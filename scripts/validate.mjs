@@ -12,7 +12,8 @@ const allowedTypes = new Set([
   'split',
   'grid',
   'pillars',
-  'gallery'
+  'gallery',
+  'image'
 ]);
 
 const mandatoryFiles = ['slides.json', 'theme.json', 'catalog.json'];
@@ -79,6 +80,12 @@ function validateSlides(relativePath) {
     if (type === 'pillars') {
       if (!Array.isArray(slide.pillars) || !slide.pillars.length) {
         throw new Error(`${relativePath}: ${label} requires a non-empty pillars array`);
+      }
+    }
+
+    if (type === 'image') {
+      if (!slide.image || typeof slide.image !== 'object' || !slide.image.src) {
+        throw new Error(`${relativePath}: ${label} requires an image object with a "src"`);
       }
     }
   });

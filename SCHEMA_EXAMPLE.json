@@ -10,7 +10,8 @@
       "grid": "Grid of images or color swatches",
       "pillars": "4-column cards for features/concepts",
       "gallery": "Gallery of images with labels and copy",
-      "typeface": "Font showcase with samples"
+      "typeface": "Font showcase with samples",
+      "image": "Full-bleed visual with optional caption overlay"
     },
     "fontPresets": {
       "sans": "Inter - Clean, modern body font",
@@ -25,7 +26,9 @@
       "badge": "optional - small label/tag",
       "headline": "optional - main heading",
       "body": "optional - text or array of paragraphs",
-      "image": "optional - image object {src, alt, aspectRatio}",
+      "image": "optional - image object {src, alt, aspectRatio, objectFit, objectPosition, border}",
+      "caption": "optional - overlay text for image slides",
+      "autoBadge": "optional - set to false to hide auto-generated badges",
       "footnote": "optional - small text at bottom",
       "font": "optional - font preset or custom font name"
     },

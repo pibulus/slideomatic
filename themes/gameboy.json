@@ -10,6 +10,8 @@
   "color-surface": "#8bac0f",
   "color-surface-alt": "#306230",
   "color-accent": "#0f380f",
+  "badge-bg": "#8bac0f",
+  "badge-color": "#0f380f",
   "color-ink": "#0f380f",
   "color-muted": "#306230",
   "border-width": "6px",

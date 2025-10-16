@@ -100,8 +100,52 @@ Edit `slides.json` directly. Each slide is a JSON object. Supported `type` value
 - `pillars`
 - `gallery`
 - `typeface` (font showcase)
+- `image` (full-bleed visual with optional caption overlay)
+
+### Auto Badges & Slide Numbers
+
+Each slide shows a badge in the upper-left corner. Set `"badge": "Slide 2B"` to control the copy. If you omit `badge`, the runtime now auto-labels the slide as `+ Slide N` based on its position. Disable the fallback with `"autoBadge": false` when you want a bare slide without any tag.
+
+### Full-Bleed Image Slides
+
+Use the `image` type when an asset should take over the whole frame:
+
+```json
+{
+  "type": "image",
+  "image": {
+    "src": "images/live-crowd.jpg",
+    "alt": "Crowd under violet lighting"
+  },
+  "caption": "Live at the Observatory — April 2024"
+}
+```
+
+Options:
+
+- `"caption"` – optional overlay at the bottom-left.
+- `"image": { "objectFit": "contain", "objectPosition": "center top" }` – fine-tune how the image is sized/anchored.
+- `"image": { "border": false }` – removes the default frame when using non-full-bleed slides.
+- `"autoBadge": false` – hide the default badge entirely.
 
 Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). The renderer handles rich text (basic HTML) and auto-links.
+
+### Missing Image Helpers
+
+If you define an `image` object without a `src`, the deck now renders a small “Search” button that opens a Google Images tab based on the slide’s `alt` (or label) text. Handy for quickly sourcing artwork while building the story.
+
+### Rapid Screenshot Decks
+
+Need a slideshow from a folder of screenshots? Run the helper script:
+
+```bash
+node scripts/generate-image-deck.mjs --dir images/screenshots --out slides-screenshots.json
+```
+
+- Images are sorted by modified time (oldest → newest).
+- Each file becomes a full-bleed `image` slide with a generated caption.
+- Launch via `deck.html?slides=slides-screenshots.json`.
+- Add `--dry-run` to preview the JSON or `--help` for more options.
 
 Validation happens at runtime—if a slide is missing required fields you'll see a descriptive error slide.
 

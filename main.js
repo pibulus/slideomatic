@@ -12,6 +12,7 @@ const renderers = {
   pillars: renderPillarsSlide,
   gallery: renderGallerySlide,
   typeface: renderTypefaceSlide,
+  image: renderImageSlide,
 };
 
 let slides = [];
@@ -175,6 +176,7 @@ function validateSlides(data) {
     "pillars",
     "gallery",
     "typeface",
+    "image",
     "_schema"  // Special type for documentation - ignored during render
   ]);
 
@@ -204,6 +206,12 @@ function validateSlides(data) {
     if (slide.type === "gallery") {
       if (!Array.isArray(slide.items) || slide.items.length === 0) {
         throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Gallery slide"}) requires a non-empty items array.`);
+      }
+    }
+
+    if (slide.type === "image") {
+      if (!slide.image || typeof slide.image !== "object" || !slide.image.src) {
+        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Image slide"}) requires an image.src value.`);
       }
     }
   });
@@ -377,6 +385,31 @@ function createSlide(slide, index, rendererMap) {
   const renderer = rendererMap[type] ?? renderStandardSlide;
   renderer(section, slide);
 
+  const directBadge = Array.from(section.children).some((child) =>
+    child.classList?.contains("badge")
+  );
+  const badgeDisabled =
+    slide.badge === false || slide.autoBadge === false;
+  const manualBadgeValue =
+    typeof slide.badge === "string"
+      ? slide.badge.trim()
+      : typeof slide.badge === "number"
+      ? String(slide.badge)
+      : "";
+
+  if (!directBadge && !badgeDisabled) {
+    if (manualBadgeValue) {
+      section.insertBefore(
+        createBadge(manualBadgeValue),
+        section.firstChild ?? null
+      );
+    } else if (slide.autoBadge !== false) {
+      const autoBadge = createBadge(`+ Slide ${index + 1}`);
+      autoBadge.dataset.badgeAuto = "true";
+      section.insertBefore(autoBadge, section.firstChild ?? null);
+    }
+  }
+
   return section;
 }
 
@@ -448,10 +481,6 @@ function renderTitleSlide(section, slide) {
 }
 
 function renderStandardSlide(section, slide) {
-  if (slide.badge) {
-    section.appendChild(createBadge(slide.badge));
-  }
-
   if (slide.headline) {
     const headline = document.createElement("h2");
     setRichContent(headline, slide.headline);
@@ -469,6 +498,33 @@ function renderStandardSlide(section, slide) {
   }
 }
 
+function renderImageSlide(section, slide) {
+  section.classList.add("slide--image");
+
+  if (!slide.image || !slide.image.src) {
+    const warning = document.createElement("p");
+    warning.className = "slide__error";
+    warning.textContent = "Image slide requires an image with a src.";
+    section.appendChild(warning);
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "slide__image-wrapper";
+
+  const imageElement = createImage(slide.image, "slide__image slide__image--full");
+  wrapper.appendChild(imageElement);
+
+  if (slide.caption) {
+    const caption = document.createElement("div");
+    caption.className = "slide__image-caption";
+    setRichContent(caption, slide.caption);
+    wrapper.appendChild(caption);
+  }
+
+  section.appendChild(wrapper);
+}
+
 function renderQuoteSlide(section, slide) {
   section.classList.add("slide--quote");
   const quote = document.createElement("blockquote");
@@ -484,9 +540,6 @@ function renderQuoteSlide(section, slide) {
 
 function renderSplitSlide(section, slide) {
   section.classList.add("slide--split");
-  if (slide.badge) {
-    section.appendChild(createBadge(slide.badge));
-  }
   const variants = Array.isArray(slide.variant)
     ? slide.variant
     : slide.variant
@@ -550,10 +603,6 @@ function renderGridSlide(section, slide) {
 function renderPillarsSlide(section, slide) {
   section.classList.add("slide--pillars");
 
-  if (slide.badge) {
-    section.appendChild(createBadge(slide.badge));
-  }
-
   if (slide.headline) {
     const headline = document.createElement("h2");
     setRichContent(headline, slide.headline);
@@ -609,10 +658,6 @@ function renderPillarsSlide(section, slide) {
 function renderGallerySlide(section, slide) {
   section.classList.add("slide--gallery");
 
-  if (slide.badge) {
-    section.appendChild(createBadge(slide.badge));
-  }
-
   if (slide.headline) {
     const headline = document.createElement("h2");
     setRichContent(headline, slide.headline);
@@ -666,10 +711,6 @@ function renderGallerySlide(section, slide) {
 
 function renderTypefaceSlide(section, slide) {
   section.classList.add("slide--typeface");
-
-  if (slide.badge) {
-    section.appendChild(createBadge(slide.badge));
-  }
 
   if (slide.headline) {
     const headline = document.createElement("h2");
@@ -770,6 +811,9 @@ function createBadge(label) {
 }
 
 function createImage(image, className = "slide__image") {
+  if (!image || !image.src) {
+    return createImagePlaceholder(image, className);
+  }
   const img = document.createElement("img");
   img.className = className;
   img.src = image.src;
@@ -787,9 +831,79 @@ function createImage(image, className = "slide__image") {
   if (image.aspectRatio) {
     img.style.aspectRatio = image.aspectRatio;
   }
+  if (image.objectFit) {
+    img.style.objectFit = image.objectFit;
+  }
+  if (image.objectPosition) {
+    img.style.objectPosition = image.objectPosition;
+  }
+  if (image.fullBleed) {
+    img.classList.add("slide__image--full");
+  }
+  if (image.border === false) {
+    img.classList.add("slide__image--borderless");
+  }
   // Make images clickable to view full size
   img.style.cursor = 'pointer';
   return img;
+}
+
+function createImagePlaceholder(image = {}, className = "slide__image") {
+  const baseClasses = String(className)
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const placeholder = document.createElement("button");
+  placeholder.type = "button";
+  placeholder.className = [...baseClasses, "image-placeholder"].join(" ");
+
+  const query =
+    image.alt ||
+    image.search ||
+    image.label ||
+    image.caption ||
+    image.query ||
+    "";
+  const trimmedQuery = query.trim();
+
+  const icon = document.createElement("span");
+  icon.className = "image-placeholder__icon";
+  icon.textContent = "🔍";
+
+  const text = document.createElement("span");
+  text.className = "image-placeholder__text";
+  text.textContent = trimmedQuery
+    ? `Search “${trimmedQuery}”`
+    : "Add reference image";
+
+  placeholder.append(icon, text);
+
+  if (trimmedQuery) {
+    placeholder.dataset.searchQuery = trimmedQuery;
+    placeholder.setAttribute("aria-label", `Search images for ${trimmedQuery}`);
+    placeholder.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const url = buildImageSearchUrl(trimmedQuery);
+      window.open(url, "_blank", "noopener");
+    });
+  } else {
+    placeholder.disabled = true;
+    placeholder.classList.add("is-disabled");
+    placeholder.setAttribute(
+      "aria-label",
+      "Add reference image (no search query)"
+    );
+  }
+
+  return placeholder;
+}
+
+function buildImageSearchUrl(query) {
+  const url = new URL("https://www.google.com/search");
+  url.searchParams.set("tbm", "isch");
+  url.searchParams.set("q", query);
+  return url.toString();
 }
 
 function handleImageModalTrigger(event) {

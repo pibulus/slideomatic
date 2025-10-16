@@ -11,7 +11,7 @@
     "title": "Frequency Deck — Vaporwave",
     "description": "A E S T H E T I C vibes with neon pinks, cyans, and grid overlays.",
     "slides": "slides.json",
-    "theme": "vaporwave",
+    "theme": "themes/vaporwave.json",
     "category": "Alt Theme",
     "tags": ["Retro", "Neon", "80s"]
   },
@@ -19,7 +19,7 @@
     "title": "Frequency Deck — Game Boy",
     "description": "Classic 4-color green palette with scanlines and pixel energy.",
     "slides": "slides.json",
-    "theme": "gameboy",
+    "theme": "themes/gameboy.json",
     "category": "Alt Theme",
     "tags": ["Retro", "Pixel", "Nostalgia"]
   },
@@ -27,7 +27,7 @@
     "title": "Frequency Deck — Slack",
     "description": "Church of SubGenius energy. Yellow, black, conspiracy, DIY punk chaos.",
     "slides": "slides.json",
-    "theme": "slack",
+    "theme": "themes/slack.json",
     "category": "Alt Theme",
     "tags": ["Punk", "DIY", "SubGenius"]
   }
