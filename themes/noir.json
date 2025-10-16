@@ -1,9 +1,9 @@
 {
   "color-bg": "#0f1114",
-  "background-surface": "radial-gradient(circle at 20% 20%, rgba(80, 120, 255, 0.35), transparent 60%), radial-gradient(circle at 80% 30%, rgba(220, 120, 255, 0.25), transparent 60%), radial-gradient(circle at 40% 75%, rgba(40, 220, 200, 0.2), transparent 65%), linear-gradient(135deg, #090b10 0%, #141923 100%)",
+  "background-surface": "linear-gradient(135deg, #050608 0%, #141923 55%, #1a2230 100%)",
   "background-overlay": "radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px)",
   "background-opacity": "0.35",
-  "slide-bg": "rgba(18, 22, 30, 0.92)",
+  "slide-bg": "rgba(10, 14, 22, 0.55)",
   "slide-border-color": "rgba(255, 255, 255, 0.18)",
   "slide-border-width": "4px",
   "slide-shadow": "0 24px 50px -30px rgba(0, 0, 0, 0.9)",
