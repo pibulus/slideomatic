@@ -11,7 +11,7 @@
     "title": "Frequency Deck — Noir",
     "description": "Moody midnight palette with glassy slide chrome and neon accents.",
     "slides": "slides.json",
-    "theme": "themes/noir.json",
+    "theme": "noir",
     "category": "Alt Theme",
     "tags": ["Dark Mode", "Neon"]
   }
