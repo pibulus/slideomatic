@@ -116,7 +116,7 @@
           params.set('theme', deck.theme);
         }
         const query = params.toString();
-        return query ? `deck.html?${query}` : 'deck.html';
+        return query ? `deck?${query}` : 'deck';
       }
 
       function buildEditorUrl(deck) {
@@ -125,7 +125,7 @@
           params.set('slides', deck.slides);
         }
         const query = params.toString();
-        return query ? `admin.html?${query}` : 'admin.html';
+        return query ? `admin?${query}` : 'admin';
       }
 
       function buildChipLabels(deck) {

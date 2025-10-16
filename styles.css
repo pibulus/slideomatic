@@ -649,15 +649,11 @@ body[data-mode="overview"] {
 .hud__back {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
   text-decoration: none;
   color: var(--color-ink);
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
   transition: color 160ms ease;
-  text-transform: uppercase;
 }
 
 .hud__back:hover {
