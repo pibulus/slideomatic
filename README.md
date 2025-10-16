@@ -126,6 +126,7 @@ Options:
 - `"caption"` – optional overlay at the bottom-left.
 - `"image": { "objectFit": "contain", "objectPosition": "center top" }` – fine-tune how the image is sized/anchored.
 - `"image": { "border": false }` – removes the default frame when using non-full-bleed slides.
+- `"image": { "orientation": "portrait" }` – overrides automatic orientation detection (`portrait`, `landscape`, or `square`).
 - `"autoBadge": false` – hide the default badge entirely.
 
 Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). The renderer handles rich text (basic HTML) and auto-links.
@@ -133,6 +134,7 @@ Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). 
 ### Missing Image Helpers
 
 If you define an `image` object without a `src`, the deck now renders a small “Search” button that opens a Google Images tab based on the slide’s `alt` (or label) text. Handy for quickly sourcing artwork while building the story.
+Images automatically tag themselves as landscape/portrait/square once loaded, and you can override with `image.orientation` if you want to lock a layout in place.
 
 ### Rapid Screenshot Decks
 

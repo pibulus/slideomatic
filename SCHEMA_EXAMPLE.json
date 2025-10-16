@@ -26,7 +26,7 @@
       "badge": "optional - small label/tag",
       "headline": "optional - main heading",
       "body": "optional - text or array of paragraphs",
-      "image": "optional - image object {src, alt, aspectRatio, objectFit, objectPosition, border}",
+      "image": "optional - image object {src, alt, aspectRatio, objectFit, objectPosition, border, orientation}",
       "caption": "optional - overlay text for image slides",
       "autoBadge": "optional - set to false to hide auto-generated badges",
       "footnote": "optional - small text at bottom",

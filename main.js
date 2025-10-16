@@ -512,7 +512,9 @@ function renderImageSlide(section, slide) {
   const wrapper = document.createElement("div");
   wrapper.className = "slide__image-wrapper";
 
-  const imageElement = createImage(slide.image, "slide__image slide__image--full");
+  const imageElement = createImage(slide.image, "slide__image slide__image--full", {
+    orientationTarget: section,
+  });
   wrapper.appendChild(imageElement);
 
   if (slide.caption) {
@@ -810,7 +812,7 @@ function createBadge(label) {
   return badge;
 }
 
-function createImage(image, className = "slide__image") {
+function createImage(image, className = "slide__image", options = {}) {
   if (!image || !image.src) {
     return createImagePlaceholder(image, className);
   }
@@ -842,6 +844,31 @@ function createImage(image, className = "slide__image") {
   }
   if (image.border === false) {
     img.classList.add("slide__image--borderless");
+  }
+  const orientationTarget = options.orientationTarget;
+  const explicitOrientation = normalizeOrientation(image.orientation);
+  const applyOrientation = (orientation) => {
+    if (!orientation) return;
+    img.dataset.orientation = orientation;
+    if (orientationTarget) {
+      orientationTarget.dataset.orientation = orientation;
+    }
+  };
+  if (explicitOrientation) {
+    applyOrientation(explicitOrientation);
+  } else {
+    const updateOrientationFromNatural = () => {
+      const orientation = deriveOrientationFromDimensions(
+        img.naturalWidth,
+        img.naturalHeight
+      );
+      applyOrientation(orientation);
+    };
+    if (img.complete && img.naturalWidth && img.naturalHeight) {
+      updateOrientationFromNatural();
+    } else {
+      img.addEventListener("load", updateOrientationFromNatural, { once: true });
+    }
   }
   // Make images clickable to view full size
   img.style.cursor = 'pointer';
@@ -904,6 +931,29 @@ function buildImageSearchUrl(query) {
   url.searchParams.set("tbm", "isch");
   url.searchParams.set("q", query);
   return url.toString();
+}
+
+function normalizeOrientation(value) {
+  if (!value) return null;
+  const normalized = String(value).toLowerCase();
+  if (["portrait", "landscape", "square"].includes(normalized)) {
+    return normalized;
+  }
+  if (["vertical", "tall"].includes(normalized)) {
+    return "portrait";
+  }
+  if (["horizontal", "wide"].includes(normalized)) {
+    return "landscape";
+  }
+  return null;
+}
+
+function deriveOrientationFromDimensions(width, height) {
+  if (!width || !height) return null;
+  if (Math.abs(width - height) / Math.max(width, height) < 0.08) {
+    return "square";
+  }
+  return width > height ? "landscape" : "portrait";
 }
 
 function handleImageModalTrigger(event) {
