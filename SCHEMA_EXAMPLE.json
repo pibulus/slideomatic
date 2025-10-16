@@ -1,0 +1,45 @@
+[
+  {
+    "type": "_schema",
+    "info": "This slide is ignored during rendering - use it to document your deck format",
+    "slideTypes": {
+      "title": "Hero slide with eyebrow, title, subtitle, and media strip",
+      "standard": "Basic slide with badge, headline, body, and optional image",
+      "quote": "Large centered quote with attribution",
+      "split": "Two-column layout with left/right content",
+      "grid": "Grid of images or color swatches",
+      "pillars": "4-column cards for features/concepts",
+      "gallery": "Gallery of images with labels and copy",
+      "typeface": "Font showcase with samples"
+    },
+    "fontPresets": {
+      "sans": "Inter - Clean, modern body font",
+      "mono": "Space Mono - Technical monospace",
+      "grotesk": "Space Grotesk - Geometric display",
+      "jetbrains": "JetBrains Mono - Code font",
+      "pixel": "Press Start 2P - 8-bit retro",
+      "custom": "Use any font name like 'Comic Sans MS', 'Georgia', etc."
+    },
+    "universalFields": {
+      "type": "required - slide type",
+      "badge": "optional - small label/tag",
+      "headline": "optional - main heading",
+      "body": "optional - text or array of paragraphs",
+      "image": "optional - image object {src, alt, aspectRatio}",
+      "footnote": "optional - small text at bottom",
+      "font": "optional - font preset or custom font name"
+    },
+    "exampleSlide": {
+      "type": "standard",
+      "badge": "Slide 2B",
+      "headline": "This is a Headline",
+      "body": ["First paragraph", "Second paragraph"],
+      "image": {
+        "src": "images/example.jpg",
+        "alt": "Description",
+        "aspectRatio": "16 / 9"
+      },
+      "font": "mono"
+    }
+  }
+]

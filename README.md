@@ -54,6 +54,31 @@ That's it—no build step, no frameworks.
 
 ---
 
+## Documenting Your Deck Format
+
+You can add a `_schema` slide at the top of `slides.json` to document your format inline. The renderer will ignore it:
+
+```json
+[
+  {
+    "type": "_schema",
+    "note": "This slide is ignored - use it to document your deck",
+    "availableTypes": ["title", "standard", "quote", "split", "grid", "pillars", "gallery", "typeface"],
+    "fontPresets": ["sans", "mono", "grotesk", "jetbrains", "pixel"],
+    "tip": "Add any documentation fields you want here"
+  },
+  {
+    "type": "title",
+    "title": "Your First Real Slide",
+    ...
+  }
+]
+```
+
+See `SCHEMA_EXAMPLE.json` for a complete documentation template.
+
+---
+
 ## Editing Slides
 
 ### Option A – In-browser editor (recommended)
@@ -74,10 +99,36 @@ Edit `slides.json` directly. Each slide is a JSON object. Supported `type` value
 - `grid`
 - `pillars`
 - `gallery`
+- `typeface` (font showcase)
 
 Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). The renderer handles rich text (basic HTML) and auto-links.
 
 Validation happens at runtime—if a slide is missing required fields you'll see a descriptive error slide.
+
+### Font Control
+
+Add a `font` field to any slide to override the theme's default font:
+
+**Presets:**
+- `"font": "sans"` - Inter (default body font)
+- `"font": "mono"` - Space Mono (monospace)
+- `"font": "grotesk"` - Space Grotesk (geometric sans)
+- `"font": "jetbrains"` - JetBrains Mono (code font)
+- `"font": "pixel"` - Press Start 2P (retro)
+
+**Custom fonts:**
+- `"font": "Comic Sans MS"` - Use any system/web font
+- `"font": "Georgia"` - Serif example
+
+Example:
+```json
+{
+  "type": "quote",
+  "quote": "This quote is in pixel font",
+  "attribution": "Retro vibes",
+  "font": "pixel"
+}
+```
 
 ---
 

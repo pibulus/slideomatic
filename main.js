@@ -11,6 +11,7 @@ const renderers = {
   grid: renderGridSlide,
   pillars: renderPillarsSlide,
   gallery: renderGallerySlide,
+  typeface: renderTypefaceSlide,
 };
 
 let slides = [];
@@ -35,14 +36,17 @@ async function initDeck() {
     return;
   }
 
-  totalCounter.textContent = slides.length;
+  // Filter out schema/docs slides before rendering
+  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
 
-  if (!Array.isArray(slides) || slides.length === 0) {
+  totalCounter.textContent = renderableSlides.length;
+
+  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
     renderEmptyState();
     return;
   }
 
-  slideElements = slides.map((slide, index) =>
+  slideElements = renderableSlides.map((slide, index) =>
     createSlide(slide, index, renderers)
   );
 
@@ -169,7 +173,9 @@ function validateSlides(data) {
     "split",
     "grid",
     "pillars",
-    "gallery"
+    "gallery",
+    "typeface",
+    "_schema"  // Special type for documentation - ignored during render
   ]);
 
   data.forEach((slide, index) => {
@@ -360,10 +366,40 @@ function createSlide(slide, index, rendererMap) {
   section.dataset.index = index;
   section.setAttribute("aria-hidden", "true");
 
+  // Apply font preset or custom font
+  if (slide.font) {
+    const fontFamily = resolveFontFamily(slide.font);
+    if (fontFamily) {
+      section.style.fontFamily = fontFamily;
+    }
+  }
+
   const renderer = rendererMap[type] ?? renderStandardSlide;
   renderer(section, slide);
 
   return section;
+}
+
+function resolveFontFamily(font) {
+  const presets = {
+    sans: '"Inter", "Helvetica Neue", Arial, sans-serif',
+    mono: '"Space Mono", "IBM Plex Mono", monospace',
+    grotesk: '"Space Grotesk", sans-serif',
+    jetbrains: '"JetBrains Mono", monospace',
+    pixel: '"Press Start 2P", monospace',
+  };
+
+  // Check if it's a preset
+  const lowerFont = font.toLowerCase();
+  if (presets[lowerFont]) {
+    return presets[lowerFont];
+  }
+
+  // Otherwise use as custom font (wrap in quotes if not already)
+  if (font.includes('"') || font.includes("'")) {
+    return font;
+  }
+  return `"${font}", sans-serif`;
 }
 
 function preloadImage(src) {
@@ -621,6 +657,59 @@ function renderGallerySlide(section, slide) {
     });
 
     section.appendChild(gallery);
+  }
+
+  if (slide.footnote) {
+    section.appendChild(createFootnote(slide.footnote));
+  }
+}
+
+function renderTypefaceSlide(section, slide) {
+  section.classList.add("slide--typeface");
+
+  if (slide.badge) {
+    section.appendChild(createBadge(slide.badge));
+  }
+
+  if (slide.headline) {
+    const headline = document.createElement("h2");
+    setRichContent(headline, slide.headline);
+    section.appendChild(headline);
+  }
+
+  appendBody(section, slide.body);
+
+  if (Array.isArray(slide.fonts)) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "typeface-grid";
+
+    slide.fonts.forEach((font) => {
+      const card = document.createElement("article");
+      card.className = "typeface-card";
+
+      const label = document.createElement("span");
+      label.className = "typeface-card__label";
+      label.textContent = font.name;
+      card.appendChild(label);
+
+      const sample = document.createElement("p");
+      sample.className = "typeface-card__sample";
+      sample.style.fontFamily = font.font;
+      if (font.weight) sample.style.fontWeight = font.weight;
+      sample.textContent = font.sample || slide.sample || "The quick brown fox jumps over the lazy dog";
+      card.appendChild(sample);
+
+      if (font.note) {
+        const note = document.createElement("span");
+        note.className = "typeface-card__note";
+        note.textContent = font.note;
+        card.appendChild(note);
+      }
+
+      wrapper.appendChild(card);
+    });
+
+    section.appendChild(wrapper);
   }
 
   if (slide.footnote) {

@@ -8,11 +8,27 @@
     "tags": ["Default", "Mesh Gradient"]
   },
   {
-    "title": "Frequency Deck — Noir",
-    "description": "Moody midnight palette with glassy slide chrome and neon accents.",
+    "title": "Frequency Deck — Vaporwave",
+    "description": "A E S T H E T I C vibes with neon pinks, cyans, and grid overlays.",
     "slides": "slides.json",
-    "theme": "noir",
+    "theme": "vaporwave",
     "category": "Alt Theme",
-    "tags": ["Dark Mode", "Neon"]
+    "tags": ["Retro", "Neon", "80s"]
+  },
+  {
+    "title": "Frequency Deck — Game Boy",
+    "description": "Classic 4-color green palette with scanlines and pixel energy.",
+    "slides": "slides.json",
+    "theme": "gameboy",
+    "category": "Alt Theme",
+    "tags": ["Retro", "Pixel", "Nostalgia"]
+  },
+  {
+    "title": "Frequency Deck — Slack",
+    "description": "Church of SubGenius energy. Yellow, black, conspiracy, DIY punk chaos.",
+    "slides": "slides.json",
+    "theme": "slack",
+    "category": "Alt Theme",
+    "tags": ["Punk", "DIY", "SubGenius"]
   }
 ]
