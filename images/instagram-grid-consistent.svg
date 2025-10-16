@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <defs>
+    <pattern id="grid-bg" width="200" height="200" patternUnits="userSpaceOnUse">
+      <rect width="200" height="200" fill="#fffbf3"/>
+      <rect x="10" y="10" width="180" height="180" fill="#ff9ff3" stroke="#070707" stroke-width="6"/>
+      <rect x="40" y="40" width="120" height="120" fill="#88d4ff" stroke="#070707" stroke-width="4"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="600" fill="url(#grid-bg)"/>
+  <text x="300" y="320" font-family="Space Mono, monospace" font-size="48" font-weight="700" text-anchor="middle" fill="#070707">COHESIVE</text>
+</svg>

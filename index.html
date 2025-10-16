@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Unbreakable Brand — Deck Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+      crossorigin
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <div class="grain-overlay" aria-hidden="true"></div>
+      <main class="slides" id="slides" aria-live="polite"></main>
+      <footer class="hud">
+        <div class="hud__controls">
+          <span class="hud__hint">← / → or space</span>
+          <span class="hud__hint">O overview</span>
+        </div>
+        <div class="hud__counter">
+          <span data-counter-current>1</span>
+          <span class="hud__divider">/</span>
+          <span data-counter-total>1</span>
+        </div>
+        <div class="hud__progress">
+          <div class="hud__progress-bar" data-progress></div>
+        </div>
+      </footer>
+    </div>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

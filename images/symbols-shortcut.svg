@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#fffbf3"/>
+  <rect x="60" y="60" width="1080" height="680" fill="none" stroke="#070707" stroke-width="18"/>
+  <g stroke="#070707" stroke-width="12">
+    <rect x="120" y="140" width="300" height="520" fill="#0d0d0d"/>
+    <rect x="460" y="140" width="280" height="520" fill="#fffbf3"/>
+    <rect x="780" y="140" width="320" height="520" fill="#ffb5e8"/>
+  </g>
+  <g font-family="Space Mono, monospace" font-size="30">
+    <text x="140" y="180" fill="#fffbf3">XO</text>
+    <text x="480" y="180" fill="#070707">TUXEDO</text>
+    <text x="800" y="180" fill="#070707">NO MOUTH</text>
+  </g>
+  <g font-family="Inter, sans-serif" font-size="24">
+    <text x="140" y="220" fill="#fffbf3">The Weeknd</text>
+    <text x="480" y="220" fill="#070707">Janelle Monáe</text>
+    <text x="800" y="220" fill="#070707">Hello Kitty</text>
+  </g>
+  <g font-family="Inter, sans-serif" font-size="26">
+    <text x="140" y="520" fill="#fffbf3">Dark. Hedonistic.</text>
+    <text x="140" y="560" fill="#fffbf3">After-hours mythology.</text>
+    <text x="480" y="520" fill="#070707">Power uniform.</text>
+    <text x="480" y="560" fill="#070707">Gender play. Control.</text>
+    <text x="800" y="520" fill="#070707">Projection surface.</text>
+    <text x="800" y="560" fill="#070707">You decide the emotion.</text>
+  </g>
+  <g font-family="Space Mono, monospace" font-size="28" fill="#070707">
+    <text x="120" y="720">Symbols carry baggage. Use it deliberately.</text>
+  </g>
+  <g fill="#fffbf3">
+    <text x="240" y="340" font-family="Space Mono, monospace" font-size="120">XO</text>
+  </g>
+  <g fill="#070707">
+    <path d="M540 320h120l-20 200h-80z" fill="#070707"/>
+    <rect x="560" y="280" width="80" height="40" fill="#070707"/>
+    <path d="M880 300c40-80 140-80 180 0-40 80-140 80-180 0z" fill="#070707"/>
+    <circle cx="920" cy="520" r="20" fill="#070707"/>
+    <circle cx="1000" cy="520" r="20" fill="#070707"/>
+  </g>
+</svg>

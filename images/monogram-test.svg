@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#fffbf3"/>
+  <rect x="60" y="60" width="1080" height="680" fill="none" stroke="#070707" stroke-width="18"/>
+  <g stroke="#070707" stroke-width="12">
+    <rect x="120" y="140" width="300" height="520" fill="#ffffff"/>
+    <rect x="460" y="140" width="280" height="520" fill="#0d0d0d"/>
+    <rect x="780" y="140" width="320" height="520" fill="#ffb5e8"/>
+  </g>
+  <g font-family="Didot, 'Bodoni 72', serif" font-size="160" fill="#070707">
+    <text x="220" y="360">L V</text>
+  </g>
+  <g font-family="Space Mono, monospace" font-size="140" fill="#fffbf3">
+    <text x="520" y="360">RTJ</text>
+  </g>
+  <path d="M500 460h200l-40 40h-120z" fill="#fffbf3"/>
+  <path d="M520 500h160v40l-80 80-80-80z" fill="#fffbf3"/>
+  <g fill="#070707">
+    <path d="M900 300c0-60 40-100 100-100l40 40-40 40 40 40-40 40 40 40-40 40c-60 0-100-40-100-100z"/>
+    <circle cx="920" cy="520" r="20"/>
+    <circle cx="980" cy="520" r="20"/>
+  </g>
+  <g font-family="Inter, sans-serif" font-size="26">
+    <text x="140" y="520" fill="#070707">Louis Vuitton</text>
+    <text x="140" y="560" fill="#070707">Luxury. Paris. Heritage.</text>
+    <text x="480" y="520" fill="#fffbf3">Run The Jewels</text>
+    <text x="480" y="560" fill="#fffbf3">Rebellion. Hip-hop. Power.</text>
+    <text x="800" y="520" fill="#070707">Prince</text>
+    <text x="800" y="560" fill="#070707">Purple genius. Androgyny.</text>
+  </g>
+  <g font-family="Space Mono, monospace" font-size="28" fill="#070707">
+    <text x="120" y="720">Same format, different worlds. Meaning compounds over time.</text>
+  </g>
+</svg>

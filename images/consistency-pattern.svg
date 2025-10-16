@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#fffbf3"/>
+  <g stroke="#070707" stroke-width="12" fill="none">
+    <rect x="60" y="60" width="1080" height="680"/>
+  </g>
+  <defs>
+    <pattern id="tile" width="160" height="160" patternUnits="userSpaceOnUse">
+      <rect width="160" height="160" fill="#fffbf3"/>
+      <rect x="16" y="16" width="128" height="128" fill="#ffb5e8" stroke="#070707" stroke-width="8"/>
+      <rect x="40" y="40" width="80" height="80" fill="#fffbf3" stroke="#070707" stroke-width="6"/>
+      <circle cx="80" cy="80" r="18" fill="#070707"/>
+    </pattern>
+  </defs>
+  <rect x="120" y="120" width="960" height="560" fill="url(#tile)" stroke="#070707" stroke-width="14"/>
+</svg>
