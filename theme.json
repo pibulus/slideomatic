@@ -1,0 +1,17 @@
+{
+  "color-bg": "#fffbf3",
+  "color-surface": "#ff9ff3",
+  "color-surface-alt": "#88d4ff",
+  "color-accent": "#feca57",
+  "color-ink": "#000000",
+  "color-muted": "#2b2b2b",
+  "border-width": "5px",
+  "gutter": "clamp(32px, 5vw, 72px)",
+  "radius": "12px",
+  "font-sans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+  "font-mono": "\"Space Mono\", \"IBM Plex Mono\", monospace",
+  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
+  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
+  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
+  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
+}

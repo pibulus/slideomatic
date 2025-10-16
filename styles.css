@@ -218,6 +218,17 @@ body[data-mode="overview"] {
   font-style: italic;
 }
 
+.auto-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(0, 0, 0, 0.4);
+}
+
+.auto-link:hover {
+  text-decoration-color: var(--color-accent);
+}
+
 .slide p code {
   font-family: var(--font-mono);
   background: rgba(0, 0, 0, 0.08);

@@ -18,15 +18,20 @@ let slideElements = [];
 let currentIndex = 0;
 let isOverview = false;
 const preloadedImages = new Set();
+let autoLinkConfigs = [];
 
 initDeck();
 
 async function initDeck() {
+  await loadAndApplyTheme();
+  await loadAutoLinks();
+
   try {
     slides = await loadSlides();
+    validateSlides(slides);
   } catch (error) {
     console.error("Failed to load slides", error);
-    renderLoadError();
+    renderLoadError(error);
     return;
   }
 
@@ -64,12 +69,55 @@ async function loadSlides() {
   return response.json();
 }
 
-function renderLoadError() {
+async function loadAndApplyTheme() {
+  try {
+    const response = await fetch("theme.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const theme = await response.json();
+    applyTheme(theme);
+  } catch (error) {
+    console.warn("Unable to load custom theme, using defaults.", error);
+  }
+}
+
+function applyTheme(theme) {
+  if (!theme || typeof theme !== "object") return;
+  const root = document.documentElement;
+  Object.entries(theme).forEach(([token, value]) => {
+    if (value == null) return;
+    root.style.setProperty(`--${token}`, value);
+  });
+}
+
+async function loadAutoLinks() {
+  try {
+    const response = await fetch("autolinks.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const links = await response.json();
+    if (!Array.isArray(links)) return;
+    autoLinkConfigs = links
+      .filter((link) => Boolean(link?.term))
+      .map((link) => ({
+        term: link.term,
+        search: link.search,
+        url: link.url,
+        urlTemplate: link.urlTemplate,
+        openInNewTab: link.openInNewTab !== false,
+        regex: new RegExp(escapeRegExp(link.term), "gi"),
+      }));
+  } catch (error) {
+    console.warn("Unable to load autolinks.json", error);
+    autoLinkConfigs = [];
+  }
+}
+
+function renderLoadError(error) {
   const message = document.createElement("section");
   message.className = "slide slide--error is-active";
   message.innerHTML = `
     <h2>Unable to load slides</h2>
     <p>Please refresh the page or contact the deck owner.</p>
+    ${error ? `<pre>${error.message}</pre>` : ""}
   `;
   slidesRoot.appendChild(message);
 }
@@ -82,6 +130,52 @@ function renderEmptyState() {
     <p>Add slide data to <code>slides.json</code> to render this deck.</p>
   `;
   slidesRoot.appendChild(message);
+}
+
+function validateSlides(data) {
+  if (!Array.isArray(data)) {
+    throw new Error("Slides data must be an array.");
+  }
+
+  const allowedTypes = new Set([
+    "title",
+    "standard",
+    "quote",
+    "split",
+    "grid",
+    "pillars",
+    "gallery"
+  ]);
+
+  data.forEach((slide, index) => {
+    if (!slide || typeof slide !== "object") {
+      throw new Error(`Slide ${index} is not an object.`);
+    }
+
+    if (slide.type && !allowedTypes.has(slide.type)) {
+      throw new Error(
+        `Slide ${index} has unsupported type "${slide.type}". Allowed types: ${[...allowedTypes].join(", ")}.`
+      );
+    }
+
+    if (slide.type === "split") {
+      if (!slide.left || !slide.right) {
+        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Split slide"}) is missing left/right content.`);
+      }
+    }
+
+    if (slide.type === "pillars") {
+      if (!Array.isArray(slide.pillars) || slide.pillars.length === 0) {
+        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Pillars slide"}) requires a non-empty pillars array.`);
+      }
+    }
+
+    if (slide.type === "gallery") {
+      if (!Array.isArray(slide.items) || slide.items.length === 0) {
+        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Gallery slide"}) requires a non-empty items array.`);
+      }
+    }
+  });
 }
 
 function handleKeyboard(event) {
@@ -278,7 +372,7 @@ function renderTitleSlide(section, slide) {
   if (slide.subtitle) {
     const subtitle = document.createElement("p");
     subtitle.className = "title__subtitle";
-    subtitle.innerHTML = slide.subtitle;
+    setRichContent(subtitle, slide.subtitle);
     section.appendChild(subtitle);
   }
 
@@ -287,10 +381,7 @@ function renderTitleSlide(section, slide) {
   }
 
   if (slide.footnote) {
-    const footnote = document.createElement("p");
-    footnote.className = "slide__footnote";
-    footnote.textContent = slide.footnote;
-    section.appendChild(footnote);
+    section.appendChild(createFootnote(slide.footnote));
   }
 }
 
@@ -301,7 +392,7 @@ function renderStandardSlide(section, slide) {
 
   if (slide.headline) {
     const headline = document.createElement("h2");
-    headline.innerHTML = slide.headline;
+    setRichContent(headline, slide.headline);
     section.appendChild(headline);
   }
 
@@ -319,12 +410,12 @@ function renderStandardSlide(section, slide) {
 function renderQuoteSlide(section, slide) {
   section.classList.add("slide--quote");
   const quote = document.createElement("blockquote");
-  quote.innerHTML = slide.quote ?? "";
+  setRichContent(quote, slide.quote ?? "");
   section.appendChild(quote);
 
   if (slide.attribution) {
     const cite = document.createElement("cite");
-    cite.innerHTML = slide.attribution;
+    setRichContent(cite, slide.attribution);
     section.appendChild(cite);
   }
 }
@@ -357,7 +448,7 @@ function renderGridSlide(section, slide) {
 
   if (slide.headline) {
     const headline = document.createElement("h2");
-    headline.innerHTML = slide.headline;
+    setRichContent(headline, slide.headline);
     section.appendChild(headline);
   }
 
@@ -377,7 +468,7 @@ function renderGridSlide(section, slide) {
       }
       if (item.label) {
         const caption = document.createElement("figcaption");
-        caption.innerHTML = item.label;
+        setRichContent(caption, item.label);
         figure.appendChild(caption);
       }
       grid.appendChild(figure);
@@ -400,7 +491,7 @@ function renderPillarsSlide(section, slide) {
 
   if (slide.headline) {
     const headline = document.createElement("h2");
-    headline.innerHTML = slide.headline;
+    setRichContent(headline, slide.headline);
     section.appendChild(headline);
   }
 
@@ -425,7 +516,7 @@ function renderPillarsSlide(section, slide) {
 
       if (pillar.title) {
         const heading = document.createElement("h3");
-        heading.innerHTML = pillar.title;
+        setRichContent(heading, pillar.title);
         card.appendChild(heading);
       }
 
@@ -434,7 +525,7 @@ function renderPillarsSlide(section, slide) {
         copyLines.forEach((line) => {
           if (!line) return;
           const text = document.createElement("p");
-          text.innerHTML = line;
+          setRichContent(text, line);
           card.appendChild(text);
         });
       }
@@ -459,7 +550,7 @@ function renderGallerySlide(section, slide) {
 
   if (slide.headline) {
     const headline = document.createElement("h2");
-    headline.innerHTML = slide.headline;
+    setRichContent(headline, slide.headline);
     section.appendChild(headline);
   }
 
@@ -482,7 +573,7 @@ function renderGallerySlide(section, slide) {
       if (item.label) {
         const label = document.createElement("span");
         label.className = "gallery__label";
-        label.innerHTML = item.label;
+        setRichContent(label, item.label);
         card.appendChild(label);
       }
 
@@ -492,7 +583,7 @@ function renderGallerySlide(section, slide) {
           if (!line) return;
           const text = document.createElement("p");
           text.className = "gallery__copy";
-          text.innerHTML = line;
+          setRichContent(text, line);
           card.appendChild(text);
         });
       }
@@ -518,7 +609,7 @@ function renderColumn(column, data = {}) {
   }
   if (data.headline) {
     const headline = document.createElement("h3");
-    headline.innerHTML = data.headline;
+    setRichContent(headline, data.headline);
     column.appendChild(headline);
   }
 
@@ -543,7 +634,7 @@ function appendBody(container, body) {
   copy.forEach((text) => {
     if (!text) return;
     const paragraph = document.createElement("p");
-    paragraph.innerHTML = text;
+    setRichContent(paragraph, text);
     container.appendChild(paragraph);
   });
 }
@@ -551,7 +642,7 @@ function appendBody(container, body) {
 function createBadge(label) {
   const badge = document.createElement("span");
   badge.className = "badge";
-  badge.innerHTML = label;
+  setRichContent(badge, label);
   return badge;
 }
 
@@ -621,7 +712,7 @@ function openImageModal(src, alt) {
 function createFootnote(text) {
   const footnote = document.createElement("p");
   footnote.className = "slide__footnote";
-  footnote.innerHTML = text;
+  setRichContent(footnote, text);
   return footnote;
 }
 
@@ -652,4 +743,109 @@ function createColorBlock(item, className = "gallery__color") {
     block.textContent = item.label;
   }
   return block;
+}
+
+function setRichContent(element, html) {
+  if (html == null) return;
+  element.innerHTML = html;
+  applyAutoLinksToElement(element);
+}
+
+function applyAutoLinksToElement(element) {
+  if (!autoLinkConfigs.length || !element) return;
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node || !node.nodeValue || !node.nodeValue.trim()) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (node.parentElement && node.parentElement.closest("a")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  const textNodes = [];
+  let current;
+  while ((current = walker.nextNode())) {
+    textNodes.push(current);
+  }
+
+  textNodes.forEach((node) => {
+    const original = node.nodeValue;
+    const matches = [];
+
+    autoLinkConfigs.forEach((config) => {
+      config.regex.lastIndex = 0;
+      let match;
+      while ((match = config.regex.exec(original)) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          text: match[0],
+          config,
+        });
+      }
+    });
+
+    if (!matches.length) return;
+    matches.sort((a, b) => a.start - b.start);
+
+    const filtered = [];
+    let lastEnd = -1;
+    matches.forEach((match) => {
+      if (match.start < lastEnd) return;
+      filtered.push(match);
+      lastEnd = match.end;
+    });
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    filtered.forEach((match) => {
+      if (match.start > cursor) {
+        fragment.appendChild(
+          document.createTextNode(original.slice(cursor, match.start))
+        );
+      }
+      fragment.appendChild(createAutoLink(match.text, match.config));
+      cursor = match.end;
+    });
+
+    if (cursor < original.length) {
+      fragment.appendChild(
+        document.createTextNode(original.slice(cursor))
+      );
+    }
+
+    node.parentNode.replaceChild(fragment, node);
+  });
+}
+
+function createAutoLink(text, config) {
+  const anchor = document.createElement("a");
+  anchor.textContent = text;
+  anchor.href = buildAutoLinkHref(text, config);
+  if (config.openInNewTab) {
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+  }
+  anchor.className = "auto-link";
+  return anchor;
+}
+
+function buildAutoLinkHref(text, config) {
+  if (config.urlTemplate) {
+    return config.urlTemplate.replace(/%s/g, encodeURIComponent(text.trim()));
+  }
+  if (config.url) {
+    return config.url;
+  }
+  const query = config.search ?? text;
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(
+    query
+  )}`;
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

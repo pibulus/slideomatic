@@ -1,63 +1,140 @@
 # Frequency Deck Webapp
 
-Prototype web presentation that embraces the neo-brutalist / pastel-punk aesthetic from the design brief. It runs as a static site, so you can host it anywhere (Deno Deploy, Vercel, Netlify, GitHub Pages, etc.).
+Static slide deck engine with a neo-brutalist / pastel-punk aesthetic. The deck runs entirely in the browser, pulling its content and theme from JSON so you can swap stories or palettes without touching the render code.
+
+---
 
 ## Quick Start
 
-1. Open `index.html` in your browser to preview locally.
-2. Edit `slides.js` to replace the placeholder content with your real slide data.
-3. Drop any images into an `images/` folder at the project root (create it if needed) and update the paths inside `slides.js`.
+1. **Install a lightweight static server** (required because the app fetches JSON files):
 
-No build step is required—the app uses vanilla HTML/CSS/JS.
+   ```bash
+   npm install -g serve   # or use npx serve .
+   ```
+
+2. **Run the server from the repo root** and open <http://localhost:3000> (or the port `serve` prints).
+
+3. **Open the deck editor** at `/admin.html`, unlock it with the password (default `bonesoup`), tweak slides, then download the updated `slides.json`.
+
+That's it—no build step, no frameworks.
+
+---
+
+## Key Files
+
+| File | Purpose |
+| --- | --- |
+| `index.html` | Presentation shell. |
+| `main.js` | Slide renderer, keyboard nav, modals, preloading, auto-linking. |
+| `slides.json` | Source of truth for all slide content. |
+| `theme.json` | CSS variable overrides (colors, spacing, fonts, shadows). |
+| `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
+| `admin.html` / `admin.js` / `admin.css` | Browser-based slide editor with password gate. |
+| `images/` | All deck imagery. Drop your own assets here. |
+
+---
 
 ## Editing Slides
 
-- The `slides` array in `slides.js` contains one object per slide.
-- Supported `type` values:
-  - `title`
-  - `standard`
-  - `quote`
-  - `split` (two-column layout)
-  - `grid` (album blind-test style)
-  - `pillars` (four-up manifesto columns)
-  - `gallery` (multi-card visual comparisons)
-- Use inline `<code>` tags in copy blocks when you need monospace text.
-- Optional properties such as `badge`, `footnote`, and `image` are documented in the placeholder slides.
+### Option A – In-browser editor (recommended)
 
-Tip: keep your copy in small arrays (`body: [...]`) to control paragraph breaks.
+1. Visit `/admin.html` while the local server is running.
+2. Enter the password (default `bonesoup`). Change it in `admin.js > ADMIN_PASSWORD` and redeploy if needed.
+3. Expand a slide card, edit text, colors, image paths, or arrays. Fields update live in memory.
+4. Click **Download slides.json** to export your changes. Replace the existing `slides.json` with the downloaded file.
 
-## Styling & Theme
+### Option B – Manual editing
 
-- Update the color palette and typography via CSS custom properties at the top of `styles.css`.
-- The riso-like grain overlay lives in the `.grain-overlay` rules—tweak or remove it if you prefer a cleaner look.
-- Add new slide layouts by wiring a renderer in `main.js` and corresponding styles in `styles.css`.
+Edit `slides.json` directly. Each slide is a JSON object. Supported `type` values:
+
+- `title`
+- `standard`
+- `quote`
+- `split`
+- `grid`
+- `pillars`
+- `gallery`
+
+Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). The renderer handles rich text (basic HTML) and auto-links.
+
+Validation happens at runtime—if a slide is missing required fields you'll see a descriptive error slide.
+
+---
+
+## Autolinks (optional)
+
+Add recurring terms to `autolinks.json` to automatically wrap them with links. Example:
+
+```json
+[
+  { "term": "Tyler, the Creator", "search": "Tyler the Creator" }
+]
+```
+
+- Omitting `urlTemplate` or `url` defaults to a Google Image search for the `search` value (or the term itself if `search` is absent).
+- Set `"openInNewTab": false` to keep navigation in the same tab.
+- Manual HTML links in `slides.json` still work if you prefer full control.
+
+---
+
+## Theming
+
+Edit `theme.json` to swap colors, typography, spacing, shadows, and border treatments. Values are applied as CSS variables on load, so you can maintain multiple theme files and rename the one you want to ship.
+
+For larger visual changes, adjust `styles.css`. Notable sections:
+
+- `.grain-overlay` – background grain & radial accents.
+- `.slide--*` blocks – layout-specific styling.
+- `.auto-link` – styling for generated hyperlinks.
+
+---
 
 ## Keyboard Controls
 
-- `ArrowRight` or `Space`: next slide
-- `ArrowLeft`: previous slide
-- `O`: toggle overview grid (click a tile to jump to that slide)
-- `Esc`: exit overview
+- `→` / `Space` – Next slide
+- `←` – Previous slide
+- `Home` / `End` – Jump to first / last slide
+- `O` – Toggle overview grid (click to jump)
+- `Esc` – Exit overview
+
+---
+
+## Performance Notes
+
+- Slides are rendered up front but hidden until shown, keeping GPU/CPU usage low while you navigate.
+- Images load lazily and are prefetched a slide or two ahead for smooth transitions.
+- `content-visibility` is enabled so off-screen slides stay cheap even with long decks.
+
+---
 
 ## Deploying
 
-Everything is static, so deployment is trivial:
+Because every asset is static, any static host works (Vercel, Netlify, GitHub Pages, S3, etc.). Ensure your host serves JSON files correctly. Example with `serve` for testing:
 
 ```bash
-# Example: deploy to Deno Deploy using `deployctl`
-deployctl deploy --project=freq-deck --include=.
+npx serve .
 ```
 
-Any static host works—just upload the repository contents.
+---
 
-## Assets & Credits
+## Changing the Admin Password
 
-- `images/pablo-photo-placeholder.svg` is a drop-in silhouette—replace it with your real portrait.
-- Wikimedia/Unsplash sourced images include credit links inside each slide footnote—retain or replace them if you swap imagery.
-- Custom SVG illustrations (`cover-*`, UI comparisons, IGOR-inspired block, waveform/noise tweaks) live under `images/` and are free to remix.
+Open `admin.js` and update the `ADMIN_PASSWORD` constant. The password is stored locally in `localStorage`, so users with access to the repo should know not to commit secret credentials—treat this as a convenience layer, not hardened security.
 
-## Next Steps
+---
 
-1. Replace placeholder images in `slides.js` with assets that live in `images/`.
-2. Flesh out the full 45-slide narrative using the provided slide types.
-3. Run through the deck to fine-tune pacing, colors, and any “broken” alignments.
+## Troubleshooting
+
+- **Deck shows “Unable to load slides”** – ensure you’re serving over HTTP (not using `file://`) and `slides.json` is valid JSON.
+- **Admin editor stuck on loading** – same as above; confirm `slides.json` is reachable.
+- **Auto-links missing** – confirm `autolinks.json` is valid JSON and the term matches the exact casing/spacing you expect.
+
+---
+
+## Shortcuts for Common Tasks
+
+- Swap imagery by replacing files in `images/` and updating the corresponding `src` fields in `slides.json`.
+- Clone the deck with a new theme by copying `theme.json`, editing, and renaming it before deployment.
+- Remove or tailor auto-links by editing `autolinks.json` or leaving it empty.
+
+Enjoy building new worlds. 💀✨

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slide Deck Editor</title>
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <h1>Slide Deck Editor</h1>
+      <div class="toolbar__actions">
+        <button id="reload-button" type="button">Reload Slides</button>
+        <button id="download-button" type="button">Download slides.json</button>
+      </div>
+    </header>
+
+    <div id="auth-screen" class="auth-screen" aria-hidden="true" hidden>
+      <form id="auth-form" class="auth-card">
+        <h2>Admin Access</h2>
+        <p>Enter the password to edit this deck.</p>
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" required />
+        <p id="auth-error" class="auth-error" role="alert"></p>
+        <button type="submit">Unlock Editor</button>
+      </form>
+    </div>
+
+    <main id="editor" class="editor" aria-live="polite"></main>
+
+    <template id="message-template">
+      <section class="message" role="alert">
+        <h2></h2>
+        <p></p>
+      </section>
+    </template>
+
+    <script type="module" src="admin.js"></script>
+  </body>
+</html>
