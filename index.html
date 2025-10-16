@@ -3,42 +3,158 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Unbreakable Brand — Deck Prototype</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-      crossorigin
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>Frequency Decks</title>
+    <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-    <div class="app" id="app">
-      <div class="grain-overlay" aria-hidden="true"></div>
-      <main class="slides" id="slides" aria-live="polite"></main>
-      <footer class="hud">
-        <div class="hud__controls">
-          <span class="hud__hint">← / → or space</span>
-          <span class="hud__hint">O overview</span>
+    <header class="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">Deck Library</p>
+        <h1>Pick a slideshow. Change the vibe. Ship the story.</h1>
+        <p class="hero__description">
+          Each deck loads straight in the browser. Choose a theme, launch the deck, or jump into the editor to tweak copy and imagery.
+        </p>
+        <div class="hero__actions">
+          <a class="button button--primary" href="deck.html">Open Default Deck</a>
+          <a class="button" href="admin.html">Open Editor</a>
         </div>
-        <div class="hud__counter">
-          <span data-counter-current>1</span>
-          <span class="hud__divider">/</span>
-          <span data-counter-total>1</span>
+      </div>
+    </header>
+
+    <main class="catalog" aria-live="polite">
+      <section class="catalog__list" data-deck-list>
+        <p class="catalog__status">Loading decks…</p>
+      </section>
+    </main>
+
+    <template id="deck-card-template">
+      <article class="deck-card">
+        <div class="deck-card__body">
+          <div class="deck-card__meta">
+            <p class="deck-card__tag"></p>
+            <h2></h2>
+            <p class="deck-card__description"></p>
+          </div>
+          <div class="deck-card__footer">
+            <div class="deck-card__links">
+              <a class="button button--primary" data-role="open-deck">Launch Deck</a>
+              <a class="button" data-role="open-editor">Edit Slides</a>
+            </div>
+            <div class="deck-card__chips" data-role="chip-container"></div>
+          </div>
         </div>
-        <div class="hud__progress">
-          <div class="hud__progress-bar" data-progress></div>
-        </div>
-      </footer>
-    </div>
-    <script type="module" src="main.js"></script>
+      </article>
+    </template>
+
+    <script type="module">
+      const list = document.querySelector('[data-deck-list]');
+      const template = document.getElementById('deck-card-template');
+
+      init();
+
+      async function init() {
+        try {
+          const decks = await loadDecks();
+          renderDecks(decks);
+        } catch (error) {
+          console.error(error);
+          renderError(error);
+        }
+      }
+
+      async function loadDecks() {
+        const response = await fetch('catalog.json', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Unable to load catalog (status ${response.status})`);
+        }
+        const payload = await response.json();
+        if (!Array.isArray(payload) || payload.length === 0) {
+          throw new Error('No decks found in catalog.json');
+        }
+        return payload;
+      }
+
+      function renderDecks(decks) {
+        list.innerHTML = '';
+        decks.forEach((deck, index) => {
+          const card = template.content.firstElementChild.cloneNode(true);
+          const heading = card.querySelector('h2');
+          const description = card.querySelector('.deck-card__description');
+          const tag = card.querySelector('.deck-card__tag');
+          const openDeck = card.querySelector('[data-role="open-deck"]');
+          const openEditor = card.querySelector('[data-role="open-editor"]');
+          const chips = card.querySelector('[data-role="chip-container"]');
+
+          heading.textContent = deck.title ?? `Deck ${index + 1}`;
+          description.textContent = deck.description ?? 'Launch to view slides.';
+          tag.textContent = deck.category ?? 'Deck';
+
+          const deckUrl = buildDeckUrl(deck);
+          openDeck.href = deckUrl;
+
+          const editorUrl = buildEditorUrl(deck);
+          openEditor.href = editorUrl;
+
+          const labels = buildChipLabels(deck);
+          labels.forEach((label) => {
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.textContent = label;
+            chips.appendChild(chip);
+          });
+
+          list.appendChild(card);
+        });
+      }
+
+      function buildDeckUrl(deck) {
+        const params = new URLSearchParams();
+        if (deck.slides && deck.slides !== 'slides.json') {
+          params.set('slides', deck.slides);
+        }
+        if (deck.theme && deck.theme !== 'theme.json') {
+          params.set('theme', deck.theme);
+        }
+        const query = params.toString();
+        return query ? `deck.html?${query}` : 'deck.html';
+      }
+
+      function buildEditorUrl(deck) {
+        const params = new URLSearchParams();
+        if (deck.slides && deck.slides !== 'slides.json') {
+          params.set('slides', deck.slides);
+        }
+        const query = params.toString();
+        return query ? `admin.html?${query}` : 'admin.html';
+      }
+
+      function buildChipLabels(deck) {
+        const labels = [];
+        if (deck.theme && deck.theme !== 'theme.json') {
+          labels.push(`Theme: ${deck.theme}`);
+        } else {
+          labels.push('Theme: default');
+        }
+        labels.push(`Slides: ${deck.slides ?? 'slides.json'}`);
+        if (deck.tags) {
+          deck.tags.forEach((tag) => labels.push(tag));
+        }
+        return labels;
+      }
+
+      function renderError(error) {
+        list.innerHTML = '';
+        const article = document.createElement('article');
+        article.className = 'deck-card deck-card--error';
+        article.innerHTML = `
+          <div class="deck-card__body">
+            <p class="deck-card__tag">Error</p>
+            <h2>Unable to load deck catalog</h2>
+            <p class="deck-card__description">${error?.message ?? 'Check the console for details.'}</p>
+          </div>
+        `;
+        list.appendChild(article);
+      }
+    </script>
   </body>
 </html>

@@ -6,13 +6,19 @@ Static slide deck engine with a neo-brutalist / pastel-punk aesthetic. The deck 
 
 ## Quick Start
 
-1. **Install a lightweight static server** (required because the app fetches JSON files):
+1. **Install dependencies** (static server + validation helpers):
 
    ```bash
-   npm install -g serve   # or use npx serve .
+   npm install
    ```
 
-2. **Run the server from the repo root** and open <http://localhost:3000> (or the port `serve` prints).
+2. **Run the local server**:
+
+   ```bash
+   npm run dev
+   ```
+
+   Then open <http://localhost:3000/index.html> (or the port printed). Pick a deck and launch it (default deck lives at `/deck.html`).
 
 3. **Open the deck editor** at `/admin.html`, unlock it with the password (default `bonesoup`), tweak slides, then download the updated `slides.json`.
 
@@ -24,13 +30,27 @@ That's it—no build step, no frameworks.
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Presentation shell. |
+| `index.html` | Deck library hub. Lists available slide/theme combinations. |
+| `deck.html` | Presentation shell that renders the selected deck. |
 | `main.js` | Slide renderer, keyboard nav, modals, preloading, auto-linking. |
-| `slides.json` | Source of truth for all slide content. |
-| `theme.json` | CSS variable overrides (colors, spacing, fonts, shadows). |
+| `slides.json` | Default slide content. |
+| `theme.json` | Default theme (colors, spacing, shadows, background layers, slide chrome). |
+| `themes/*.json` | Optional theme variants (loaded via `?theme=` query param). |
+| `catalog.json` | Deck catalog used by the index page. |
 | `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
 | `admin.html` / `admin.js` / `admin.css` | Browser-based slide editor with password gate. |
 | `images/` | All deck imagery. Drop your own assets here. |
+
+---
+
+## Development Commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Serves the repo locally using `serve`. Required for JSON fetches. |
+| `npm run check` | Validates `slides.json`, theme files, catalog entries, and optional autolinks. |
+| `deck.html?slides=foo.json&theme=themes/bar.json` | Manual check for alternate slide/theme combos. |
+| `admin.html?slides=foo.json` | Opens the editor for a non-default slide file. |
 
 ---
 
@@ -79,13 +99,37 @@ Add recurring terms to `autolinks.json` to automatically wrap them with links. E
 
 ## Theming
 
-Edit `theme.json` to swap colors, typography, spacing, shadows, and border treatments. Values are applied as CSS variables on load, so you can maintain multiple theme files and rename the one you want to ship.
+Edit `theme.json` to swap colors, typography, spacing, shadows, and background texture. For variations, drop additional files into `themes/` and load them with `?theme=<name>` (e.g., `?theme=noir` loads `themes/noir.json`). You can also pass a direct file path like `?theme=themes/sunset.json`.
 
-For larger visual changes, adjust `styles.css`. Notable sections:
+**Example:**
 
-- `.grain-overlay` – background grain & radial accents.
-- `.slide--*` blocks – layout-specific styling.
-- `.auto-link` – styling for generated hyperlinks.
+- `/?theme=noir` → loads `themes/noir.json`.
+- `/index.html?theme=alternate.json` → loads `alternate.json` from the project root.
+
+| Token | Result |
+| --- | --- |
+| `color-bg` | Base canvas colour (also used when slide background is solid). |
+| `background-surface` | Optional global gradient/mesh (e.g. layered `radial-gradient(...)`). |
+| `background-overlay` | Optional grain/noise overlay (accepts gradients or `url(...)`). |
+| `background-opacity` | Opacity applied to the overlay layer (0–1). |
+| `slide-bg` | Slide card fill (supports rgba or gradients). |
+| `slide-border-color`, `slide-border-width` | Frame colour/weight for each slide. |
+| `slide-shadow` | Box-shadow applied to slides. |
+| `color-surface`, `color-surface-alt`, `color-accent` | Accent colour family used throughout slides. |
+| `font-sans`, `font-mono` | Font stacks for body/headings and monospace accents. |
+| `border-width`, `radius`, `shadow-*` | Frame treatments for cards and images. |
+| `gutter` | Global slide padding. |
+
+Swap `theme.json` for instant vibe changes; keep alternate files handy and rename them before deployment.
+
+---
+
+## Multiple Decks / Variants
+
+- List decks in `catalog.json`; each entry can point to a different slides JSON and theme JSON.
+- Launch a deck by visiting `deck.html?slides=path/to.json&theme=my-theme.json` (the index page builds these URLs for you).
+- To edit a non-default deck, open `/admin.html?slides=path/to.json`.
+- If you omit a parameter, the deck falls back to `slides.json` and `theme.json`.
 
 ---
 

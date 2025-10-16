@@ -62,7 +62,7 @@ async function initDeck() {
 }
 
 async function loadSlides() {
-  const response = await fetch("slides.json", { cache: "no-store" });
+  const response = await fetch(resolveSlidesPath(), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
   }
@@ -71,13 +71,26 @@ async function loadSlides() {
 
 async function loadAndApplyTheme() {
   try {
-    const response = await fetch("theme.json", { cache: "no-store" });
+    const response = await fetch(resolveThemePath(), { cache: "no-store" });
     if (!response.ok) return;
     const theme = await response.json();
     applyTheme(theme);
   } catch (error) {
     console.warn("Unable to load custom theme, using defaults.", error);
   }
+}
+
+function resolveThemePath() {
+  const params = new URLSearchParams(window.location.search);
+  const themeParam = params.get("theme");
+  if (!themeParam) return "theme.json";
+  if (themeParam.endsWith(".json")) {
+    return themeParam;
+  }
+  if (themeParam.includes("/")) {
+    return `${themeParam}.json`;
+  }
+  return `themes/${themeParam}.json`;
 }
 
 function applyTheme(theme) {
@@ -87,6 +100,18 @@ function applyTheme(theme) {
     if (value == null) return;
     root.style.setProperty(`--${token}`, value);
   });
+}
+
+function resolveSlidesPath() {
+  const params = new URLSearchParams(window.location.search);
+  const slidesParam = params.get("slides");
+  if (!slidesParam) {
+    return "slides.json";
+  }
+  if (slidesParam.endsWith(".json")) {
+    return slidesParam;
+  }
+  return `${slidesParam}.json`;
 }
 
 async function loadAutoLinks() {
@@ -307,6 +332,7 @@ function setActiveSlide(nextIndex) {
   newSlide.style.visibility = "visible";
   newSlide.style.pointerEvents = isOverview ? "none" : "auto";
   newSlide.setAttribute("aria-hidden", "false");
+  newSlide.scrollTop = 0;
   slideElements[currentIndex].classList.add("is-active");
   slideElements[currentIndex].scrollIntoView({ block: "center" });
 
@@ -422,6 +448,9 @@ function renderQuoteSlide(section, slide) {
 
 function renderSplitSlide(section, slide) {
   section.classList.add("slide--split");
+  if (slide.badge) {
+    section.appendChild(createBadge(slide.badge));
+  }
   const variants = Array.isArray(slide.variant)
     ? slide.variant
     : slide.variant
@@ -633,6 +662,11 @@ function appendBody(container, body) {
   const copy = Array.isArray(body) ? body : [body];
   copy.forEach((text) => {
     if (!text) return;
+    const quoteElement = maybeCreateQuoteElement(text);
+    if (quoteElement) {
+      container.appendChild(quoteElement);
+      return;
+    }
     const paragraph = document.createElement("p");
     setRichContent(paragraph, text);
     container.appendChild(paragraph);
@@ -749,6 +783,33 @@ function setRichContent(element, html) {
   if (html == null) return;
   element.innerHTML = html;
   applyAutoLinksToElement(element);
+}
+
+function maybeCreateQuoteElement(raw) {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const quoteMatch = trimmed.match(/^(["“])(.*?)(["”])(?:\s*(?:[—–-]{1,2})\s*(.+))?$/s);
+  if (!quoteMatch) {
+    return null;
+  }
+
+  const [, , quoteBody, , attribution] = quoteMatch;
+  const block = document.createElement("blockquote");
+  block.className = "quote-block";
+
+  const quoteSpan = document.createElement("span");
+  setRichContent(quoteSpan, quoteBody.trim());
+  block.append(...quoteSpan.childNodes);
+
+  if (attribution) {
+    const cite = document.createElement("cite");
+    setRichContent(cite, attribution.trim());
+    block.appendChild(cite);
+  }
+
+  return block;
 }
 
 function applyAutoLinksToElement(element) {

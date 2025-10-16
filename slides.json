@@ -27,7 +27,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 0B",
+    "badge": "Slide 2B",
     "headline": "Who Runs This",
     "body": [
       "Pablo. Bone Soup touring agency. Apps that do one thing well.",
@@ -42,7 +42,7 @@
   },
   {
     "type": "pillars",
-    "badge": "Slide 0C",
+    "badge": "Slide 3C",
     "headline": "The Four Pillars",
     "body": "Your visual brand lives where these forces intersect.",
     "pillars": [
@@ -50,7 +50,7 @@
         "title": "COMPRESSION",
         "copy": [
           "Maximum meaning in minimum space.",
-          "Logos, colors, type — .zip files for feeling."
+          "Logos, colors, type \u2014 .zip files for feeling."
         ],
         "image": "images/pillar-1.png"
       },
@@ -82,7 +82,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 0D",
+    "badge": "Slide 4D",
     "headline": "The 0.3 Second Vibe-Check",
     "body": [
       "You discover music scrolling. The visual stops you or gets skipped.",
@@ -125,11 +125,11 @@
   },
   {
     "type": "gallery",
-    "badge": "Part 1 — Compression & Story",
+    "badge": "Part 1 \u2014 Compression & Story",
     "headline": "Compression: The Core Concept",
     "body": [
       "Saying everything with one image. A logo, a color, a font.",
-      "Compressed stories — shortcuts to entire worlds of meaning."
+      "Compressed stories \u2014 shortcuts to entire worlds of meaning."
     ],
     "items": [
       {
@@ -160,7 +160,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 2",
+    "badge": "Slide 6",
     "left": {
       "headline": "The Artifact",
       "body": [
@@ -186,7 +186,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 3",
+    "badge": "Slide 7",
     "headline": "Artifact vs. Story",
     "body": [
       "Liquid Death turns water into culture by stacking compression, interface, and narrative.",
@@ -221,10 +221,10 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 4",
+    "badge": "Slide 8",
     "headline": "We Are Storytelling Animals",
     "body": [
-      "People don't buy what you do; they buy why you do it. — Simon Sinek",
+      "\"People don't buy what you do; they buy why you do it.\" \u2014 Simon Sinek",
       "We're not logical. We're tribal. We buy stories, identities, membership.",
       "Your visual brand draws the border of that tribe."
     ],
@@ -235,12 +235,12 @@
   },
   {
     "type": "split",
-    "badge": "Slide 5",
+    "badge": "Slide 9",
     "left": {
       "headline": "Low Friction",
       "body": [
         "Lower cognitive load. Instant clarity.",
-        "Consistent behavior — buttons do what they promise."
+        "Consistent behavior \u2014 buttons do what they promise."
       ],
       "image": {
         "src": "images/clean-ui.svg",
@@ -261,11 +261,11 @@
   },
   {
     "type": "split",
-    "badge": "Slide 6",
+    "badge": "Slide 10",
     "left": {
       "headline": "Consistency = Signal",
       "body": [
-        "Patterns lock into memory 60,000× faster than text.",
+        "Patterns lock into memory 60,000\u00d7 faster than text.",
         "Your audience tunes in because you transmit steadily."
       ],
       "image": {
@@ -277,7 +277,7 @@
       "headline": "Randomness = Noise",
       "body": [
         "Every off-brand post adds static.",
-        "You're not just competing with other bands — you're fighting the entire feed."
+        "You're not just competing with other bands \u2014 you're fighting the entire feed."
       ],
       "image": {
         "src": "images/static-noise.svg",
@@ -287,11 +287,11 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 7",
+    "badge": "Slide 11",
     "headline": "Your System Is Your Freedom",
     "body": [
       "Decision fatigue kills creativity. When colors, fonts, vibe are decided, creation becomes assembly.",
-      "Constraints aren't prison — they're your sandbox. Risograph proves it: 2-3 colors, imperfect registration. The limit became the aesthetic."
+      "Constraints aren't prison \u2014 they're your sandbox. Risograph proves it: 2-3 colors, imperfect registration. The limit became the aesthetic."
     ],
     "image": {
       "src": "images/riso-poster.jpg",
@@ -300,13 +300,13 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 8",
+    "badge": "Slide 12",
     "headline": "The Anti-Brand Brand",
     "body": [
-      "DIY means built by hand, on purpose — not random.",
-      "Punk zines, riot grrrl, early hip-hop — all had tight visual systems so the subversion landed.",
-      "It's not about standing out, it's about being outstanding. And you're outstanding when you're yourself. — Pharrell Williams",
-      "No visual strategy isn't punk — it's invisible."
+      "DIY means built by hand, on purpose \u2014 not random.",
+      "Punk zines, riot grrrl, early hip-hop \u2014 all had tight visual systems so the subversion landed.",
+      "\"It's not about standing out, it's about being outstanding. And you're outstanding when you're yourself.\" \u2014 Pharrell Williams",
+      "No visual strategy isn't punk \u2014 it's invisible."
     ],
     "image": {
       "src": "images/riotgrrl.webp",
@@ -315,7 +315,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 9",
+    "badge": "Slide 13",
     "headline": "Your Weirdness Needs a Container",
     "body": [
       "Mac DeMarco stays consistently lo-fi, goofy, slacker chic. The consistency lets the weird land.",
@@ -337,19 +337,19 @@
           "alt": "Mac DeMarco lounging in a garage-style studio setup"
         },
         "label": "Everyday Mythology",
-        "copy": "Same color story, same slacker vibe — even offstage."
+        "copy": "Same color story, same slacker vibe \u2014 even offstage."
       }
     ]
   },
   {
     "type": "standard",
-    "badge": "Slide 10",
+    "badge": "Slide 14",
     "headline": "Part 1: The Big Idea",
     "body": [
-      "COMPRESSION — A logo, color, or font is a .zip file for meaning.",
-      "INTERFACE — Your brand is a UI. Make it low-friction and intuitive.",
-      "SIGNAL VS NOISE — Consistency = clear frequency. Randomness = static.",
-      "INFRASTRUCTURE FOR WEIRDNESS — Build the container. Then get weird inside.",
+      "COMPRESSION \u2014 A logo, color, or font is a .zip file for meaning.",
+      "INTERFACE \u2014 Your brand is a UI. Make it low-friction and intuitive.",
+      "SIGNAL VS NOISE \u2014 Consistency = clear frequency. Randomness = static.",
+      "INFRASTRUCTURE FOR WEIRDNESS \u2014 Build the container. Then get weird inside.",
       "Okay, so the big idea. But HOW?"
     ],
     "image": {
@@ -359,7 +359,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 11",
+    "badge": "Slide 15",
     "headline": "Part 2: The Visual Toolkit",
     "body": [
       "The Elements of Compression.",
@@ -380,14 +380,14 @@
           "src": "images/color-palette.png",
           "alt": "Color palette examples"
         },
-        "label": "Color · Type · Symbols",
+        "label": "Color \u00b7 Type \u00b7 Symbols",
         "copy": "The compressed language of your brand."
       }
     ]
   },
   {
     "type": "standard",
-    "badge": "Slide 12",
+    "badge": "Slide 16",
     "headline": "You're Already An Expert",
     "body": [
       "Look at these four covers. Don't overthink it.",
@@ -402,11 +402,11 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 13",
+    "badge": "Slide 17",
     "headline": "Color = Compressed Emotion",
     "body": [
       "Prince owned purple. Tiffany owns 1837 blue. Cadbury trademarked Pantone 2685C.",
-      "Pick 2–3 colors. Use them relentlessly. Make people associate those colors with you.",
+      "Pick 2\u20133 colors. Use them relentlessly. Make people associate those colors with you.",
       "Color is your emotion engine. Red screams urgency. Blue soothes. Neon feels synthetic. Pastels whisper bedroom pop.",
       "Rule: Maximum 3 colors. That's your palette."
     ],
@@ -417,10 +417,10 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 14",
+    "badge": "Slide 18",
     "headline": "Typography = Compressed Voice",
     "body": [
-      "Type is the clothes words wear. — Beatrice Warde",
+      "\"Type is the clothes words wear.\" \u2014 Beatrice Warde",
       "Serif feels traditional. Sans-serif feels modern. Display fonts are personality weapons.",
       "Pick one font for your name, one for everything else. Done."
     ],
@@ -445,7 +445,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 15",
+    "badge": "Slide 19",
     "left": {
       "headline": "The 1975: Neon Minimalism",
       "body": [
@@ -471,10 +471,10 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 16",
+    "badge": "Slide 20",
     "headline": "\"Ugly\" Is A Vibe Too",
     "body": [
-      "100 gecs weaponize Comic Sans and chaotic collage — intentional chaos tailored to hyperpop.",
+      "100 gecs weaponize Comic Sans and chaotic collage \u2014 intentional chaos tailored to hyperpop.",
       "Early skate videos and Vice weren't polished, but the lo-fi was consistent. The aesthetic said: we're too real for corporate gloss.",
       "Ugly on purpose > pretty by accident. Intentional chaos > unintentional mess."
     ],
@@ -499,7 +499,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 17",
+    "badge": "Slide 21",
     "headline": "Symbols = Cultural Shortcuts",
     "body": [
       "You don't invent new symbols. Steal, remix, and make them yours through consistent use.",
@@ -521,7 +521,7 @@
           "alt": "Outlined geometric symbol variations labelled Shape One"
         },
         "label": "Shape 1 Iterations",
-        "copy": "One motif, multiple executions — proof of ownership through use."
+        "copy": "One motif, multiple executions \u2014 proof of ownership through use."
       },
       {
         "image": {
@@ -535,7 +535,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 18",
+    "badge": "Slide 22",
     "headline": "The Monogram Test",
     "body": [
       "Same format. Different worlds. LV means luxury. RTJ means rebellion. Prince's glyph means uncompromising artistry.",
@@ -549,11 +549,11 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 19",
+    "badge": "Slide 23",
     "headline": "Own A Shape",
     "body": [
       "The 1975 own the rectangle frame. Tame Impala owns the vortex. Teenage Engineering owns the playful knob grid.",
-      "Pick one graphic leitmotif — a shape, line, pattern, or compositional rule. Repeat it everywhere.",
+      "Pick one graphic leitmotif \u2014 a shape, line, pattern, or compositional rule. Repeat it everywhere.",
       "You don't need a complicated symbol. You need a simple one, used consistently."
     ],
     "items": [
@@ -585,11 +585,11 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 20",
+    "badge": "Slide 24",
     "headline": "The Mood Board",
     "body": [
-      "Good artists copy, great artists steal. — Possibly Picasso, definitely stolen.",
-      "Collect 20–30 images that feel like your world. Don't judge yet.",
+      "\"Good artists copy, great artists steal.\" \u2014 Possibly Picasso, definitely stolen.",
+      "Collect 20\u201330 images that feel like your world. Don't judge yet.",
       "Look for recurring colors, textures, silhouettes, and vibe. That's your taste talking."
     ],
     "items": [
@@ -607,18 +607,18 @@
           "alt": "Mood board with eclectic art and design references"
         },
         "label": "Cultural References",
-        "copy": "Art, music, culture — defining your visual universe."
+        "copy": "Art, music, culture \u2014 defining your visual universe."
       }
     ]
   },
   {
     "type": "standard",
-    "badge": "Slide 21",
+    "badge": "Slide 25",
     "headline": "From Vibe To Visuals",
     "body": [
       "Step 1: Mood board. Collect visual gut-checks.",
-      "Step 2: Extract colors. What shades keep repeating? Pick your 2–3.",
-      "Step 3: Select font style. Sans vs serif vs display — what matches the energy?",
+      "Step 2: Extract colors. What shades keep repeating? Pick your 2\u20133.",
+      "Step 3: Select font style. Sans vs serif vs display \u2014 what matches the energy?",
       "Step 4: Identify your element. Shape, texture, motif. Test combos until it feels like you.",
       "Colors + Fonts + Element = Your system."
     ],
@@ -629,11 +629,11 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 22",
+    "badge": "Slide 26",
     "headline": "Simplicity Is Elegance",
     "body": [
-      "Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away. — Antoine de Saint-Exupéry",
-      "Simplicity is the keynote of all true elegance. — Coco Chanel",
+      "\"Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away.\" \u2014 Antoine de Saint-Exup\u00e9ry",
+      "\"Simplicity is the keynote of all true elegance.\" \u2014 Coco Chanel",
       "Joy Division's Unknown Pleasures: one image, one color, infinite resonance. You don't need five colors, four fonts, and ten graphics.",
       "Set the rule: max 3 colors, max 2 fonts, one graphic element. Stick to it for six months. Let constraints set you loose."
     ],
@@ -644,7 +644,7 @@
   },
   {
     "type": "standard",
-    "badge": "Part 3 — The Power of Consistency",
+    "badge": "Part 3 \u2014 The Power of Consistency",
     "headline": "Consistency Compounds",
     "body": [
       "Your toolkit is useless if used randomly. This is where the magic happens.",
@@ -658,7 +658,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 24",
+    "badge": "Slide 28",
     "headline": "Patterns Build Neural Pathways",
     "body": [
       "The brain recognizes patterns 60,000x faster than text. Repetition builds habits in your audience's mind.",
@@ -672,7 +672,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 25",
+    "badge": "Slide 29",
     "headline": "Pattern Recognition = Survival",
     "body": [
       "For 200,000 years, humans survived by recognizing patterns.",
@@ -687,7 +687,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 26",
+    "badge": "Slide 30",
     "headline": "Memory Formation 101",
     "body": [
       "First impression: 'Huh. Okay.'",
@@ -700,7 +700,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 27",
+    "badge": "Slide 31",
     "left": {
       "headline": "Inconsistency = Amateur",
       "body": [
@@ -728,7 +728,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 28",
+    "badge": "Slide 32",
     "headline": "Tyler's Era-Based Worlds",
     "body": [
       "Tyler, the Creator changes his entire visual world every album. But WITHIN each era? Perfect consistency.",
@@ -741,7 +741,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 29",
+    "badge": "Slide 33",
     "headline": "Cohesion Within a Universe",
     "body": [
       "Flower Boy era: Every asset used pastels, bees, sunny softness.",
@@ -752,7 +752,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 30",
+    "badge": "Slide 34",
     "headline": "One Image, Forever",
     "body": [
       "Joy Division, 1979: Unknown Pleasures album cover. Radio pulsar visualization.",
@@ -767,13 +767,13 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 31 — Oasis Part 1",
+    "badge": "Slide 35 \u2014 Oasis Part 1",
     "headline": "1993: A Simple Black Box",
     "body": [
       "Designer Brian Cannon created the logo for an unknown band with no budget.",
       "Helvetica Black for legibility. White text. Black rectangle. White borders.",
       "Inspired by the Decca Records logo on a Rolling Stones album.",
-      "That logo just works on everything. From a postage stamp to a billboard or a T-shirt. — Brian Cannon"
+      "\"That logo just works on everything. From a postage stamp to a billboard or a T-shirt.\" \u2014 Brian Cannon"
     ],
     "image": {
       "src": "images/oasis-logo.png",
@@ -782,7 +782,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 32 — Oasis Part 2",
+    "badge": "Slide 36 \u2014 Oasis Part 2",
     "headline": "1994-2009: Never Changed It",
     "body": [
       "They didn't iterate, adapt, or refresh for relevance. They committed for three decades.",
@@ -792,7 +792,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 33 — Oasis Part 3",
+    "badge": "Slide 37 \u2014 Oasis Part 3",
     "headline": "2025: The Payday",
     "body": [
       "Oasis reunites after 16 years. They brought back the original 1993 logo.",
@@ -803,7 +803,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 34",
+    "badge": "Slide 38",
     "left": {
       "headline": "Deliberate Evolution",
       "body": [
@@ -815,20 +815,20 @@
     "right": {
       "headline": "When to Rebrand",
       "body": [
-        "✓ Sound/story genuinely evolved",
-        "✓ Can commit for 12+ months",
-        "✓ Built equity in old brand",
-        "✓ Change tells a story",
+        "\u2713 Sound/story genuinely evolved",
+        "\u2713 Can commit for 12+ months",
+        "\u2713 Built equity in old brand",
+        "\u2713 Change tells a story",
         "",
-        "✗ You're bored",
-        "✗ Not working fast enough",
-        "✗ Following trends"
+        "\u2717 You're bored",
+        "\u2717 Not working fast enough",
+        "\u2717 Following trends"
       ]
     }
   },
   {
     "type": "standard",
-    "badge": "Slide 35",
+    "badge": "Slide 39",
     "headline": "Your Brand Lives Everywhere",
     "body": [
       "Every touchpoint repeats your story. Your brand is a beacon in the chaos.",
@@ -842,7 +842,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 36",
+    "badge": "Slide 40",
     "headline": "Document Your System",
     "body": [
       "Your Brand Bible is your source of truth. One page. All decisions.",
@@ -852,7 +852,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 37",
+    "badge": "Slide 41",
     "headline": "Every Post is a Deposit",
     "body": [
       "Your artist name starts worthless. In 3 years it could mean everything.",
@@ -866,7 +866,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 38",
+    "badge": "Slide 42",
     "left": {
       "headline": "Chaotic Grid",
       "body": [
@@ -894,7 +894,7 @@
   },
   {
     "type": "pillars",
-    "badge": "Slide 39",
+    "badge": "Slide 43",
     "headline": "Consistency Recap",
     "body": "The non-negotiables",
     "pillars": [
@@ -930,7 +930,7 @@
   },
   {
     "type": "standard",
-    "badge": "Part 4 — Your Action Plan",
+    "badge": "Part 4 \u2014 Your Action Plan",
     "headline": "Build Your Infrastructure",
     "body": [
       "Get curious, get excited, get active",
@@ -945,7 +945,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 38 — The Oasis Principle",
+    "badge": "Slide 45 \u2014 The Oasis Principle",
     "headline": "The Oasis Principle",
     "body": [
       "Oasis didn't read branding books. They showed up the same way for 15 years.",
@@ -961,31 +961,31 @@
   },
   {
     "type": "split",
-    "badge": "Slide 39 — When to Rebrand",
+    "badge": "Slide 46 \u2014 When to Rebrand",
     "left": {
-      "headline": "✓ Rebrand When",
+      "headline": "\u2713 Rebrand When",
       "body": [
-        "✓ Sound/story genuinely evolved",
-        "✓ Can commit for 12+ months",
-        "✓ Built equity in old brand",
-        "✓ Change tells a story",
-        "✓ Bored of being you AND changed as person"
+        "\u2713 Sound/story genuinely evolved",
+        "\u2713 Can commit for 12+ months",
+        "\u2713 Built equity in old brand",
+        "\u2713 Change tells a story",
+        "\u2713 Bored of being you AND changed as person"
       ]
     },
     "right": {
-      "headline": "✗ Don't Rebrand When",
+      "headline": "\u2717 Don't Rebrand When",
       "body": [
-        "✗ You're bored",
-        "✗ Not working fast enough",
-        "✗ Following trends",
-        "✗ Friend suggested it",
-        "✗ Procrastinating on actual art"
+        "\u2717 You're bored",
+        "\u2717 Not working fast enough",
+        "\u2717 Following trends",
+        "\u2717 Friend suggested it",
+        "\u2717 Procrastinating on actual art"
       ]
     }
   },
   {
     "type": "pillars",
-    "badge": "Slide 40 — Step 0",
+    "badge": "Slide 47 \u2014 Step 0",
     "headline": "Step 0: Know Your Pillars",
     "body": "Define your framework before building your toolkit.",
     "pillars": [
@@ -1018,7 +1018,7 @@
   },
   {
     "type": "gallery",
-    "badge": "Slide 41 — Step 1",
+    "badge": "Slide 48 \u2014 Step 1",
     "headline": "Step 1: Define Your Story",
     "body": [
       "Describe your project in 3-5 words. Not marketing copy. The core vibe.",
@@ -1049,7 +1049,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 42 — Step 2",
+    "badge": "Slide 49 \u2014 Step 2",
     "headline": "Step 2: Build Your Mood Board",
     "body": [
       "Collect 20-30 images that feel like your vibe. Don't overthink. Don't worry about stealing.",
@@ -1064,7 +1064,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 43 — Step 3",
+    "badge": "Slide 50 \u2014 Step 3",
     "headline": "Step 3: Extract Your Toolkit",
     "body": [
       "From vibes to actual tools. You're extracting what's already in your taste.",
@@ -1079,7 +1079,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 44 — Step 4",
+    "badge": "Slide 51 \u2014 Step 4",
     "headline": "Step 4: Document Your System",
     "body": [
       "Create your one-page brand bible. Your source of truth.",
@@ -1093,7 +1093,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 45 — Step 5",
+    "badge": "Slide 52 \u2014 Step 5",
     "headline": "Step 5: Apply With Discipline",
     "body": [
       "Use your system for everything. 6-12 months minimum. No exceptions.",
@@ -1109,7 +1109,7 @@
   },
   {
     "type": "split",
-    "badge": "Slide 46 — Step 6",
+    "badge": "Slide 53 \u2014 Step 6",
     "left": {
       "headline": "The Grid Test",
       "body": [
@@ -1133,7 +1133,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 47 — Final Thought",
+    "badge": "Slide 54 \u2014 Final Thought",
     "headline": "You Are Building Your Brand Right Now",
     "body": [
       "Every choice signals. Random choices make you invisible. Systematic choices make you magnetic.",
@@ -1150,7 +1150,7 @@
   },
   {
     "type": "standard",
-    "badge": "Slide 48 — Tools & Resources",
+    "badge": "Slide 55 \u2014 Tools & Resources",
     "headline": "Tools & Resources",
     "body": [
       "Color: Coolors.co, Adobe Color, Color Hunt",
@@ -1163,7 +1163,7 @@
   },
   {
     "type": "title",
-    "badge": "Slide 49",
+    "badge": "Slide 56",
     "title": "Thank You",
     "subtitle": "Now go build your infrastructure.",
     "footnote": "Questions? Let's talk."

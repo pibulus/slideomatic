@@ -1,0 +1,14 @@
+{
+  "name": "frequency-deck",
+  "version": "0.1.0",
+  "description": "Static JSON-driven slideshow engine.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "serve .",
+    "check": "node scripts/validate.mjs"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

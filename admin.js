@@ -9,6 +9,7 @@ const authError = document.getElementById("auth-error");
 
 const AUTH_TOKEN_KEY = "deck-admin-token";
 const ADMIN_PASSWORD = "bonesoup"; // change to your secret
+const SLIDES_PATH = resolveSlidesPath();
 
 let slides = [];
 let controlsBound = false;
@@ -19,6 +20,7 @@ function init() {
   downloadButton.disabled = true;
   reloadButton.disabled = true;
   authForm.addEventListener("submit", handleAuthSubmit);
+  document.title = `Slide Deck Editor · ${getFileName(SLIDES_PATH)}`;
 
   if (hasValidToken()) {
     unlockEditor();
@@ -40,10 +42,10 @@ async function loadSlides(force = false) {
   reloadButton.disabled = true;
 
   try {
-    const url = force ? `slides.json?ts=${Date.now()}` : "slides.json";
+    const url = force ? withTimestamp(SLIDES_PATH) : SLIDES_PATH;
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) {
-      throw new Error(`Failed to load slides.json (status ${response.status})`);
+      throw new Error(`Failed to load ${SLIDES_PATH} (status ${response.status})`);
     }
     slides = await response.json();
     renderSlides();
@@ -108,7 +110,7 @@ function verifyPassword(input) {
 
 function renderSlides() {
   if (!Array.isArray(slides) || slides.length === 0) {
-    showMessage("No slides", "Add slide data to slides.json to begin editing.");
+    showMessage("No slides", `Add slide data to ${SLIDES_PATH} to begin editing.`);
     return;
   }
 
@@ -268,7 +270,7 @@ function downloadSlides() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "slides.json";
+  anchor.download = getFileName(SLIDES_PATH);
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -280,4 +282,28 @@ function showMessage(title, message) {
   section.querySelector("p").textContent = message;
   editor.innerHTML = "";
   editor.appendChild(section);
+}
+
+function resolveSlidesPath() {
+  const params = new URLSearchParams(window.location.search);
+  const slidesParam = params.get("slides");
+  if (!slidesParam) return "slides.json";
+  if (slidesParam.endsWith(".json")) return slidesParam;
+  return `${slidesParam}.json`;
+}
+
+function getFileName(path) {
+  try {
+    const url = new URL(path, window.location.href);
+    const pathname = url.pathname;
+    return pathname.substring(pathname.lastIndexOf("/") + 1) || "slides.json";
+  } catch (error) {
+    const segments = path.split("/");
+    return segments.pop() || "slides.json";
+  }
+}
+
+function withTimestamp(path) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}ts=${Date.now()}`;
 }

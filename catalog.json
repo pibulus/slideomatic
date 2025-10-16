@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Frequency Deck",
+    "description": "Primary pastel-punk narrative with mesh gradient background.",
+    "slides": "slides.json",
+    "theme": "theme.json",
+    "category": "Core Deck",
+    "tags": ["Default", "Mesh Gradient"]
+  },
+  {
+    "title": "Frequency Deck — Noir",
+    "description": "Moody midnight palette with glassy slide chrome and neon accents.",
+    "slides": "slides.json",
+    "theme": "themes/noir.json",
+    "category": "Alt Theme",
+    "tags": ["Dark Mode", "Neon"]
+  }
+]
