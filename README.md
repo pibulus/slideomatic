@@ -1,6 +1,6 @@
-# Frequency Deck Webapp
+# Slide-o-matic 🎬
 
-Static slide deck engine with a neo-brutalist / pastel-punk aesthetic. The deck runs entirely in the browser, pulling its content and theme from JSON so you can swap stories or palettes without touching the render code.
+Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Create presentations with your voice, generate themes with AI, and swap stories or palettes without touching code.
 
 ---
 
@@ -237,6 +237,17 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `Home` / `End` – Jump to first / last slide
 - `O` – Toggle overview grid (click to jump)
 - `Esc` – Exit overview
+- `V` – **Voice-to-slide** (record audio, AI generates slide)
+- `T` – **Voice-to-theme** (record audio, AI generates + applies theme)
+- `E` – Edit current slide JSON
+- `D` – Download deck as JSON
+- `U` – Upload deck from JSON
+
+### 🎙️ Voice-to-Slide (NEW!)
+Press `V` or click the voice button to generate slides using AI! Just describe what you want and Gemini will create the perfect slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
+
+### 🎨 Voice-to-Theme (NEW!)
+Press `T` to generate a complete theme using AI! Just describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and download it for you.
 
 ---
 

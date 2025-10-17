@@ -13,7 +13,9 @@ const allowedTypes = new Set([
   'grid',
   'pillars',
   'gallery',
-  'image'
+  'image',
+  'typeface',
+  '_schema'  // Documentation slide type (ignored during render)
 ]);
 
 const mandatoryFiles = ['slides.json', 'theme.json', 'catalog.json'];

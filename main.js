@@ -69,6 +69,12 @@ async function initDeck() {
     uploadInput.addEventListener('change', handleDeckUpload);
   }
 
+  // Setup voice button
+  const voiceBtn = document.getElementById('voice-btn');
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', toggleVoiceRecording);
+  }
+
   setActiveSlide(0);
 }
 
@@ -281,6 +287,28 @@ function handleKeyboard(event) {
     event.preventDefault();
     flashKeyFeedback('E');
     toggleEditDrawer();
+  }
+
+  if (event.key.toLowerCase() === "v") {
+    event.preventDefault();
+    flashKeyFeedback('V');
+    toggleVoiceRecording();
+  }
+
+  if (event.key.toLowerCase() === "t") {
+    event.preventDefault();
+    flashKeyFeedback('T');
+    toggleVoiceTheme();
+  }
+
+  if (event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    flashKeyFeedback('S');
+    openSettingsModal();
+  }
+
+  if (event.key === "Escape") {
+    closeSettingsModal();
   }
 }
 
@@ -1400,4 +1428,756 @@ function duplicateCurrentSlide() {
 
   closeEditDrawer();
   console.log('✓ Slide duplicated');
+}
+
+// ===================================================================
+// VOICE-TO-SLIDE
+// ===================================================================
+
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let mediaStream = null;
+
+// ===================================================================
+// API KEY MANAGEMENT
+// ===================================================================
+
+const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
+
+function getGeminiApiKey() {
+  return localStorage.getItem(STORAGE_KEY_API) || '';
+}
+
+function toggleVoiceRecording() {
+  // Check for API key first
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    openSettingsModal();
+    showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
+    return;
+  }
+
+  if (isRecording) {
+    stopVoiceRecording();
+  } else {
+    startVoiceRecording();
+  }
+}
+
+async function startVoiceRecording() {
+  try {
+    // Request microphone access
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
+
+    // Find supported mime type
+    const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
+    let mimeType = '';
+    for (const type of mimeTypes) {
+      if (!type || MediaRecorder.isTypeSupported(type)) {
+        mimeType = type;
+        break;
+      }
+    }
+
+    mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    audioChunks = [];
+    mediaStream = stream;
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+      await processVoiceToSlide(audioBlob);
+      cleanupVoiceRecording();
+    };
+
+    mediaRecorder.start(1000); // Collect data every second
+    isRecording = true;
+
+    // Update button UI
+    updateVoiceButtonState(true);
+
+    console.log('🎙️ Recording started...');
+  } catch (error) {
+    console.error('❌ Error starting recording:', error);
+    alert('Failed to access microphone. Please check permissions.');
+    cleanupVoiceRecording();
+  }
+}
+
+function stopVoiceRecording() {
+  if (!mediaRecorder || !isRecording) return;
+
+  isRecording = false;
+  updateVoiceButtonState(false, true);
+
+  if (mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+}
+
+function cleanupVoiceRecording() {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream = null;
+  }
+  mediaRecorder = null;
+  audioChunks = [];
+  isRecording = false;
+  updateVoiceButtonState(false, false);
+}
+
+function updateVoiceButtonState(recording, processing) {
+  const voiceBtn = document.getElementById('voice-btn');
+  const hudStatus = document.getElementById('hud-status');
+  if (!voiceBtn) return;
+
+  if (recording) {
+    voiceBtn.classList.add('is-recording');
+    voiceBtn.textContent = 'Stop';
+    voiceBtn.setAttribute('aria-label', 'Stop recording');
+
+    // Show status
+    if (hudStatus) {
+      hudStatus.textContent = '🎙 Recording...';
+      hudStatus.className = 'hud__status hud__status--recording is-visible';
+    }
+  } else if (processing) {
+    voiceBtn.classList.add('is-processing');
+    voiceBtn.classList.remove('is-recording');
+    voiceBtn.textContent = 'Voice';
+
+    // Show status
+    if (hudStatus) {
+      hudStatus.textContent = '⚡ Generating slide...';
+      hudStatus.className = 'hud__status hud__status--processing is-visible';
+    }
+  } else {
+    voiceBtn.classList.remove('is-recording', 'is-processing');
+    voiceBtn.textContent = 'Voice';
+    voiceBtn.setAttribute('aria-label', 'Voice to slide (V)');
+
+    // Hide status
+    if (hudStatus) {
+      hudStatus.classList.remove('is-visible');
+      setTimeout(() => {
+        hudStatus.textContent = '';
+        hudStatus.className = 'hud__status';
+      }, 200);
+    }
+  }
+}
+
+async function processVoiceToSlide(audioBlob) {
+  try {
+    console.log('🤖 Processing audio with Gemini...');
+
+    // Convert audio blob to base64
+    const base64Audio = await blobToBase64(audioBlob);
+    const audioData = base64Audio.split(',')[1]; // Remove data:audio/...;base64, prefix
+
+    // Create the prompt with full slide schema
+    const prompt = buildSlideDesignPrompt();
+
+    // Check for API key first
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
+    }
+
+    // Call Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: prompt
+              },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Gemini API call failed');
+    }
+
+    const result = await response.json();
+    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
+
+    if (!generatedText) {
+      throw new Error('No response from Gemini');
+    }
+
+    // Extract JSON from markdown code blocks if present
+    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                      generatedText.match(/\{[\s\S]*\}/);
+
+    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
+    const slideData = JSON.parse(jsonText);
+
+    // Validate the slide
+    validateSlides([slideData]);
+
+    // Insert slide after current position
+    insertSlideAfterCurrent(slideData);
+
+    console.log('✅ Slide created and inserted!');
+  } catch (error) {
+    console.error('❌ Error processing voice:', error);
+    alert(`Failed to create slide: ${error.message}`);
+    updateVoiceButtonState(false, false);
+  }
+}
+
+function buildSlideDesignPrompt() {
+  return `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's voice description.
+
+IMPORTANT RULES FOR IMAGE NAMES:
+- Image "alt" text is used for Google Image Search, so make it FINDABLE but not TOO SPECIFIC
+- Good: "vintage synthesizer", "mountain landscape sunset", "modern office workspace"
+- Bad: "moog model d serial 12345", "mount everest north face 1996", "apple macbook pro m1 2021"
+- Use common, searchable terms that will return good visual results
+- Think like a user searching Google Images - what would find the RIGHT kind of image?
+
+AVAILABLE SLIDE TYPES:
+1. "title" - Big hero slide with title, subtitle, optional media strip
+   Fields: type, title, subtitle, eyebrow, media (array of {image: {src, alt}}), footnote
+
+2. "standard" - Headline + body + optional image
+   Fields: type, headline, body (string or array), image {src, alt}, footnote
+
+3. "quote" - Large quote with attribution
+   Fields: type, quote, attribution
+
+4. "split" - Two-column layout
+   Fields: type, left {headline, body, image}, right {headline, body, image}
+
+5. "grid" - Grid of images/colors
+   Fields: type, headline, body, items (array of {image: {src, alt}, label})
+
+6. "pillars" - Feature cards
+   Fields: type, headline, pillars (array of {title, copy, image})
+
+7. "gallery" - Visual gallery
+   Fields: type, headline, items (array of {image, label, copy})
+
+8. "image" - Full-bleed image slide
+   Fields: type, image {src, alt}, caption
+
+9. "typeface" - Font showcase
+   Fields: type, headline, fonts (array of {name, font, sample})
+
+AVAILABLE FONTS (use font field on ANY slide or in typeface showcase):
+- Presets: "sans" (Inter), "mono" (Space Mono), "grotesk" (Space Grotesk), "jetbrains" (JetBrains Mono), "pixel" (Press Start 2P)
+- Any system font: "Georgia", "Comic Sans MS", etc.
+- Font can be set per-slide in root level: {"type": "quote", "font": "pixel", ...}
+
+MARKDOWN & LINKS (use in headlines, body, quotes):
+- Bold: **text** or __text__
+- Italic: *text* or _text_
+- Links: [text](url) - example: [Visit Site](https://example.com)
+- Code: \`code\`
+- Combine: **[Bold Link](url)**
+
+DESIGN GUIDELINES:
+- Choose the slide type that best fits the user's description
+- For image searches, use FINDABLE alt text (see rules above)
+- Keep headlines punchy (5-7 words max)
+- Body text should be clear and concise
+- Use markdown for emphasis, links, code snippets
+- If user mentions multiple points, consider "pillars" or "grid"
+- If user wants a visual focus, use "image" or "gallery"
+- For quotes or testimonials, use "quote" type
+- Badge field is optional - use for section labels
+- Add font presets when user requests specific typography
+
+Return ONLY valid JSON matching the schema. No markdown, no explanations.
+
+Example output for "a slide about vintage synthesizers with some examples":
+{
+  "type": "grid",
+  "headline": "Vintage Synthesizers",
+  "body": "The machines that shaped electronic music",
+  "items": [
+    {"image": {"alt": "moog synthesizer"}, "label": "Moog"},
+    {"image": {"alt": "roland jupiter synthesizer"}, "label": "Roland Jupiter"},
+    {"image": {"alt": "arp odyssey synth"}, "label": "ARP Odyssey"}
+  ]
+}
+
+Now listen to the audio and create the slide:`;
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function insertSlideAfterCurrent(slideData) {
+  // Insert after current index
+  slides.splice(currentIndex + 1, 0, slideData);
+
+  // Reload deck to render new slide
+  reloadDeck();
+
+  // Jump to the new slide
+  setTimeout(() => {
+    setActiveSlide(currentIndex + 1);
+    updateVoiceButtonState(false, false);
+  }, 100);
+}
+
+// ===================================================================
+// VOICE-TO-THEME
+// ===================================================================
+
+let isRecordingTheme = false;
+let themeMediaRecorder = null;
+let themeAudioChunks = [];
+let themeMediaStream = null;
+
+function toggleVoiceTheme() {
+  if (isRecordingTheme) {
+    stopVoiceThemeRecording();
+  } else {
+    startVoiceThemeRecording();
+  }
+}
+
+async function startVoiceThemeRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
+
+    const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
+    let mimeType = '';
+    for (const type of mimeTypes) {
+      if (!type || MediaRecorder.isTypeSupported(type)) {
+        mimeType = type;
+        break;
+      }
+    }
+
+    themeMediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    themeAudioChunks = [];
+    themeMediaStream = stream;
+
+    themeMediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        themeAudioChunks.push(event.data);
+      }
+    };
+
+    themeMediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(themeAudioChunks, { type: mimeType || 'audio/webm' });
+      await processVoiceToTheme(audioBlob);
+      cleanupVoiceThemeRecording();
+    };
+
+    themeMediaRecorder.start(1000);
+    isRecordingTheme = true;
+
+    showHudStatus('🎨 Recording theme...', 'recording');
+    console.log('🎨 Recording theme description...');
+  } catch (error) {
+    console.error('❌ Error starting theme recording:', error);
+    alert('Failed to access microphone. Please check permissions.');
+    cleanupVoiceThemeRecording();
+  }
+}
+
+function stopVoiceThemeRecording() {
+  if (!themeMediaRecorder || !isRecordingTheme) return;
+
+  isRecordingTheme = false;
+  showHudStatus('🎨 Generating theme...', 'processing');
+
+  if (themeMediaRecorder.state !== 'inactive') {
+    themeMediaRecorder.stop();
+  }
+}
+
+function cleanupVoiceThemeRecording() {
+  if (themeMediaStream) {
+    themeMediaStream.getTracks().forEach(track => track.stop());
+    themeMediaStream = null;
+  }
+  themeMediaRecorder = null;
+  themeAudioChunks = [];
+  isRecordingTheme = false;
+}
+
+async function processVoiceToTheme(audioBlob) {
+  try {
+    console.log('🎨 Generating theme with Gemini...');
+
+    const base64Audio = await blobToBase64(audioBlob);
+    const audioData = base64Audio.split(',')[1];
+
+    const prompt = buildThemeDesignPrompt();
+
+    // Check for API key first
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 1.0,  // Higher temp for more creative themes
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Gemini API call failed');
+    }
+
+    const result = await response.json();
+    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
+
+    if (!generatedText) {
+      throw new Error('No response from Gemini');
+    }
+
+    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                      generatedText.match(/\{[\s\S]*\}/);
+
+    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
+    const themeData = JSON.parse(jsonText);
+
+    // Apply the new theme
+    applyTheme(themeData);
+
+    // Download theme.json automatically
+    downloadTheme(themeData);
+
+    showHudStatus('🎨 Theme created!', 'success');
+    console.log('✅ Theme applied and downloaded!');
+  } catch (error) {
+    console.error('❌ Error processing theme:', error);
+    alert(`Failed to create theme: ${error.message}`);
+    hideHudStatus();
+  }
+}
+
+function buildThemeDesignPrompt() {
+  return `You are a theme designer for Slideomatic. Create a complete theme.json based on the user's voice description.
+
+THEME SCHEMA - ALL fields required:
+{
+  "color-bg": "#fffbf3",                    // Main background color
+  "background-surface": "radial-gradient(...)",  // Complex gradient or solid color
+  "background-overlay": "radial-gradient(...)",  // Texture/pattern overlay or ""
+  "background-opacity": "0.5",              // Opacity of overlay (0-1)
+  "slide-bg": "rgba(255, 251, 243, 0.88)", // Slide background (can be transparent)
+  "slide-border-color": "#1b1b1b",         // Slide border color
+  "slide-border-width": "5px",             // Border thickness (0px for none)
+  "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)", // Neo-brutalist shadow
+  "color-surface": "#ff9ff3",              // Primary accent color
+  "color-surface-alt": "#88d4ff",          // Secondary accent
+  "color-accent": "#feca57",               // Tertiary accent
+  "badge-bg": "#feca57",                   // Badge background
+  "badge-color": "#1b1b1b",                // Badge text color
+  "color-ink": "#000000",                  // Primary text color
+  "color-muted": "#2b2b2b",                // Secondary text color
+  "border-width": "5px",                   // Global border width
+  "gutter": "clamp(32px, 5vw, 72px)",      // Spacing unit
+  "radius": "12px",                        // Border radius
+  "font-sans": "\\"Inter\\", sans-serif",    // Sans font stack
+  "font-mono": "\\"Space Mono\\", monospace", // Mono font stack
+  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
+  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
+  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
+  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
+}
+
+DESIGN GUIDELINES:
+1. **Color Harmony** - Choose a cohesive palette (pastel-punk, dark mode, neon, retro, etc.)
+2. **Gradients** - Can use radial-gradient, linear-gradient, or solid colors
+3. **Shadows** - Neo-brutalist (hard offset shadows) or soft (box-shadow with blur)
+4. **Borders** - Can be thick (5px+), thin (1-2px), or none (0px)
+5. **Typography** - Suggest real font stacks (serif, sans, mono, display)
+6. **Contrast** - Ensure text is readable on backgrounds
+7. **Vibe** - Match the mood the user describes (playful, serious, retro, modern, etc.)
+
+STYLE ARCHETYPES:
+- **Pastel Punk** (default): Soft pastels + chunky borders + hard shadows
+- **Dark Brutalist**: Dark bg + neon accents + heavy borders
+- **Minimal Clean**: White/light grays + subtle borders + no gradients
+- **Retro Warm**: Warm browns/oranges + serif fonts + textured overlays
+- **Neon Cyber**: Dark bg + bright neons + glowing shadows
+- **Nature Soft**: Greens/earth tones + organic gradients + soft shadows
+
+Return ONLY valid JSON. No markdown, no explanations.
+
+Example for "dark cyberpunk with neon accents":
+{
+  "color-bg": "#0a0e27",
+  "background-surface": "radial-gradient(circle at 20% 30%, rgba(255, 0, 255, 0.15), transparent 50%), radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.15), transparent 50%), #0a0e27",
+  "background-overlay": "repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 255, 255, 0.03) 3px)",
+  "background-opacity": "0.8",
+  "slide-bg": "rgba(10, 14, 39, 0.95)",
+  "slide-border-color": "#ff00ff",
+  "slide-border-width": "3px",
+  "slide-shadow": "0 0 20px rgba(255, 0, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.3)",
+  "color-surface": "#ff00ff",
+  "color-surface-alt": "#00ffff",
+  "color-accent": "#ffff00",
+  "badge-bg": "#ff00ff",
+  "badge-color": "#0a0e27",
+  "color-ink": "#ffffff",
+  "color-muted": "#a0a0ff",
+  "border-width": "2px",
+  "gutter": "clamp(32px, 5vw, 72px)",
+  "radius": "8px",
+  "font-sans": "\\"Orbitron\\", \\"Arial\\", sans-serif",
+  "font-mono": "\\"Share Tech Mono\\", monospace",
+  "shadow-sm": "0 0 10px rgba(255, 0, 255, 0.4)",
+  "shadow-md": "0 0 20px rgba(255, 0, 255, 0.5)",
+  "shadow-lg": "0 0 30px rgba(255, 0, 255, 0.6)",
+  "shadow-xl": "0 0 40px rgba(255, 0, 255, 0.7)"
+}
+
+Now listen to the audio and create the theme:`;
+}
+
+function downloadTheme(themeData) {
+  const json = JSON.stringify(themeData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'theme.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log('✓ Theme downloaded as theme.json');
+}
+
+// ===================================================================
+// SETTINGS MODAL
+// ===================================================================
+
+function openSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  const input = document.getElementById('gemini-api-key');
+  if (modal && input) {
+    input.value = getGeminiApiKey();
+    modal.classList.add('is-open');
+
+    // Setup event listeners if not already set
+    setupSettingsModalListeners();
+  }
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  if (modal) {
+    modal.classList.remove('is-open');
+  }
+}
+
+function setupSettingsModalListeners() {
+  // Close button
+  const closeBtn = document.querySelector('.settings-modal__close');
+  if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    closeBtn.addEventListener('click', closeSettingsModal);
+    closeBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Backdrop
+  const backdrop = document.querySelector('.settings-modal__backdrop');
+  if (backdrop && !backdrop.dataset.listenerAttached) {
+    backdrop.addEventListener('click', closeSettingsModal);
+    backdrop.dataset.listenerAttached = 'true';
+  }
+
+  // Save button
+  const saveBtn = document.getElementById('save-api-key');
+  if (saveBtn && !saveBtn.dataset.listenerAttached) {
+    saveBtn.addEventListener('click', saveApiKey);
+    saveBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Test button
+  const testBtn = document.getElementById('test-api-key');
+  if (testBtn && !testBtn.dataset.listenerAttached) {
+    testBtn.addEventListener('click', testApiKey);
+    testBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Clear button
+  const clearBtn = document.getElementById('clear-api-key');
+  if (clearBtn && !clearBtn.dataset.listenerAttached) {
+    clearBtn.addEventListener('click', clearApiKey);
+    clearBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Toggle visibility button
+  const toggleBtn = document.getElementById('toggle-api-key-visibility');
+  if (toggleBtn && !toggleBtn.dataset.listenerAttached) {
+    toggleBtn.addEventListener('click', toggleApiKeyVisibility);
+    toggleBtn.dataset.listenerAttached = 'true';
+  }
+}
+
+function saveApiKey() {
+  const input = document.getElementById('gemini-api-key');
+  const key = input.value.trim();
+
+  if (key) {
+    localStorage.setItem(STORAGE_KEY_API, key);
+    showApiKeyStatus('success', '✓ API key saved successfully!');
+  } else {
+    showApiKeyStatus('error', 'Please enter a valid API key');
+  }
+}
+
+async function testApiKey() {
+  const key = getGeminiApiKey();
+
+  if (!key) {
+    showApiKeyStatus('error', 'No API key found. Please save one first.');
+    return;
+  }
+
+  showApiKeyStatus('info', 'Testing connection...');
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'test' }] }]
+        })
+      }
+    );
+
+    if (response.ok) {
+      showApiKeyStatus('success', '✓ Connection successful! Your API key is working.');
+    } else {
+      const error = await response.json();
+      showApiKeyStatus('error', `Invalid API key or connection failed: ${error.error?.message || 'Unknown error'}`);
+    }
+  } catch (error) {
+    showApiKeyStatus('error', 'Connection test failed. Please check your internet connection.');
+  }
+}
+
+function clearApiKey() {
+  if (confirm('Are you sure you want to clear your API key?')) {
+    localStorage.removeItem(STORAGE_KEY_API);
+    const input = document.getElementById('gemini-api-key');
+    if (input) input.value = '';
+    showApiKeyStatus('info', 'API key cleared');
+  }
+}
+
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('gemini-api-key');
+  if (input) {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+}
+
+function showApiKeyStatus(type, message) {
+  const status = document.getElementById('api-key-status');
+  if (!status) return;
+
+  status.className = `settings-field__status is-visible is-${type}`;
+  status.textContent = message;
+
+  // Auto-hide success/info messages after 3 seconds (keep errors visible)
+  if (type !== 'error') {
+    setTimeout(() => {
+      status.classList.remove('is-visible');
+    }, 3000);
+  }
+}
+
+// ===================================================================
+// HUD STATUS HELPERS
+// ===================================================================
+
+function showHudStatus(message, type = '') {
+  const hudStatus = document.getElementById('hud-status');
+  if (!hudStatus) return;
+
+  hudStatus.textContent = message;
+  hudStatus.className = `hud__status is-visible ${type ? `hud__status--${type}` : ''}`;
+}
+
+function hideHudStatus() {
+  const hudStatus = document.getElementById('hud-status');
+  if (!hudStatus) return;
+
+  hudStatus.classList.remove('is-visible');
+  setTimeout(() => {
+    hudStatus.textContent = '';
+    hudStatus.className = 'hud__status';
+  }, 200);
 }

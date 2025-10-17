@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Unbreakable Brand — Deck Prototype</title>
+    <title>Slide-o-matic 🎬</title>
     <link rel="stylesheet" href="styles.css" />
     <link
       rel="preconnect"
@@ -33,14 +33,62 @@
           <!-- Form will be dynamically generated -->
         </div>
       </aside>
+
+      <!-- Settings Modal -->
+      <div class="settings-modal" id="settings-modal">
+        <div class="settings-modal__backdrop"></div>
+        <div class="settings-modal__content">
+          <div class="settings-modal__header">
+            <h2>⚙️ Settings</h2>
+            <button class="settings-modal__close" aria-label="Close settings">×</button>
+          </div>
+          <div class="settings-modal__body">
+            <div class="settings-field">
+              <label class="settings-field__label" for="gemini-api-key">
+                Gemini API Key
+                <span class="settings-field__hint">Required for voice-to-slide and voice-to-theme</span>
+              </label>
+              <div class="settings-field__input-group">
+                <input
+                  type="password"
+                  id="gemini-api-key"
+                  class="settings-field__input"
+                  placeholder="Enter your Gemini API key..."
+                  autocomplete="off"
+                />
+                <button class="settings-field__toggle" id="toggle-api-key-visibility" aria-label="Toggle visibility">
+                  👁️
+                </button>
+              </div>
+              <div class="settings-field__actions">
+                <button class="settings-btn settings-btn--primary" id="save-api-key">
+                  Save Key
+                </button>
+                <button class="settings-btn settings-btn--secondary" id="test-api-key">
+                  Test Connection
+                </button>
+                <button class="settings-btn settings-btn--danger" id="clear-api-key">
+                  Clear Key
+                </button>
+              </div>
+              <div class="settings-field__status" id="api-key-status"></div>
+            </div>
+            <div class="settings-help">
+              <p><strong>Don't have an API key?</strong></p>
+              <p>Get one free at <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></p>
+              <p class="settings-help__note">Your key is stored locally in your browser and never sent anywhere except Google's Gemini API.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <main class="slides" id="slides" aria-live="polite"></main>
       <footer class="hud">
         <div class="hud__controls">
-          <a class="hud__back" href="index.html" data-hide-on-overview aria-label="Back to Deck Library">Back</a>
-          <span class="hud__hint">← / →</span>
-          <span class="hud__hint">E edit</span>
-          <span class="hud__hint">D download</span>
-          <span class="hud__hint">U upload</span>
+          <a class="hud__back" href="index.html" data-hide-on-overview aria-label="Back to Deck Library" title="Back to library">Back</a>
+          <span class="hud__hint" title="Navigate slides">← / →</span>
+          <button class="hud__voice-btn" id="voice-btn" aria-label="Voice to slide (V)" title="Voice to slide (V)">Voice</button>
+          <div class="hud__status" id="hud-status"></div>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>
