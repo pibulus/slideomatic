@@ -85,9 +85,11 @@
       <main class="slides" id="slides" aria-live="polite"></main>
       <footer class="hud">
         <div class="hud__controls">
-          <a class="hud__back" href="index.html" data-hide-on-overview aria-label="Back to Deck Library" title="Back to library">Back</a>
+          <button class="hud__action hud__add-btn" id="add-btn" aria-label="Add slide from voice (V)" title="Add slide from voice (V)">Add</button>
+          <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Ask Gemini to edit current slide" title="Edit current slide with Gemini">Edit</button>
+          <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides" title="View all slides">Overview</button>
+          <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download slides JSON" title="Download slides JSON">Save</button>
           <span class="hud__hint" title="Navigate slides">← / →</span>
-          <button class="hud__voice-btn" id="voice-btn" aria-label="Voice to slide (V)" title="Voice to slide (V)">Voice</button>
           <div class="hud__status" id="hud-status"></div>
         </div>
         <div class="hud__counter">

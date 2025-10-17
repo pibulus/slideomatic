@@ -21,6 +21,14 @@ let currentIndex = 0;
 let isOverview = false;
 const preloadedImages = new Set();
 let autoLinkConfigs = [];
+const voiceButtons = {};
+let activeVoiceMode = null;
+let voiceProcessing = false;
+const OVERVIEW_MAX_ROWS = 3;
+let overviewRowCount = 1;
+let overviewColumnCount = 0;
+let overviewCursor = 0;
+let lastOverviewHighlight = 0;
 
 initDeck();
 
@@ -58,6 +66,7 @@ async function initDeck() {
     fragment.appendChild(slide);
   });
   slidesRoot.appendChild(fragment);
+  updateOverviewLayout();
 
   document.addEventListener("keydown", handleKeyboard);
   slidesRoot.addEventListener("click", handleSlideClick);
@@ -69,13 +78,38 @@ async function initDeck() {
     uploadInput.addEventListener('change', handleDeckUpload);
   }
 
-  // Setup voice button
-  const voiceBtn = document.getElementById('voice-btn');
-  if (voiceBtn) {
-    voiceBtn.addEventListener('click', toggleVoiceRecording);
+  // Setup voice-driven actions
+  const addBtn = document.getElementById('add-btn');
+  if (addBtn) {
+    voiceButtons.add = addBtn;
+    addBtn.addEventListener('click', () => toggleVoiceRecording('add'));
+    updateVoiceUI('add', 'idle');
+  }
+
+  const editBtn = document.getElementById('edit-btn');
+  if (editBtn) {
+    voiceButtons.edit = editBtn;
+    editBtn.addEventListener('click', () => toggleVoiceRecording('edit'));
+    updateVoiceUI('edit', 'idle');
+  }
+
+  const overviewBtn = document.getElementById('overview-btn');
+  if (overviewBtn) {
+    overviewBtn.addEventListener('click', toggleOverview);
+  }
+
+  const saveDeckBtn = document.getElementById('save-deck-btn');
+  if (saveDeckBtn) {
+    saveDeckBtn.addEventListener('click', () => {
+      downloadDeck();
+      showHudStatus('💾 Deck downloaded', 'success');
+      setTimeout(hideHudStatus, 1600);
+    });
   }
 
   setActiveSlide(0);
+  updateOverviewButton();
+  overviewCursor = currentIndex;
 }
 
 async function loadSlides() {
@@ -241,84 +275,123 @@ function handleKeyboard(event) {
     return;
   }
 
-  if (event.key === "ArrowRight" || event.key === " ") {
+  const { key } = event;
+  const lowerKey = key.toLowerCase();
+
+  if (isOverview) {
+    if (key === "ArrowRight") {
+      event.preventDefault();
+      moveOverviewCursorBy(1, 0);
+      return;
+    }
+    if (key === "ArrowLeft") {
+      event.preventDefault();
+      moveOverviewCursorBy(-1, 0);
+      return;
+    }
+    if (key === "ArrowDown") {
+      event.preventDefault();
+      moveOverviewCursorBy(0, 1);
+      return;
+    }
+    if (key === "ArrowUp") {
+      event.preventDefault();
+      moveOverviewCursorBy(0, -1);
+      return;
+    }
+    if (key === "Enter" || key === " ") {
+      event.preventDefault();
+      flashKeyFeedback('↵');
+      exitOverview(overviewCursor);
+      return;
+    }
+    if (key === "Escape") {
+      event.preventDefault();
+      flashKeyFeedback('ESC');
+      exitOverview();
+      return;
+    }
+  }
+
+  if (key === "ArrowRight" || key === " ") {
     event.preventDefault();
-    if (isOverview) return;
     flashKeyFeedback('→');
     setActiveSlide(currentIndex + 1);
+    return;
   }
 
-  if (event.key === "ArrowLeft") {
+  if (key === "ArrowLeft") {
     event.preventDefault();
-    if (isOverview) return;
     flashKeyFeedback('←');
     setActiveSlide(currentIndex - 1);
+    return;
   }
 
-  if (event.key === "Home") {
+  if (key === "Home") {
     event.preventDefault();
-    if (isOverview) return;
     flashKeyFeedback('⇤');
     setActiveSlide(0);
+    return;
   }
 
-  if (event.key === "End") {
+  if (key === "End") {
     event.preventDefault();
-    if (isOverview) return;
     flashKeyFeedback('⇥');
     setActiveSlide(slideElements.length - 1);
+    return;
   }
 
-  if (event.key.toLowerCase() === "o") {
+  if (lowerKey === "o") {
     event.preventDefault();
     flashKeyFeedback('O');
     toggleOverview();
+    return;
   }
 
-  if (event.key === "Escape" && isOverview) {
-    event.preventDefault();
-    flashKeyFeedback('ESC');
-    exitOverview();
-  }
-
-  if (event.key.toLowerCase() === "d") {
+  if (lowerKey === "d") {
     event.preventDefault();
     flashKeyFeedback('D');
     downloadDeck();
+    return;
   }
 
-  if (event.key.toLowerCase() === "u") {
+  if (lowerKey === "u") {
     event.preventDefault();
     flashKeyFeedback('U');
     const uploadInput = document.getElementById('deck-upload');
     if (uploadInput) uploadInput.click();
+    return;
   }
 
-  if (event.key.toLowerCase() === "e") {
+  if (lowerKey === "e") {
     event.preventDefault();
     flashKeyFeedback('E');
     toggleEditDrawer();
+    return;
   }
 
-  if (event.key.toLowerCase() === "v") {
+  if (lowerKey === "v") {
     event.preventDefault();
     flashKeyFeedback('V');
-    toggleVoiceRecording();
+    toggleVoiceRecording('add');
+    return;
   }
 
-  if (event.key.toLowerCase() === "t") {
+  if (lowerKey === "t") {
     event.preventDefault();
     flashKeyFeedback('T');
     toggleVoiceTheme();
+    return;
   }
 
-  if (event.key.toLowerCase() === "s") {
+  if (lowerKey === "s") {
     event.preventDefault();
     flashKeyFeedback('S');
     openSettingsModal();
+    return;
   }
 
-  if (event.key === "Escape") {
+  if (key === "Escape") {
     closeSettingsModal();
   }
 }
@@ -358,25 +431,125 @@ function toggleOverview() {
 
 function enterOverview() {
   document.body.dataset.mode = "overview";
+  updateOverviewLayout();
   slideElements.forEach((slide) => {
     slide.style.visibility = "visible";
     slide.style.pointerEvents = "auto";
     slide.setAttribute("aria-hidden", "false");
+    slide.tabIndex = 0;
   });
   isOverview = true;
+  overviewCursor = clamp(currentIndex, 0, slideElements.length - 1);
+  highlightOverviewSlide(overviewCursor);
+  updateOverviewButton();
 }
 
 function exitOverview(targetIndex = currentIndex) {
   delete document.body.dataset.mode;
   isOverview = false;
   slideElements.forEach((slide, index) => {
-    if (index === targetIndex) return;
-    slide.style.visibility = "hidden";
-    slide.style.pointerEvents = "none";
-    slide.setAttribute("aria-hidden", "true");
+    if (index !== targetIndex) {
+      slide.style.visibility = "hidden";
+      slide.style.pointerEvents = "none";
+      slide.setAttribute("aria-hidden", "true");
+    }
+    slide.classList.remove('is-active');
+    slide.tabIndex = -1;
   });
   setActiveSlide(targetIndex);
+  overviewCursor = currentIndex;
+  lastOverviewHighlight = overviewCursor;
+  updateOverviewButton();
 }
+
+function updateOverviewButton() {
+  const overviewBtn = document.getElementById('overview-btn');
+  if (!overviewBtn) return;
+  if (isOverview) {
+    overviewBtn.textContent = "Slides";
+    overviewBtn.setAttribute('aria-label', 'Exit overview');
+    overviewBtn.title = 'Return to active slide';
+  } else {
+    overviewBtn.textContent = "Overview";
+    overviewBtn.setAttribute('aria-label', 'View all slides');
+    overviewBtn.title = 'View all slides';
+  }
+}
+
+function updateOverviewLayout() {
+  const totalSlides = slideElements.length;
+  if (!totalSlides) return;
+  const estimatedRows = Math.max(1, Math.min(OVERVIEW_MAX_ROWS, Math.round(window.innerHeight / 340)));
+  overviewRowCount = Math.min(estimatedRows, totalSlides);
+  overviewColumnCount = Math.max(1, Math.ceil(totalSlides / overviewRowCount));
+  slidesRoot.style.setProperty('--overview-row-count', overviewRowCount);
+  slidesRoot.style.setProperty('--overview-column-count', overviewColumnCount);
+  overviewCursor = clamp(overviewCursor, 0, totalSlides - 1);
+  if (isOverview) {
+    highlightOverviewSlide(overviewCursor, { scroll: false });
+  } else {
+    overviewCursor = clamp(currentIndex, 0, totalSlides - 1);
+    lastOverviewHighlight = overviewCursor;
+  }
+}
+
+function highlightOverviewSlide(index, { scroll = true } = {}) {
+  const totalSlides = slideElements.length;
+  if (!totalSlides) return;
+  const clamped = clamp(index, 0, totalSlides - 1);
+  const previous = slideElements[lastOverviewHighlight];
+  if (previous) {
+    previous.classList.remove('is-active');
+  }
+
+  overviewCursor = clamped;
+  const current = slideElements[overviewCursor];
+  if (current) {
+    current.classList.add('is-active');
+    current.tabIndex = 0;
+    if (scroll) {
+      current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }
+  lastOverviewHighlight = overviewCursor;
+}
+
+function moveOverviewCursorBy(deltaColumn, deltaRow) {
+  const totalSlides = slideElements.length;
+  if (!totalSlides) return;
+
+  const rows = overviewRowCount || 1;
+  const columns = Math.max(1, Math.ceil(totalSlides / rows));
+
+  let column = Math.floor(overviewCursor / rows) + deltaColumn;
+  let row = (overviewCursor % rows) + deltaRow;
+
+  column = clamp(column, 0, columns - 1);
+  row = clamp(row, 0, rows - 1);
+
+  let nextIndex = column * rows + row;
+  if (nextIndex >= totalSlides) {
+    while (row > 0 && nextIndex >= totalSlides) {
+      row -= 1;
+      nextIndex = column * rows + row;
+    }
+    while (nextIndex >= totalSlides && column > 0) {
+      column -= 1;
+      nextIndex = Math.min(totalSlides - 1, column * rows + Math.min(row, rows - 1));
+    }
+    nextIndex = clamp(nextIndex, 0, totalSlides - 1);
+  }
+
+  highlightOverviewSlide(nextIndex);
+}
+
+window.addEventListener('resize', () => {
+  if (!slideElements.length) return;
+  updateOverviewLayout();
+  if (isOverview) {
+    highlightOverviewSlide(overviewCursor, { scroll: false });
+  }
+});
 
 function setActiveSlide(nextIndex) {
   const clamped = clamp(nextIndex, 0, slideElements.length - 1);
@@ -413,6 +586,9 @@ function setActiveSlide(nextIndex) {
   newSlide.scrollTop = 0;
   slideElements[currentIndex].classList.add("is-active");
   slideElements[currentIndex].scrollIntoView({ block: "center" });
+  overviewCursor = currentIndex;
+  lastOverviewHighlight = currentIndex;
+  updateOverviewButton();
 
   updateHud();
   preloadSlideImages(currentIndex);
@@ -491,6 +667,11 @@ function createSlide(slide, index, rendererMap) {
   });
 
   section.appendChild(content);
+
+  const rootBadge = section.querySelector(':scope > .badge');
+  if (rootBadge) {
+    attachSlideHomeBadge(rootBadge);
+  }
 
   return section;
 }
@@ -922,6 +1103,33 @@ function createBadge(label) {
   return badge;
 }
 
+function attachSlideHomeBadge(badge) {
+  if (badge.dataset.navHomeBound === "true") return;
+  badge.dataset.navHomeBound = "true";
+  badge.setAttribute('role', 'link');
+  badge.tabIndex = 0;
+  badge.addEventListener('click', handleHomeBadgeClick);
+  badge.addEventListener('keydown', handleHomeBadgeKeydown);
+}
+
+function handleHomeBadgeClick(event) {
+  if (event.defaultPrevented) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  navigateToDeckHome();
+}
+
+function handleHomeBadgeKeydown(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    navigateToDeckHome();
+  }
+}
+
+function navigateToDeckHome() {
+  window.location.href = "index.html";
+}
+
 function createImage(image, className = "slide__image", options = {}) {
   if (!image || !image.src) {
     return createImagePlaceholder(image, className);
@@ -1110,19 +1318,27 @@ function openImageModal(src, alt) {
   document.body.appendChild(modal);
   requestAnimationFrame(() => modal.classList.add('is-active'));
 
+  let handleEsc;
+
   const closeModal = () => {
     modal.classList.remove('is-active');
+    document.removeEventListener('keydown', handleEsc);
     setTimeout(() => modal.remove(), 300);
   };
 
   modal.querySelector('.image-modal__backdrop').addEventListener('click', closeModal);
+  const contentImg = modal.querySelector('.image-modal__content img');
+  if (contentImg) {
+    contentImg.addEventListener('click', closeModal);
+  }
   modal.querySelector('.image-modal__close').addEventListener('click', closeModal);
-  document.addEventListener('keydown', function escHandler(e) {
+
+  handleEsc = (e) => {
     if (e.key === 'Escape') {
       closeModal();
-      document.removeEventListener('keydown', escHandler);
     }
-  });
+  };
+  document.addEventListener('keydown', handleEsc);
 }
 
 function createFootnote(text) {
@@ -1341,7 +1557,7 @@ function handleDeckUpload(event) {
       slides = newSlides;
 
       // Reload deck with new slides
-      reloadDeck();
+      reloadDeck({ targetIndex: 0 });
 
       console.log(`✓ Loaded ${slides.length} slides from ${file.name}`);
     } catch (error) {
@@ -1356,7 +1572,8 @@ function handleDeckUpload(event) {
   event.target.value = '';
 }
 
-function reloadDeck() {
+function reloadDeck(options = {}) {
+  const { targetIndex = currentIndex, focus = true } = options;
   // Clear existing slides
   slidesRoot.innerHTML = '';
 
@@ -1382,10 +1599,19 @@ function reloadDeck() {
     fragment.appendChild(slide);
   });
   slidesRoot.appendChild(fragment);
+  updateOverviewLayout();
 
-  // Reset to first slide
-  currentIndex = 0;
-  setActiveSlide(0);
+  const clampedIndex = clamp(
+    typeof targetIndex === "number" ? targetIndex : 0,
+    0,
+    renderableSlides.length - 1
+  );
+
+  if (focus) {
+    setActiveSlide(clampedIndex);
+  } else {
+    currentIndex = clampedIndex;
+  }
 }
 
 // ===================================================================
@@ -1401,7 +1627,12 @@ function toggleEditDrawer() {
   isEditDrawerOpen = !isEditDrawerOpen;
 
   if (isEditDrawerOpen) {
-    drawer.classList.add('is-open');
+    drawer.classList.add('is-open', 'is-springing');
+    drawer.addEventListener(
+      'animationend',
+      () => drawer.classList.remove('is-springing'),
+      { once: true }
+    );
     renderEditForm();
     // Setup close button
     const closeBtn = drawer.querySelector('.edit-drawer__close');
@@ -1410,13 +1641,17 @@ function toggleEditDrawer() {
     }
   } else {
     drawer.classList.remove('is-open');
+    drawer.classList.remove('is-springing');
   }
 }
 
 function closeEditDrawer() {
   isEditDrawerOpen = false;
   const drawer = document.getElementById('edit-drawer');
-  if (drawer) drawer.classList.remove('is-open');
+  if (drawer) {
+    drawer.classList.remove('is-open');
+    drawer.classList.remove('is-springing');
+  }
 }
 
 function renderEditForm() {
@@ -1437,11 +1672,34 @@ function renderEditForm() {
           style="font-family: var(--font-mono); font-size: 0.9rem;"
         >${JSON.stringify(currentSlide, null, 2)}</textarea>
       </div>
+      <div class="edit-drawer__field edit-drawer__field--template">
+        <label class="edit-drawer__label">Add Template</label>
+        <div class="edit-drawer__template-controls">
+          <select class="edit-drawer__select" id="slide-template-select">
+            <option value="">Choose slide type…</option>
+            <option value="title">Title</option>
+            <option value="standard">Standard</option>
+            <option value="quote">Quote</option>
+            <option value="split">Split</option>
+            <option value="grid">Grid</option>
+            <option value="pillars">Pillars</option>
+            <option value="gallery">Gallery</option>
+            <option value="image">Image</option>
+            <option value="typeface">Typeface</option>
+          </select>
+          <button type="button" class="edit-drawer__button" id="add-template-btn">
+            Add Template
+          </button>
+        </div>
+      </div>
       <button type="button" class="edit-drawer__button" id="save-slide-btn">
         Save & Reload
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
         Duplicate Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
+        Save Deck JSON
       </button>
     </form>
   `;
@@ -1449,6 +1707,38 @@ function renderEditForm() {
   // Setup save button
   document.getElementById('save-slide-btn')?.addEventListener('click', saveCurrentSlide);
   document.getElementById('duplicate-slide-btn')?.addEventListener('click', duplicateCurrentSlide);
+  document.getElementById('download-deck-btn')?.addEventListener('click', () => {
+    downloadDeck();
+    showHudStatus('💾 Deck downloaded', 'success');
+    setTimeout(hideHudStatus, 1600);
+  });
+
+  const templateBtn = document.getElementById('add-template-btn');
+  if (templateBtn) {
+    templateBtn.addEventListener('click', () => {
+      const select = document.getElementById('slide-template-select');
+      const type = select ? select.value : '';
+      if (!type) {
+        alert('Select a slide type to add.');
+        return;
+      }
+
+      const template = getSlideTemplate(type);
+      if (!template) {
+        alert(`No template available for type "${type}".`);
+        return;
+      }
+
+      const insertIndex = currentIndex + 1;
+      slides.splice(insertIndex, 0, template);
+      reloadDeck({ targetIndex: insertIndex });
+      showHudStatus(`✨ Added ${type} template`, 'success');
+      setTimeout(hideHudStatus, 1600);
+      renderEditForm();
+      console.log(`✓ Added ${type} template slide`);
+    });
+  }
+
 }
 
 function saveCurrentSlide() {
@@ -1457,9 +1747,12 @@ function saveCurrentSlide() {
 
   try {
     const updatedSlide = JSON.parse(textarea.value);
+    const targetIndex = currentIndex;
     slides[currentIndex] = updatedSlide;
-    reloadDeck();
+    reloadDeck({ targetIndex });
     closeEditDrawer();
+    showHudStatus('✨ Slide updated', 'success');
+    setTimeout(hideHudStatus, 1600);
     console.log('✓ Slide updated');
   } catch (error) {
     alert(`Invalid JSON: ${error.message}`);
@@ -1474,19 +1767,136 @@ function duplicateCurrentSlide() {
   const duplicatedSlide = JSON.parse(JSON.stringify(currentSlide));
 
   // Insert after current slide
-  slides.splice(currentIndex + 1, 0, duplicatedSlide);
+  const newIndex = currentIndex + 1;
+  slides.splice(newIndex, 0, duplicatedSlide);
 
-  reloadDeck();
-
-  // Move to the duplicated slide
-  setTimeout(() => setActiveSlide(currentIndex + 1), 100);
-
+  reloadDeck({ targetIndex: newIndex });
   closeEditDrawer();
+  showHudStatus('✨ Slide duplicated', 'success');
+  setTimeout(hideHudStatus, 1600);
   console.log('✓ Slide duplicated');
 }
 
+function getSlideTemplate(type) {
+  const templates = {
+    title: {
+      type: 'title',
+      eyebrow: 'New Section',
+      title: 'Title Goes Here',
+      subtitle: 'Optional subtitle copy',
+      media: [],
+      font: 'grotesk'
+    },
+    standard: {
+      type: 'standard',
+      badge: 'Slide',
+      headline: 'Headline Goes Here',
+      body: ['First talking point', 'Second talking point'],
+      font: 'sans'
+    },
+    quote: {
+      type: 'quote',
+      quote: '"Add your quote here."',
+      attribution: 'Attribution Name',
+      font: 'sans'
+    },
+    split: {
+      type: 'split',
+      left: {
+        headline: 'Left Column',
+        body: ['Left column bullet']
+      },
+      right: {
+        headline: 'Right Column',
+        body: ['Right column bullet']
+      },
+      font: 'sans'
+    },
+    grid: {
+      type: 'grid',
+      headline: 'Grid Headline',
+      body: ['Introduce the items in this grid.'],
+      items: [
+        {
+          image: { src: '', alt: 'Image description' },
+          label: 'Item label'
+        },
+        {
+          image: { src: '', alt: 'Image description' },
+          label: 'Item label'
+        }
+      ],
+      font: 'sans'
+    },
+    pillars: {
+      type: 'pillars',
+      headline: 'Pillars Headline',
+      body: ['Introduce the pillars.'],
+      pillars: [
+        {
+          title: 'Pillar One',
+          copy: ['Supporting detail for pillar one']
+        },
+        {
+          title: 'Pillar Two',
+          copy: ['Supporting detail for pillar two']
+        }
+      ],
+      font: 'sans'
+    },
+    gallery: {
+      type: 'gallery',
+      headline: 'Gallery Headline',
+      body: 'Describe the collection showcased here.',
+      items: [
+        {
+          image: { src: '', alt: 'Image description' },
+          label: 'Item label',
+          copy: 'Optional supporting copy.'
+        },
+        {
+          image: { src: '', alt: 'Image description' },
+          label: 'Item label',
+          copy: 'Optional supporting copy.'
+        }
+      ],
+      font: 'sans'
+    },
+    image: {
+      type: 'image',
+      badge: 'Slide',
+      headline: 'Image Slide Headline',
+      image: { src: '', alt: 'Describe the image' },
+      caption: 'Optional caption text.',
+      font: 'sans'
+    },
+    typeface: {
+      type: 'typeface',
+      headline: 'Typeface Showcase',
+      fonts: [
+        {
+          name: 'Display',
+          font: '"Space Grotesk", sans-serif',
+          sample: 'The quick brown fox jumps over the lazy dog.'
+        },
+        {
+          name: 'Body',
+          font: '"Inter", sans-serif',
+          sample: 'Use this space to demonstrate body copy.'
+        }
+      ],
+      body: ['Describe how these typefaces support the system.'],
+      font: 'sans'
+    }
+  };
+
+  const template = templates[type];
+  if (!template) return null;
+  return JSON.parse(JSON.stringify(template));
+}
+
 // ===================================================================
-// VOICE-TO-SLIDE
+// VOICE-DRIVEN SLIDE ACTIONS
 // ===================================================================
 
 let isRecording = false;
@@ -1504,8 +1914,7 @@ function getGeminiApiKey() {
   return localStorage.getItem(STORAGE_KEY_API) || '';
 }
 
-function toggleVoiceRecording() {
-  // Check for API key first
+function toggleVoiceRecording(mode = 'add') {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
     openSettingsModal();
@@ -1513,16 +1922,27 @@ function toggleVoiceRecording() {
     return;
   }
 
-  if (isRecording) {
-    stopVoiceRecording();
-  } else {
-    startVoiceRecording();
+  if (mode === 'edit' && !slideElements[currentIndex]) {
+    alert('No slide selected to edit.');
+    return;
   }
+
+  if (voiceProcessing) {
+    return;
+  }
+
+  if (isRecording) {
+    if (activeVoiceMode === mode) {
+      stopVoiceRecording();
+    }
+    return;
+  }
+
+  startVoiceRecording(mode);
 }
 
-async function startVoiceRecording() {
+async function startVoiceRecording(mode) {
   try {
-    // Request microphone access
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -1531,7 +1951,6 @@ async function startVoiceRecording() {
       }
     });
 
-    // Find supported mime type
     const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
     let mimeType = '';
     for (const type of mimeTypes) {
@@ -1544,6 +1963,7 @@ async function startVoiceRecording() {
     mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     audioChunks = [];
     mediaStream = stream;
+    activeVoiceMode = mode;
 
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
@@ -1552,22 +1972,29 @@ async function startVoiceRecording() {
     };
 
     mediaRecorder.onstop = async () => {
+      const currentMode = activeVoiceMode || mode;
       const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-      await processVoiceToSlide(audioBlob);
-      cleanupVoiceRecording();
+      voiceProcessing = true;
+      try {
+        await processVoiceAction(currentMode, audioBlob);
+      } finally {
+        cleanupVoiceRecording({ resetButton: false });
+        updateVoiceUI(currentMode, 'idle');
+        voiceProcessing = false;
+        activeVoiceMode = null;
+      }
     };
 
-    mediaRecorder.start(1000); // Collect data every second
+    mediaRecorder.start(1000);
     isRecording = true;
-
-    // Update button UI
-    updateVoiceButtonState(true);
-
+    updateVoiceUI(mode, 'recording');
     console.log('🎙️ Recording started...');
   } catch (error) {
     console.error('❌ Error starting recording:', error);
     alert('Failed to access microphone. Please check permissions.');
-    cleanupVoiceRecording();
+    cleanupVoiceRecording({ resetButton: false });
+    updateVoiceUI(mode, 'idle');
+    activeVoiceMode = null;
   }
 }
 
@@ -1575,14 +2002,16 @@ function stopVoiceRecording() {
   if (!mediaRecorder || !isRecording) return;
 
   isRecording = false;
-  updateVoiceButtonState(false, true);
+  if (activeVoiceMode) {
+    updateVoiceUI(activeVoiceMode, 'processing');
+  }
 
   if (mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
   }
 }
 
-function cleanupVoiceRecording() {
+function cleanupVoiceRecording({ resetButton = true } = {}) {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
     mediaStream = null;
@@ -1590,68 +2019,69 @@ function cleanupVoiceRecording() {
   mediaRecorder = null;
   audioChunks = [];
   isRecording = false;
-  updateVoiceButtonState(false, false);
+  if (resetButton && activeVoiceMode) {
+    updateVoiceUI(activeVoiceMode, 'idle');
+  }
 }
 
-function updateVoiceButtonState(recording, processing) {
-  const voiceBtn = document.getElementById('voice-btn');
+function updateVoiceUI(mode, state) {
+  const button = voiceButtons[mode];
   const hudStatus = document.getElementById('hud-status');
-  if (!voiceBtn) return;
+  if (!button) return;
 
-  if (recording) {
-    voiceBtn.classList.add('is-recording');
-    voiceBtn.textContent = 'Stop';
-    voiceBtn.setAttribute('aria-label', 'Stop recording');
+  const baseLabel = mode === 'edit' ? 'Edit' : 'Add';
+  const shortcutHint = mode === 'add' ? ' (shortcut V)' : '';
 
-    // Show status
+  if (state === 'recording') {
+    button.classList.add('is-recording');
+    button.classList.remove('is-processing');
+    button.textContent = 'Stop';
+    button.setAttribute('aria-label', 'Stop recording');
     if (hudStatus) {
       hudStatus.textContent = '🎙 Recording...';
       hudStatus.className = 'hud__status hud__status--recording is-visible';
     }
-  } else if (processing) {
-    voiceBtn.classList.add('is-processing');
-    voiceBtn.classList.remove('is-recording');
-    voiceBtn.textContent = 'Voice';
+    return;
+  }
 
-    // Show status
+  if (state === 'processing') {
+    button.classList.remove('is-recording');
+    button.classList.add('is-processing');
+    button.textContent = baseLabel;
+    button.setAttribute('aria-label', `${baseLabel} slide from voice${shortcutHint}`);
     if (hudStatus) {
-      hudStatus.textContent = '⚡ Generating slide...';
+      hudStatus.textContent = mode === 'edit'
+        ? '⚡ Updating slide...'
+        : '⚡ Generating slide...';
       hudStatus.className = 'hud__status hud__status--processing is-visible';
     }
-  } else {
-    voiceBtn.classList.remove('is-recording', 'is-processing');
-    voiceBtn.textContent = 'Voice';
-    voiceBtn.setAttribute('aria-label', 'Voice to slide (V)');
-
-    // Hide status
-    if (hudStatus) {
-      hudStatus.classList.remove('is-visible');
-      setTimeout(() => {
-        hudStatus.textContent = '';
-        hudStatus.className = 'hud__status';
-      }, 200);
-    }
+    return;
   }
+
+  button.classList.remove('is-recording', 'is-processing');
+  button.textContent = baseLabel;
+  button.setAttribute('aria-label', `${baseLabel} slide from voice${shortcutHint}`);
+}
+
+async function processVoiceAction(mode, audioBlob) {
+  const action = mode === 'edit' ? processVoiceEditSlide : processVoiceToSlide;
+  await action(audioBlob);
 }
 
 async function processVoiceToSlide(audioBlob) {
   try {
     console.log('🤖 Processing audio with Gemini...');
+    const uiStart = performance.now();
 
-    // Convert audio blob to base64
     const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1]; // Remove data:audio/...;base64, prefix
+    const audioData = base64Audio.split(',')[1];
 
-    // Create the prompt with full slide schema
     const prompt = buildSlideDesignPrompt();
-
-    // Check for API key first
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
       throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
     }
 
-    // Call Gemini API
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
@@ -1662,9 +2092,7 @@ async function processVoiceToSlide(audioBlob) {
         body: JSON.stringify({
           contents: [{
             parts: [
-              {
-                text: prompt
-              },
+              { text: prompt },
               {
                 inlineData: {
                   mimeType: audioBlob.type || 'audio/webm',
@@ -1688,30 +2116,110 @@ async function processVoiceToSlide(audioBlob) {
 
     const result = await response.json();
     const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-
     if (!generatedText) {
       throw new Error('No response from Gemini');
     }
 
-    // Extract JSON from markdown code blocks if present
     const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
                       generatedText.match(/\{[\s\S]*\}/);
 
     const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
     const slideData = JSON.parse(jsonText);
-
-    // Validate the slide
     validateSlides([slideData]);
 
-    // Insert slide after current position
-    insertSlideAfterCurrent(slideData);
+    const newIndex = insertSlideAfterCurrent(slideData);
 
+    await ensureMinimumDelay(uiStart, 1300);
+    showHudStatus('✨ Slide ready — Save Deck to export', 'success');
+    setActiveSlide(newIndex);
+    setTimeout(hideHudStatus, 2000);
     console.log('✅ Slide created and inserted!');
   } catch (error) {
     console.error('❌ Error processing voice:', error);
     alert(`Failed to create slide: ${error.message}`);
-    updateVoiceButtonState(false, false);
   }
+}
+
+async function processVoiceEditSlide(audioBlob) {
+  try {
+    const targetIndex = currentIndex;
+    const slideToEdit = slides[targetIndex];
+    if (!slideToEdit) {
+      throw new Error('No slide selected to edit.');
+    }
+
+    console.log('🛠 Updating slide with Gemini...');
+    const uiStart = performance.now();
+
+    const base64Audio = await blobToBase64(audioBlob);
+    const audioData = base64Audio.split(',')[1];
+    const prompt = buildSlideEditPrompt(slideToEdit);
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Gemini API call failed');
+    }
+
+    const result = await response.json();
+    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
+    if (!generatedText) {
+      throw new Error('No response from Gemini');
+    }
+
+    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                      generatedText.match(/\{[\s\S]*\}/);
+    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
+    const updatedSlide = JSON.parse(jsonText);
+    validateSlides([updatedSlide]);
+
+    slides[targetIndex] = updatedSlide;
+    reloadDeck({ targetIndex });
+    overviewCursor = targetIndex;
+
+    await ensureMinimumDelay(uiStart, 1300);
+    showHudStatus('✨ Slide updated — Save Deck to export', 'success');
+    setTimeout(hideHudStatus, 2000);
+    console.log('✅ Slide updated via Gemini!');
+  } catch (error) {
+    console.error('❌ Error updating slide:', error);
+    alert(`Failed to update slide: ${error.message}`);
+  }
+}
+
+function buildSlideEditPrompt(slide) {
+  const slideJson = JSON.stringify(slide, null, 2);
+  return `You are an expert Slideomatic editor. Update the existing slide JSON based on the user's voice instructions.\n\nCURRENT SLIDE JSON:\n\n\`\`\`json\n${slideJson}\n\`\`\`\n\nRULES:\n- Preserve the slide's "type" and required keys for that type.\n- If the user requests additions or removals, update the relevant arrays (items, pillars, etc.).\n- Keep badge/headline/body values unless the user explicitly changes them.\n- Return ONLY a single valid JSON object with no commentary or markdown fences.\n- If the request is unclear, make a best effort improvement while keeping the structure consistent.`;
 }
 
 function buildSlideDesignPrompt() {
@@ -1802,18 +2310,20 @@ function blobToBase64(blob) {
   });
 }
 
+function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
+  const elapsed = performance.now() - startTimestamp;
+  if (elapsed >= minimumMs) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, minimumMs - elapsed));
+}
+
 function insertSlideAfterCurrent(slideData) {
   // Insert after current index
-  slides.splice(currentIndex + 1, 0, slideData);
+  const newIndex = currentIndex + 1;
+  slides.splice(newIndex, 0, slideData);
 
   // Reload deck to render new slide
-  reloadDeck();
-
-  // Jump to the new slide
-  setTimeout(() => {
-    setActiveSlide(currentIndex + 1);
-    updateVoiceButtonState(false, false);
-  }, 100);
+  reloadDeck({ targetIndex: newIndex });
+  return newIndex;
 }
 
 // ===================================================================
@@ -1911,6 +2421,7 @@ function cleanupVoiceThemeRecording() {
 async function processVoiceToTheme(audioBlob) {
   try {
     console.log('🎨 Generating theme with Gemini...');
+    const uiStart = performance.now();
 
     const base64Audio = await blobToBase64(audioBlob);
     const audioData = base64Audio.split(',')[1];
@@ -1974,7 +2485,9 @@ async function processVoiceToTheme(audioBlob) {
     // Download theme.json automatically
     downloadTheme(themeData);
 
+    await ensureMinimumDelay(uiStart, 1500);
     showHudStatus('🎨 Theme created!', 'success');
+    setTimeout(hideHudStatus, 2200);
     console.log('✅ Theme applied and downloaded!');
   } catch (error) {
     console.error('❌ Error processing theme:', error);
