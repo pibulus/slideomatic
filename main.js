@@ -3631,7 +3631,45 @@ async function initDeckWithTheme() {
   // Initialize theme drawer
   initThemeDrawer();
 
+  // Show intro modal on first visit
+  showIntroModalIfFirstVisit();
+
   setActiveSlide(0);
   updateOverviewButton();
   overviewCursor = currentIndex;
+}
+
+// ================================================================
+// Intro Modal (First Visit)
+// ================================================================
+
+function showIntroModalIfFirstVisit() {
+  const INTRO_SEEN_KEY = 'slideomatic_intro_seen';
+  const introModal = document.getElementById('intro-modal');
+  const closeBtn = document.getElementById('intro-modal-close');
+
+  if (!introModal) return;
+
+  // Check if user has seen intro before
+  const hasSeenIntro = localStorage.getItem(INTRO_SEEN_KEY);
+
+  if (!hasSeenIntro) {
+    // Show intro modal with slight delay for effect
+    setTimeout(() => {
+      introModal.classList.add('is-open');
+    }, 800);
+
+    // Close button handler
+    closeBtn?.addEventListener('click', () => {
+      introModal.classList.remove('is-open');
+      localStorage.setItem(INTRO_SEEN_KEY, 'true');
+    });
+
+    // Close on backdrop click
+    const backdrop = introModal.querySelector('.intro-modal__backdrop');
+    backdrop?.addEventListener('click', () => {
+      introModal.classList.remove('is-open');
+      localStorage.setItem(INTRO_SEEN_KEY, 'true');
+    });
+  }
 }
