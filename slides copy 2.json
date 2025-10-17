@@ -1,0 +1,883 @@
+[
+  {
+    "type": "title",
+    "eyebrow": "Live Session",
+    "title": "The Unbreakable Brand",
+    "subtitle": "How to Compress Worlds Into Symbols That Stick",
+    "items": [
+      {"image": {"src": "images/oasis-logo.gif", "alt": "Oasis logo"}},
+      {"image": {"src": "images/supreme-logo.png", "alt": "Supreme wordmark"}},
+      {"image": {"src": "", "alt": "Liquid Death can"}},
+      {"image": {"src": "", "alt": "Barbara Kruger typography"}}
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 1",
+    "headline": "Compression: Say More With Less",
+    "body": [
+      "Design is compression. Meaning under pressure.",
+      "A brand is a zip file — a tiny package that holds emotion, history, and intent.",
+      "Every pixel, color, and word should carry its weight. No passengers."
+    ],
+    "image": {"src": "", "alt": "visual metaphor for compression in design"}
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 2",
+    "headline": "If You Can Name It, You Can Frame It",
+    "body": [
+      "Language is the original interface. Naming is power.",
+      "The moment you name your aesthetic, your tone, or your vibe, you gain control over it.",
+      "Wittgenstein said: *“The limits of my language mean the limits of my world.”*"
+    ],
+    "image": {"src": "", "alt": "typographic exploration of naming and framing"}
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 3",
+    "headline": "Interface: Everything Between You and the World",
+    "body": [
+      "Every interaction — a website, a logo, a tone of voice — is an interface.",
+      "Good interfaces reduce friction. Every extra click or doubt loses attention.",
+      "Design like you respect people’s time. Make it feel inevitable."
+    ],
+    "image": {"src": "", "alt": "hand reaching toward abstract interface elements"}
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 4",
+    "headline": "Curation Beats Creation",
+    "body": [
+      "You don’t need to invent. You need to *choose* well.",
+      "Curation is the art of reduction — selecting what resonates and rejecting the noise.",
+      "Aesthetic coherence comes from taste, not abundance."
+    ],
+    "image": {"src": "", "alt": "moodboard or collage of curated design elements"}
+  },
+  {
+    "type": "quote",
+    "badge": "Interlude",
+    "headline": "“The way you do one thing is the way you do everything.”",
+    "body": "Design, tone, timing — they’re all the same signal, refracted.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 5",
+    "headline": "Narrative: The Ultimate Compression",
+    "body": [
+      "Stories are the original data format.",
+      "A logo, a name, a font — they all tell a story faster than words can.",
+      "The strongest brands are myths you can summarize in a sentence."
+    ],
+    "image": {"src": "", "alt": "Oasis logo juxtaposed with crowd energy"}
+  },
+  {
+    "type": "gallery",
+    "badge": "Slide 6",
+    "headline": "Visual Myths in Action",
+    "body": "Each of these logos compresses a universe — class, rebellion, joy, belonging.",
+    "image": {"orientation": "landscape"},
+    "items": [
+      {"image": {"src": "", "alt": "Oasis logo"}},
+      {"image": {"src": "", "alt": "Supreme box logo"}},
+      {"image": {"src": "", "alt": "Nike swoosh"}},
+      {"image": {"src": "", "alt": "Liquid Death skull can"}}
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 7",
+    "headline": "Coherence Builds Trust",
+    "body": [
+      "Consistency creates familiarity. Familiarity breeds trust.",
+      "Stick with your palette, your tone, your logo. Time adds luster.",
+      "If you change too much, you reset your story. Pick a lane and grow in it."
+    ],
+    "image": {"src": "", "alt": "brand consistency across decades"}
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 8",
+    "headline": "Friction Kills Frequency",
+    "body": [
+      "Every unnecessary choice or delay breaks the rhythm of engagement.",
+      "Reduce the cognitive load. Make it easy to understand, share, and love.",
+      "The best design feels invisible until it’s gone."
+    ],
+    "image": {"src": "", "alt": "diagram of user drop-off after clicks"}
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 9",
+    "headline": "“Authenticity is a system.”",
+    "body": "You earn it through consistency, taste, and repetition — not slogans.",
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 10",
+    "headline": "Your First 0.3 Seconds",
+    "body": [
+      "People decide if they vibe with you in 0.3 seconds.",
+      "Design for that gut instinct — color, layout, rhythm, tone.",
+      "Your frequency should be instantly readable, like a song you recognize in one note."
+    ],
+    "image": {"src": "", "alt": "faces reacting instantly to visual identity"}
+  },
+  {
+    "type": "title",
+    "eyebrow": "Part Two",
+    "title": "The Visual Toolkit",
+    "subtitle": "Color, Shape, Type, and Subversion",
+    "media": [
+      {"image": {"src": "", "alt": "Riso print texture close-up", "orientation": "square"}},
+      {"image": {"src": "", "alt": "skate zine layout", "orientation": "portrait"}},
+      {"image": {"src": "", "alt": "bold typography collage", "orientation": "landscape"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 11",
+    "headline": "Authenticity Prints Rough",
+    "body": [
+      "Perfect is suspicious. Real is trustworthy.",
+      "Riso prints, xerox zines, and DIY posters feel alive because they have texture — randomness that signals honesty.",
+      "Limitations give character. Two inks can say more than a gradient ever will."
+    ],
+    "image": {"src": "", "alt": "bone soup tour poster risograph", "orientation": "portrait"},
+    "font": "sans"
+  },
+  {
+    "type": "gallery",
+    "badge": "Slide 12",
+    "headline": "Bone Soup: Consistency Through Chaos",
+    "body": "Scrappy logos, recycled paper, and stamped mail-outs. Every imperfection tells the same story: human, local, and loud.",
+    "items": [
+      {"image": {"src": "", "alt": "Guantanamo Baywatch tour poster", "orientation": "portrait"}},
+      {"image": {"src": "", "alt": "Bone Soup hand-stamped mailer", "orientation": "square"}},
+      {"image": {"src": "", "alt": "Mesa Cosa gig flyer", "orientation": "portrait"}},
+      {"image": {"src": "", "alt": "Riso print close-up", "orientation": "square"}}
+    ],
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 13",
+    "headline": "The Anti-Brand Brand",
+    "body": [
+      "The best rebellion is coherence with irony.",
+      "Liquid Death, Palace, 100 Gecs — they glitch the system by playing its game too well.",
+      "Subversion works when it’s fluent in the language it mocks."
+    ],
+    "image": {"src": "", "alt": "Liquid Death logo on black can", "orientation": "square"},
+    "font": "grotesk"
+  },
+  {
+    "type": "pillars",
+    "badge": "Slide 14",
+    "headline": "Color = Compressed Emotion",
+    "body": "Pick three. One base, one contrast, one accent. The 60-30-10 rule keeps chaos elegant.",
+    "font": "sans",
+    "pillars": [
+      {"title": "Base (60%)", "text": "Sets the mood. Often neutral or brand-defining."},
+      {"title": "Contrast (30%)", "text": "Adds tension and energy."},
+      {"title": "Accent (10%)", "text": "The emotional spark — the juice."},
+      {"title": "Hack", "text": "Color is speed. People feel before they think."}
+    ]
+  },
+  {
+    "type": "typeface",
+    "badge": "Slide 15",
+    "headline": "Typography = Compressed Voice",
+    "font": "mono",
+    "samples": [
+      {"font": "Georgia", "text": "Serif = heritage, credibility, tradition"},
+      {"font": "Inter", "text": "Sans = modern, neutral, accessible"},
+      {"font": "Space Mono", "text": "Mono = precise, coded, calm"},
+      {"font": "Comic Sans MS", "text": "Comic Sans = rebellion, irony, humor"}
+    ],
+    "body": [
+      "You already know how fonts feel — trust that instinct.",
+      "The medium *is* the message. Don’t let the wrong font betray your intent."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 16",
+    "headline": "Shape = Compressed Psychology",
+    "body": [
+      "Circles feel safe. Squares feel stable. Triangles feel sharp and active.",
+      "Even before language, your brain reads shapes as emotional cues.",
+      "Designers are behavioral engineers — you’re scripting comfort or tension."
+    ],
+    "image": {"src": "", "alt": "diagram of circle square triangle psychology", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 17",
+    "headline": "Semiotics: Symbols Carry Worlds",
+    "body": [
+      "Symbols are cultural shortcuts. They inherit meaning through history and use.",
+      "Flip a triangle and you can change its entire moral resonance.",
+      "The ‘Silence = Death’ poster’s red triangle now means Palestinian resistance. One rotation, new world."
+    ],
+    "image": {"src": "", "alt": "red triangle poster comparison up vs down", "orientation": "portrait"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 18",
+    "headline": "Steal, Remix, Repeat",
+    "body": [
+      "Symbols are open source. Ownership is consistency.",
+      "Use them carefully — remix, don’t parody. Every iteration redefines the language.",
+      "Meaning is a frequency. Tune it until it resonates with your people."
+    ],
+    "image": {"src": "", "alt": "collage of cultural symbols and remixes", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 19",
+    "headline": "“Ugly is the new honesty.”",
+    "body": "When everything’s polished, roughness reads as truth. Use it with intent.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 20",
+    "headline": "Follow Your Nose",
+    "body": [
+      "You already know what feels right — you’ve been trained by culture since birth.",
+      "Trust your vibe. Curate what resonates and compress it into your visual language.",
+      "Everything else is noise."
+    ],
+    "image": {"src": "", "alt": "designer moodboard desk workspace", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "title",
+    "eyebrow": "Part Three",
+    "title": "Systems & Synthesis",
+    "subtitle": "Naming, Rhythm, and the Architecture of Consistency",
+    "media": [
+      {"image": {"src": "", "alt": "Teenage Engineering OP-1 close-up", "orientation": "landscape"}},
+      {"image": {"src": "", "alt": "Mac DeMarco portrait with warm tones", "orientation": "portrait"}},
+      {"image": {"src": "", "alt": "Riso stamp on envelope", "orientation": "square"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 21",
+    "headline": "Name It to Frame It (Again)",
+    "body": [
+      "Naming isn’t a label — it’s a handle for meaning.",
+      "Once you name your system, you can navigate it.",
+      "‘Pastel Punk Neo-Brutalism’ isn’t a joke; it’s a compass."
+    ],
+    "image": {"src": "", "alt": "naming notebook sketches and sticky notes", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 22",
+    "headline": "Build Systems, Not One-Offs",
+    "body": [
+      "Every poster, logo, or layout should live in the same ecosystem.",
+      "Lock your palette, type, and spacing — make templates that scale.",
+      "If you do it once, do it twice. Repetition builds trust."
+    ],
+    "image": {"src": "", "alt": "repeating poster grid with consistent layout", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 23",
+    "headline": "Teenage Engineering: Elegance Through Play",
+    "body": [
+      "Their site is a masterclass in restraint — three colors, one typeface, endless charm.",
+      "The OP-1 is a toy and a tool. Nostalgic, futuristic, simple, and human.",
+      "Playfulness *is* precision when it’s intentional."
+    ],
+    "image": {"src": "", "alt": "Teenage Engineering homepage screenshot", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 24",
+    "headline": "The Moodboard as Operating System",
+    "body": [
+      "Pinterest is free curation school. Your boards are data sets.",
+      "Collect, label, remix — each board becomes a prototype of taste.",
+      "Curation isn’t procrastination; it’s preprocessing."
+    ],
+    "image": {"src": "", "alt": "Pinterest moodboard screenshot", "orientation": "portrait"},
+    "font": "sans"
+  },
+  {
+    "type": "pillars",
+    "badge": "Slide 25",
+    "headline": "Your Pack: A Design Survival Kit",
+    "font": "mono",
+    "columns": [
+      {"title": "Colors", "text": "3–4 tones that define emotion."},
+      {"title": "Fonts", "text": "2 families that define voice."},
+      {"title": "Shapes", "text": "1–2 recurring motifs that define form."},
+      {"title": "Textures", "text": "Add imperfection to make it human."}
+    ],
+    "body": "Everything else is flavor. Keep the pack light so you can move fast."
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 26",
+    "headline": "Simplicity Is Compression",
+    "body": [
+      "Remove until what’s left still works and still feels.",
+      "Less isn’t minimalism — it’s efficiency of signal.",
+      "Elegance is when nothing is wasted, not when everything is white."
+    ],
+    "image": {"src": "", "alt": "minimal yet warm website layout", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 27",
+    "headline": "“The way you simplify determines the way you’re understood.”",
+    "body": "Compression is clarity. Clarity is generosity.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 28",
+    "headline": "Frequency Over Reach",
+    "body": [
+      "You don’t need everyone — just the right ones.",
+      "Your brand is a broadcast. Keep your signal clear and consistent.",
+      "Repetition isn’t boring when it’s rhythmic."
+    ],
+    "image": {"src": "", "alt": "radio waves or sound frequency visualization", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 29",
+    "headline": "The Pareto Principle of Design",
+    "body": [
+      "80% of perception comes from 20% of elements.",
+      "Focus on the heavy hitters: typography, color, composition.",
+      "Perfecting minor details before core tone is ego, not craft."
+    ],
+    "image": {"src": "", "alt": "80/20 design ratio diagram", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 30",
+    "headline": "Juicy. Sticky. Fresh.",
+    "body": [
+      "My design language in three words: tactile, memorable, alive.",
+      "Juicy: squishy, fun, touchable.  Sticky: something you want to return to.  Fresh: present and culturally awake.",
+      "Compress your vibe into a trinity. That’s brand philosophy distilled."
+    ],
+    "image": {"src": "", "alt": "colorful tactile UI collage or playful typography", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "title",
+    "eyebrow": "Part Four",
+    "title": "Compression in Practice",
+    "subtitle": "Modularity, Systems, and Creative Shortcuts",
+    "media": [
+      {"image": {"src": "", "alt": "workshop table with laptop and design tools", "orientation": "landscape"}},
+      {"image": {"src": "", "alt": "student sketchbook and stickers", "orientation": "portrait"}},
+      {"image": {"src": "", "alt": "SVG icon grid layout", "orientation": "square"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 31",
+    "headline": "Systems Thinking = Self Thinking",
+    "body": [
+      "If you design a system, you design yourself a map.",
+      "Your color palette, font set, folder structure — all of it is a reflection of your thought process.",
+      "Build systems that make future-you’s life easier."
+    ],
+    "image": {"src": "", "alt": "organized digital folders and moodboards", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 32",
+    "headline": "Modularity Is Freedom",
+    "body": [
+      "Modular systems aren’t constraints — they’re creative trampolines.",
+      "A modular logo or layout lets you remix endlessly without breaking tone.",
+      "SVGs are forever. Infinite scale, zero loss. Always export your logos as vectors."
+    ],
+    "image": {"src": "", "alt": "SVG icons in grid showing scalability", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 33",
+    "headline": "Frame Is Everything",
+    "body": [
+      "Frank Zappa said the frame is the most important part of the art.",
+      "It tells the audience *how to look* and *how much to care.*",
+      "Design’s job is to frame meaning — the font, crop, and border are the handshake."
+    ],
+    "image": {"src": "", "alt": "art gallery frames and interface borders", "orientation": "portrait"},
+    "font": "grotesk"
+  },
+  {
+    "type": "gallery",
+    "badge": "Slide 34",
+    "headline": "Tyler, the Creator: Evolution Through Design",
+    "body": "Every era is a palette: ‘Goblin’ (chaos), ‘Flower Boy’ (warmth), ‘Call Me If You Get Lost’ (passport chic). He designs emotion.",
+    "items": [
+      {"image": {"src": "", "alt": "Goblin album cover", "orientation": "square"}},
+      {"image": {"src": "", "alt": "Flower Boy album cover", "orientation": "square"}},
+      {"image": {"src": "", "alt": "Call Me If You Get Lost passport cover", "orientation": "square"}}
+    ],
+    "font": "sans"
+  },
+  {
+    "type": "pillars",
+    "badge": "Slide 35",
+    "headline": "Good Systems Have Rules",
+    "font": "mono",
+    "columns": [
+      {"title": "Naming", "text": "Give your patterns names — language creates order."},
+      {"title": "Limiting", "text": "Choose 3–4 visual variables and stay faithful."},
+      {"title": "Layering", "text": "Add nuance through rhythm, not excess."},
+      {"title": "Reusing", "text": "Templates are sacred. Repeat your wins."}
+    ],
+    "body": "Every good brand or artist has invisible rules. Make yours explicit."
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 36",
+    "headline": "Shortcuts = Superpowers",
+    "body": [
+      "There’s no prize for doing it the long way.",
+      "Tools like TinyWow, remove.bg, ColorHunt, Coolors, and Figma templates exist so you can focus on the vibe, not the plumbing.",
+      "Use free tools. You’re not cheating; you’re compressing workflow."
+    ],
+    "image": {"src": "", "alt": "screenshots of online creative tools like Coolors and TinyWow", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 37",
+    "headline": "Compress Your Assets",
+    "body": [
+      "Keep a folder of ready-to-drop elements — logos, fonts, bios, mockups.",
+      "Make every file modular and future-proof. Version control = mental clarity.",
+      "When your assets are tidy, your mind is free."
+    ],
+    "image": {"src": "", "alt": "design assets neatly organized in folders", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 38",
+    "headline": "“Curiosity is your operating system.”",
+    "body": "Follow your nose. Your taste evolves faster than your tools — let it lead.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 39",
+    "headline": "Build Once, Reuse Forever",
+    "body": [
+      "Every time you build a deck, layout, or logo, save the skeleton.",
+      "Recycling your own systems is how professionals seem effortless.",
+      "Set up your creative OS — your pack is your future."
+    ],
+    "image": {"src": "", "alt": "template layouts reused across projects", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 40",
+    "headline": "Tools Don’t Make Taste",
+    "body": [
+      "Figma, Photoshop, Procreate — none of them give you a vibe.",
+      "Taste is compressed curiosity, curated over time.",
+      "Tools are amplifiers. You’re the signal."
+    ],
+    "image": {"src": "", "alt": "designer using laptop surrounded by art references", "orientation": "portrait"},
+    "font": "grotesk"
+  },
+  {
+    "type": "title",
+    "eyebrow": "Part Five",
+    "title": "Applied Compression",
+    "subtitle": "Shortcuts, Taste, and the Wisdom of Restraint",
+    "media": [
+      {"image": {"src": "", "alt": "studio desk with sketchbooks and laptop", "orientation": "landscape"}},
+      {"image": {"src": "", "alt": "browser windows of design tools", "orientation": "landscape"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 41",
+    "headline": "“Three colors is harmony. Four colors? Now you’re talking jazz.”",
+    "body": "Keep it simple. A good palette is like a good chord — tension, release, rhythm.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 42",
+    "headline": "Loaded Symbols Carry Luggage",
+    "body": [
+      "Every icon has history. Hearts, eyes, crosses, flames — they arrive pre-charged.",
+      "If you use a loaded symbol, be intentional. Don’t let your work say something you didn’t mean.",
+      "A red heart says love. A green one says, ‘I’m not sure.’"
+    ],
+    "image": {"src": "", "alt": "grid of icons and emojis showing subtle tone shifts", "orientation": "square"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 43",
+    "headline": "Color Is Frequency",
+    "body": [
+      "Colors are emotional notes. You’re composing a feeling.",
+      "Hue = pitch. Saturation = volume. Value = tempo.",
+      "Design your vibe like you’d mix a song — with balance and groove."
+    ],
+    "image": {"src": "", "alt": "color gradients as audio waveforms", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "pillars",
+    "badge": "Slide 44",
+    "headline": "Shortcuts You Can Trust",
+    "font": "mono",
+    "columns": [
+      {"title": "Color", "text": "[ColorHunt.co](https://colorhunt.co) / [Colorize.design](https://colorize.design) / [Colormind.io](https://colormind.io)"},
+      {"title": "Fonts", "text": "[Fontshare.com](https://www.fontshare.com) / [Fonts In Use](https://fontsinuse.com) / [Fontspring Matcherator](https://www.fontspring.com/matcherator)"},
+      {"title": "Assets", "text": "[TinyWow.com](https://tinywow.com) / [Remove.bg](https://remove.bg) / [Upscayl.org](https://upscayl.org)"},
+      {"title": "Inspo & Layout", "text": "[Mobbin.com](https://mobbin.com) / [PageFlows.com](https://pageflows.com) / [Godly.website](https://godly.website)"}
+    ],
+    "body": "Real tools. No Canva. No excuses."
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 45",
+    "headline": "Taste Is a Muscle",
+    "body": [
+      "You don’t find taste — you train it.",
+      "Scroll consciously. Save what moves you. Question what doesn’t.",
+      "The algorithm is a mirror. Teach it your frequency."
+    ],
+    "image": {"src": "", "alt": "designer scrolling curated feed", "orientation": "portrait"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 46",
+    "headline": "Framing Is Everything",
+    "body": [
+      "Zappa said the frame tells people how to value the art.",
+      "The font on a book cover is the handshake before the story.",
+      "Frame your work like it deserves to be believed."
+    ],
+    "image": {"src": "", "alt": "gallery frames and interface borders", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 47",
+    "headline": "“Simplicity isn’t less. It’s focus.”",
+    "body": "The trick isn’t taking things away — it’s leaving only what sings.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 48",
+    "headline": "Your Creative OS",
+    "body": [
+      "Your pack, your palette, your references — that’s your operating system.",
+      "When it’s solid, new work builds itself.",
+      "Compression is freedom. You make space for flow."
+    ],
+    "image": {"src": "", "alt": "neatly organized creative folders labeled colors_fonts_icons", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 49",
+    "headline": "Wisdom for Builders",
+    "body": [
+      "Don’t chase aesthetics; chase coherence.",
+      "Restraint is charisma.",
+      "Everything good ages well because it knows what it is."
+    ],
+    "image": {"src": "", "alt": "simple iconic logos that have endured", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 50",
+    "headline": "“Follow your curiosity. It’s the only reliable compass.”",
+    "body": "Every system, every logo, every frame started as someone following a hunch.",
+    "font": "grotesk"
+  },
+  {
+    "type": "title",
+    "eyebrow": "Part Six",
+    "title": "Permission & Subversion",
+    "subtitle": "Being the Glitch and Building Anyway",
+    "media": [
+      {"image": {"src": "", "alt": "glitch art collage with bright tones", "orientation": "landscape"}},
+      {"image": {"src": "", "alt": "vintage DIY zine covers and punk posters", "orientation": "landscape"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 51",
+    "headline": "“If you can’t join the system, jam it.”",
+    "body": "Subversion isn’t chaos — it’s clarity through contradiction.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 52",
+    "headline": "You Are the Glitch",
+    "body": [
+      "The system wants sameness. Your weirdness is the signal that breaks through.",
+      "Every artist, coder, and misfit who ever mattered started as an error message.",
+      "Be the glitch. It’s the only part the algorithm can’t predict."
+    ],
+    "image": {"src": "", "alt": "digital glitch portrait abstract collage", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 53",
+    "headline": "Steal Boldly, Remix Shamelessly",
+    "body": [
+      "Good artists borrow. Great artists steal and rename the folder.",
+      "The KLF literally burned a million pounds — you can at least remix a moodboard.",
+      "Ownership is repetition. Say it often enough and it becomes yours."
+    ],
+    "image": {"src": "", "alt": "collage of remixed cultural images and zine snippets", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 54",
+    "headline": "Permission Granted",
+    "body": [
+      "Nobody is coming to crown you with legitimacy.",
+      "You give yourself permission — to start, to ask, to fail, to retry.",
+      "Confidence is just self-issued authority repeated over time."
+    ],
+    "image": {"src": "", "alt": "handwritten note saying permission granted", "orientation": "portrait"},
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 55",
+    "headline": "“The moment you stop asking if you’re allowed, you start making art.”",
+    "body": "Ask forgiveness from no one — except maybe your color palette.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 56",
+    "headline": "Trust Your Taste",
+    "body": [
+      "Taste is intuition trained by time.",
+      "If it feels right, it probably is — the hard part is letting yourself believe that.",
+      "Doubt is part of the rhythm; it keeps the groove honest."
+    ],
+    "image": {"src": "", "alt": "close-up of mixing console and hands adjusting faders", "orientation": "landscape"},
+    "font": "mono"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 57",
+    "headline": "Seek, Ask, Search",
+    "body": [
+      "Every answer is already somewhere — your job is to find the right question.",
+      "Google is the new oracle, but discernment is your filter.",
+      "Don’t wait for clarity — generate it through curiosity."
+    ],
+    "image": {"src": "", "alt": "search bar overlay on abstract pattern", "orientation": "landscape"},
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 58",
+    "headline": "Build, Break, Repeat",
+    "body": [
+      "Every creative system has to collapse a few times before it stabilizes.",
+      "Iteration is evolution. Failure is just an unoptimized prototype.",
+      "The Church of the SubGenius would call that Slack."
+    ],
+    "image": {"src": "", "alt": "recycled design drafts layered over each other", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Slide 59",
+    "headline": "“Reality is the ultimate remix.”",
+    "body": "Everything you make is built from everything you’ve loved.",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Slide 60",
+    "headline": "Final Thought: The Glitch Is the Grace",
+    "body": [
+      "Perfection is sterile. Glitches prove something’s alive.",
+      "Compression, curation, narrative — all just ways of shaping noise into meaning.",
+      "You are the interface. Stay curious. Stay messy. Stay human."
+    ],
+    "image": {"src": "", "alt": "soft glitch aesthetic gradient background", "orientation": "landscape"},
+    "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "eyebrow": "End Transmission",
+    "headline": "“Bless your mess.”",
+    "body": [
+      "Everything worth doing starts as noise.",
+      "The universe runs on accidents, noodles, and good timing.",
+      "Thanks for listening. Go make something weird."
+    ],
+    "media": [
+      {"image": {"src": "", "alt": "risograph ghost or SubGenius-style smiling face", "orientation": "square"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "title",
+    "eyebrow": "Bonus Level",
+    "title": "The Cheat Codes",
+    "subtitle": "Compressed Rules, Useful Tools, and Sacred Shortcuts",
+    "media": [
+      {"image": {"src": "", "alt": "arcade start screen with glitch overlay", "orientation": "landscape"}}
+    ],
+    "font": "grotesk"
+  },
+  {
+    "type": "pillars",
+    "badge": "Design Ratios",
+    "headline": "Compression in Numbers",
+    "font": "mono",
+    "columns": [
+      {"title": "60/30/10 Rule", "text": "Main tone, secondary support, accent spark. Works for color, layout, and sound."},
+      {"title": "80/20 Rule", "text": "Eighty percent of the impact comes from twenty percent of the elements. Find your heavy hitters."},
+      {"title": "Rule of Thirds", "text": "Balance your grid by dividing your frame into threes — simplicity through geometry."},
+      {"title": "Golden Ratio (1.618)", "text": "Use sparingly; it’s sacred math, not a religion. Trust your eye over your ruler."}
+    ],
+    "body": "Ratios are poetry disguised as math. They’re shortcuts to harmony."
+  },
+  {
+    "type": "pillars",
+    "badge": "Typography Tactics",
+    "headline": "Type Is Voice",
+    "font": "grotesk",
+    "columns": [
+      {"title": "Pair with Purpose", "text": "One loud font, one calm font. Let them play call and response."},
+      {"title": "Hierarchy Heals", "text": "Contrast makes meaning. Don’t whisper what should shout."},
+      {"title": "Type as Texture", "text": "Sometimes legibility is overrated. Feeling > reading."},
+      {"title": "Never Stretch Type", "text": "You’re not God. Don’t warp Helvetica."}
+    ],
+    "body": "Typography is music for people who read with their eyes."
+  },
+  {
+    "type": "pillars",
+    "badge": "Layout Wisdom",
+    "headline": "Grids Keep You Honest",
+    "font": "sans",
+    "columns": [
+      {"title": "Respect Margins", "text": "Whitespace is oxygen. If you’re suffocating, pull back."},
+      {"title": "Align to Rhythm", "text": "Every good layout has a beat. Even punk posters."},
+      {"title": "One Weird Element", "text": "Break your grid once to prove you built it."},
+      {"title": "Symmetry Is Optional", "text": "Tension is what keeps the eye awake."}
+    ],
+    "body": "Grids aren’t prisons — they’re trampolines."
+  },
+  {
+    "type": "pillars",
+    "badge": "Color Codes",
+    "headline": "Emotional Math",
+    "font": "grotesk",
+    "columns": [
+      {"title": "Hue = Personality", "text": "Cool = distance, Warm = closeness. Mix to taste."},
+      {"title": "Saturation = Energy", "text": "Dial down to calm, push up to shout."},
+      {"title": "Value = Depth", "text": "Dark recedes, light advances. Use that tension."},
+      {"title": "Palette = Band", "text": "If one tone plays jazz, kick it from the lineup."}
+    ],
+    "body": "Color is emotion translated into math."
+  },
+  {
+    "type": "pillars",
+    "badge": "Creative Laws",
+    "headline": "Unwritten But Universal",
+    "font": "mono",
+    "columns": [
+      {"title": "Law of Intention", "text": "If you don’t define your vibe, someone else will."},
+      {"title": "Law of Economy", "text": "Spend effort where it pays dividends — aesthetics that scale."},
+      {"title": "Law of Play", "text": "If it’s not fun, the audience can tell."},
+      {"title": "Law of Persistence", "text": "Everything great was embarrassing halfway through."}
+    ],
+    "body": "Every design problem is just a confidence problem wearing different pants."
+  },
+  {
+    "type": "pillars",
+    "badge": "Secret Weapons",
+    "headline": "Underground Tools & Free Resources",
+    "font": "sans",
+    "columns": [
+      {"title": "Color & Texture", "text": "[Lospec Palette List](https://lospec.com/palette-list) / [Khroma.co](https://khroma.co) / [Cool Backgrounds](https://coolbackgrounds.io)"},
+      {"title": "Fonts & Type", "text": "[Velvetyne.fr](https://velvetyne.fr) / [Fontshare](https://fontshare.com) / [FutureFonts.xyz](https://www.futurefonts.xyz)"},
+      {"title": "Inspiration", "text": "[Hoverstat.es](https://hoverstat.es) / [BrutalistWebsites.com](https://brutalistwebsites.com) / [Design Museum Everywhere](https://designmuseumeverywhere.org)"},
+      {"title": "Utility & Weirdness", "text": "[TinyWow.com](https://tinywow.com) / [Haikei.app](https://haikei.app) / [BGJar.com](https://bgjar.com)"}
+    ],
+    "body": "Free doesn’t mean cheap. It means frictionless curiosity."
+  },
+  {
+    "type": "pillars",
+    "badge": "Reading List",
+    "headline": "Fuel for Designers, Builders, and Mischief Makers",
+    "font": "grotesk",
+    "columns": [
+      {"title": "Design & Thought", "text": "John Maeda – *Laws of Simplicity* / Susan Kare – *Icons & Symbols* / Ellen Lupton – *Thinking with Type*"},
+      {"title": "Systems & Chaos", "text": "Brian Eno – *Oblique Strategies* / Stewart Brand – *How Buildings Learn* / Kevin Kelly – *What Technology Wants*"},
+      {"title": "Subversion & Spirit", "text": "The KLF – *The Manual* / Church of the SubGenius – *Book of the SubGenius* / Jenny Odell – *How to Do Nothing*"},
+      {"title": "Culture & Compression", "text": "Marshall McLuhan – *The Medium is the Massage* / David Byrne – *How Music Works* / Paul Rand – *Design, Form and Chaos*"}
+    ],
+    "body": "Steal their methods, not their mystique."
+  },
+  {
+    "type": "standard",
+    "badge": "Final Glitch",
+    "headline": "Keep the Channel Open",
+    "body": [
+      "The best designers aren’t chasing trends — they’re decoding frequencies.",
+      "Every system you build is a prayer to future-you.",
+      "Bless your mess, compress your chaos, and keep your interface kind."
+    ],
+    "image": {"src": "", "alt": "soft glitch gradient background", "orientation": "landscape"},
+    "font": "grotesk"
+  }
+]
+
+
+
+
+

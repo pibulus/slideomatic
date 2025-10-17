@@ -21,14 +21,26 @@
     />
   </head>
   <body>
+    <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <div class="app" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
+      <aside class="edit-drawer" id="edit-drawer">
+        <div class="edit-drawer__header">
+          <h2>Edit Slide</h2>
+          <button class="edit-drawer__close" aria-label="Close editor">×</button>
+        </div>
+        <div class="edit-drawer__content" id="edit-drawer-content">
+          <!-- Form will be dynamically generated -->
+        </div>
+      </aside>
       <main class="slides" id="slides" aria-live="polite"></main>
       <footer class="hud">
         <div class="hud__controls">
           <a class="hud__back" href="index.html" data-hide-on-overview aria-label="Back to Deck Library">Back</a>
-          <span class="hud__hint">← / → or space</span>
-          <span class="hud__hint">O overview</span>
+          <span class="hud__hint">← / →</span>
+          <span class="hud__hint">E edit</span>
+          <span class="hud__hint">D download</span>
+          <span class="hud__hint">U upload</span>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>

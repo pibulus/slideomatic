@@ -9,6 +9,52 @@
   },
   {
     "term": "Liquid Death",
-    "search": "Liquid Death can"
+    "search": "Liquid Death water"
+  },
+  {
+    "term": "Teenage Engineering",
+    "url": "https://teenage.engineering",
+    "openInNewTab": true
+  },
+  {
+    "term": "Supreme",
+    "search": "Supreme brand skateboard"
+  },
+  {
+    "term": "Nike",
+    "search": "Nike brand"
+  },
+  {
+    "term": "Palace",
+    "search": "Palace Skateboards brand"
+  },
+  {
+    "term": "100 Gecs",
+    "search": "100 Gecs band"
+  },
+  {
+    "term": "The KLF",
+    "search": "The KLF band"
+  },
+  {
+    "term": "Barbara Kruger",
+    "search": "Barbara Kruger artist"
+  },
+  {
+    "term": "Mac DeMarco",
+    "search": "Mac DeMarco musician"
+  },
+  {
+    "term": "Frank Zappa",
+    "search": "Frank Zappa musician"
+  },
+  {
+    "term": "Bone Soup",
+    "search": "Bone Soup Melbourne venue"
+  },
+  {
+    "term": "teenage.engineering",
+    "url": "https://teenage.engineering",
+    "openInNewTab": true
   }
 ]

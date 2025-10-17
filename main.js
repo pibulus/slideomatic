@@ -63,6 +63,12 @@ async function initDeck() {
   slidesRoot.addEventListener("click", handleSlideClick);
   document.addEventListener("click", handleImageModalTrigger);
 
+  // Setup deck upload
+  const uploadInput = document.getElementById('deck-upload');
+  if (uploadInput) {
+    uploadInput.addEventListener('change', handleDeckUpload);
+  }
+
   setActiveSlide(0);
 }
 
@@ -256,6 +262,25 @@ function handleKeyboard(event) {
     event.preventDefault();
     flashKeyFeedback('ESC');
     exitOverview();
+  }
+
+  if (event.key.toLowerCase() === "d") {
+    event.preventDefault();
+    flashKeyFeedback('D');
+    downloadDeck();
+  }
+
+  if (event.key.toLowerCase() === "u") {
+    event.preventDefault();
+    flashKeyFeedback('U');
+    const uploadInput = document.getElementById('deck-upload');
+    if (uploadInput) uploadInput.click();
+  }
+
+  if (event.key.toLowerCase() === "e") {
+    event.preventDefault();
+    flashKeyFeedback('E');
+    toggleEditDrawer();
   }
 }
 
@@ -529,13 +554,18 @@ function renderImageSlide(section, slide) {
 
 function renderQuoteSlide(section, slide) {
   section.classList.add("slide--quote");
+
+  // Support both 'quote' and 'headline' for the main quote text
+  const quoteText = slide.quote ?? slide.headline ?? "";
   const quote = document.createElement("blockquote");
-  setRichContent(quote, slide.quote ?? "");
+  setRichContent(quote, quoteText);
   section.appendChild(quote);
 
-  if (slide.attribution) {
+  // Support both 'attribution' and 'body' for the attribution/subtext
+  const attributionText = slide.attribution ?? slide.body;
+  if (attributionText) {
     const cite = document.createElement("cite");
-    setRichContent(cite, slide.attribution);
+    setRichContent(cite, attributionText);
     section.appendChild(cite);
   }
 }
@@ -612,6 +642,10 @@ function renderPillarsSlide(section, slide) {
   }
 
   appendBody(section, slide.body);
+
+  if (slide.image) {
+    section.appendChild(createImage(slide.image));
+  }
 
   if (Array.isArray(slide.pillars)) {
     const wrapper = document.createElement("div");
@@ -720,26 +754,36 @@ function renderTypefaceSlide(section, slide) {
     section.appendChild(headline);
   }
 
-  appendBody(section, slide.body);
+  if (slide.image) {
+    section.appendChild(createImage(slide.image));
+  }
 
-  if (Array.isArray(slide.fonts)) {
+  // Support both 'fonts' (detailed) and 'samples' (simple) array formats
+  const fontArray = slide.fonts || slide.samples;
+  if (Array.isArray(fontArray)) {
     const wrapper = document.createElement("div");
     wrapper.className = "typeface-grid";
 
-    slide.fonts.forEach((font) => {
+    fontArray.forEach((font) => {
       const card = document.createElement("article");
       card.className = "typeface-card";
 
-      const label = document.createElement("span");
-      label.className = "typeface-card__label";
-      label.textContent = font.name;
-      card.appendChild(label);
+      // Handle both formats: {name, font, sample} and {font, text}
+      const fontFamily = font.font;
+      const displayText = font.text || font.sample || slide.sample || "The quick brown fox jumps over the lazy dog";
+
+      if (font.name) {
+        const label = document.createElement("span");
+        label.className = "typeface-card__label";
+        label.textContent = font.name;
+        card.appendChild(label);
+      }
 
       const sample = document.createElement("p");
       sample.className = "typeface-card__sample";
-      sample.style.fontFamily = font.font;
+      sample.style.fontFamily = fontFamily;
       if (font.weight) sample.style.fontWeight = font.weight;
-      sample.textContent = font.sample || slide.sample || "The quick brown fox jumps over the lazy dog";
+      sample.textContent = displayText;
       card.appendChild(sample);
 
       if (font.note) {
@@ -754,6 +798,8 @@ function renderTypefaceSlide(section, slide) {
 
     section.appendChild(wrapper);
   }
+
+  appendBody(section, slide.body);
 
   if (slide.footnote) {
     section.appendChild(createFootnote(slide.footnote));
@@ -1034,8 +1080,24 @@ function createColorBlock(item, className = "gallery__color") {
 
 function setRichContent(element, html) {
   if (html == null) return;
-  element.innerHTML = html;
+  element.innerHTML = parseMarkdown(html);
   applyAutoLinksToElement(element);
+}
+
+function parseMarkdown(text) {
+  if (typeof text !== 'string') return text;
+
+  return text
+    // Bold: **text** or __text__
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_ (but not inside words)
+    .replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>')
+    .replace(/(?<!\w)_([^_]+?)_(?!\w)/g, '<em>$1</em>')
+    // Links: [text](url)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    // Code: `code`
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
 function maybeCreateQuoteElement(raw) {
@@ -1162,4 +1224,180 @@ function buildAutoLinkHref(text, config) {
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// ===================================================================
+// DECK IMPORT/EXPORT
+// ===================================================================
+
+function downloadDeck() {
+  const json = JSON.stringify(slides, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'slides.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log('✓ Deck downloaded as slides.json');
+}
+
+function handleDeckUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const newSlides = JSON.parse(e.target.result);
+      validateSlides(newSlides);
+
+      // Replace current slides
+      slides = newSlides;
+
+      // Reload deck with new slides
+      reloadDeck();
+
+      console.log(`✓ Loaded ${slides.length} slides from ${file.name}`);
+    } catch (error) {
+      console.error('Failed to load deck:', error);
+      alert(`Failed to load deck: ${error.message}`);
+    }
+  };
+
+  reader.readAsText(file);
+
+  // Reset input so the same file can be uploaded again
+  event.target.value = '';
+}
+
+function reloadDeck() {
+  // Clear existing slides
+  slidesRoot.innerHTML = '';
+
+  // Filter out schema slides
+  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
+
+  totalCounter.textContent = renderableSlides.length;
+
+  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
+    renderEmptyState();
+    return;
+  }
+
+  // Re-render all slides
+  slideElements = renderableSlides.map((slide, index) =>
+    createSlide(slide, index, renderers)
+  );
+
+  const fragment = document.createDocumentFragment();
+  slideElements.forEach((slide) => {
+    slide.style.visibility = "hidden";
+    slide.style.pointerEvents = "none";
+    fragment.appendChild(slide);
+  });
+  slidesRoot.appendChild(fragment);
+
+  // Reset to first slide
+  currentIndex = 0;
+  setActiveSlide(0);
+}
+
+// ===================================================================
+// EDIT DRAWER
+// ===================================================================
+
+let isEditDrawerOpen = false;
+
+function toggleEditDrawer() {
+  const drawer = document.getElementById('edit-drawer');
+  if (!drawer) return;
+
+  isEditDrawerOpen = !isEditDrawerOpen;
+
+  if (isEditDrawerOpen) {
+    drawer.classList.add('is-open');
+    renderEditForm();
+    // Setup close button
+    const closeBtn = drawer.querySelector('.edit-drawer__close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeEditDrawer);
+    }
+  } else {
+    drawer.classList.remove('is-open');
+  }
+}
+
+function closeEditDrawer() {
+  isEditDrawerOpen = false;
+  const drawer = document.getElementById('edit-drawer');
+  if (drawer) drawer.classList.remove('is-open');
+}
+
+function renderEditForm() {
+  const content = document.getElementById('edit-drawer-content');
+  if (!content) return;
+
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  content.innerHTML = `
+    <form class="edit-drawer__form">
+      <div class="edit-drawer__field">
+        <label class="edit-drawer__label">Slide JSON</label>
+        <textarea
+          class="edit-drawer__textarea"
+          id="slide-json-editor"
+          rows="20"
+          style="font-family: var(--font-mono); font-size: 0.9rem;"
+        >${JSON.stringify(currentSlide, null, 2)}</textarea>
+      </div>
+      <button type="button" class="edit-drawer__button" id="save-slide-btn">
+        Save & Reload
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
+        Duplicate Slide
+      </button>
+    </form>
+  `;
+
+  // Setup save button
+  document.getElementById('save-slide-btn')?.addEventListener('click', saveCurrentSlide);
+  document.getElementById('duplicate-slide-btn')?.addEventListener('click', duplicateCurrentSlide);
+}
+
+function saveCurrentSlide() {
+  const textarea = document.getElementById('slide-json-editor');
+  if (!textarea) return;
+
+  try {
+    const updatedSlide = JSON.parse(textarea.value);
+    slides[currentIndex] = updatedSlide;
+    reloadDeck();
+    closeEditDrawer();
+    console.log('✓ Slide updated');
+  } catch (error) {
+    alert(`Invalid JSON: ${error.message}`);
+  }
+}
+
+function duplicateCurrentSlide() {
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  // Deep clone the slide
+  const duplicatedSlide = JSON.parse(JSON.stringify(currentSlide));
+
+  // Insert after current slide
+  slides.splice(currentIndex + 1, 0, duplicatedSlide);
+
+  reloadDeck();
+
+  // Move to the duplicated slide
+  setTimeout(() => setActiveSlide(currentIndex + 1), 100);
+
+  closeEditDrawer();
+  console.log('✓ Slide duplicated');
 }
