@@ -230,6 +230,17 @@ function validateSlides(data) {
 }
 
 function handleKeyboard(event) {
+  const target = event.target;
+  if (
+    target &&
+    target instanceof HTMLElement &&
+    (target.matches("input, textarea, select") ||
+      target.isContentEditable ||
+      target.closest("#edit-drawer"))
+  ) {
+    return;
+  }
+
   if (event.key === "ArrowRight" || event.key === " ") {
     event.preventDefault();
     if (isOverview) return;
@@ -462,6 +473,24 @@ function createSlide(slide, index, rendererMap) {
       section.insertBefore(autoBadge, section.firstChild ?? null);
     }
   }
+
+  const content = document.createElement('div');
+  content.className = 'slide__content';
+
+  const nodes = [];
+  while (section.firstChild) {
+    nodes.push(section.removeChild(section.firstChild));
+  }
+
+  nodes.forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('badge')) {
+      section.appendChild(node);
+    } else {
+      content.appendChild(node);
+    }
+  });
+
+  section.appendChild(content);
 
   return section;
 }
@@ -698,8 +727,15 @@ function renderPillarsSlide(section, slide) {
         card.appendChild(heading);
       }
 
-      if (pillar.copy) {
-        const copyLines = Array.isArray(pillar.copy) ? pillar.copy : [pillar.copy];
+      const pillarCopy =
+        pillar.copy ??
+        pillar.text ??
+        pillar.body ??
+        pillar.description ??
+        null;
+
+      if (pillarCopy) {
+        const copyLines = Array.isArray(pillarCopy) ? pillarCopy : [pillarCopy];
         copyLines.forEach((line) => {
           if (!line) return;
           const text = document.createElement("p");
@@ -920,7 +956,12 @@ function createImage(image, className = "slide__image", options = {}) {
     img.classList.add("slide__image--borderless");
   }
   const orientationTarget = options.orientationTarget;
-  const explicitOrientation = normalizeOrientation(image.orientation);
+  const rawOrientation =
+    typeof image.orientation === "string" ? image.orientation.trim() : image.orientation;
+  const explicitOrientation = normalizeOrientation(rawOrientation);
+  const orientationLocked =
+    image.lockOrientation === true ||
+    (typeof rawOrientation === "string" && /!$/.test(rawOrientation));
   const applyOrientation = (orientation) => {
     if (!orientation) return;
     img.dataset.orientation = orientation;
@@ -930,19 +971,21 @@ function createImage(image, className = "slide__image", options = {}) {
   };
   if (explicitOrientation) {
     applyOrientation(explicitOrientation);
-  } else {
-    const updateOrientationFromNatural = () => {
-      const orientation = deriveOrientationFromDimensions(
-        img.naturalWidth,
-        img.naturalHeight
-      );
+  }
+  const updateOrientationFromNatural = () => {
+    const orientation = deriveOrientationFromDimensions(
+      img.naturalWidth,
+      img.naturalHeight
+    );
+    if (!orientation) return;
+    if (!explicitOrientation || (!orientationLocked && orientation !== explicitOrientation)) {
       applyOrientation(orientation);
-    };
-    if (img.complete && img.naturalWidth && img.naturalHeight) {
-      updateOrientationFromNatural();
-    } else {
-      img.addEventListener("load", updateOrientationFromNatural, { once: true });
     }
+  };
+  if (img.complete && img.naturalWidth && img.naturalHeight) {
+    updateOrientationFromNatural();
+  } else {
+    img.addEventListener("load", updateOrientationFromNatural, { once: true });
   }
   // Make images clickable to view full size
   img.style.cursor = 'pointer';
@@ -1009,7 +1052,19 @@ function buildImageSearchUrl(query) {
 
 function normalizeOrientation(value) {
   if (!value) return null;
-  const normalized = String(value).toLowerCase();
+  const normalized = String(value).toLowerCase().replace(/!+$/, "");
+  const alias = {
+    poster: "portrait",
+    "one-sheet": "portrait",
+    flyer: "portrait",
+    sheet: "portrait",
+    banner: "landscape",
+    widescreen: "landscape",
+    panorama: "landscape",
+  }[normalized];
+  if (alias) {
+    return alias;
+  }
   if (["portrait", "landscape", "square"].includes(normalized)) {
     return normalized;
   }
@@ -1771,6 +1826,13 @@ let themeAudioChunks = [];
 let themeMediaStream = null;
 
 function toggleVoiceTheme() {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    openSettingsModal();
+    showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
+    return;
+  }
+
   if (isRecordingTheme) {
     stopVoiceThemeRecording();
   } else {

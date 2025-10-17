@@ -6,14 +6,11 @@ Generate slides using voice commands powered by Gemini AI.
 
 1. Get a Gemini API key from https://makersuite.google.com/app/apikey
 
-2. Add your API key to `main.js`:
-   ```javascript
-   // Find this line in main.js (around line 1421)
-   const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+2. Open the deck (`deck.html`) and press `S` or click the settings button in the HUD.
 
-   // Replace with your actual key
-   const GEMINI_API_KEY = "AIza...your-actual-key";
-   ```
+3. Paste your key into the **Gemini API Key** field, then hit **Save Key**. You can optionally use **Test Connection** to verify it.
+
+4. The key is stored locally in your browser via `localStorage`—no code changes required.
 
 ## Usage
 
