@@ -475,6 +475,29 @@ body[data-mode="overview"] {
   max-width: 24ch;
 }
 
+.image-placeholder--dragover {
+  border-color: var(--color-accent);
+  background: rgba(254, 202, 87, 0.25);
+  transform: translate(-2px, -2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.image-placeholder--error {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.15);
+  color: #991B1B;
+}
+
+.image-placeholder--error .image-placeholder__icon {
+  animation: error-shake 0.5s ease-in-out;
+}
+
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
 .slide__image--borderless {
   border: none;
   box-shadow: none;

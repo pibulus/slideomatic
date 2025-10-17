@@ -1607,14 +1607,15 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   const text = document.createElement("span");
   text.className = "image-placeholder__text";
   text.textContent = trimmedQuery
-    ? `Search “${trimmedQuery}”`
-    : "Add reference image";
+    ? `Search "${trimmedQuery}" or drag & drop`
+    : "Drag & drop or paste image";
 
   placeholder.append(icon, text);
 
+  // Click handler for Google Image Search (keep existing behavior)
   if (trimmedQuery) {
     placeholder.dataset.searchQuery = trimmedQuery;
-    placeholder.setAttribute("aria-label", `Search images for ${trimmedQuery}`);
+    placeholder.setAttribute("aria-label", `Search images for ${trimmedQuery} or drag and drop`);
     placeholder.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1622,13 +1623,44 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
       window.open(url, "_blank", "noopener");
     });
   } else {
-    placeholder.disabled = true;
-    placeholder.classList.add("is-disabled");
     placeholder.setAttribute(
       "aria-label",
-      "Add reference image (no search query)"
+      "Drag and drop or paste an image"
     );
   }
+
+  // Drag & drop handlers
+  placeholder.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    placeholder.classList.add("image-placeholder--dragover");
+    text.textContent = "Drop to add image";
+  });
+
+  placeholder.addEventListener("dragleave", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    placeholder.classList.remove("image-placeholder--dragover");
+    text.textContent = trimmedQuery
+      ? `Search "${trimmedQuery}" or drag & drop`
+      : "Drag & drop or paste image";
+  });
+
+  placeholder.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    placeholder.classList.remove("image-placeholder--dragover");
+
+    const files = Array.from(event.dataTransfer.files);
+    const imageFile = files.find(f => f.type.startsWith("image/"));
+
+    if (imageFile) {
+      await handleImageUpload(imageFile, placeholder, image);
+    }
+  });
+
+  // Store reference for paste handler
+  placeholder.dataset.placeholderFor = JSON.stringify(image);
 
   return placeholder;
 }
@@ -1638,6 +1670,177 @@ function buildImageSearchUrl(query) {
   url.searchParams.set("tbm", "isch");
   url.searchParams.set("q", query);
   return url.toString();
+}
+
+// ================================================================
+// Image Upload & Compression
+// ================================================================
+
+async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
+  if (!file.type.startsWith("image/")) {
+    showImageError(placeholderElement, "Please drop an image file");
+    return;
+  }
+
+  // Show loading state
+  const text = placeholderElement.querySelector(".image-placeholder__text");
+  const icon = placeholderElement.querySelector(".image-placeholder__icon");
+  const originalText = text.textContent;
+  const originalIcon = icon.textContent;
+
+  text.textContent = "Compressing...";
+  icon.textContent = "⏳";
+  placeholderElement.disabled = true;
+
+  try {
+    // Compress image
+    const compressedFile = await compressImage(file);
+
+    // Check size after compression
+    const sizeInMB = compressedFile.size / (1024 * 1024);
+    if (sizeInMB > 5) {
+      throw new Error(`Image too large: ${sizeInMB.toFixed(1)}MB (max 5MB)`);
+    }
+
+    if (sizeInMB > 2) {
+      console.warn(`Large image: ${sizeInMB.toFixed(1)}MB - consider using a smaller file`);
+    }
+
+    // Convert to base64
+    const base64 = await fileToBase64(compressedFile);
+
+    // Find the slide this placeholder belongs to and update it
+    const slideIndex = findSlideIndexForPlaceholder(placeholderElement);
+    if (slideIndex !== -1) {
+      updateSlideImage(slideIndex, {
+        src: base64,
+        alt: imageConfig.alt || file.name.replace(/\.[^/.]+$/, ""),
+        originalFilename: file.name,
+        compressedSize: compressedFile.size,
+        uploadedAt: Date.now()
+      });
+
+      // Re-render the slide
+      await renderSlides();
+      showSlide(slideIndex);
+
+      showHudStatus(`Image added (${(sizeInMB).toFixed(1)}MB)`, "success");
+    }
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    showImageError(placeholderElement, error.message);
+    text.textContent = originalText;
+    icon.textContent = originalIcon;
+    placeholderElement.disabled = false;
+  }
+}
+
+async function compressImage(file) {
+  // Check if browser-image-compression is available
+  if (typeof imageCompression === 'undefined') {
+    console.warn('Image compression library not loaded, using original file');
+    return file;
+  }
+
+  const options = {
+    maxWidthOrHeight: 1920,  // Max on longest side (handles portrait/landscape)
+    useWebWorker: true,      // Don't freeze UI
+    fileType: 'image/webp',  // Modern, efficient format
+    initialQuality: 0.85,    // Sweet spot for quality/size
+  };
+
+  try {
+    const compressed = await imageCompression(file, options);
+    console.log(`Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressed.size / 1024 / 1024).toFixed(2)}MB`);
+    return compressed;
+  } catch (error) {
+    console.error('Compression failed, using original:', error);
+    return file;
+  }
+}
+
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function findSlideIndexForPlaceholder(placeholderElement) {
+  const slideElement = placeholderElement.closest('.slide');
+  if (!slideElement) return -1;
+  return slideElements.indexOf(slideElement);
+}
+
+function updateSlideImage(slideIndex, imageData) {
+  if (slideIndex < 0 || slideIndex >= slides.length) return;
+
+  const slide = slides[slideIndex];
+
+  // Update the slide's image data
+  if (!slide.image) {
+    slide.image = {};
+  }
+
+  Object.assign(slide.image, imageData);
+}
+
+function showImageError(placeholderElement, message) {
+  const text = placeholderElement.querySelector(".image-placeholder__text");
+  text.textContent = message;
+  placeholderElement.classList.add("image-placeholder--error");
+
+  setTimeout(() => {
+    placeholderElement.classList.remove("image-placeholder--error");
+  }, 3000);
+}
+
+function showHudStatus(message, type = "info") {
+  const status = document.getElementById("hud-status");
+  if (!status) return;
+
+  status.textContent = message;
+  status.className = `hud__status hud__status--${type}`;
+
+  setTimeout(() => {
+    status.textContent = "";
+    status.className = "hud__status";
+  }, 3000);
+}
+
+// Global paste handler for images
+async function handleGlobalPaste(event) {
+  // Don't interfere with paste in text inputs
+  const target = event.target;
+  if (target && (target.matches('input, textarea') || target.isContentEditable)) {
+    return;
+  }
+
+  const items = event.clipboardData?.items;
+  if (!items) return;
+
+  for (let item of items) {
+    if (item.type.startsWith('image/')) {
+      event.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      // Find the first image placeholder on the current slide
+      const currentSlide = slideElements[currentIndex];
+      if (!currentSlide) continue;
+
+      const placeholder = currentSlide.querySelector('.image-placeholder');
+      if (placeholder) {
+        const imageConfig = JSON.parse(placeholder.dataset.placeholderFor || '{}');
+        await handleImageUpload(file, placeholder, imageConfig);
+      } else {
+        showHudStatus("No image placeholder on current slide", "warning");
+      }
+      break; // Only handle the first image
+    }
+  }
 }
 
 function normalizeOrientation(value) {
@@ -3572,6 +3775,7 @@ async function initDeckWithTheme() {
   document.addEventListener("keydown", handleKeyboard);
   slidesRoot.addEventListener("click", handleSlideClick);
   document.addEventListener("click", handleImageModalTrigger);
+  document.addEventListener("paste", handleGlobalPaste);
 
   const uploadInput = document.getElementById('deck-upload');
   if (uploadInput) {
