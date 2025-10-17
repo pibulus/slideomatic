@@ -13,6 +13,7 @@ const renderers = {
   gallery: renderGallerySlide,
   typeface: renderTypefaceSlide,
   image: renderImageSlide,
+  graph: renderGraphSlide,
 };
 
 let slides = [];
@@ -1015,6 +1016,73 @@ function renderGallerySlide(section, slide) {
   if (slide.footnote) {
     section.appendChild(createFootnote(slide.footnote));
   }
+}
+
+function renderGraphSlide(section, slide) {
+  const content = document.createElement("div");
+  content.className = "slide__content";
+
+  // Title
+  if (slide.title) {
+    const title = document.createElement("h2");
+    title.textContent = slide.title;
+    content.appendChild(title);
+  }
+
+  // Description (optional, shows what the graph is about)
+  if (slide.description && !slide.imageData) {
+    const description = document.createElement("p");
+    description.className = "graph-description";
+    description.textContent = slide.description;
+    content.appendChild(description);
+  }
+
+  // Graph container
+  const graphContainer = document.createElement("div");
+  graphContainer.className = "graph-container";
+
+  if (slide.imageData) {
+    // Show cached generated image
+    const img = document.createElement("img");
+    img.className = "graph-image";
+    img.src = slide.imageData;
+    img.alt = slide.description || "Generated graph";
+    img.dataset.orientation = normalizeOrientation(slide.orientation);
+
+    const regenerateBtn = document.createElement("button");
+    regenerateBtn.className = "graph-regenerate-btn";
+    regenerateBtn.textContent = "🔄 Regenerate";
+    regenerateBtn.dataset.slideIndex = slide._index;
+    regenerateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
+
+    graphContainer.appendChild(img);
+    graphContainer.appendChild(regenerateBtn);
+  } else {
+    // Show generate button placeholder
+    const placeholder = document.createElement("div");
+    placeholder.className = "graph-placeholder";
+
+    const icon = document.createElement("div");
+    icon.className = "graph-placeholder__icon";
+    icon.textContent = "📊";
+
+    const text = document.createElement("div");
+    text.className = "graph-placeholder__text";
+    text.textContent = slide.description || "Generate a graph";
+
+    const generateBtn = document.createElement("button");
+    generateBtn.className = "graph-generate-btn";
+    generateBtn.textContent = "Generate Graph";
+    generateBtn.dataset.slideIndex = slide._index;
+    generateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
+
+    placeholder.append(icon, text, generateBtn);
+    graphContainer.appendChild(placeholder);
+  }
+
+  content.appendChild(graphContainer);
+  section.appendChild(content);
+  return section;
 }
 
 function renderTypefaceSlide(section, slide) {
@@ -2843,4 +2911,123 @@ if (notesModal) {
       notesModal.classList.remove('is-open');
     }
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GRAPH GENERATION (Gemini 2.5 Flash Image)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function generateGraphImage(slide, containerElement) {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    return;
+  }
+
+  // Show loading state
+  const button = containerElement.querySelector('.graph-generate-btn, .graph-regenerate-btn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = button.classList.contains('graph-regenerate-btn')
+      ? '🔄 Generating...'
+      : 'Generating...';
+  }
+
+  try {
+    // Get current theme colors
+    const rootStyles = getComputedStyle(document.documentElement);
+    const colorSurface = rootStyles.getPropertyValue('--color-surface').trim();
+    const colorSurfaceAlt = rootStyles.getPropertyValue('--color-surface-alt').trim();
+    const colorAccent = rootStyles.getPropertyValue('--color-accent').trim();
+
+    // Build prompt with theme colors and risograph style
+    const orientation = slide.orientation || 'landscape';
+    const aspectRatio = orientation === 'portrait' ? '3:4' : orientation === 'square' ? '1:1' : '16:9';
+
+    const prompt = `Create a clean, minimal ${orientation} graph or chart: ${slide.description || slide.title}.
+
+Style requirements:
+- Risograph print aesthetic with bold, flat colors
+- Use these colors: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}
+- Clean typography, clear labels
+- Data-focused, no decorative elements
+- High contrast, easy to read from distance
+- Professional presentation quality
+
+The graph should be publication-ready with clear data visualization.`;
+
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            responseModalities: ['Image'],
+            imageConfig: {
+              aspectRatio: aspectRatio
+            }
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const imagePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+    if (!imagePart || !imagePart.inlineData) {
+      throw new Error('No image data returned from API');
+    }
+
+    // Build base64 data URL
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    const imageData = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+
+    // Save to slide object
+    slide.imageData = imageData;
+
+    // Update container to show image
+    containerElement.innerHTML = '';
+
+    const img = document.createElement('img');
+    img.className = 'graph-image';
+    img.src = imageData;
+    img.alt = slide.description || 'Generated graph';
+    img.dataset.orientation = normalizeOrientation(slide.orientation);
+
+    const regenerateBtn = document.createElement('button');
+    regenerateBtn.className = 'graph-regenerate-btn';
+    regenerateBtn.textContent = '🔄 Regenerate';
+    regenerateBtn.addEventListener('click', () => generateGraphImage(slide, containerElement));
+
+    containerElement.appendChild(img);
+    containerElement.appendChild(regenerateBtn);
+
+    showHudStatus('✨ Graph generated', 'success');
+    setTimeout(hideHudStatus, 2000);
+
+  } catch (error) {
+    console.error('Graph generation failed:', error);
+    showHudStatus(`❌ ${error.message}`, 'error');
+    setTimeout(hideHudStatus, 3000);
+
+    // Reset button
+    if (button) {
+      button.disabled = false;
+      button.textContent = button.classList.contains('graph-regenerate-btn')
+        ? '🔄 Regenerate'
+        : 'Generate Graph';
+    }
+  }
 }
