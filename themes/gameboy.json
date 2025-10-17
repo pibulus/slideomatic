@@ -3,7 +3,7 @@
   "background-surface": "linear-gradient(135deg, #306230 0%, #0f380f 100%)",
   "background-overlay": "repeating-linear-gradient(0deg, rgba(15, 56, 15, 0.8) 0px, transparent 1px, transparent 2px, rgba(15, 56, 15, 0.8) 3px)",
   "background-opacity": "0.3",
-  "slide-bg": "rgba(155, 188, 15, 0.95)",
+  "slide-bg": "rgba(155, 188, 15, 0.82)",
   "slide-border-color": "#0f380f",
   "slide-border-width": "6px",
   "slide-shadow": "8px 8px 0 rgba(15, 56, 15, 0.6)",

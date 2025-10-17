@@ -3,7 +3,7 @@
   "background-surface": "radial-gradient(circle at 15% 20%, rgba(255, 159, 243, 0.35), transparent 55%), radial-gradient(circle at 85% 30%, rgba(136, 212, 255, 0.35), transparent 55%), radial-gradient(circle at 40% 70%, rgba(254, 202, 87, 0.25), transparent 60%), radial-gradient(circle at 80% 90%, rgba(255, 159, 243, 0.18), transparent 55%), #fffbf3",
   "background-overlay": "radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.15) 0.5px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0.5px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.08) 1px, transparent 2px)",
   "background-opacity": "0.5",
-  "slide-bg": "rgba(255, 251, 243, 0.88)",
+  "slide-bg": "rgba(255, 251, 243, 0.82)",
   "slide-border-color": "#1b1b1b",
   "slide-border-width": "5px",
   "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)",

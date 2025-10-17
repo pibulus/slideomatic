@@ -34,6 +34,23 @@
         </div>
       </aside>
 
+      <!-- Speaker Notes Modal -->
+      <div class="notes-modal" id="notes-modal">
+        <div class="notes-modal__backdrop"></div>
+        <div class="notes-modal__content">
+          <div class="notes-modal__header">
+            <h2>📝 Speaker Notes</h2>
+            <button class="notes-modal__close" aria-label="Close notes">×</button>
+          </div>
+          <div class="notes-modal__body">
+            <div class="notes-modal__slide-title" id="notes-slide-title"></div>
+            <div class="notes-modal__text" id="notes-text">
+              No speaker notes for this slide.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Settings Modal -->
       <div class="settings-modal" id="settings-modal">
         <div class="settings-modal__backdrop"></div>
@@ -89,6 +106,12 @@
           <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Ask Gemini to edit current slide" title="Edit current slide with Gemini">Edit</button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides" title="View all slides">Overview</button>
           <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download slides JSON" title="Download slides JSON">Save</button>
+          <select class="hud__theme-select" id="theme-select" aria-label="Switch theme" title="Switch theme">
+            <option value="theme.json">Default</option>
+            <option value="themes/vaporwave.json">Vaporwave</option>
+            <option value="themes/slack.json">Slack</option>
+            <option value="themes/gameboy.json">Gameboy</option>
+          </select>
           <span class="hud__hint" title="Navigate slides">← / →</span>
           <div class="hud__status" id="hud-status"></div>
         </div>

@@ -107,6 +107,26 @@ async function initDeck() {
     });
   }
 
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) {
+    themeSelect.addEventListener('change', async (event) => {
+      const themePath = event.target.value;
+      showHudStatus('🎨 Switching theme...', 'processing');
+      try {
+        const response = await fetch(themePath, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+        const theme = await response.json();
+        applyTheme(theme);
+        showHudStatus('✨ Theme applied', 'success');
+        setTimeout(hideHudStatus, 1600);
+      } catch (error) {
+        console.error('Failed to apply theme:', error);
+        showHudStatus('❌ Theme failed', 'error');
+        setTimeout(hideHudStatus, 2000);
+      }
+    });
+  }
+
   setActiveSlide(0);
   updateOverviewButton();
   overviewCursor = currentIndex;
@@ -352,6 +372,13 @@ function handleKeyboard(event) {
     event.preventDefault();
     flashKeyFeedback('D');
     downloadDeck();
+    return;
+  }
+
+  if (lowerKey === "n") {
+    event.preventDefault();
+    flashKeyFeedback('N');
+    toggleSpeakerNotes();
     return;
   }
 
@@ -2755,4 +2782,65 @@ function hideHudStatus() {
     hudStatus.textContent = '';
     hudStatus.className = 'hud__status';
   }, 200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPEAKER NOTES
+// ═══════════════════════════════════════════════════════════════════════════
+
+function toggleSpeakerNotes() {
+  const modal = document.getElementById('notes-modal');
+  if (!modal) return;
+
+  const isOpen = modal.classList.contains('is-open');
+
+  if (isOpen) {
+    modal.classList.remove('is-open');
+  } else {
+    // Update notes content for current slide
+    const currentSlide = slides[currentIndex];
+    const slideTitle = document.getElementById('notes-slide-title');
+    const notesText = document.getElementById('notes-text');
+
+    if (slideTitle) {
+      slideTitle.textContent = `Slide ${currentIndex + 1} of ${slides.length}`;
+    }
+
+    if (notesText) {
+      const notes = currentSlide?.notes || currentSlide?.speaker_notes;
+      if (notes) {
+        notesText.textContent = notes;
+      } else {
+        notesText.textContent = 'No speaker notes for this slide.';
+      }
+    }
+
+    modal.classList.add('is-open');
+  }
+}
+
+// Setup notes modal close handlers
+const notesModal = document.getElementById('notes-modal');
+if (notesModal) {
+  const closeBtn = notesModal.querySelector('.notes-modal__close');
+  const backdrop = notesModal.querySelector('.notes-modal__backdrop');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      notesModal.classList.remove('is-open');
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      notesModal.classList.remove('is-open');
+    });
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && notesModal.classList.contains('is-open')) {
+      notesModal.classList.remove('is-open');
+    }
+  });
 }
