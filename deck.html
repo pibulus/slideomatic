@@ -24,6 +24,49 @@
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <div class="app" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
+
+      <!-- Theme Editor Drawer (Left Side) -->
+      <aside class="theme-drawer" id="theme-drawer">
+        <div class="theme-drawer__header">
+          <h2>🎨 Theme Editor</h2>
+          <button class="theme-drawer__close" aria-label="Close theme editor">×</button>
+        </div>
+        <div class="theme-drawer__content">
+          <div class="theme-drawer__actions">
+            <button class="theme-drawer__btn theme-drawer__btn--primary" id="theme-save-btn">
+              💾 Save to Library
+            </button>
+            <button class="theme-drawer__btn theme-drawer__btn--ai" id="theme-ai-btn">
+              ✨ Ask AI
+            </button>
+            <button class="theme-drawer__btn theme-drawer__btn--random" id="theme-random-btn">
+              🎲 Randomize
+            </button>
+          </div>
+
+          <div class="theme-drawer__library">
+            <h3>Saved Themes</h3>
+            <div class="theme-drawer__library-list" id="theme-library-list">
+              <!-- Saved themes will be populated here -->
+            </div>
+          </div>
+
+          <div class="theme-drawer__editor">
+            <h3>Current Theme JSON</h3>
+            <textarea
+              class="theme-drawer__textarea"
+              id="theme-json-editor"
+              spellcheck="false"
+              placeholder='{"color-bg": "#fffbf3", ...}'
+            ></textarea>
+            <button class="theme-drawer__apply-btn" id="theme-apply-btn">
+              Apply Changes
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Slide Editor Drawer (Right Side) -->
       <aside class="edit-drawer" id="edit-drawer">
         <div class="edit-drawer__header">
           <h2>Edit Slide</h2>
@@ -104,6 +147,7 @@
         <div class="hud__controls">
           <button class="hud__action hud__add-btn" id="add-btn" aria-label="Add slide from voice (V)" title="Add slide from voice (V)">Add</button>
           <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Ask Gemini to edit current slide" title="Edit current slide with Gemini">Edit</button>
+          <button class="hud__action hud__theme-btn" id="theme-btn" aria-label="Open theme editor" title="Open theme editor (T)">Theme</button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides" title="View all slides">Overview</button>
           <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download slides JSON" title="Download slides JSON">Save</button>
           <select class="hud__theme-select" id="theme-select" aria-label="Switch theme" title="Switch theme">

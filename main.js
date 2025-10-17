@@ -30,8 +30,69 @@ let overviewRowCount = 1;
 let overviewColumnCount = 0;
 let overviewCursor = 0;
 let lastOverviewHighlight = 0;
+let currentTheme = null;
 
-initDeck();
+// ================================================================
+// Theme Library - localStorage persistence
+// ================================================================
+
+const THEME_LIBRARY_KEY = 'slideomatic_themes';
+const CURRENT_THEME_KEY = 'slideomatic_current_theme';
+
+function getThemeLibrary() {
+  try {
+    const stored = localStorage.getItem(THEME_LIBRARY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.warn('Failed to load theme library:', error);
+    return [];
+  }
+}
+
+function saveThemeToLibrary(name, theme) {
+  const library = getThemeLibrary();
+  const existing = library.findIndex(t => t.name === name);
+
+  const themeEntry = {
+    name,
+    theme,
+    created: existing >= 0 ? library[existing].created : Date.now(),
+    updated: Date.now()
+  };
+
+  if (existing >= 0) {
+    library[existing] = themeEntry;
+  } else {
+    library.push(themeEntry);
+  }
+
+  localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(library));
+  return themeEntry;
+}
+
+function deleteThemeFromLibrary(name) {
+  const library = getThemeLibrary();
+  const filtered = library.filter(t => t.name !== name);
+  localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(filtered));
+}
+
+function setCurrentTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem(CURRENT_THEME_KEY, JSON.stringify(theme));
+}
+
+function getCurrentTheme() {
+  if (currentTheme) return currentTheme;
+  try {
+    const stored = localStorage.getItem(CURRENT_THEME_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.warn('Failed to load current theme:', error);
+    return null;
+  }
+}
+
+initDeckWithTheme();
 
 async function initDeck() {
   await loadAndApplyTheme();
@@ -3030,4 +3091,287 @@ The graph should be publication-ready with clear data visualization.`;
         : 'Generate Graph';
     }
   }
+}
+
+// ================================================================
+// Theme Drawer UI & Management
+// ================================================================
+
+function initThemeDrawer() {
+  const themeDrawer = document.getElementById('theme-drawer');
+  const themeBtn = document.getElementById('theme-btn');
+  const closeBtn = themeDrawer?.querySelector('.theme-drawer__close');
+  const textarea = document.getElementById('theme-json-editor');
+  const applyBtn = document.getElementById('theme-apply-btn');
+  const saveBtn = document.getElementById('theme-save-btn');
+  const aiBtn = document.getElementById('theme-ai-btn');
+  const randomBtn = document.getElementById('theme-random-btn');
+
+  if (!themeDrawer) return;
+
+  // Open/close theme drawer
+  themeBtn?.addEventListener('click', () => {
+    const isOpen = themeDrawer.classList.contains('is-open');
+    if (!isOpen) {
+      themeDrawer.classList.add('is-open', 'is-springing');
+      loadThemeIntoEditor();
+      renderThemeLibrary();
+    } else {
+      themeDrawer.classList.remove('is-open', 'is-springing');
+    }
+  });
+
+  closeBtn?.addEventListener('click', () => {
+    themeDrawer.classList.remove('is-open', 'is-springing');
+  });
+
+  // Apply theme from textarea
+  applyBtn?.addEventListener('click', async () => {
+    try {
+      const themeJson = textarea.value;
+      const theme = JSON.parse(themeJson);
+      applyTheme(theme);
+      setCurrentTheme(theme);
+      showHudStatus('✨ Theme applied', 'success');
+      setTimeout(hideHudStatus, 1600);
+    } catch (error) {
+      showHudStatus(`❌ Invalid JSON: ${error.message}`, 'error');
+      setTimeout(hideHudStatus, 3000);
+    }
+  });
+
+  // Save current theme to library
+  saveBtn?.addEventListener('click', () => {
+    try {
+      const themeJson = textarea.value;
+      const theme = JSON.parse(themeJson);
+      const name = prompt('Name your theme:', 'My Theme');
+      if (!name) return;
+
+      saveThemeToLibrary(name, theme);
+      renderThemeLibrary();
+      showHudStatus('💾 Theme saved', 'success');
+      setTimeout(hideHudStatus, 1600);
+    } catch (error) {
+      showHudStatus(`❌ ${error.message}`, 'error');
+      setTimeout(hideHudStatus, 2000);
+    }
+  });
+
+  // AI theme generator (placeholder for now)
+  aiBtn?.addEventListener('click', () => {
+    showHudStatus('⚠️ AI theme generator coming soon!', 'info');
+    setTimeout(hideHudStatus, 2000);
+  });
+
+  // Random theme generator (placeholder for now)
+  randomBtn?.addEventListener('click', () => {
+    showHudStatus('⚠️ Random theme generator coming soon!', 'info');
+    setTimeout(hideHudStatus, 2000);
+  });
+
+  // Keyboard shortcut: T for theme drawer
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 't' || e.key === 'T') {
+      if (isOverview || document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA') {
+        return;
+      }
+      e.preventDefault();
+      themeBtn?.click();
+    }
+  });
+}
+
+function loadThemeIntoEditor() {
+  const textarea = document.getElementById('theme-json-editor');
+  if (!textarea) return;
+
+  const theme = getCurrentTheme() || currentTheme;
+  if (theme) {
+    textarea.value = JSON.stringify(theme, null, 2);
+  } else {
+    // Load from CSS variables as fallback
+    const computedTheme = extractCurrentThemeFromCSS();
+    textarea.value = JSON.stringify(computedTheme, null, 2);
+  }
+}
+
+function extractCurrentThemeFromCSS() {
+  const root = document.documentElement;
+  const style = getComputedStyle(root);
+
+  const themeVars = [
+    'color-bg', 'background-surface', 'background-overlay', 'background-opacity',
+    'slide-bg', 'slide-border-color', 'slide-border-width', 'slide-shadow',
+    'color-surface', 'color-surface-alt', 'color-accent', 'badge-bg', 'badge-color',
+    'color-ink', 'color-muted', 'border-width', 'gutter', 'radius',
+    'font-sans', 'font-mono', 'shadow-sm', 'shadow-md', 'shadow-lg', 'shadow-xl'
+  ];
+
+  const theme = {};
+  themeVars.forEach(varName => {
+    const value = style.getPropertyValue(`--${varName}`).trim();
+    if (value) {
+      theme[varName] = value;
+    }
+  });
+
+  return theme;
+}
+
+function renderThemeLibrary() {
+  const list = document.getElementById('theme-library-list');
+  if (!list) return;
+
+  const library = getThemeLibrary();
+
+  if (library.length === 0) {
+    list.innerHTML = '<p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-muted); font-style: italic;">No saved themes yet</p>';
+    return;
+  }
+
+  list.innerHTML = library.map(entry => `
+    <div class="theme-drawer__library-item">
+      <span class="theme-drawer__library-item-name">${entry.name}</span>
+      <div class="theme-drawer__library-item-actions">
+        <button class="theme-drawer__library-item-btn" data-action="load" data-name="${entry.name}">
+          Load
+        </button>
+        <button class="theme-drawer__library-item-btn theme-drawer__library-item-btn--delete" data-action="delete" data-name="${entry.name}">
+          Delete
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  // Wire up load/delete buttons
+  list.querySelectorAll('[data-action="load"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      const library = getThemeLibrary();
+      const entry = library.find(t => t.name === name);
+      if (entry) {
+        applyTheme(entry.theme);
+        setCurrentTheme(entry.theme);
+        loadThemeIntoEditor();
+        showHudStatus(`✨ Loaded "${name}"`, 'success');
+        setTimeout(hideHudStatus, 1600);
+      }
+    });
+  });
+
+  list.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      if (confirm(`Delete theme "${name}"?`)) {
+        deleteThemeFromLibrary(name);
+        renderThemeLibrary();
+        showHudStatus(`🗑️ Deleted "${name}"`, 'success');
+        setTimeout(hideHudStatus, 1600);
+      }
+    });
+  });
+}
+
+// Initialize theme drawer on deck init
+async function initDeckWithTheme() {
+  await loadAndApplyTheme();
+  await loadAutoLinks();
+
+  try {
+    slides = await loadSlides();
+    validateSlides(slides);
+  } catch (error) {
+    console.error("Failed to load slides", error);
+    renderLoadError(error);
+    return;
+  }
+
+  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
+  totalCounter.textContent = renderableSlides.length;
+
+  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
+    renderEmptyState();
+    return;
+  }
+
+  slideElements = renderableSlides.map((slide, index) =>
+    createSlide(slide, index, renderers)
+  );
+
+  const fragment = document.createDocumentFragment();
+  slideElements.forEach((slide) => {
+    slide.style.visibility = "hidden";
+    slide.style.pointerEvents = "none";
+    fragment.appendChild(slide);
+  });
+  slidesRoot.appendChild(fragment);
+  updateOverviewLayout();
+
+  document.addEventListener("keydown", handleKeyboard);
+  slidesRoot.addEventListener("click", handleSlideClick);
+  document.addEventListener("click", handleImageModalTrigger);
+
+  const uploadInput = document.getElementById('deck-upload');
+  if (uploadInput) {
+    uploadInput.addEventListener('change', handleDeckUpload);
+  }
+
+  const addBtn = document.getElementById('add-btn');
+  if (addBtn) {
+    voiceButtons.add = addBtn;
+    addBtn.addEventListener('click', () => toggleVoiceRecording('add'));
+    updateVoiceUI('add', 'idle');
+  }
+
+  const editBtn = document.getElementById('edit-btn');
+  if (editBtn) {
+    voiceButtons.edit = editBtn;
+    editBtn.addEventListener('click', () => toggleVoiceRecording('edit'));
+    updateVoiceUI('edit', 'idle');
+  }
+
+  const overviewBtn = document.getElementById('overview-btn');
+  if (overviewBtn) {
+    overviewBtn.addEventListener('click', toggleOverview);
+  }
+
+  const saveDeckBtn = document.getElementById('save-deck-btn');
+  if (saveDeckBtn) {
+    saveDeckBtn.addEventListener('click', () => {
+      downloadDeck();
+      showHudStatus('💾 Deck downloaded', 'success');
+      setTimeout(hideHudStatus, 1600);
+    });
+  }
+
+  const themeSelect = document.getElementById('theme-select');
+  if (themeSelect) {
+    themeSelect.addEventListener('change', async (event) => {
+      const themePath = event.target.value;
+      showHudStatus('🎨 Switching theme...', 'processing');
+      try {
+        const response = await fetch(themePath, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+        const theme = await response.json();
+        applyTheme(theme);
+        setCurrentTheme(theme);
+        loadThemeIntoEditor(); // Update editor if drawer is open
+        showHudStatus('✨ Theme applied', 'success');
+        setTimeout(hideHudStatus, 1600);
+      } catch (error) {
+        console.error('Failed to apply theme:', error);
+        showHudStatus('❌ Theme failed', 'error');
+        setTimeout(hideHudStatus, 2000);
+      }
+    });
+  }
+
+  // Initialize theme drawer
+  initThemeDrawer();
+
+  setActiveSlide(0);
+  updateOverviewButton();
+  overviewCursor = currentIndex;
 }
