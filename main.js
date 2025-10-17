@@ -186,6 +186,138 @@ Return ONLY valid JSON, no markdown or explanation.`;
   return theme;
 }
 
+// ================================================================
+// Smart Random Theme Generator (Color Theory)
+// ================================================================
+
+function generateRandomTheme() {
+  // Pick a random palette strategy
+  const strategies = ['analogous', 'triadic', 'complementary', 'split-complementary', 'monochromatic'];
+  const strategy = strategies[Math.floor(Math.random() * strategies.length)];
+
+  // Generate base hue (0-360)
+  const baseHue = Math.floor(Math.random() * 360);
+
+  // Generate palette based on strategy
+  const palette = generatePalette(baseHue, strategy);
+
+  // Choose light or dark mode randomly (weighted toward light)
+  const isDark = Math.random() < 0.3;
+
+  // Pick random border style
+  const borderWidths = ['3px', '4px', '5px', '6px'];
+  const borderWidth = borderWidths[Math.floor(Math.random() * borderWidths.length)];
+
+  // Pick random shadow style
+  const shadowStyles = [
+    { sm: '6px 6px 0 rgba(0, 0, 0, 0.25)', md: '10px 10px 0 rgba(0, 0, 0, 0.3)', lg: '16px 16px 0 rgba(0, 0, 0, 0.35)', xl: '24px 24px 0 rgba(0, 0, 0, 0.4)' },
+    { sm: '4px 4px 0 rgba(0, 0, 0, 0.2)', md: '8px 8px 0 rgba(0, 0, 0, 0.25)', lg: '12px 12px 0 rgba(0, 0, 0, 0.3)', xl: '18px 18px 0 rgba(0, 0, 0, 0.35)' },
+    { sm: '0 4px 12px rgba(0, 0, 0, 0.15)', md: '0 8px 24px rgba(0, 0, 0, 0.2)', lg: '0 12px 32px rgba(0, 0, 0, 0.25)', xl: '0 18px 48px rgba(0, 0, 0, 0.3)' },
+  ];
+  const shadows = shadowStyles[Math.floor(Math.random() * shadowStyles.length)];
+
+  // Build theme object
+  const colorBg = isDark ? hslToHex(baseHue, 20, 10) : hslToHex(baseHue, 30, 95);
+  const colorInk = isDark ? '#ffffff' : '#000000';
+  const colorMuted = isDark ? '#a0a0a0' : '#2b2b2b';
+
+  const theme = {
+    'color-bg': colorBg,
+    'background-surface': `radial-gradient(circle at 15% 20%, ${palette.primary}55, transparent 55%), radial-gradient(circle at 85% 30%, ${palette.secondary}55, transparent 55%), radial-gradient(circle at 40% 70%, ${palette.accent}45, transparent 60%), ${colorBg}`,
+    'background-overlay': 'radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.15) 0.5px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0.5px, transparent 1px)',
+    'background-opacity': '0.5',
+    'slide-bg': isDark ? `rgba(${hexToRgb(colorBg).join(', ')}, 0.92)` : `rgba(${hexToRgb(colorBg).join(', ')}, 0.82)`,
+    'slide-border-color': colorInk,
+    'slide-border-width': borderWidth,
+    'slide-shadow': shadows.md,
+    'color-surface': palette.primary,
+    'color-surface-alt': palette.secondary,
+    'color-accent': palette.accent,
+    'badge-bg': palette.accent,
+    'badge-color': colorInk,
+    'color-ink': colorInk,
+    'color-muted': colorMuted,
+    'border-width': borderWidth,
+    'gutter': 'clamp(32px, 5vw, 72px)',
+    'radius': '12px',
+    'font-sans': '"Inter", "Helvetica Neue", Arial, sans-serif',
+    'font-mono': '"Space Mono", "IBM Plex Mono", monospace',
+    'shadow-sm': shadows.sm,
+    'shadow-md': shadows.md,
+    'shadow-lg': shadows.lg,
+    'shadow-xl': shadows.xl
+  };
+
+  return theme;
+}
+
+function generatePalette(baseHue, strategy) {
+  let hues = [];
+
+  switch (strategy) {
+    case 'analogous':
+      hues = [baseHue, (baseHue + 30) % 360, (baseHue + 60) % 360];
+      break;
+    case 'triadic':
+      hues = [baseHue, (baseHue + 120) % 360, (baseHue + 240) % 360];
+      break;
+    case 'complementary':
+      hues = [baseHue, (baseHue + 180) % 360, (baseHue + 30) % 360];
+      break;
+    case 'split-complementary':
+      hues = [baseHue, (baseHue + 150) % 360, (baseHue + 210) % 360];
+      break;
+    case 'monochromatic':
+      hues = [baseHue, baseHue, baseHue];
+      break;
+  }
+
+  // Generate colors with varied saturation/lightness for depth
+  const primary = hslToHex(hues[0], 70 + Math.random() * 25, 55 + Math.random() * 15);
+  const secondary = hslToHex(hues[1], 65 + Math.random() * 25, 60 + Math.random() * 15);
+  const accent = hslToHex(hues[2], 75 + Math.random() * 20, 50 + Math.random() * 20);
+
+  return { primary, secondary, accent };
+}
+
+function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+
+  let r = 0, g = 0, b = 0;
+
+  if (h >= 0 && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (h >= 60 && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (h >= 120 && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (h >= 180 && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (h >= 240 && h < 300) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+
+  r = Math.round((r + m) * 255);
+  g = Math.round((g + m) * 255);
+  b = Math.round((b + m) * 255);
+
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [255, 255, 255];
+}
+
 initDeckWithTheme();
 
 async function initDeck() {
@@ -3278,10 +3410,24 @@ function initThemeDrawer() {
     }
   });
 
-  // Random theme generator (placeholder for now)
+  // Random theme generator
   randomBtn?.addEventListener('click', () => {
-    showHudStatus('⚠️ Random theme generator coming soon!', 'info');
-    setTimeout(hideHudStatus, 2000);
+    try {
+      showHudStatus('🎲 Generating random theme...', 'processing');
+
+      const theme = generateRandomTheme();
+
+      // Apply and load into editor
+      applyTheme(theme);
+      setCurrentTheme(theme);
+      loadThemeIntoEditor();
+
+      showHudStatus('✨ Random theme applied!', 'success');
+      setTimeout(hideHudStatus, 1600);
+    } catch (error) {
+      showHudStatus(`❌ ${error.message}`, 'error');
+      setTimeout(hideHudStatus, 2000);
+    }
   });
 
   // Keyboard shortcut: T for theme drawer
