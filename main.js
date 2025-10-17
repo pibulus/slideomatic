@@ -92,6 +92,100 @@ function getCurrentTheme() {
   }
 }
 
+// ================================================================
+// AI Theme Generation
+// ================================================================
+
+async function generateThemeWithAI(description) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
+  }
+
+  const prompt = `You are a theme designer for a presentation app called Slide-O-Matic.
+
+Generate a complete theme JSON based on this description:
+"${description}"
+
+The theme should use these CSS variables (all are required):
+
+{
+  "color-bg": "<main background color - usually light>",
+  "background-surface": "<gradient or solid for backdrop>",
+  "background-overlay": "<subtle texture overlay>",
+  "background-opacity": "<0-1 for overlay opacity>",
+  "slide-bg": "<slide background with rgba for transparency>",
+  "slide-border-color": "<slide border color>",
+  "slide-border-width": "<border thickness, e.g. '5px'>",
+  "slide-shadow": "<CSS box-shadow>",
+  "color-surface": "<primary accent color>",
+  "color-surface-alt": "<secondary accent color>",
+  "color-accent": "<highlight color for badges>",
+  "badge-bg": "<badge background>",
+  "badge-color": "<badge text color>",
+  "color-ink": "<main text color>",
+  "color-muted": "<muted text color>",
+  "border-width": "<default border width>",
+  "gutter": "<spacing - use clamp()>",
+  "radius": "<border radius>",
+  "font-sans": "<sans-serif font stack>",
+  "font-mono": "<monospace font stack>",
+  "shadow-sm": "<small shadow>",
+  "shadow-md": "<medium shadow>",
+  "shadow-lg": "<large shadow>",
+  "shadow-xl": "<extra large shadow>"
+}
+
+Design Guidelines:
+- Create harmonious color palettes (60-30-10 rule)
+- Ensure good contrast (4.5:1 minimum for text)
+- Use rgba() for transparent backgrounds
+- Shadows should match the theme mood (hard shadows for punk/bold, soft for calm)
+- Choose appropriate fonts that match the vibe
+- Keep gradients subtle and tasteful
+
+Return ONLY valid JSON, no markdown or explanation.`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 2048,
+        }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Gemini API call failed');
+  }
+
+  const result = await response.json();
+  const generatedText = result.candidates[0]?.content?.parts[0]?.text;
+  if (!generatedText) {
+    throw new Error('No response from Gemini');
+  }
+
+  // Extract JSON from response (might be wrapped in markdown)
+  const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
+                    generatedText.match(/\{[\s\S]*\}/);
+
+  const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
+  const theme = JSON.parse(jsonText);
+
+  return theme;
+}
+
 initDeckWithTheme();
 
 async function initDeck() {
@@ -3158,10 +3252,30 @@ function initThemeDrawer() {
     }
   });
 
-  // AI theme generator (placeholder for now)
-  aiBtn?.addEventListener('click', () => {
-    showHudStatus('⚠️ AI theme generator coming soon!', 'info');
-    setTimeout(hideHudStatus, 2000);
+  // AI theme generator
+  aiBtn?.addEventListener('click', async () => {
+    const description = prompt('Describe your theme:\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
+    if (!description) return;
+
+    try {
+      showHudStatus('✨ Generating theme...', 'processing');
+      aiBtn.disabled = true;
+
+      const theme = await generateThemeWithAI(description);
+
+      // Apply and load into editor
+      applyTheme(theme);
+      setCurrentTheme(theme);
+      loadThemeIntoEditor();
+
+      showHudStatus('✨ Theme generated!', 'success');
+      setTimeout(hideHudStatus, 1600);
+    } catch (error) {
+      showHudStatus(`❌ ${error.message}`, 'error');
+      setTimeout(hideHudStatus, 3000);
+    } finally {
+      aiBtn.disabled = false;
+    }
   });
 
   // Random theme generator (placeholder for now)
