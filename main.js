@@ -31,6 +31,14 @@ let overviewColumnCount = 0;
 let overviewCursor = 0;
 let lastOverviewHighlight = 0;
 let currentTheme = null;
+const slideScrollPositions = new Map();
+let slideIndexPanel = null;
+let slideIndexContent = null;
+let slideIndexList = null;
+let slideIndexEntries = [];
+let isSlideIndexOpen = false;
+let slideIndexPreviousFocus = null;
+let lazyImageObserver = null;
 
 // ================================================================
 // Theme Library - localStorage persistence
@@ -38,6 +46,334 @@ let currentTheme = null;
 
 const THEME_LIBRARY_KEY = 'slideomatic_themes';
 const CURRENT_THEME_KEY = 'slideomatic_current_theme';
+const REQUIRED_THEME_TOKENS = {
+  "color-bg": "#fffbf3",
+  "background-surface": "radial-gradient(circle at 15% 20%, rgba(255, 159, 243, 0.35), transparent 55%), radial-gradient(circle at 85% 30%, rgba(136, 212, 255, 0.35), transparent 55%), radial-gradient(circle at 40% 70%, rgba(254, 202, 87, 0.25), transparent 60%), radial-gradient(circle at 80% 90%, rgba(255, 159, 243, 0.18), transparent 55%), #fffbf3",
+  "background-overlay": "radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.15) 0.5px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0.5px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.08) 1px, transparent 2px)",
+  "background-opacity": "0.5",
+  "slide-bg": "rgba(255, 251, 243, 0.82)",
+  "slide-border-color": "#1b1b1b",
+  "slide-border-width": "5px",
+  "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)",
+  "color-surface": "#ff9ff3",
+  "color-surface-alt": "#88d4ff",
+  "color-accent": "#feca57",
+  "badge-bg": "#feca57",
+  "badge-color": "#1b1b1b",
+  "color-ink": "#000000",
+  "color-muted": "#2b2b2b",
+  "border-width": "5px",
+  "gutter": "clamp(32px, 5vw, 72px)",
+  "radius": "12px",
+  "font-sans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+  "font-mono": "\"Space Mono\", \"IBM Plex Mono\", monospace",
+  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
+  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
+  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
+  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
+};
+const FOCUSABLE_SELECTORS = [
+  'a[href]',
+  'area[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+function normalizeThemeTokens(theme) {
+  const base = { ...REQUIRED_THEME_TOKENS };
+  const extras = {};
+  if (theme && typeof theme === 'object') {
+    Object.entries(theme).forEach(([token, value]) => {
+      if (value == null) return;
+      const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+      if (Object.prototype.hasOwnProperty.call(base, token)) {
+        base[token] = stringValue;
+      } else {
+        extras[token] = stringValue;
+      }
+    });
+  }
+
+  const missingTokens = Object.keys(REQUIRED_THEME_TOKENS).filter(
+    (key) => !theme || theme[key] == null
+  );
+  if (missingTokens.length) {
+    console.warn(
+      `Theme missing tokens: ${missingTokens.join(', ')}. Using defaults for them.`
+    );
+  }
+
+  return { ...base, ...extras };
+}
+
+function getFocusableElements(container) {
+  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
+    (el) =>
+      !el.hasAttribute('disabled') &&
+      el.getAttribute('tabindex') !== '-1' &&
+      typeof el.focus === 'function' &&
+      (el.offsetWidth > 0 ||
+        el.offsetHeight > 0 ||
+        el.getClientRects().length > 0)
+  );
+}
+
+function trapFocus(event, container) {
+  if (event.key !== 'Tab') return;
+  const focusable = getFocusableElements(container);
+  if (focusable.length === 0) {
+    event.preventDefault();
+    container.setAttribute('tabindex', '-1');
+    container.focus({ preventScroll: true });
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const isShift = event.shiftKey;
+  const active = document.activeElement;
+
+  if (!isShift && active === last) {
+    event.preventDefault();
+    first.focus();
+  } else if (isShift && active === first) {
+    event.preventDefault();
+    last.focus();
+  }
+}
+
+function focusFirstElement(container) {
+  const focusable = getFocusableElements(container);
+  if (focusable.length > 0) {
+    focusable[0].focus();
+  } else {
+    container.setAttribute('tabindex', '-1');
+    container.focus({ preventScroll: true });
+  }
+}
+
+function getLazyImageObserver() {
+  if (lazyImageObserver) return lazyImageObserver;
+  lazyImageObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      loadLazyImage(img);
+      if (lazyImageObserver) {
+        lazyImageObserver.unobserve(img);
+      }
+    });
+  }, { rootMargin: '200px 0px' });
+  return lazyImageObserver;
+}
+
+function registerLazyImage(img, src) {
+  if (!src) return;
+  img.dataset.src = src;
+  img.src = TRANSPARENT_PIXEL;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.classList.add('is-loading');
+  img.addEventListener('load', () => {
+    img.classList.remove('is-loading');
+  }, { once: true });
+  getLazyImageObserver().observe(img);
+}
+
+function loadLazyImage(img) {
+  if (!img || !img.dataset || !img.dataset.src) return;
+  const actualSrc = img.dataset.src;
+  delete img.dataset.src;
+  img.src = actualSrc;
+  if (lazyImageObserver) {
+    lazyImageObserver.unobserve(img);
+  }
+}
+
+function ensureSlideIndexPanel() {
+  if (slideIndexPanel) return;
+
+  slideIndexPanel = document.createElement('div');
+  slideIndexPanel.id = 'slide-index';
+  slideIndexPanel.className = 'slide-index';
+  slideIndexPanel.setAttribute('aria-hidden', 'true');
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'slide-index__backdrop';
+  backdrop.setAttribute('data-index-close', 'true');
+
+  slideIndexContent = document.createElement('aside');
+  slideIndexContent.className = 'slide-index__panel';
+  slideIndexContent.setAttribute('role', 'dialog');
+  slideIndexContent.setAttribute('aria-modal', 'true');
+  slideIndexContent.setAttribute('aria-label', 'Slide index');
+
+  const header = document.createElement('header');
+  header.className = 'slide-index__header';
+
+  const title = document.createElement('h2');
+  title.className = 'slide-index__title';
+  title.textContent = 'Slide Index';
+  header.appendChild(title);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'slide-index__close';
+  closeBtn.setAttribute('aria-label', 'Close slide index');
+  closeBtn.setAttribute('data-index-close', 'true');
+  closeBtn.textContent = '×';
+  header.appendChild(closeBtn);
+
+  slideIndexContent.appendChild(header);
+
+  slideIndexList = document.createElement('ol');
+  slideIndexList.className = 'slide-index__list';
+  slideIndexContent.appendChild(slideIndexList);
+
+  const footer = document.createElement('div');
+  footer.className = 'slide-index__footer';
+  footer.textContent = 'Jump anywhere without leaving flow.';
+  slideIndexContent.appendChild(footer);
+
+  slideIndexPanel.append(backdrop, slideIndexContent);
+  document.body.appendChild(slideIndexPanel);
+
+  slideIndexPanel.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.indexClose === 'true') {
+      closeSlideIndex();
+    }
+  });
+}
+
+function buildSlideIndex() {
+  ensureSlideIndexPanel();
+  if (!slideIndexList) return;
+
+  slideIndexEntries = slides
+    .map((slide, index) => ({ slide, index }))
+    .filter(({ slide }) => slide && slide.type !== '_schema');
+
+  slideIndexList.innerHTML = '';
+
+  if (slideIndexEntries.length === 0) {
+    const emptyState = document.createElement('li');
+    emptyState.className = 'slide-index__empty';
+    emptyState.textContent = 'No slides available.';
+    slideIndexList.appendChild(emptyState);
+    return;
+  }
+
+  slideIndexEntries.forEach(({ slide, index }) => {
+    const item = document.createElement('li');
+    item.className = 'slide-index__item';
+    item.dataset.slideIndex = String(index);
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'slide-index__button';
+
+    const number = document.createElement('span');
+    number.className = 'slide-index__number';
+    number.textContent = String(index + 1).padStart(2, '0');
+
+    const label = document.createElement('span');
+    label.className = 'slide-index__label';
+    label.textContent = deriveSlideLabel(slide, index);
+
+    button.append(number, label);
+    button.addEventListener('click', () => {
+      closeSlideIndex();
+      setActiveSlide(index);
+    });
+
+    item.appendChild(button);
+    slideIndexList.appendChild(item);
+  });
+
+  updateSlideIndexHighlight(currentIndex);
+}
+
+function deriveSlideLabel(slide, index) {
+  const primary = slide.title || slide.headline || slide.quote || slide.description;
+  const secondary = slide.badge;
+  let text = primary || secondary || `Slide ${index + 1}`;
+  if (secondary && primary) {
+    text = `${secondary} — ${primary}`;
+  }
+  return text.length > 80 ? `${text.slice(0, 77)}…` : text;
+}
+
+function updateSlideIndexHighlight(activeIndex) {
+  if (!slideIndexList) return;
+  slideIndexList.querySelectorAll('.slide-index__item.is-current').forEach((item) => {
+    item.classList.remove('is-current');
+  });
+  const currentItem = slideIndexList.querySelector(`.slide-index__item[data-slide-index="${activeIndex}"]`);
+  if (currentItem) {
+    currentItem.classList.add('is-current');
+    if (isSlideIndexOpen) {
+      currentItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+}
+
+function openSlideIndex() {
+  ensureSlideIndexPanel();
+  if (!slideIndexPanel || isSlideIndexOpen) return;
+  buildSlideIndex();
+
+  isSlideIndexOpen = true;
+  slideIndexPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  slideIndexPanel.classList.add('is-open');
+  slideIndexPanel.setAttribute('aria-hidden', 'false');
+  document.addEventListener('keydown', handleSlideIndexKeydown, true);
+  updateSlideIndexHighlight(currentIndex);
+
+  const currentButton = slideIndexList?.querySelector(`.slide-index__item[data-slide-index="${currentIndex}"] button`);
+  requestAnimationFrame(() => {
+    (currentButton || slideIndexContent)?.focus({ preventScroll: true });
+  });
+}
+
+function closeSlideIndex() {
+  if (!slideIndexPanel || !isSlideIndexOpen) return;
+
+  isSlideIndexOpen = false;
+  slideIndexPanel.classList.remove('is-open');
+  slideIndexPanel.setAttribute('aria-hidden', 'true');
+  document.removeEventListener('keydown', handleSlideIndexKeydown, true);
+
+  const target = slideIndexPreviousFocus && typeof slideIndexPreviousFocus.focus === 'function'
+    ? slideIndexPreviousFocus
+    : document.getElementById('index-btn');
+  requestAnimationFrame(() => target?.focus());
+  slideIndexPreviousFocus = null;
+}
+
+function toggleSlideIndex() {
+  if (isSlideIndexOpen) {
+    closeSlideIndex();
+  } else {
+    openSlideIndex();
+  }
+}
+
+function handleSlideIndexKeydown(event) {
+  if (!isSlideIndexOpen || !slideIndexContent) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeSlideIndex();
+    return;
+  }
+  if (event.key === 'Tab') {
+    trapFocus(event, slideIndexContent);
+  }
+}
 
 function getThemeLibrary() {
   try {
@@ -53,9 +389,11 @@ function saveThemeToLibrary(name, theme) {
   const library = getThemeLibrary();
   const existing = library.findIndex(t => t.name === name);
 
+  const normalizedTheme = normalizeThemeTokens(theme);
+
   const themeEntry = {
     name,
-    theme,
+    theme: normalizedTheme,
     created: existing >= 0 ? library[existing].created : Date.now(),
     updated: Date.now()
   };
@@ -77,17 +415,22 @@ function deleteThemeFromLibrary(name) {
 }
 
 function setCurrentTheme(theme) {
-  currentTheme = theme;
-  localStorage.setItem(CURRENT_THEME_KEY, JSON.stringify(theme));
+  const normalized = normalizeThemeTokens(theme);
+  currentTheme = normalized;
+  localStorage.setItem(CURRENT_THEME_KEY, JSON.stringify(normalized));
 }
 
 function getCurrentTheme() {
   if (currentTheme) return currentTheme;
   try {
     const stored = localStorage.getItem(CURRENT_THEME_KEY);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    currentTheme = normalizeThemeTokens(parsed);
+    return currentTheme;
   } catch (error) {
     console.warn('Failed to load current theme:', error);
+    localStorage.removeItem(CURRENT_THEME_KEY);
     return null;
   }
 }
@@ -102,10 +445,14 @@ async function generateThemeWithAI(description) {
     throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
   }
 
+  const sanitizedDescription = typeof description === 'string'
+    ? description.replace(/`/g, "'")
+    : '';
+
   const prompt = `You are a theme designer for a presentation app called Slide-O-Matic.
 
-Generate a complete theme JSON based on this description:
-"${description}"
+User description:
+${sanitizedDescription || '(no additional description provided)'}
 
 The theme should use these CSS variables (all are required):
 
@@ -183,7 +530,7 @@ Return ONLY valid JSON, no markdown or explanation.`;
   const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
   const theme = JSON.parse(jsonText);
 
-  return theme;
+  return normalizeThemeTokens(theme);
 }
 
 // ================================================================
@@ -355,6 +702,7 @@ async function initDeck() {
   });
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
+  buildSlideIndex();
 
   document.addEventListener("keydown", handleKeyboard);
   slidesRoot.addEventListener("click", handleSlideClick);
@@ -381,6 +729,11 @@ async function initDeck() {
     updateVoiceUI('edit', 'idle');
   }
 
+  const indexBtn = document.getElementById('index-btn');
+  if (indexBtn) {
+    indexBtn.addEventListener('click', toggleSlideIndex);
+  }
+
   const overviewBtn = document.getElementById('overview-btn');
   if (overviewBtn) {
     overviewBtn.addEventListener('click', toggleOverview);
@@ -404,7 +757,8 @@ async function initDeck() {
         const response = await fetch(themePath, { cache: "no-store" });
         if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
         const theme = await response.json();
-        applyTheme(theme);
+        const normalizedTheme = applyTheme(theme);
+        setCurrentTheme(normalizedTheme);
         showHudStatus('✨ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
@@ -433,7 +787,8 @@ async function loadAndApplyTheme() {
     const response = await fetch(resolveThemePath(), { cache: "no-store" });
     if (!response.ok) return;
     const theme = await response.json();
-    applyTheme(theme);
+    const normalizedTheme = applyTheme(theme);
+    setCurrentTheme(normalizedTheme);
   } catch (error) {
     console.warn("Unable to load custom theme, using defaults.", error);
   }
@@ -454,11 +809,14 @@ function resolveThemePath() {
 
 function applyTheme(theme) {
   if (!theme || typeof theme !== "object") return;
+  const normalized = normalizeThemeTokens(theme);
+  currentTheme = normalized;
   const root = document.documentElement;
-  Object.entries(theme).forEach(([token, value]) => {
+  Object.entries(normalized).forEach(([token, value]) => {
     if (value == null) return;
     root.style.setProperty(`--${token}`, value);
   });
+  return normalized;
 }
 
 function resolveSlidesPath() {
@@ -657,6 +1015,13 @@ function handleKeyboard(event) {
     return;
   }
 
+  if (lowerKey === "i") {
+    event.preventDefault();
+    flashKeyFeedback('I');
+    toggleSlideIndex();
+    return;
+  }
+
   if (lowerKey === "d") {
     event.preventDefault();
     flashKeyFeedback('D');
@@ -746,6 +1111,9 @@ function toggleOverview() {
 }
 
 function enterOverview() {
+  if (isSlideIndexOpen) {
+    closeSlideIndex();
+  }
   document.body.dataset.mode = "overview";
   updateOverviewLayout();
   slideElements.forEach((slide) => {
@@ -757,6 +1125,10 @@ function enterOverview() {
   isOverview = true;
   overviewCursor = clamp(currentIndex, 0, slideElements.length - 1);
   highlightOverviewSlide(overviewCursor);
+  const focusedSlide = slideElements[overviewCursor];
+  if (focusedSlide) {
+    requestAnimationFrame(() => focusedSlide.focus({ preventScroll: true }));
+  }
   updateOverviewButton();
 }
 
@@ -816,6 +1188,7 @@ function highlightOverviewSlide(index, { scroll = true } = {}) {
   const previous = slideElements[lastOverviewHighlight];
   if (previous) {
     previous.classList.remove('is-active');
+    previous.tabIndex = -1;
   }
 
   overviewCursor = clamped;
@@ -869,13 +1242,16 @@ window.addEventListener('resize', () => {
 
 function setActiveSlide(nextIndex) {
   const clamped = clamp(nextIndex, 0, slideElements.length - 1);
-  if (clamped === currentIndex && slideElements[currentIndex].classList.contains("is-active")) {
+  if (!isOverview && clamped === currentIndex && slideElements[currentIndex].classList.contains("is-active")) {
     updateHud();
     return;
   }
 
   // Save reference to old slide before changing index
   const oldSlide = slideElements[currentIndex];
+  if (oldSlide) {
+    slideScrollPositions.set(currentIndex, oldSlide.scrollTop);
+  }
 
   // Remove active from old slide
   oldSlide.classList.remove("is-active");
@@ -899,7 +1275,9 @@ function setActiveSlide(nextIndex) {
   newSlide.style.visibility = "visible";
   newSlide.style.pointerEvents = isOverview ? "none" : "auto";
   newSlide.setAttribute("aria-hidden", "false");
-  newSlide.scrollTop = 0;
+  const previousScroll = slideScrollPositions.get(currentIndex) || 0;
+  newSlide.scrollTop = previousScroll;
+  newSlide.querySelectorAll('img[data-src]').forEach(loadLazyImage);
   slideElements[currentIndex].classList.add("is-active");
   slideElements[currentIndex].scrollIntoView({ block: "center" });
   overviewCursor = currentIndex;
@@ -907,6 +1285,7 @@ function setActiveSlide(nextIndex) {
   updateOverviewButton();
 
   updateHud();
+  updateSlideIndexHighlight(currentIndex);
   preloadSlideImages(currentIndex);
   preloadSlideImages(currentIndex + 1);
   preloadSlideImages(currentIndex + 2);
@@ -1027,6 +1406,9 @@ function preloadSlideImages(index) {
   if (!slide) return;
   const images = slide.querySelectorAll("img[data-modal-src]");
   images.forEach((img) => {
+    if (img.dataset && img.dataset.src) {
+      loadLazyImage(img);
+    }
     const src = img.dataset.modalSrc || img.currentSrc || img.src;
     preloadImage(src);
   });
@@ -1517,9 +1899,11 @@ function createImage(image, className = "slide__image", options = {}) {
   }
   const img = document.createElement("img");
   img.className = className;
-  img.src = image.src;
+  const actualSrc = image.src;
+  const modalSrc = image.modalSrc ?? actualSrc;
+  const shouldLazyLoad = typeof actualSrc === "string" && !actualSrc.startsWith("data:");
   img.alt = image.alt ?? "";
-  img.dataset.modalSrc = image.modalSrc ?? image.src;
+  img.dataset.modalSrc = modalSrc;
   if (image.alt) {
     img.dataset.modalAlt = image.alt;
   }
@@ -1529,6 +1913,11 @@ function createImage(image, className = "slide__image", options = {}) {
     img.loading = "lazy";
   }
   img.decoding = image.decoding ?? "async";
+  if (shouldLazyLoad) {
+    registerLazyImage(img, actualSrc);
+  } else {
+    img.src = actualSrc;
+  }
   if (image.aspectRatio) {
     img.style.aspectRatio = image.aspectRatio;
   }
@@ -2229,6 +2618,7 @@ function reloadDeck(options = {}) {
   const { targetIndex = currentIndex, focus = true } = options;
   // Clear existing slides
   slidesRoot.innerHTML = '';
+  slideScrollPositions.clear();
 
   // Filter out schema slides
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
@@ -2253,6 +2643,7 @@ function reloadDeck(options = {}) {
   });
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
+  buildSlideIndex();
 
   const clampedIndex = clamp(
     typeof targetIndex === "number" ? targetIndex : 0,
@@ -2272,39 +2663,71 @@ function reloadDeck(options = {}) {
 // ===================================================================
 
 let isEditDrawerOpen = false;
+let editDrawerPreviousFocus = null;
+
+document.getElementById('edit-drawer')?.setAttribute('aria-hidden', 'true');
+
+const handleEditDrawerKeydown = (event) => {
+  const drawer = document.getElementById('edit-drawer');
+  if (!drawer || !isEditDrawerOpen) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeEditDrawer();
+  } else if (event.key === 'Tab') {
+    trapFocus(event, drawer);
+  }
+};
 
 function toggleEditDrawer() {
-  const drawer = document.getElementById('edit-drawer');
-  if (!drawer) return;
-
-  isEditDrawerOpen = !isEditDrawerOpen;
-
   if (isEditDrawerOpen) {
-    drawer.classList.add('is-open', 'is-springing');
-    drawer.addEventListener(
-      'animationend',
-      () => drawer.classList.remove('is-springing'),
-      { once: true }
-    );
-    renderEditForm();
-    // Setup close button
-    const closeBtn = drawer.querySelector('.edit-drawer__close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeEditDrawer);
-    }
+    closeEditDrawer();
   } else {
-    drawer.classList.remove('is-open');
-    drawer.classList.remove('is-springing');
+    openEditDrawer();
   }
 }
 
-function closeEditDrawer() {
-  isEditDrawerOpen = false;
+function openEditDrawer() {
   const drawer = document.getElementById('edit-drawer');
-  if (drawer) {
-    drawer.classList.remove('is-open');
-    drawer.classList.remove('is-springing');
+  if (!drawer || isEditDrawerOpen) return;
+
+  isEditDrawerOpen = true;
+  editDrawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  drawer.classList.add('is-open', 'is-springing');
+  drawer.setAttribute('aria-hidden', 'false');
+  drawer.addEventListener(
+    'animationend',
+    () => drawer.classList.remove('is-springing'),
+    { once: true }
+  );
+
+  renderEditForm();
+
+  const closeBtn = drawer.querySelector('.edit-drawer__close');
+  if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    closeBtn.addEventListener('click', closeEditDrawer);
+    closeBtn.dataset.listenerAttached = 'true';
   }
+
+  focusFirstElement(drawer);
+  document.addEventListener('keydown', handleEditDrawerKeydown, true);
+}
+
+function closeEditDrawer() {
+  const drawer = document.getElementById('edit-drawer');
+  if (!drawer || !isEditDrawerOpen) return;
+
+  isEditDrawerOpen = false;
+  drawer.classList.remove('is-open');
+  drawer.classList.remove('is-springing');
+  drawer.setAttribute('aria-hidden', 'true');
+  document.removeEventListener('keydown', handleEditDrawerKeydown, true);
+
+  const target = editDrawerPreviousFocus && typeof editDrawerPreviousFocus.focus === 'function'
+    ? editDrawerPreviousFocus
+    : document.getElementById('edit-btn');
+  requestAnimationFrame(() => target?.focus());
+  editDrawerPreviousFocus = null;
 }
 
 function renderEditForm() {
@@ -2907,11 +3330,14 @@ AVAILABLE SLIDE TYPES:
 7. "gallery" - Visual gallery
    Fields: type, headline, items (array of {image, label, copy})
 
-8. "image" - Full-bleed image slide
-   Fields: type, image {src, alt}, caption
-
-9. "typeface" - Font showcase
-   Fields: type, headline, fonts (array of {name, font, sample})
+  8. "image" - Full-bleed image slide
+     Fields: type, image {src, alt}, caption
+  
+  9. "graph" - AI-generated infographic/graph
+     Fields: type, title, description, orientation (landscape/portrait/square), imageData (base64)
+  
+  10. "typeface" - Font showcase
+      Fields: type, headline, fonts (array of {name, font, sample})
 
 AVAILABLE FONTS (use font field on ANY slide or in typeface showcase):
 - Presets: "sans" (Inter), "mono" (Space Mono), "grotesk" (Space Grotesk), "jetbrains" (JetBrains Mono), "pixel" (Press Start 2P)
@@ -3133,10 +3559,11 @@ async function processVoiceToTheme(audioBlob) {
     const themeData = JSON.parse(jsonText);
 
     // Apply the new theme
-    applyTheme(themeData);
+    const normalizedTheme = applyTheme(themeData);
 
     // Download theme.json automatically
-    downloadTheme(themeData);
+    downloadTheme(normalizedTheme);
+    setCurrentTheme(normalizedTheme);
 
     await ensureMinimumDelay(uiStart, 1500);
     showHudStatus('🎨 Theme created!', 'success');
@@ -3607,29 +4034,74 @@ function initThemeDrawer() {
 
   if (!themeDrawer) return;
 
+  themeDrawer.setAttribute('aria-hidden', 'true');
+  themeBtn?.setAttribute('aria-expanded', 'false');
+
+  let previousFocus = null;
+
+  const handleDrawerKeydown = (event) => {
+    if (!themeDrawer.classList.contains('is-open')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeThemeDrawer();
+    } else if (event.key === 'Tab') {
+      trapFocus(event, themeDrawer);
+    }
+  };
+
+  const openThemeDrawer = () => {
+    if (themeDrawer.classList.contains('is-open')) return;
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    themeDrawer.classList.add('is-open', 'is-springing');
+    themeDrawer.setAttribute('aria-hidden', 'false');
+    themeBtn?.setAttribute('aria-expanded', 'true');
+    themeDrawer.addEventListener(
+      'animationend',
+      () => themeDrawer.classList.remove('is-springing'),
+      { once: true }
+    );
+    loadThemeIntoEditor();
+    renderThemeLibrary();
+    focusFirstElement(themeDrawer);
+    document.addEventListener('keydown', handleDrawerKeydown, true);
+  };
+
+  const closeThemeDrawer = () => {
+    if (!themeDrawer.classList.contains('is-open')) return;
+    themeDrawer.classList.remove('is-open');
+    themeDrawer.classList.remove('is-springing');
+    themeDrawer.setAttribute('aria-hidden', 'true');
+    themeBtn?.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('keydown', handleDrawerKeydown, true);
+    const target = previousFocus && typeof previousFocus.focus === 'function'
+      ? previousFocus
+      : themeBtn;
+    requestAnimationFrame(() => target?.focus());
+    previousFocus = null;
+  };
+
   // Open/close theme drawer
   themeBtn?.addEventListener('click', () => {
     const isOpen = themeDrawer.classList.contains('is-open');
     if (!isOpen) {
-      themeDrawer.classList.add('is-open', 'is-springing');
-      loadThemeIntoEditor();
-      renderThemeLibrary();
+      openThemeDrawer();
     } else {
-      themeDrawer.classList.remove('is-open', 'is-springing');
+      closeThemeDrawer();
     }
   });
 
-  closeBtn?.addEventListener('click', () => {
-    themeDrawer.classList.remove('is-open', 'is-springing');
-  });
+  if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    closeBtn.addEventListener('click', closeThemeDrawer);
+    closeBtn.dataset.listenerAttached = 'true';
+  }
 
   // Apply theme from textarea
   applyBtn?.addEventListener('click', async () => {
     try {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
-      applyTheme(theme);
-      setCurrentTheme(theme);
+      const normalizedTheme = applyTheme(theme);
+      setCurrentTheme(normalizedTheme);
       showHudStatus('✨ Theme applied', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3668,8 +4140,8 @@ function initThemeDrawer() {
       const theme = await generateThemeWithAI(description);
 
       // Apply and load into editor
-      applyTheme(theme);
-      setCurrentTheme(theme);
+      const normalizedTheme = applyTheme(theme);
+      setCurrentTheme(normalizedTheme);
       loadThemeIntoEditor();
 
       showHudStatus('✨ Theme generated!', 'success');
@@ -3690,8 +4162,8 @@ function initThemeDrawer() {
       const theme = generateRandomTheme();
 
       // Apply and load into editor
-      applyTheme(theme);
-      setCurrentTheme(theme);
+      const normalizedTheme = applyTheme(theme);
+      setCurrentTheme(normalizedTheme);
       loadThemeIntoEditor();
 
       showHudStatus('✨ Random theme applied!', 'success');
@@ -3784,8 +4256,8 @@ function renderThemeLibrary() {
       const library = getThemeLibrary();
       const entry = library.find(t => t.name === name);
       if (entry) {
-        applyTheme(entry.theme);
-        setCurrentTheme(entry.theme);
+        const normalizedTheme = applyTheme(entry.theme);
+        setCurrentTheme(normalizedTheme);
         loadThemeIntoEditor();
         showHudStatus(`✨ Loaded "${name}"`, 'success');
         setTimeout(hideHudStatus, 1600);
@@ -3888,8 +4360,8 @@ async function initDeckWithTheme() {
         const response = await fetch(themePath, { cache: "no-store" });
         if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
         const theme = await response.json();
-        applyTheme(theme);
-        setCurrentTheme(theme);
+        const normalizedTheme = applyTheme(theme);
+        setCurrentTheme(normalizedTheme);
         loadThemeIntoEditor(); // Update editor if drawer is open
         showHudStatus('✨ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
