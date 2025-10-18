@@ -2553,8 +2553,7 @@ function renderEditForm() {
       }
 
       const insertIndex = currentIndex + 1;
-      slides.splice(insertIndex, 0, template);
-      reloadDeck({ targetIndex: insertIndex });
+      insertSlideAt(insertIndex, template, { activate: true });
       showHudStatus(`✨ Added ${type} template`, 'success');
       setTimeout(hideHudStatus, 1600);
       renderEditForm();
@@ -2591,13 +2590,149 @@ function duplicateCurrentSlide() {
 
   // Insert after current slide
   const newIndex = currentIndex + 1;
-  slides.splice(newIndex, 0, duplicatedSlide);
-
-  reloadDeck({ targetIndex: newIndex });
+  insertSlideAt(newIndex, duplicatedSlide, { activate: true });
   closeEditDrawer();
   showHudStatus('✨ Slide duplicated', 'success');
   setTimeout(hideHudStatus, 1600);
   console.log('✓ Slide duplicated');
+}
+
+function shiftScrollPositions(startIndex, delta) {
+  if (!slideScrollPositions.size || delta === 0) return;
+  const updated = new Map();
+  slideScrollPositions.forEach((value, key) => {
+    if (key >= startIndex) {
+      const nextKey = key + delta;
+      if (nextKey >= 0) {
+        updated.set(nextKey, value);
+      }
+    } else {
+      updated.set(key, value);
+    }
+  });
+  slideScrollPositions.clear();
+  updated.forEach((value, key) => slideScrollPositions.set(key, value));
+}
+
+function reindexSlides(startIndex = 0) {
+  for (let index = Math.max(0, startIndex); index < slideElements.length; index += 1) {
+    const slideElement = slideElements[index];
+    if (!slideElement) continue;
+    slideElement.dataset.index = index;
+    const autoBadge = slideElement.querySelector(':scope > .badge[data-badge-auto="true"]');
+    if (autoBadge) {
+      autoBadge.textContent = `+ Slide ${index + 1}`;
+    }
+  }
+}
+
+function insertSlideAt(index, slideData, options = {}) {
+  const { activate = false } = options;
+  if (index < 0) index = 0;
+  if (index > slides.length) index = slides.length;
+
+  slides.splice(index, 0, slideData);
+  shiftScrollPositions(index, 1);
+
+  const newSlideElement = createSlide(slideData, index, renderers);
+  if (isOverview) {
+    newSlideElement.style.visibility = 'visible';
+    newSlideElement.style.pointerEvents = 'auto';
+    newSlideElement.setAttribute('aria-hidden', 'false');
+    newSlideElement.tabIndex = 0;
+  } else {
+    newSlideElement.style.visibility = 'hidden';
+    newSlideElement.style.pointerEvents = 'none';
+    newSlideElement.setAttribute('aria-hidden', 'true');
+    newSlideElement.tabIndex = -1;
+  }
+
+  const existingElement = slideElements[index];
+  if (existingElement && existingElement.parentElement) {
+    existingElement.parentElement.insertBefore(newSlideElement, existingElement);
+  } else {
+    slidesRoot.appendChild(newSlideElement);
+  }
+
+  slideElements.splice(index, 0, newSlideElement);
+  reindexSlides(index);
+
+  totalCounter.textContent = slideElements.length;
+  updateOverviewLayout();
+  refreshSlideIndex();
+
+  if (!activate) {
+    if (!isOverview && index <= currentIndex) {
+      currentIndex = clamp(currentIndex + 1, 0, slideElements.length - 1);
+    }
+    if (isOverview && index <= overviewCursor) {
+      overviewCursor = clamp(overviewCursor + 1, 0, slideElements.length - 1);
+    }
+  }
+
+  if (activate) {
+    if (isOverview) {
+      highlightOverviewSlide(index);
+    } else {
+      setActiveSlide(index);
+    }
+  } else if (!isOverview) {
+    updateHud();
+  } else {
+    overviewCursor = clamp(overviewCursor, 0, slideElements.length - 1);
+    highlightOverviewSlide(overviewCursor, { scroll: false });
+  }
+
+  updateSlideIndexHighlight(isOverview ? overviewCursor : currentIndex);
+
+  return newSlideElement;
+}
+
+function removeSlideAt(index, options = {}) {
+  const { focus = true } = options;
+  if (index < 0 || index >= slides.length) return;
+
+  slides.splice(index, 1);
+  slideScrollPositions.delete(index);
+  shiftScrollPositions(index + 1, -1);
+
+  const [removedElement] = slideElements.splice(index, 1);
+  if (removedElement && removedElement.parentElement) {
+    removedElement.parentElement.removeChild(removedElement);
+  }
+
+  if (!slideElements.length) {
+    slidesRoot.innerHTML = '';
+    renderEmptyState();
+    totalCounter.textContent = 0;
+    currentIndex = 0;
+    updateHud();
+    refreshSlideIndex();
+    updateOverviewLayout();
+    return;
+  }
+
+  reindexSlides(index);
+  totalCounter.textContent = slideElements.length;
+  updateOverviewLayout();
+  refreshSlideIndex();
+
+  if (isOverview) {
+    overviewCursor = clamp(overviewCursor, 0, slideElements.length - 1);
+    highlightOverviewSlide(overviewCursor, { scroll: false });
+    updateSlideIndexHighlight(overviewCursor);
+    return;
+  }
+
+  const nextIndex = clamp(currentIndex >= index ? currentIndex - 1 : currentIndex, 0, slideElements.length - 1);
+
+  if (focus) {
+    setActiveSlide(nextIndex);
+  } else {
+    currentIndex = nextIndex;
+    updateHud();
+    updateSlideIndexHighlight(currentIndex);
+  }
 }
 
 function replaceSlideAt(index, options = {}) {
@@ -3081,7 +3216,7 @@ async function processVoiceEditSlide(audioBlob) {
     validateSlides([updatedSlide]);
 
     slides[targetIndex] = updatedSlide;
-    reloadDeck({ targetIndex });
+    replaceSlideAt(targetIndex);
     overviewCursor = targetIndex;
 
     await ensureMinimumDelay(uiStart, 1300);
@@ -3199,10 +3334,7 @@ function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
 function insertSlideAfterCurrent(slideData) {
   // Insert after current index
   const newIndex = currentIndex + 1;
-  slides.splice(newIndex, 0, slideData);
-
-  // Reload deck to render new slide
-  reloadDeck({ targetIndex: newIndex });
+  insertSlideAt(newIndex, slideData, { activate: true });
   return newIndex;
 }
 
