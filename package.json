@@ -1,9 +1,10 @@
 {
-  "name": "frequency-deck",
+  "name": "slideomatic.app",
   "version": "0.1.0",
-  "description": "Static JSON-driven slideshow engine.",
+  "description": "Slideomatic.app — voice-powered, themeable slideshow engine.",
   "private": true,
   "type": "module",
+  "homepage": "https://slideomatic.app",
   "scripts": {
     "dev": "serve .",
     "check": "node scripts/validate.mjs"
