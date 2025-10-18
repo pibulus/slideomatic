@@ -24,45 +24,64 @@
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <div class="app" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
+      <button class="drawer-launcher drawer-launcher--theme" id="theme-btn" aria-label="Open theme editor" title="Open theme editor">
+        Theme
+      </button>
 
-      <!-- Theme Editor Drawer (Left Side) -->
+      <!-- Theme Editor Drawer (Right Side) -->
       <aside class="theme-drawer" id="theme-drawer">
         <div class="theme-drawer__header">
           <h2>🎨 Theme Editor</h2>
           <button class="theme-drawer__close" aria-label="Close theme editor">×</button>
         </div>
         <div class="theme-drawer__content">
-          <div class="theme-drawer__actions">
-            <button class="theme-drawer__btn theme-drawer__btn--primary" id="theme-save-btn">
-              💾 Save to Library
-            </button>
-            <button class="theme-drawer__btn theme-drawer__btn--ai" id="theme-ai-btn">
-              ✨ Ask AI
-            </button>
-            <button class="theme-drawer__btn theme-drawer__btn--random" id="theme-random-btn">
-              🎲 Randomize
-            </button>
-          </div>
-
-          <div class="theme-drawer__library">
-            <h3>Saved Themes</h3>
-            <div class="theme-drawer__library-list" id="theme-library-list">
-              <!-- Saved themes will be populated here -->
+          <form class="theme-drawer__form">
+            <div class="theme-drawer__section theme-drawer__section--editor">
+              <label class="theme-drawer__label" for="theme-json-editor">Current Theme JSON</label>
+              <p class="theme-drawer__hint">Edit tokens directly for precise control, then apply.</p>
+              <textarea
+                class="theme-drawer__textarea"
+                id="theme-json-editor"
+                spellcheck="false"
+                placeholder='{"color-bg": "#fffbf3", ...}'
+              ></textarea>
+              <button class="theme-drawer__apply-btn" type="button" id="theme-apply-btn">
+                Apply Changes
+              </button>
             </div>
-          </div>
 
-          <div class="theme-drawer__editor">
-            <h3>Current Theme JSON</h3>
-            <textarea
-              class="theme-drawer__textarea"
-              id="theme-json-editor"
-              spellcheck="false"
-              placeholder='{"color-bg": "#fffbf3", ...}'
-            ></textarea>
-            <button class="theme-drawer__apply-btn" id="theme-apply-btn">
-              Apply Changes
-            </button>
-          </div>
+            <div class="theme-drawer__field">
+              <label class="theme-drawer__label" for="theme-select">Active Theme</label>
+              <select class="theme-drawer__select" id="theme-select" aria-label="Switch theme" title="Switch theme">
+                <option value="theme.json">Default</option>
+                <option value="themes/vaporwave.json">Vaporwave</option>
+                <option value="themes/slack.json">Slack</option>
+                <option value="themes/gameboy.json">Gameboy</option>
+              </select>
+            </div>
+
+            <div class="theme-drawer__actions theme-drawer__actions--stacked">
+              <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
+                🎲 Randomize
+              </button>
+              <button class="theme-drawer__btn theme-drawer__btn--primary" type="button" id="theme-save-btn">
+                💾 Save to Library
+              </button>
+              <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
+                ✨ Ask AI
+              </button>
+            </div>
+
+            <div class="theme-drawer__section">
+              <div class="theme-drawer__section-header">
+                <h3>Saved Themes</h3>
+                <p>Load, rename, or remove presets you’ve captured.</p>
+              </div>
+              <div class="theme-drawer__library-list" id="theme-library-list">
+                <!-- Saved themes will be populated here -->
+              </div>
+            </div>
+          </form>
         </div>
       </aside>
 
@@ -161,7 +180,6 @@
                 <li><kbd>←</kbd> <kbd>→</kbd> Navigate slides</li>
                 <li><kbd>V</kbd> Add slide with voice</li>
                 <li><kbd>E</kbd> Edit current slide</li>
-                <li><kbd>T</kbd> Open theme editor</li>
                 <li><kbd>O</kbd> Overview mode</li>
                 <li><kbd>N</kbd> Speaker notes</li>
                 <li><kbd>S</kbd> Settings (API key)</li>
@@ -194,16 +212,9 @@
         <div class="hud__controls">
           <button class="hud__action hud__add-btn" id="add-btn" aria-label="Add slide from voice (V)" title="Add slide from voice (V)">Add</button>
           <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Ask Gemini to edit current slide" title="Edit current slide with Gemini">Edit</button>
-          <button class="hud__action hud__theme-btn" id="theme-btn" aria-label="Open theme editor" title="Open theme editor (T)">Theme</button>
           <button class="hud__action hud__index-btn" id="index-btn" aria-label="Open slide index" title="Open slide index (I)">Index</button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides" title="View all slides">Overview</button>
           <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download slides JSON" title="Download slides JSON">Save</button>
-          <select class="hud__theme-select" id="theme-select" aria-label="Switch theme" title="Switch theme">
-            <option value="theme.json">Default</option>
-            <option value="themes/vaporwave.json">Vaporwave</option>
-            <option value="themes/slack.json">Slack</option>
-            <option value="themes/gameboy.json">Gameboy</option>
-          </select>
           <span class="hud__hint" title="Navigate slides">← / →</span>
           <div class="hud__status" id="hud-status"></div>
         </div>

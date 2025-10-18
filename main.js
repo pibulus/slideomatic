@@ -41,6 +41,9 @@ let overviewColumnCount = 0;
 let overviewCursor = 0;
 let lastOverviewHighlight = 0;
 let currentTheme = null;
+let isThemeDrawerOpen = false;
+let themeDrawerPreviousFocus = null;
+let currentThemePath = "theme.json";
 const slideScrollPositions = new Map();
 
 initSlideIndex({
@@ -487,6 +490,7 @@ async function initDeck() {
   if (themeSelect) {
     themeSelect.addEventListener('change', async (event) => {
       const themePath = event.target.value;
+      currentThemePath = themePath;
       showHudStatus('🎨 Switching theme...', 'processing');
       try {
         const response = await fetch(themePath, { cache: "no-store" });
@@ -494,6 +498,8 @@ async function initDeck() {
         const theme = await response.json();
         const normalizedTheme = applyTheme(theme);
         setCurrentTheme(normalizedTheme);
+        loadThemeIntoEditor();
+        syncThemeSelectUI();
         showHudStatus('✨ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
@@ -524,6 +530,7 @@ async function loadAndApplyTheme() {
     const theme = await response.json();
     const normalizedTheme = applyTheme(theme);
     setCurrentTheme(normalizedTheme);
+    currentThemePath = resolveThemePath();
   } catch (error) {
     console.warn("Unable to load custom theme, using defaults.", error);
   }
@@ -671,8 +678,7 @@ function handleKeyboard(event) {
     target &&
     target instanceof HTMLElement &&
     (target.matches("input, textarea, select") ||
-      target.isContentEditable ||
-      target.closest("#edit-drawer"))
+      target.isContentEditable)
   ) {
     return;
   }
@@ -796,7 +802,7 @@ function handleKeyboard(event) {
   if (lowerKey === "t") {
     event.preventDefault();
     flashKeyFeedback('T');
-    toggleVoiceTheme();
+    toggleThemeDrawer();
     return;
   }
 
@@ -846,9 +852,8 @@ function toggleOverview() {
 }
 
 function enterOverview() {
-  if (isSlideIndexOpen) {
-    closeSlideIndex();
-  }
+  closeSlideIndex();
+  closeThemeDrawer();
   document.body.dataset.mode = "overview";
   updateOverviewLayout();
   slideElements.forEach((slide) => {
@@ -2428,6 +2433,10 @@ function openEditDrawer() {
   const drawer = document.getElementById('edit-drawer');
   if (!drawer || isEditDrawerOpen) return;
 
+  if (isThemeDrawerOpen) {
+    closeThemeDrawer();
+  }
+
   isEditDrawerOpen = true;
   editDrawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
@@ -3814,6 +3823,85 @@ The graph should be publication-ready with clear data visualization.`;
 // Theme Drawer UI & Management
 // ================================================================
 
+function handleThemeDrawerKeydown(event) {
+  if (!isThemeDrawerOpen) return;
+  const themeDrawer = document.getElementById('theme-drawer');
+  if (!themeDrawer) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeThemeDrawer();
+  } else if (event.key === 'Tab') {
+    trapFocus(event, themeDrawer);
+  }
+}
+
+function syncThemeSelectUI() {
+  const themeSelect = document.getElementById('theme-select');
+  if (!themeSelect) return;
+  const options = Array.from(themeSelect.options).map(option => option.value);
+  if (options.includes(currentThemePath)) {
+    themeSelect.value = currentThemePath;
+  }
+}
+
+function openThemeDrawer() {
+  const themeDrawer = document.getElementById('theme-drawer');
+  const themeBtn = document.getElementById('theme-btn');
+  if (!themeDrawer || isThemeDrawerOpen) return;
+
+  if (isEditDrawerOpen) {
+    closeEditDrawer();
+  }
+
+  isThemeDrawerOpen = true;
+  themeDrawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  themeDrawer.classList.add('is-open', 'is-springing');
+  themeDrawer.setAttribute('aria-hidden', 'false');
+  themeBtn?.setAttribute('aria-expanded', 'true');
+  themeBtn?.classList.add('is-active');
+  themeDrawer.addEventListener(
+    'animationend',
+    () => themeDrawer.classList.remove('is-springing'),
+    { once: true }
+  );
+
+  loadThemeIntoEditor();
+  renderThemeLibrary();
+  syncThemeSelectUI();
+  focusFirstElement(themeDrawer);
+  document.addEventListener('keydown', handleThemeDrawerKeydown, true);
+}
+
+function closeThemeDrawer() {
+  const themeDrawer = document.getElementById('theme-drawer');
+  const themeBtn = document.getElementById('theme-btn');
+  if (!themeDrawer || !isThemeDrawerOpen) return;
+
+  isThemeDrawerOpen = false;
+  themeDrawer.classList.remove('is-open');
+  themeDrawer.classList.remove('is-springing');
+  themeDrawer.setAttribute('aria-hidden', 'true');
+  themeBtn?.setAttribute('aria-expanded', 'false');
+  themeBtn?.classList.remove('is-active');
+
+  document.removeEventListener('keydown', handleThemeDrawerKeydown, true);
+
+  const target = themeDrawerPreviousFocus && typeof themeDrawerPreviousFocus.focus === 'function'
+    ? themeDrawerPreviousFocus
+    : themeBtn;
+  requestAnimationFrame(() => target?.focus());
+  themeDrawerPreviousFocus = null;
+}
+
+function toggleThemeDrawer() {
+  if (isThemeDrawerOpen) {
+    closeThemeDrawer();
+  } else {
+    openThemeDrawer();
+  }
+}
+
 function initThemeDrawer() {
   const themeDrawer = document.getElementById('theme-drawer');
   const themeBtn = document.getElementById('theme-btn');
@@ -3824,76 +3912,30 @@ function initThemeDrawer() {
   const aiBtn = document.getElementById('theme-ai-btn');
   const randomBtn = document.getElementById('theme-random-btn');
 
-  if (!themeDrawer) return;
+  if (!themeDrawer || !themeBtn) return;
 
   themeDrawer.setAttribute('aria-hidden', 'true');
-  themeBtn?.setAttribute('aria-expanded', 'false');
+  themeBtn.setAttribute('aria-expanded', 'false');
+  themeBtn.classList.remove('is-active');
 
-  let previousFocus = null;
-
-  const handleDrawerKeydown = (event) => {
-    if (!themeDrawer.classList.contains('is-open')) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeThemeDrawer();
-    } else if (event.key === 'Tab') {
-      trapFocus(event, themeDrawer);
-    }
-  };
-
-  const openThemeDrawer = () => {
-    if (themeDrawer.classList.contains('is-open')) return;
-    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    themeDrawer.classList.add('is-open', 'is-springing');
-    themeDrawer.setAttribute('aria-hidden', 'false');
-    themeBtn?.setAttribute('aria-expanded', 'true');
-    themeDrawer.addEventListener(
-      'animationend',
-      () => themeDrawer.classList.remove('is-springing'),
-      { once: true }
-    );
-    loadThemeIntoEditor();
-    renderThemeLibrary();
-    focusFirstElement(themeDrawer);
-    document.addEventListener('keydown', handleDrawerKeydown, true);
-  };
-
-  const closeThemeDrawer = () => {
-    if (!themeDrawer.classList.contains('is-open')) return;
-    themeDrawer.classList.remove('is-open');
-    themeDrawer.classList.remove('is-springing');
-    themeDrawer.setAttribute('aria-hidden', 'true');
-    themeBtn?.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('keydown', handleDrawerKeydown, true);
-    const target = previousFocus && typeof previousFocus.focus === 'function'
-      ? previousFocus
-      : themeBtn;
-    requestAnimationFrame(() => target?.focus());
-    previousFocus = null;
-  };
-
-  // Open/close theme drawer
-  themeBtn?.addEventListener('click', () => {
-    const isOpen = themeDrawer.classList.contains('is-open');
-    if (!isOpen) {
-      openThemeDrawer();
-    } else {
-      closeThemeDrawer();
-    }
-  });
+  if (!themeBtn.dataset.listenerAttached) {
+    themeBtn.addEventListener('click', toggleThemeDrawer);
+    themeBtn.dataset.listenerAttached = 'true';
+  }
 
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
     closeBtn.addEventListener('click', closeThemeDrawer);
     closeBtn.dataset.listenerAttached = 'true';
   }
 
-  // Apply theme from textarea
   applyBtn?.addEventListener('click', async () => {
+    if (!textarea) return;
     try {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
       const normalizedTheme = applyTheme(theme);
       setCurrentTheme(normalizedTheme);
+      syncThemeSelectUI();
       showHudStatus('✨ Theme applied', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3902,8 +3944,8 @@ function initThemeDrawer() {
     }
   });
 
-  // Save current theme to library
   saveBtn?.addEventListener('click', () => {
+    if (!textarea) return;
     try {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
@@ -3920,9 +3962,8 @@ function initThemeDrawer() {
     }
   });
 
-  // AI theme generator
   aiBtn?.addEventListener('click', async () => {
-    const description = prompt('Describe your theme:\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
+    const description = prompt('Describe your theme:\\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
     if (!description) return;
 
     try {
@@ -3931,10 +3972,10 @@ function initThemeDrawer() {
 
       const theme = await generateThemeWithAI(description);
 
-      // Apply and load into editor
       const normalizedTheme = applyTheme(theme);
       setCurrentTheme(normalizedTheme);
       loadThemeIntoEditor();
+      syncThemeSelectUI();
 
       showHudStatus('✨ Theme generated!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3946,17 +3987,16 @@ function initThemeDrawer() {
     }
   });
 
-  // Random theme generator
   randomBtn?.addEventListener('click', () => {
     try {
       showHudStatus('🎲 Generating random theme...', 'processing');
 
       const theme = generateRandomTheme();
 
-      // Apply and load into editor
       const normalizedTheme = applyTheme(theme);
       setCurrentTheme(normalizedTheme);
       loadThemeIntoEditor();
+      syncThemeSelectUI();
 
       showHudStatus('✨ Random theme applied!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3966,17 +4006,7 @@ function initThemeDrawer() {
     }
   });
 
-  // Keyboard shortcut: T for theme drawer
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 't' || e.key === 'T') {
-      if (isOverview || document.activeElement.tagName === 'INPUT' ||
-          document.activeElement.tagName === 'TEXTAREA') {
-        return;
-      }
-      e.preventDefault();
-      themeBtn?.click();
-    }
-  });
+  syncThemeSelectUI();
 }
 
 function loadThemeIntoEditor() {
@@ -3991,6 +4021,7 @@ function loadThemeIntoEditor() {
     const computedTheme = extractCurrentThemeFromCSS();
     textarea.value = JSON.stringify(computedTheme, null, 2);
   }
+  syncThemeSelectUI();
 }
 
 function extractCurrentThemeFromCSS() {
