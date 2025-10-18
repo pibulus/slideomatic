@@ -529,6 +529,7 @@ function validateSlides(data) {
     "grid",
     "pillars",
     "gallery",
+    "graph",
     "typeface",
     "image",
     "_schema"  // Special type for documentation - ignored during render
@@ -1339,7 +1340,6 @@ function renderGraphSlide(section, slide) {
     const regenerateBtn = document.createElement("button");
     regenerateBtn.className = "graph-regenerate-btn";
     regenerateBtn.textContent = "🔄 Regenerate";
-    regenerateBtn.dataset.slideIndex = slide._index;
     regenerateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
 
     graphContainer.appendChild(img);
@@ -1360,7 +1360,6 @@ function renderGraphSlide(section, slide) {
     const generateBtn = document.createElement("button");
     generateBtn.className = "graph-generate-btn";
     generateBtn.textContent = "Generate Graph";
-    generateBtn.dataset.slideIndex = slide._index;
     generateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
 
     placeholder.append(icon, text, generateBtn);
@@ -1676,6 +1675,9 @@ function buildImageSearchUrl(query) {
 // Image Upload & Compression
 // ================================================================
 
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const TARGET_IMAGE_BYTES = 900 * 1024;
+
 async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
   if (!file.type.startsWith("image/")) {
     showImageError(placeholderElement, "Please drop an image file");
@@ -1692,18 +1694,15 @@ async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
   icon.textContent = "⏳";
   placeholderElement.disabled = true;
 
+  let hadError = false;
+
   try {
-    // Compress image
-    const compressedFile = await compressImage(file);
+    const { file: compressedFile, format: outputFormat, hitSoftLimit } = await compressImage(file);
+    const sizeInBytes = compressedFile.size;
+    const sizeLabel = formatBytes(sizeInBytes);
 
-    // Check size after compression
-    const sizeInMB = compressedFile.size / (1024 * 1024);
-    if (sizeInMB > 5) {
-      throw new Error(`Image too large: ${sizeInMB.toFixed(1)}MB (max 5MB)`);
-    }
-
-    if (sizeInMB > 2) {
-      console.warn(`Large image: ${sizeInMB.toFixed(1)}MB - consider using a smaller file`);
+    if (sizeInBytes > MAX_IMAGE_BYTES) {
+      throw new Error(`Image still too large (${sizeLabel}); try a smaller original.`);
     }
 
     // Convert to base64
@@ -1716,47 +1715,104 @@ async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
         src: base64,
         alt: imageConfig.alt || file.name.replace(/\.[^/.]+$/, ""),
         originalFilename: file.name,
-        compressedSize: compressedFile.size,
+        compressedSize: sizeInBytes,
+        compressedFormat: outputFormat,
         uploadedAt: Date.now()
       });
 
-      // Re-render the slide
-      await renderSlides();
-      showSlide(slideIndex);
-
-      showHudStatus(`Image added (${(sizeInMB).toFixed(1)}MB)`, "success");
+      // Re-render the deck and jump back to the updated slide
+      reloadDeck({ targetIndex: slideIndex });
+      if (hitSoftLimit) {
+        console.warn(`Image for slide ${slideIndex} landed above soft target (${sizeLabel}).`);
+      }
+      const statusType = hitSoftLimit ? "warning" : "success";
+      const statusMessage = hitSoftLimit
+        ? `Image added (${sizeLabel}) — hit quality floor`
+        : `Image added (${sizeLabel})`;
+      showHudStatus(statusMessage, statusType);
+      setTimeout(hideHudStatus, hitSoftLimit ? 3000 : 2000);
     }
   } catch (error) {
+    hadError = true;
     console.error("Image upload failed:", error);
-    showImageError(placeholderElement, error.message);
-    text.textContent = originalText;
     icon.textContent = originalIcon;
+    text.textContent = originalText;
+    showImageError(placeholderElement, error.message);
+  } finally {
     placeholderElement.disabled = false;
+    if (!hadError) {
+      text.textContent = originalText;
+      icon.textContent = originalIcon;
+      delete text.dataset.originalText;
+    }
   }
 }
 
 async function compressImage(file) {
   // Check if browser-image-compression is available
   if (typeof imageCompression === 'undefined') {
-    console.warn('Image compression library not loaded, using original file');
-    return file;
+    if (file.size > MAX_IMAGE_BYTES) {
+      throw new Error('Compression library unavailable — use a smaller image (<2MB).');
+    }
+    return { file, format: file.type || 'image/png', hitSoftLimit: file.size > TARGET_IMAGE_BYTES };
   }
 
-  const options = {
-    maxWidthOrHeight: 1920,  // Max on longest side (handles portrait/landscape)
-    useWebWorker: true,      // Don't freeze UI
-    fileType: 'image/webp',  // Modern, efficient format
-    initialQuality: 0.85,    // Sweet spot for quality/size
-  };
-
-  try {
-    const compressed = await imageCompression(file, options);
-    console.log(`Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressed.size / 1024 / 1024).toFixed(2)}MB`);
-    return compressed;
-  } catch (error) {
-    console.error('Compression failed, using original:', error);
-    return file;
+  if (file.size <= TARGET_IMAGE_BYTES) {
+    return { file, format: file.type || 'image/png', hitSoftLimit: false };
   }
+
+  const preferredFormats = [];
+  if (file.type !== 'image/webp' && file.type !== 'image/gif') {
+    preferredFormats.push('image/webp');
+  }
+  if (file.type) {
+    preferredFormats.push(file.type);
+  }
+  if (!preferredFormats.includes('image/png')) {
+    preferredFormats.push('image/png');
+  }
+
+  const dimensionSteps = [1920, 1600, 1440, 1280];
+  const qualitySteps = [0.82, 0.72, 0.62, 0.54, 0.46];
+  let bestCandidate = null;
+
+  for (const format of preferredFormats) {
+    for (const dimension of dimensionSteps) {
+      const qualities = format === 'image/png' ? [1] : qualitySteps;
+      for (const quality of qualities) {
+        const options = {
+          maxWidthOrHeight: dimension,
+          useWebWorker: true,
+          maxSizeMB: TARGET_IMAGE_BYTES / (1024 * 1024),
+          maxIteration: 12,
+          fileType: format,
+        };
+        if (format !== 'image/png') {
+          options.initialQuality = quality;
+        }
+
+        try {
+          const compressed = await imageCompression(file, options);
+          if (compressed.size <= TARGET_IMAGE_BYTES) {
+            return { file: compressed, format, hitSoftLimit: false };
+          }
+          if (compressed.size <= MAX_IMAGE_BYTES) {
+            if (!bestCandidate || compressed.size < bestCandidate.file.size) {
+              bestCandidate = { file: compressed, format, hitSoftLimit: true };
+            }
+          }
+        } catch (error) {
+          console.warn(`Compression attempt failed (${format} @ ${dimension}px, q=${quality}):`, error);
+        }
+      }
+    }
+  }
+
+  if (bestCandidate) {
+    return bestCandidate;
+  }
+
+  throw new Error('Could not shrink image under 2MB. Try exporting a smaller source.');
 }
 
 async function fileToBase64(file) {
@@ -1766,6 +1822,24 @@ async function fileToBase64(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) {
+    return '';
+  }
+  const thresh = 1024;
+  if (bytes < thresh) {
+    return `${bytes} B`;
+  }
+  const units = ['KB', 'MB', 'GB'];
+  let u = -1;
+  let value = bytes;
+  do {
+    value /= thresh;
+    ++u;
+  } while (value >= thresh && u < units.length - 1);
+  return `${value.toFixed(u === 0 ? 0 : 1)} ${units[u]}`;
 }
 
 function findSlideIndexForPlaceholder(placeholderElement) {
@@ -1789,24 +1863,17 @@ function updateSlideImage(slideIndex, imageData) {
 
 function showImageError(placeholderElement, message) {
   const text = placeholderElement.querySelector(".image-placeholder__text");
+  if (!text) return;
+
+  const previousText = text.dataset.originalText || text.textContent;
+  text.dataset.originalText = previousText;
   text.textContent = message;
   placeholderElement.classList.add("image-placeholder--error");
 
   setTimeout(() => {
+    text.textContent = text.dataset.originalText || previousText;
+    delete text.dataset.originalText;
     placeholderElement.classList.remove("image-placeholder--error");
-  }, 3000);
-}
-
-function showHudStatus(message, type = "info") {
-  const status = document.getElementById("hud-status");
-  if (!status) return;
-
-  status.textContent = message;
-  status.className = `hud__status hud__status--${type}`;
-
-  setTimeout(() => {
-    status.textContent = "";
-    status.className = "hud__status";
   }, 3000);
 }
 
@@ -1837,6 +1904,7 @@ async function handleGlobalPaste(event) {
         await handleImageUpload(file, placeholder, imageConfig);
       } else {
         showHudStatus("No image placeholder on current slide", "warning");
+        setTimeout(hideHudStatus, 2000);
       }
       break; // Only handle the first image
     }
@@ -3431,7 +3499,8 @@ async function generateGraphImage(slide, containerElement) {
     const colorAccent = rootStyles.getPropertyValue('--color-accent').trim();
 
     // Build prompt with theme colors and risograph style
-    const orientation = slide.orientation || 'landscape';
+    const normalizedOrientation = normalizeOrientation(slide.orientation) || (slide.orientation ? String(slide.orientation).toLowerCase() : '');
+    const orientation = normalizedOrientation || 'landscape';
     const aspectRatio = orientation === 'portrait' ? '3:4' : orientation === 'square' ? '1:1' : '16:9';
 
     const prompt = `Create a clean, minimal ${orientation} graph or chart: ${slide.description || slide.title}.
