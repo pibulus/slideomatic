@@ -1844,8 +1844,11 @@ async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
         uploadedAt: Date.now()
       });
 
-      // Re-render the deck and jump back to the updated slide
-      reloadDeck({ targetIndex: slideIndex });
+      // Re-render the slide and preserve context
+      replaceSlideAt(slideIndex, { focus: false });
+      if (!isOverview) {
+        setActiveSlide(slideIndex);
+      }
       if (hitSoftLimit) {
         console.warn(`Image for slide ${slideIndex} landed above soft target (${sizeLabel}).`);
       }
@@ -2560,7 +2563,7 @@ function saveCurrentSlide() {
     const updatedSlide = JSON.parse(textarea.value);
     const targetIndex = currentIndex;
     slides[currentIndex] = updatedSlide;
-    reloadDeck({ targetIndex });
+    replaceSlideAt(targetIndex);
     closeEditDrawer();
     showHudStatus('✨ Slide updated', 'success');
     setTimeout(hideHudStatus, 1600);
@@ -2586,6 +2589,60 @@ function duplicateCurrentSlide() {
   showHudStatus('✨ Slide duplicated', 'success');
   setTimeout(hideHudStatus, 1600);
   console.log('✓ Slide duplicated');
+}
+
+function replaceSlideAt(index, options = {}) {
+  const { focus = true } = options;
+  if (index < 0 || index >= slides.length) return;
+
+  const existing = slideElements[index];
+  if (!existing || !existing.parentElement) {
+    reloadDeck({ targetIndex: index, focus });
+    return;
+  }
+
+  const previousScroll = existing.scrollTop;
+  slideScrollPositions.set(index, previousScroll);
+
+  const slideData = slides[index];
+  const newSlide = createSlide(slideData, index, renderers);
+  newSlide.style.visibility = existing.style.visibility;
+  newSlide.style.pointerEvents = existing.style.pointerEvents;
+  newSlide.setAttribute('aria-hidden', existing.getAttribute('aria-hidden') ?? 'true');
+  newSlide.tabIndex = existing.tabIndex;
+
+  existing.replaceWith(newSlide);
+  slideElements[index] = newSlide;
+
+  const wasActive = index === currentIndex && !isOverview;
+  if (wasActive) {
+    newSlide.classList.add('is-active');
+    newSlide.style.visibility = 'visible';
+    newSlide.style.pointerEvents = 'auto';
+    newSlide.setAttribute('aria-hidden', 'false');
+    const scrollOffset = slideScrollPositions.get(index) ?? previousScroll ?? 0;
+    requestAnimationFrame(() => {
+      newSlide.scrollTop = scrollOffset;
+      if (focus) {
+        newSlide.focus({ preventScroll: true });
+      }
+    });
+  } else if (isOverview) {
+    newSlide.style.visibility = 'visible';
+    newSlide.style.pointerEvents = 'auto';
+    newSlide.setAttribute('aria-hidden', 'false');
+  } else {
+    newSlide.style.visibility = 'hidden';
+    newSlide.style.pointerEvents = 'none';
+    newSlide.setAttribute('aria-hidden', 'true');
+  }
+
+  updateOverviewLayout();
+  refreshSlideIndex();
+  updateSlideIndexHighlight(currentIndex);
+  if (wasActive && !isOverview) {
+    updateHud();
+  }
 }
 
 function getSlideTemplate(type) {
