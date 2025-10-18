@@ -3,175 +3,116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Slide-o-Matic Deck Library</title>
+    <title>Slide-o-Matic</title>
     <meta
       name="description"
-      content="Browse decks and themes for Slideomatic.app, the voice-powered slideshow engine."
+      content="Slideomatic.app — voice-powered, pastel-punk slideshow engine. Launch a deck, start fresh, or upload your own JSON."
     />
     <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-    <header class="hero">
-      <div class="hero__content">
-        <p class="hero__eyebrow">Slide-o-Matic</p>
-        <h1>Pick a slideshow. Change the vibe. Ship the story.</h1>
-        <p class="hero__description">
-          Each deck loads straight in the browser. Choose a theme, launch the deck, or jump into the editor to tweak copy and imagery—all powered by Slideomatic.app.
+    <main class="landing">
+      <section class="landing__hero">
+        <p class="landing__eyebrow">Slide-o-Matic</p>
+        <h1 class="landing__title">Pick a slideshow. Change the vibe. Ship the story.</h1>
+        <p class="landing__description">
+          Launch the live deck, start a fresh canvas, or drop in your own JSON file. Slideomatic.app keeps the pastel-punk energy,
+          theme controls, and voice tools ready to go.
         </p>
-        <div class="hero__actions">
-          <a class="button button--primary" href="deck.html">Open Default Deck</a>
-          <a class="button" href="admin.html">Open Editor</a>
+        <div class="landing__actions">
+          <a class="button button--primary" href="deck.html">Open default deck</a>
+          <a class="button button--outline" href="admin.html">Start new deck</a>
+          <button class="button button--ghost" type="button" id="upload-btn">Upload deck JSON</button>
+          <input type="file" id="upload-input" accept=".json,application/json" hidden />
         </div>
-      </div>
-    </header>
+      </section>
 
-    <main class="catalog" aria-live="polite">
-      <section class="catalog__list" data-deck-list>
-        <p class="catalog__status">Loading decks…</p>
+      <section class="landing__grid" id="about">
+        <article class="landing__panel">
+          <h2>Pastel-punk slides, zero build steps.</h2>
+          <p>
+            Slide-o-Matic bundles a live deck runtime, a JSON editor, and a theme drawer. Swap art direction with a dropdown, edit
+            slides while you present, or let Gemini draft new pages from voice prompts.
+          </p>
+        </article>
+
+        <div class="landing__cards">
+          <article class="landing__card">
+            <h3>Voice-first workflow</h3>
+            <p>Hold <strong>V</strong> or <strong>E</strong> inside the deck to add or edit slides by speaking — AI fills in the JSON.</p>
+          </article>
+          <article class="landing__card">
+            <h3>Theme everything</h3>
+            <p>Open the theme drawer to randomize palettes, prompt Gemini for a new vibe, or save presets to your local library.</p>
+          </article>
+          <article class="landing__card">
+            <h3>JSON you can trust</h3>
+            <p>Download the deck at any time. The editor validates against the schema so your exports stay portable.</p>
+          </article>
+        </div>
       </section>
     </main>
 
-    <template id="deck-card-template">
-      <article class="deck-card">
-        <div class="deck-card__body">
-          <div class="deck-card__meta">
-            <p class="deck-card__tag"></p>
-            <h2></h2>
-            <p class="deck-card__description"></p>
-          </div>
-          <div class="deck-card__footer">
-            <div class="deck-card__links">
-              <a class="button button--primary" data-role="open-deck">Launch Deck</a>
-              <a class="button" data-role="open-editor">Edit Slides</a>
-            </div>
-            <div class="deck-card__chips" data-role="chip-container"></div>
-          </div>
-        </div>
-      </article>
-    </template>
-
-    <script type="module">
-      const list = document.querySelector('[data-deck-list]');
-      const template = document.getElementById('deck-card-template');
-
-      init();
-
-      async function init() {
-        try {
-          const decks = await loadDecks();
-          renderDecks(decks);
-        } catch (error) {
-          console.error(error);
-          renderError(error);
-        }
-      }
-
-      async function loadDecks() {
-        const response = await fetch('catalog.json', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`Unable to load catalog (status ${response.status})`);
-        }
-        const payload = await response.json();
-        if (!Array.isArray(payload) || payload.length === 0) {
-          throw new Error('No decks found in catalog.json');
-        }
-        return payload;
-      }
-
-      function renderDecks(decks) {
-        list.innerHTML = '';
-        decks.forEach((deck, index) => {
-          const card = template.content.firstElementChild.cloneNode(true);
-          const heading = card.querySelector('h2');
-          const description = card.querySelector('.deck-card__description');
-          const tag = card.querySelector('.deck-card__tag');
-          const openDeck = card.querySelector('[data-role="open-deck"]');
-          const openEditor = card.querySelector('[data-role="open-editor"]');
-          const chips = card.querySelector('[data-role="chip-container"]');
-
-          heading.textContent = deck.title ?? `Deck ${index + 1}`;
-          description.textContent = deck.description ?? 'Launch to view slides.';
-          tag.textContent = deck.category ?? 'Deck';
-
-          const deckUrl = buildDeckUrl(deck);
-          openDeck.href = deckUrl;
-
-          const editorUrl = buildEditorUrl(deck);
-          openEditor.href = editorUrl;
-
-          const labels = buildChipLabels(deck);
-          labels.forEach((label) => {
-            const chip = document.createElement('span');
-            chip.className = 'chip';
-            chip.textContent = label;
-            chips.appendChild(chip);
-          });
-
-          list.appendChild(card);
-        });
-      }
-
-      function buildDeckUrl(deck) {
-        const params = new URLSearchParams();
-        if (deck.slides && deck.slides !== 'slides.json') {
-          params.set('slides', deck.slides);
-        }
-        if (deck.theme && deck.theme !== 'theme.json') {
-          params.set('theme', deck.theme);
-        }
-        const query = params.toString();
-        return query ? `deck?${query}` : 'deck';
-      }
-
-      function buildEditorUrl(deck) {
-        const params = new URLSearchParams();
-        if (deck.slides && deck.slides !== 'slides.json') {
-          params.set('slides', deck.slides);
-        }
-        const query = params.toString();
-        return query ? `admin?${query}` : 'admin';
-      }
-
-      function buildChipLabels(deck) {
-        const labels = [];
-        if (deck.theme && deck.theme !== 'theme.json') {
-          labels.push(`Theme: ${deck.theme}`);
-        } else {
-          labels.push('Theme: default');
-        }
-        labels.push(`Slides: ${deck.slides ?? 'slides.json'}`);
-        if (deck.tags) {
-          deck.tags.forEach((tag) => labels.push(tag));
-        }
-        return labels;
-      }
-
-      function renderError(error) {
-        list.innerHTML = '';
-        const article = document.createElement('article');
-        article.className = 'deck-card deck-card--error';
-        article.innerHTML = `
-          <div class="deck-card__body">
-            <p class="deck-card__tag">Error</p>
-            <h2>Unable to load deck catalog</h2>
-            <p class="deck-card__description">${error?.message ?? 'Check the console for details.'}</p>
-          </div>
-        `;
-        list.appendChild(article);
-      }
-    </script>
-
-    <footer class="footer">
-      <div class="footer__content">
-        <p class="footer__made-by">
-          Made with ✨ by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>
+    <footer class="landing__footer">
+      <div class="landing__footer-about">
+        <strong>About Slide-o-Matic</strong>
+        <p>
+          A neo-brutalist, pastel-punk slideshow engine by
+          <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>. Built for rapid storytelling, on-the-fly edits,
+          and theme explorations without a build pipeline.
         </p>
-        <div class="footer__links">
-          <a href="https://github.com/pibulus" target="_blank" rel="noopener" class="footer__link">GitHub</a>
-          <span class="footer__divider">•</span>
-          <a href="https://ko-fi.com/pibulus" target="_blank" rel="noopener" class="footer__link footer__link--kofi">☕ Ko-fi</a>
-        </div>
+      </div>
+      <div class="landing__footer-actions">
+        <button class="link-button" type="button" data-open-intent="theme">Open theme drawer</button>
+        <button class="link-button" type="button" data-open-intent="settings">Open settings</button>
+        <a class="link-button" href="README.md" target="_blank" rel="noopener">Docs</a>
       </div>
     </footer>
+
+    <script type="module">
+      const uploadBtn = document.getElementById('upload-btn');
+      const uploadInput = document.getElementById('upload-input');
+      const actionButtons = document.querySelectorAll('[data-open-intent]');
+
+      uploadBtn?.addEventListener('click', () => uploadInput?.click());
+
+      uploadInput?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            JSON.parse(reader.result);
+          } catch (error) {
+            alert('That file is not valid JSON. Please pick a deck JSON export.');
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(file);
+          const target = new URL('deck.html', window.location.href);
+          target.searchParams.set('slides', objectUrl);
+          target.searchParams.set('open', 'theme');
+          window.location.href = target.toString();
+        };
+
+        reader.onerror = () => {
+          alert('Unable to read that file. Please try again.');
+        };
+
+        reader.readAsText(file);
+      });
+
+      actionButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const intent = button.dataset.openIntent;
+          const target = new URL('deck.html', window.location.href);
+          if (intent) {
+            target.searchParams.set('open', intent);
+          }
+          window.location.href = target.toString();
+        });
+      });
+    </script>
   </body>
 </html>

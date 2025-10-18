@@ -4337,6 +4337,21 @@ async function initDeckWithTheme() {
   setActiveSlide(0);
   updateOverviewButton();
   overviewCursor = currentIndex;
+  handleInitialIntent();
+}
+
+function handleInitialIntent() {
+  const params = new URLSearchParams(window.location.search);
+  const openIntent = params.get('open');
+  if (!openIntent) return;
+
+  requestAnimationFrame(() => {
+    if (openIntent === 'theme') {
+      openThemeDrawer();
+    } else if (openIntent === 'settings') {
+      openSettingsModal();
+    }
+  });
 }
 
 // ================================================================
