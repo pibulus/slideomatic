@@ -1,3 +1,13 @@
+import { normalizeThemeTokens, REQUIRED_THEME_TOKENS } from './theme-utils.js';
+import { registerLazyImage, loadLazyImage } from './lazy-images.js';
+import {
+  initSlideIndex,
+  toggleSlideIndex,
+  closeSlideIndex,
+  refreshSlideIndex,
+  updateSlideIndexHighlight,
+} from './slide-index.js';
+
 const slidesRoot = document.getElementById("slides");
 const currentCounter = document.querySelector("[data-counter-current]");
 const totalCounter = document.querySelector("[data-counter-total]");
@@ -32,13 +42,12 @@ let overviewCursor = 0;
 let lastOverviewHighlight = 0;
 let currentTheme = null;
 const slideScrollPositions = new Map();
-let slideIndexPanel = null;
-let slideIndexContent = null;
-let slideIndexList = null;
-let slideIndexEntries = [];
-let isSlideIndexOpen = false;
-let slideIndexPreviousFocus = null;
-let lazyImageObserver = null;
+
+initSlideIndex({
+  getSlides: () => slides,
+  getCurrentIndex: () => currentIndex,
+  setActiveSlide: (index) => setActiveSlide(index),
+});
 
 // ================================================================
 // Theme Library - localStorage persistence
@@ -46,32 +55,6 @@ let lazyImageObserver = null;
 
 const THEME_LIBRARY_KEY = 'slideomatic_themes';
 const CURRENT_THEME_KEY = 'slideomatic_current_theme';
-const REQUIRED_THEME_TOKENS = {
-  "color-bg": "#fffbf3",
-  "background-surface": "radial-gradient(circle at 15% 20%, rgba(255, 159, 243, 0.35), transparent 55%), radial-gradient(circle at 85% 30%, rgba(136, 212, 255, 0.35), transparent 55%), radial-gradient(circle at 40% 70%, rgba(254, 202, 87, 0.25), transparent 60%), radial-gradient(circle at 80% 90%, rgba(255, 159, 243, 0.18), transparent 55%), #fffbf3",
-  "background-overlay": "radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.15) 0.5px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0.5px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.08) 1px, transparent 2px)",
-  "background-opacity": "0.5",
-  "slide-bg": "rgba(255, 251, 243, 0.82)",
-  "slide-border-color": "#1b1b1b",
-  "slide-border-width": "5px",
-  "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)",
-  "color-surface": "#ff9ff3",
-  "color-surface-alt": "#88d4ff",
-  "color-accent": "#feca57",
-  "badge-bg": "#feca57",
-  "badge-color": "#1b1b1b",
-  "color-ink": "#000000",
-  "color-muted": "#2b2b2b",
-  "border-width": "5px",
-  "gutter": "clamp(32px, 5vw, 72px)",
-  "radius": "12px",
-  "font-sans": "\"Inter\", \"Helvetica Neue\", Arial, sans-serif",
-  "font-mono": "\"Space Mono\", \"IBM Plex Mono\", monospace",
-  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
-  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
-  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
-  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
-};
 const FOCUSABLE_SELECTORS = [
   'a[href]',
   'area[href]',
@@ -81,34 +64,6 @@ const FOCUSABLE_SELECTORS = [
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])'
 ].join(',');
-const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
-function normalizeThemeTokens(theme) {
-  const base = { ...REQUIRED_THEME_TOKENS };
-  const extras = {};
-  if (theme && typeof theme === 'object') {
-    Object.entries(theme).forEach(([token, value]) => {
-      if (value == null) return;
-      const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-      if (Object.prototype.hasOwnProperty.call(base, token)) {
-        base[token] = stringValue;
-      } else {
-        extras[token] = stringValue;
-      }
-    });
-  }
-
-  const missingTokens = Object.keys(REQUIRED_THEME_TOKENS).filter(
-    (key) => !theme || theme[key] == null
-  );
-  if (missingTokens.length) {
-    console.warn(
-      `Theme missing tokens: ${missingTokens.join(', ')}. Using defaults for them.`
-    );
-  }
-
-  return { ...base, ...extras };
-}
 
 function getFocusableElements(container) {
   return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
@@ -155,226 +110,6 @@ function focusFirstElement(container) {
     container.focus({ preventScroll: true });
   }
 }
-
-function getLazyImageObserver() {
-  if (lazyImageObserver) return lazyImageObserver;
-  lazyImageObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const img = entry.target;
-      loadLazyImage(img);
-      if (lazyImageObserver) {
-        lazyImageObserver.unobserve(img);
-      }
-    });
-  }, { rootMargin: '200px 0px' });
-  return lazyImageObserver;
-}
-
-function registerLazyImage(img, src) {
-  if (!src) return;
-  img.dataset.src = src;
-  img.src = TRANSPARENT_PIXEL;
-  img.loading = 'lazy';
-  img.decoding = 'async';
-  img.classList.add('is-loading');
-  img.addEventListener('load', () => {
-    img.classList.remove('is-loading');
-  }, { once: true });
-  getLazyImageObserver().observe(img);
-}
-
-function loadLazyImage(img) {
-  if (!img || !img.dataset || !img.dataset.src) return;
-  const actualSrc = img.dataset.src;
-  delete img.dataset.src;
-  img.src = actualSrc;
-  if (lazyImageObserver) {
-    lazyImageObserver.unobserve(img);
-  }
-}
-
-function ensureSlideIndexPanel() {
-  if (slideIndexPanel) return;
-
-  slideIndexPanel = document.createElement('div');
-  slideIndexPanel.id = 'slide-index';
-  slideIndexPanel.className = 'slide-index';
-  slideIndexPanel.setAttribute('aria-hidden', 'true');
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'slide-index__backdrop';
-  backdrop.setAttribute('data-index-close', 'true');
-
-  slideIndexContent = document.createElement('aside');
-  slideIndexContent.className = 'slide-index__panel';
-  slideIndexContent.setAttribute('role', 'dialog');
-  slideIndexContent.setAttribute('aria-modal', 'true');
-  slideIndexContent.setAttribute('aria-label', 'Slide index');
-
-  const header = document.createElement('header');
-  header.className = 'slide-index__header';
-
-  const title = document.createElement('h2');
-  title.className = 'slide-index__title';
-  title.textContent = 'Slide Index';
-  header.appendChild(title);
-
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'slide-index__close';
-  closeBtn.setAttribute('aria-label', 'Close slide index');
-  closeBtn.setAttribute('data-index-close', 'true');
-  closeBtn.textContent = '×';
-  header.appendChild(closeBtn);
-
-  slideIndexContent.appendChild(header);
-
-  slideIndexList = document.createElement('ol');
-  slideIndexList.className = 'slide-index__list';
-  slideIndexContent.appendChild(slideIndexList);
-
-  const footer = document.createElement('div');
-  footer.className = 'slide-index__footer';
-  footer.textContent = 'Jump anywhere without leaving flow.';
-  slideIndexContent.appendChild(footer);
-
-  slideIndexPanel.append(backdrop, slideIndexContent);
-  document.body.appendChild(slideIndexPanel);
-
-  slideIndexPanel.addEventListener('click', (event) => {
-    const target = event.target;
-    if (target instanceof HTMLElement && target.dataset.indexClose === 'true') {
-      closeSlideIndex();
-    }
-  });
-}
-
-function buildSlideIndex() {
-  ensureSlideIndexPanel();
-  if (!slideIndexList) return;
-
-  slideIndexEntries = slides
-    .map((slide, index) => ({ slide, index }))
-    .filter(({ slide }) => slide && slide.type !== '_schema');
-
-  slideIndexList.innerHTML = '';
-
-  if (slideIndexEntries.length === 0) {
-    const emptyState = document.createElement('li');
-    emptyState.className = 'slide-index__empty';
-    emptyState.textContent = 'No slides available.';
-    slideIndexList.appendChild(emptyState);
-    return;
-  }
-
-  slideIndexEntries.forEach(({ slide, index }) => {
-    const item = document.createElement('li');
-    item.className = 'slide-index__item';
-    item.dataset.slideIndex = String(index);
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'slide-index__button';
-
-    const number = document.createElement('span');
-    number.className = 'slide-index__number';
-    number.textContent = String(index + 1).padStart(2, '0');
-
-    const label = document.createElement('span');
-    label.className = 'slide-index__label';
-    label.textContent = deriveSlideLabel(slide, index);
-
-    button.append(number, label);
-    button.addEventListener('click', () => {
-      closeSlideIndex();
-      setActiveSlide(index);
-    });
-
-    item.appendChild(button);
-    slideIndexList.appendChild(item);
-  });
-
-  updateSlideIndexHighlight(currentIndex);
-}
-
-function deriveSlideLabel(slide, index) {
-  const primary = slide.title || slide.headline || slide.quote || slide.description;
-  const secondary = slide.badge;
-  let text = primary || secondary || `Slide ${index + 1}`;
-  if (secondary && primary) {
-    text = `${secondary} — ${primary}`;
-  }
-  return text.length > 80 ? `${text.slice(0, 77)}…` : text;
-}
-
-function updateSlideIndexHighlight(activeIndex) {
-  if (!slideIndexList) return;
-  slideIndexList.querySelectorAll('.slide-index__item.is-current').forEach((item) => {
-    item.classList.remove('is-current');
-  });
-  const currentItem = slideIndexList.querySelector(`.slide-index__item[data-slide-index="${activeIndex}"]`);
-  if (currentItem) {
-    currentItem.classList.add('is-current');
-    if (isSlideIndexOpen) {
-      currentItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-}
-
-function openSlideIndex() {
-  ensureSlideIndexPanel();
-  if (!slideIndexPanel || isSlideIndexOpen) return;
-  buildSlideIndex();
-
-  isSlideIndexOpen = true;
-  slideIndexPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  slideIndexPanel.classList.add('is-open');
-  slideIndexPanel.setAttribute('aria-hidden', 'false');
-  document.addEventListener('keydown', handleSlideIndexKeydown, true);
-  updateSlideIndexHighlight(currentIndex);
-
-  const currentButton = slideIndexList?.querySelector(`.slide-index__item[data-slide-index="${currentIndex}"] button`);
-  requestAnimationFrame(() => {
-    (currentButton || slideIndexContent)?.focus({ preventScroll: true });
-  });
-}
-
-function closeSlideIndex() {
-  if (!slideIndexPanel || !isSlideIndexOpen) return;
-
-  isSlideIndexOpen = false;
-  slideIndexPanel.classList.remove('is-open');
-  slideIndexPanel.setAttribute('aria-hidden', 'true');
-  document.removeEventListener('keydown', handleSlideIndexKeydown, true);
-
-  const target = slideIndexPreviousFocus && typeof slideIndexPreviousFocus.focus === 'function'
-    ? slideIndexPreviousFocus
-    : document.getElementById('index-btn');
-  requestAnimationFrame(() => target?.focus());
-  slideIndexPreviousFocus = null;
-}
-
-function toggleSlideIndex() {
-  if (isSlideIndexOpen) {
-    closeSlideIndex();
-  } else {
-    openSlideIndex();
-  }
-}
-
-function handleSlideIndexKeydown(event) {
-  if (!isSlideIndexOpen || !slideIndexContent) return;
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeSlideIndex();
-    return;
-  }
-  if (event.key === 'Tab') {
-    trapFocus(event, slideIndexContent);
-  }
-}
-
 function getThemeLibrary() {
   try {
     const stored = localStorage.getItem(THEME_LIBRARY_KEY);
@@ -702,7 +437,7 @@ async function initDeck() {
   });
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
-  buildSlideIndex();
+  refreshSlideIndex();
 
   document.addEventListener("keydown", handleKeyboard);
   slidesRoot.addEventListener("click", handleSlideClick);
@@ -2643,7 +2378,7 @@ function reloadDeck(options = {}) {
   });
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
-  buildSlideIndex();
+  refreshSlideIndex();
 
   const clampedIndex = clamp(
     typeof targetIndex === "number" ? targetIndex : 0,
