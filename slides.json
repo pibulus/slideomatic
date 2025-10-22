@@ -4,7 +4,7 @@
     "eyebrow": "Live Session",
     "title": "Make Brand Good",
     "subtitle": "How to Compress Worlds Into Symbols That Stick",
-    "items": [
+    "media": [
       {
         "image": {
           "src": "images/oasis-logo.gif",
@@ -13,20 +13,14 @@
       },
       {
         "image": {
-          "src": "images/supreme-logo.png",
+          "src": "images/supreme-logo-new.png",
           "alt": "Supreme wordmark"
         }
       },
       {
         "image": {
-          "src": "",
+          "src": "images/liquid-death-can-new.jpg",
           "alt": "Liquid Death can"
-        }
-      },
-      {
-        "image": {
-          "src": "",
-          "alt": "Barbara Kruger typography"
         }
       }
     ]
