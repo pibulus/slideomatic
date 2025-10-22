@@ -44,6 +44,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body[data-mode="overview"] {
@@ -1060,55 +1061,6 @@ body[data-mode="overview"] {
     transform: rotate(360deg);
   }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DRAWER LAUNCHERS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.drawer-launcher {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 1200;
-  appearance: none;
-  border: var(--border-width) solid var(--color-ink);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  padding: 10px 16px;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform 180ms cubic-bezier(0.2, 2, 0.4, 1),
-              box-shadow 180ms ease,
-              background 180ms ease,
-              color 180ms ease;
-}
-
-.drawer-launcher:hover,
-.drawer-launcher:focus {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-md);
-  outline: none;
-}
-
-.drawer-launcher.is-active {
-  background: var(--color-ink);
-  color: var(--color-surface);
-}
-
-@media (max-width: 720px) {
-  .drawer-launcher {
-    top: 16px;
-    right: 16px;
-    padding: 8px 14px;
-  }
-}
-
 
 .hud__counter {
   display: flex;

@@ -13,16 +13,16 @@
   <body>
     <main class="landing">
       <section class="landing__hero">
-        <p class="landing__eyebrow">Slide-o-Matic</p>
-        <h1 class="landing__title">Pick a slideshow. Change the vibe. Ship the story.</h1>
-        <p class="landing__description">
-          Launch the live deck, start a fresh canvas, or drop in your own JSON file. Slideomatic.app keeps the pastel-punk energy,
-          theme controls, and voice tools ready to go.
+        <p class="landing__eyebrow">Pastel-punk presentation lab</p>
+        <h1 class="landing__title">Slide-o-Matic</h1>
+        <p class="landing__subtitle">
+          Kick off the default deck, dive straight into the editor, or drop in a JSON export. Slideomatic.app keeps the neon-soaked,
+          voice-ready tooling within reach.
         </p>
         <div class="landing__actions">
           <a class="button button--primary" href="deck.html">Open default deck</a>
-          <a class="button button--outline" href="admin.html">Start new deck</a>
-          <button class="button button--ghost" type="button" id="upload-btn">Upload deck JSON</button>
+          <a class="button button--secondary" href="admin.html">Start new deck</a>
+          <button class="button button--accent" type="button" id="upload-btn">Upload deck JSON</button>
           <input type="file" id="upload-input" accept=".json,application/json" hidden />
         </div>
       </section>
@@ -57,10 +57,14 @@
       <div class="landing__footer-about">
         <strong>About Slide-o-Matic</strong>
         <p>
-          A neo-brutalist, pastel-punk slideshow engine by
-          <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>. Built for rapid storytelling, on-the-fly edits,
-          and theme explorations without a build pipeline.
+          A pastel-punk, neo-brutalist deck machine by
+          <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>. Designed for flow-state storytelling, rapid
+          prototyping, and on-stage theme swaps without build tooling.
         </p>
+        <div class="landing__footer-buttons">
+          <button class="link-button" type="button" data-about-open>Read the origin story</button>
+          <a class="link-button link-button--kofi" href="https://ko-fi.com/pibulus" target="_blank" rel="noopener">☕ Support on Ko-fi</a>
+        </div>
       </div>
       <div class="landing__footer-actions">
         <button class="link-button" type="button" data-open-intent="theme">Open theme drawer</button>
@@ -69,10 +73,36 @@
       </div>
     </footer>
 
+    <div class="about-modal" id="about-modal" aria-hidden="true">
+      <div class="about-modal__backdrop" data-about-close></div>
+      <article class="about-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="about-modal-title" tabindex="-1">
+        <button class="about-modal__close" type="button" aria-label="Close about" data-about-close>×</button>
+        <h2 class="about-modal__title" id="about-modal-title">Slide-o-Matic</h2>
+        <p class="about-modal__lede">
+          Slide-o-Matic is a pastel-punk slideshow laboratory for people who ship stories fast. It pairs a JSON-first editor with voice
+          tooling so you can improvise slides, remix themes, and push exports without breaking flow.
+        </p>
+        <ul class="about-modal__list">
+          <li>🎙️ Voice commands draft and edit slides mid-presentation.</li>
+          <li>🎨 Theme drawer flips palettes, gradients, and typography live.</li>
+          <li>📦 JSON exports stay schema-safe and portable between decks.</li>
+        </ul>
+        <p class="about-modal__footer">
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo Alvarado</a>. If it sparks joy, grab a deck,
+          remix a theme, and share the vibe.
+        </p>
+      </article>
+    </div>
+
     <script type="module">
       const uploadBtn = document.getElementById('upload-btn');
       const uploadInput = document.getElementById('upload-input');
       const actionButtons = document.querySelectorAll('[data-open-intent]');
+      const aboutModal = document.getElementById('about-modal');
+      const aboutDialog = aboutModal?.querySelector('.about-modal__dialog');
+      const aboutOpeners = document.querySelectorAll('[data-about-open]');
+      const aboutClosers = aboutModal?.querySelectorAll('[data-about-close]');
+      let aboutPreviousFocus = null;
 
       uploadBtn?.addEventListener('click', () => uploadInput?.click());
 
@@ -113,6 +143,57 @@
           window.location.href = target.toString();
         });
       });
+
+      function openAboutModal() {
+        if (!aboutModal || aboutModal.classList.contains('is-open')) return;
+        aboutPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        aboutModal.classList.add('is-open');
+        aboutModal.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(() => aboutDialog?.focus({ preventScroll: true }));
+        document.addEventListener('keydown', handleAboutKeydown, true);
+      }
+
+      function closeAboutModal() {
+        if (!aboutModal || !aboutModal.classList.contains('is-open')) return;
+        aboutModal.classList.remove('is-open');
+        aboutModal.setAttribute('aria-hidden', 'true');
+        document.removeEventListener('keydown', handleAboutKeydown, true);
+        const target = aboutPreviousFocus && typeof aboutPreviousFocus.focus === 'function'
+          ? aboutPreviousFocus
+          : null;
+        aboutPreviousFocus = null;
+        requestAnimationFrame(() => target?.focus());
+      }
+
+      function handleAboutKeydown(event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeAboutModal();
+        }
+        if (event.key !== 'Tab') return;
+        if (!aboutDialog) return;
+        const focusable = aboutDialog.querySelectorAll(
+          'a[href], button:not([disabled]), textarea, input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) {
+          event.preventDefault();
+          aboutDialog.focus({ preventScroll: true });
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      }
+
+      aboutOpeners.forEach((button) => button.addEventListener('click', openAboutModal));
+      aboutClosers?.forEach((button) => button.addEventListener('click', closeAboutModal));
     </script>
   </body>
 </html>

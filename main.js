@@ -4044,13 +4044,13 @@ function initThemeDrawer() {
   const aiBtn = document.getElementById('theme-ai-btn');
   const randomBtn = document.getElementById('theme-random-btn');
 
-  if (!themeDrawer || !themeBtn) return;
+  if (!themeDrawer) return;
 
   themeDrawer.setAttribute('aria-hidden', 'true');
-  themeBtn.setAttribute('aria-expanded', 'false');
-  themeBtn.classList.remove('is-active');
+  themeBtn?.setAttribute('aria-expanded', 'false');
+  themeBtn?.classList.remove('is-active');
 
-  if (!themeBtn.dataset.listenerAttached) {
+  if (themeBtn && !themeBtn.dataset.listenerAttached) {
     themeBtn.addEventListener('click', toggleThemeDrawer);
     themeBtn.dataset.listenerAttached = 'true';
   }
