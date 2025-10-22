@@ -45,6 +45,9 @@ let isThemeDrawerOpen = false;
 let themeDrawerPreviousFocus = null;
 let currentThemePath = "theme.json";
 const slideScrollPositions = new Map();
+const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
+let deckStorageKey = null;
+let deckPersistFailureNotified = false;
 
 initSlideIndex({
   getSlides: () => slides,
@@ -409,13 +412,38 @@ async function initDeck() {
   await loadAndApplyTheme();
   await loadAutoLinks();
 
+  let loadedSlides = null;
+  let loadError = null;
   try {
-    slides = await loadSlides();
-    validateSlides(slides);
+    loadedSlides = await loadSlides();
   } catch (error) {
-    console.error("Failed to load slides", error);
-    renderLoadError(error);
+    loadError = error;
+  }
+
+  const storedSlides = loadPersistedDeck();
+
+  if (Array.isArray(storedSlides)) {
+    slides = storedSlides;
+  } else if (Array.isArray(loadedSlides)) {
+    slides = loadedSlides;
+  } else {
+    const finalError = loadError || new Error("Unable to load slides");
+    console.error("Failed to load slides", finalError);
+    renderLoadError(finalError);
     return;
+  }
+
+  try {
+    validateSlides(slides);
+  } catch (validationError) {
+    console.error("Failed to validate slides", validationError);
+    renderLoadError(validationError);
+    return;
+  }
+
+  const usingPersistedSlides = Array.isArray(storedSlides);
+  if (usingPersistedSlides) {
+    console.info('Slide-o-Matic: loaded deck overrides from localStorage.');
   }
 
   // Filter out schema/docs slides before rendering
@@ -573,6 +601,71 @@ function resolveSlidesPath() {
   return `${slidesParam}.json`;
 }
 
+function getDeckStorageKey() {
+  if (deckStorageKey) return deckStorageKey;
+  const path = resolveSlidesPath();
+  try {
+    const url = new URL(path, window.location.href);
+    deckStorageKey = `${DECK_STORAGE_PREFIX}${url.pathname}`;
+  } catch (error) {
+    deckStorageKey = `${DECK_STORAGE_PREFIX}${path}`;
+  }
+  return deckStorageKey;
+}
+
+function loadPersistedDeck() {
+  try {
+    const stored = localStorage.getItem(getDeckStorageKey());
+    if (!stored) return null;
+    const payload = JSON.parse(stored);
+    if (!payload || typeof payload !== 'object') return null;
+    if (!Array.isArray(payload.slides)) return null;
+    return payload.slides;
+  } catch (error) {
+    console.warn('Failed to load deck overrides from localStorage:', error);
+    try {
+      localStorage.removeItem(getDeckStorageKey());
+    } catch (_) {
+      // Ignore cleanup failure – nothing else we can do.
+    }
+    return null;
+  }
+}
+
+function persistSlides() {
+  if (!Array.isArray(slides)) return;
+  try {
+    const payload = {
+      version: 1,
+      updatedAt: Date.now(),
+      source: resolveSlidesPath(),
+      slides,
+    };
+    localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
+    deckPersistFailureNotified = false;
+  } catch (error) {
+    console.warn('Unable to persist deck edits to localStorage:', error);
+    if (!deckPersistFailureNotified) {
+      try {
+        showHudStatus('⚠️ Unable to save edits locally', 'warning');
+        setTimeout(hideHudStatus, 2400);
+      } catch (_) {
+        // HUD not available; ignore.
+      }
+      deckPersistFailureNotified = true;
+    }
+  }
+}
+
+function clearPersistedDeck() {
+  try {
+    localStorage.removeItem(getDeckStorageKey());
+    deckPersistFailureNotified = false;
+  } catch (error) {
+    console.warn('Failed to clear deck overrides from localStorage:', error);
+  }
+}
+
 async function loadAutoLinks() {
   try {
     const response = await fetch("autolinks.json", { cache: "no-store" });
@@ -640,10 +733,19 @@ function validateSlides(data) {
       throw new Error(`Slide ${index} is not an object.`);
     }
 
-    if (slide.type && !allowedTypes.has(slide.type)) {
-      throw new Error(
-        `Slide ${index} has unsupported type "${slide.type}". Allowed types: ${[...allowedTypes].join(", ")}.`
+    const originalType = slide.type;
+    const normalizedType =
+      typeof originalType === "string" && originalType.trim()
+        ? originalType.trim()
+        : "standard";
+
+    if (!allowedTypes.has(normalizedType)) {
+      console.warn(
+        `Slide ${index} has unsupported type "${normalizedType}". Falling back to "standard".`
       );
+      slide.type = "standard";
+    } else {
+      slide.type = normalizedType;
     }
 
     if (slide.type === "split") {
@@ -2315,6 +2417,7 @@ function escapeRegExp(string) {
 // ===================================================================
 
 function downloadDeck() {
+  persistSlides();
   const json = JSON.stringify(slides, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -2335,7 +2438,17 @@ function handleDeckUpload(event) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      const newSlides = JSON.parse(e.target.result);
+      const parsed = JSON.parse(e.target.result);
+      const newSlides = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.slides)
+        ? parsed.slides
+        : null;
+
+      if (!newSlides) {
+        throw new Error('File must contain a JSON array of slides.');
+      }
+
       validateSlides(newSlides);
 
       // Replace current slides
@@ -2343,7 +2456,10 @@ function handleDeckUpload(event) {
 
       // Reload deck with new slides
       reloadDeck({ targetIndex: 0 });
+      persistSlides();
 
+      showHudStatus(`📂 Loaded ${newSlides.length} slides`, 'success');
+      setTimeout(hideHudStatus, 1600);
       console.log(`✓ Loaded ${slides.length} slides from ${file.name}`);
     } catch (error) {
       console.error('Failed to load deck:', error);
@@ -2684,6 +2800,7 @@ function insertSlideAt(index, slideData, options = {}) {
   }
 
   updateSlideIndexHighlight(isOverview ? overviewCursor : currentIndex);
+  persistSlides();
 
   return newSlideElement;
 }
@@ -2693,6 +2810,7 @@ function removeSlideAt(index, options = {}) {
   if (index < 0 || index >= slides.length) return;
 
   slides.splice(index, 1);
+  persistSlides();
   slideScrollPositions.delete(index);
   shiftScrollPositions(index + 1, -1);
 
@@ -2742,6 +2860,7 @@ function replaceSlideAt(index, options = {}) {
   const existing = slideElements[index];
   if (!existing || !existing.parentElement) {
     reloadDeck({ targetIndex: index, focus });
+    persistSlides();
     return;
   }
 
@@ -2787,6 +2906,7 @@ function replaceSlideAt(index, options = {}) {
   if (wasActive && !isOverview) {
     updateHud();
   }
+  persistSlides();
 }
 
 function getSlideTemplate(type) {
@@ -4238,13 +4358,38 @@ async function initDeckWithTheme() {
   await loadAndApplyTheme();
   await loadAutoLinks();
 
+  let loadedSlides = null;
+  let loadError = null;
   try {
-    slides = await loadSlides();
-    validateSlides(slides);
+    loadedSlides = await loadSlides();
   } catch (error) {
-    console.error("Failed to load slides", error);
-    renderLoadError(error);
+    loadError = error;
+  }
+
+  const storedSlides = loadPersistedDeck();
+
+  if (Array.isArray(storedSlides)) {
+    slides = storedSlides;
+  } else if (Array.isArray(loadedSlides)) {
+    slides = loadedSlides;
+  } else {
+    const finalError = loadError || new Error("Unable to load slides");
+    console.error("Failed to load slides", finalError);
+    renderLoadError(finalError);
     return;
+  }
+
+  try {
+    validateSlides(slides);
+  } catch (validationError) {
+    console.error("Failed to validate slides", validationError);
+    renderLoadError(validationError);
+    return;
+  }
+
+  const usingPersistedSlides = Array.isArray(storedSlides);
+  if (usingPersistedSlides) {
+    console.info('Slide-o-Matic: loaded deck overrides from localStorage.');
   }
 
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
