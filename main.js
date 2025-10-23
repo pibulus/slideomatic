@@ -61,6 +61,8 @@ initSlideIndex({
 
 const THEME_LIBRARY_KEY = 'slideomatic_themes';
 const CURRENT_THEME_KEY = 'slideomatic_current_theme';
+const CURRENT_THEME_PATH_KEY = 'slideomatic_current_theme_path';
+const LOCAL_THEME_SOURCE = '__local__';
 const FOCUSABLE_SELECTORS = [
   'a[href]',
   'area[href]',
@@ -155,10 +157,18 @@ function deleteThemeFromLibrary(name) {
   localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(filtered));
 }
 
-function setCurrentTheme(theme) {
+function setCurrentTheme(theme, options = {}) {
   const normalized = normalizeThemeTokens(theme);
   currentTheme = normalized;
   localStorage.setItem(CURRENT_THEME_KEY, JSON.stringify(normalized));
+  const source = options.source ?? currentThemePath ?? LOCAL_THEME_SOURCE;
+  currentThemePath = source;
+  try {
+    localStorage.setItem(CURRENT_THEME_PATH_KEY, source);
+  } catch (error) {
+    console.warn('Failed to store theme path:', error);
+  }
+  return normalized;
 }
 
 function getCurrentTheme() {
@@ -168,6 +178,8 @@ function getCurrentTheme() {
     if (!stored) return null;
     const parsed = JSON.parse(stored);
     currentTheme = normalizeThemeTokens(parsed);
+    const storedPath = localStorage.getItem(CURRENT_THEME_PATH_KEY);
+    currentThemePath = storedPath || LOCAL_THEME_SOURCE;
     return currentTheme;
   } catch (error) {
     console.warn('Failed to load current theme:', error);
@@ -306,8 +318,12 @@ function generateRandomTheme() {
 
   // Build theme object
   const colorBg = isDark ? hslToHex(baseHue, 20, 10) : hslToHex(baseHue, 30, 95);
-  const colorInk = isDark ? '#ffffff' : '#000000';
-  const colorMuted = isDark ? '#a0a0a0' : '#2b2b2b';
+  const colorInk = getAccessibleTextColor(colorBg);
+  const colorMuted =
+    colorInk === '#000000'
+      ? mixHexColors('#000000', '#666666', 0.6)
+      : mixHexColors('#ffffff', '#444444', 0.4);
+  const badgeTextColor = getAccessibleTextColor(palette.accent);
 
   const theme = {
     'color-bg': colorBg,
@@ -322,7 +338,7 @@ function generateRandomTheme() {
     'color-surface-alt': palette.secondary,
     'color-accent': palette.accent,
     'badge-bg': palette.accent,
-    'badge-color': colorInk,
+    'badge-color': badgeTextColor,
     'color-ink': colorInk,
     'color-muted': colorMuted,
     'border-width': borderWidth,
@@ -404,6 +420,43 @@ function hexToRgb(hex) {
   return result
     ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
     : [255, 255, 255];
+}
+
+function getRelativeLuminance(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  const [rs, gs, bs] = [r, g, b].map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(foregroundHex, backgroundHex) {
+  const l1 = getRelativeLuminance(foregroundHex);
+  const l2 = getRelativeLuminance(backgroundHex);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function getAccessibleTextColor(backgroundHex) {
+  const blackContrast = getContrastRatio('#000000', backgroundHex);
+  const whiteContrast = getContrastRatio('#ffffff', backgroundHex);
+  return blackContrast >= whiteContrast ? '#000000' : '#ffffff';
+}
+
+function mixHexColors(colorA, colorB, ratio = 0.5) {
+  const [r1, g1, b1] = hexToRgb(colorA);
+  const [r2, g2, b2] = hexToRgb(colorB);
+  const mix = (a, b) => Math.round(a * (1 - ratio) + b * ratio);
+  return (
+    '#' +
+    [mix(r1, r2), mix(g1, g2), mix(b1, b2)]
+      .map((value) => value.toString(16).padStart(2, '0'))
+      .join('')
+  );
 }
 
 initDeckWithTheme();
@@ -508,9 +561,11 @@ async function initDeck() {
   const saveDeckBtn = document.getElementById('save-deck-btn');
   if (saveDeckBtn) {
     saveDeckBtn.addEventListener('click', () => {
-      downloadDeck();
-      showHudStatus('💾 Deck downloaded', 'success');
-      setTimeout(hideHudStatus, 1600);
+      const persisted = downloadDeck();
+      if (persisted) {
+        showHudStatus('💾 Deck downloaded', 'success');
+        setTimeout(hideHudStatus, 1600);
+      }
     });
   }
 
@@ -518,14 +573,13 @@ async function initDeck() {
   if (themeSelect) {
     themeSelect.addEventListener('change', async (event) => {
       const themePath = event.target.value;
-      currentThemePath = themePath;
       showHudStatus('🎨 Switching theme...', 'processing');
       try {
         const response = await fetch(themePath, { cache: "no-store" });
         if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
         const theme = await response.json();
         const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme);
+        setCurrentTheme(normalizedTheme, { source: themePath });
         loadThemeIntoEditor();
         syncThemeSelectUI();
         showHudStatus('✨ Theme applied', 'success');
@@ -552,13 +606,33 @@ async function loadSlides() {
 }
 
 async function loadAndApplyTheme() {
+  const params = new URLSearchParams(window.location.search);
+  const themeParamProvided = params.has("theme");
+  const storedTheme = getCurrentTheme();
+  if (storedTheme && !themeParamProvided) {
+    applyTheme(storedTheme);
+    const storedPath = localStorage.getItem(CURRENT_THEME_PATH_KEY);
+    currentThemePath = storedPath || LOCAL_THEME_SOURCE;
+    if (!storedPath) {
+      try {
+        localStorage.setItem(CURRENT_THEME_PATH_KEY, currentThemePath);
+      } catch (error) {
+        console.warn('Failed to persist theme path:', error);
+      }
+    }
+    syncThemeSelectUI();
+    return;
+  }
+
+  const themePath = resolveThemePath();
   try {
-    const response = await fetch(resolveThemePath(), { cache: "no-store" });
+    const response = await fetch(themePath, { cache: "no-store" });
     if (!response.ok) return;
     const theme = await response.json();
     const normalizedTheme = applyTheme(theme);
-    setCurrentTheme(normalizedTheme);
-    currentThemePath = resolveThemePath();
+    setCurrentTheme(normalizedTheme, { source: themePath });
+    currentThemePath = themePath;
+    syncThemeSelectUI();
   } catch (error) {
     console.warn("Unable to load custom theme, using defaults.", error);
   }
@@ -606,9 +680,10 @@ function getDeckStorageKey() {
   const path = resolveSlidesPath();
   try {
     const url = new URL(path, window.location.href);
-    deckStorageKey = `${DECK_STORAGE_PREFIX}${url.pathname}`;
+    const keySource = `${url.origin}${url.pathname}${url.search ?? ""}`;
+    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(keySource)}`;
   } catch (error) {
-    deckStorageKey = `${DECK_STORAGE_PREFIX}${path}`;
+    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(path)}`;
   }
   return deckStorageKey;
 }
@@ -632,8 +707,9 @@ function loadPersistedDeck() {
   }
 }
 
-function persistSlides() {
-  if (!Array.isArray(slides)) return;
+function persistSlides(options = {}) {
+  const { suppressWarning = false } = options;
+  if (!Array.isArray(slides)) return false;
   try {
     const payload = {
       version: 1,
@@ -643,9 +719,10 @@ function persistSlides() {
     };
     localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
     deckPersistFailureNotified = false;
+    return true;
   } catch (error) {
     console.warn('Unable to persist deck edits to localStorage:', error);
-    if (!deckPersistFailureNotified) {
+    if (!deckPersistFailureNotified && !suppressWarning) {
       try {
         showHudStatus('⚠️ Unable to save edits locally', 'warning');
         setTimeout(hideHudStatus, 2400);
@@ -654,6 +731,7 @@ function persistSlides() {
       }
       deckPersistFailureNotified = true;
     }
+    return false;
   }
 }
 
@@ -1009,9 +1087,8 @@ function updateOverviewButton() {
 function updateOverviewLayout() {
   const totalSlides = slideElements.length;
   if (!totalSlides) return;
-  const estimatedRows = Math.max(1, Math.min(OVERVIEW_MAX_ROWS, Math.round(window.innerHeight / 340)));
-  overviewRowCount = Math.min(estimatedRows, totalSlides);
-  overviewColumnCount = Math.max(1, Math.ceil(totalSlides / overviewRowCount));
+  overviewRowCount = 1;
+  overviewColumnCount = totalSlides;
   slidesRoot.style.setProperty('--overview-row-count', overviewRowCount);
   slidesRoot.style.setProperty('--overview-column-count', overviewColumnCount);
   overviewCursor = clamp(overviewCursor, 0, totalSlides - 1);
@@ -1048,29 +1125,9 @@ function highlightOverviewSlide(index, { scroll = true } = {}) {
 function moveOverviewCursorBy(deltaColumn, deltaRow) {
   const totalSlides = slideElements.length;
   if (!totalSlides) return;
-
-  const rows = overviewRowCount || 1;
-  const columns = Math.max(1, Math.ceil(totalSlides / rows));
-
-  let column = Math.floor(overviewCursor / rows) + deltaColumn;
-  let row = (overviewCursor % rows) + deltaRow;
-
-  column = clamp(column, 0, columns - 1);
-  row = clamp(row, 0, rows - 1);
-
-  let nextIndex = column * rows + row;
-  if (nextIndex >= totalSlides) {
-    while (row > 0 && nextIndex >= totalSlides) {
-      row -= 1;
-      nextIndex = column * rows + row;
-    }
-    while (nextIndex >= totalSlides && column > 0) {
-      column -= 1;
-      nextIndex = Math.min(totalSlides - 1, column * rows + Math.min(row, rows - 1));
-    }
-    nextIndex = clamp(nextIndex, 0, totalSlides - 1);
-  }
-
+  const delta = deltaColumn !== 0 ? deltaColumn : deltaRow;
+  if (!delta) return;
+  const nextIndex = clamp(overviewCursor + delta, 0, totalSlides - 1);
   highlightOverviewSlide(nextIndex);
 }
 
@@ -1128,6 +1185,9 @@ function setActiveSlide(nextIndex) {
 
   updateHud();
   updateSlideIndexHighlight(currentIndex);
+  if (isEditDrawerOpen) {
+    renderEditForm();
+  }
   preloadSlideImages(currentIndex);
   preloadSlideImages(currentIndex + 1);
   preloadSlideImages(currentIndex + 2);
@@ -2417,7 +2477,7 @@ function escapeRegExp(string) {
 // ===================================================================
 
 function downloadDeck() {
-  persistSlides();
+  const persisted = persistSlides();
   const json = JSON.stringify(slides, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -2429,6 +2489,7 @@ function downloadDeck() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   console.log('✓ Deck downloaded as slides.json');
+  return persisted;
 }
 
 function handleDeckUpload(event) {
@@ -2456,10 +2517,12 @@ function handleDeckUpload(event) {
 
       // Reload deck with new slides
       reloadDeck({ targetIndex: 0 });
-      persistSlides();
+      const persisted = persistSlides();
 
-      showHudStatus(`📂 Loaded ${newSlides.length} slides`, 'success');
-      setTimeout(hideHudStatus, 1600);
+      if (persisted) {
+        showHudStatus(`📂 Loaded ${newSlides.length} slides`, 'success');
+        setTimeout(hideHudStatus, 1600);
+      }
       console.log(`✓ Loaded ${slides.length} slides from ${file.name}`);
     } catch (error) {
       console.error('Failed to load deck:', error);
@@ -2647,9 +2710,11 @@ function renderEditForm() {
   document.getElementById('save-slide-btn')?.addEventListener('click', saveCurrentSlide);
   document.getElementById('duplicate-slide-btn')?.addEventListener('click', duplicateCurrentSlide);
   document.getElementById('download-deck-btn')?.addEventListener('click', () => {
-    downloadDeck();
-    showHudStatus('💾 Deck downloaded', 'success');
-    setTimeout(hideHudStatus, 1600);
+    const persisted = downloadDeck();
+    if (persisted) {
+      showHudStatus('💾 Deck downloaded', 'success');
+      setTimeout(hideHudStatus, 1600);
+    }
   });
 
   const templateBtn = document.getElementById('add-template-btn');
@@ -3616,7 +3681,7 @@ async function processVoiceToTheme(audioBlob) {
 
     // Download theme.json automatically
     downloadTheme(normalizedTheme);
-    setCurrentTheme(normalizedTheme);
+    setCurrentTheme(normalizedTheme, { source: '__ai__' });
 
     await ensureMinimumDelay(uiStart, 1500);
     showHudStatus('🎨 Theme created!', 'success');
@@ -4093,6 +4158,16 @@ function syncThemeSelectUI() {
   const options = Array.from(themeSelect.options).map(option => option.value);
   if (options.includes(currentThemePath)) {
     themeSelect.value = currentThemePath;
+  } else {
+    let customOption = themeSelect.querySelector('option[value="__custom__"]');
+    if (!customOption) {
+      customOption = document.createElement('option');
+      customOption.value = '__custom__';
+      customOption.textContent = 'Saved Theme';
+      customOption.dataset.generated = 'true';
+      themeSelect.appendChild(customOption);
+    }
+    themeSelect.value = '__custom__';
   }
 }
 
@@ -4186,7 +4261,7 @@ function initThemeDrawer() {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
       const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme);
+      setCurrentTheme(normalizedTheme, { source: '__custom__' });
       syncThemeSelectUI();
       showHudStatus('✨ Theme applied', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -4225,7 +4300,7 @@ function initThemeDrawer() {
       const theme = await generateThemeWithAI(description);
 
       const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme);
+      setCurrentTheme(normalizedTheme, { source: '__ai__' });
       loadThemeIntoEditor();
       syncThemeSelectUI();
 
@@ -4246,7 +4321,7 @@ function initThemeDrawer() {
       const theme = generateRandomTheme();
 
       const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme);
+      setCurrentTheme(normalizedTheme, { source: '__random__' });
       loadThemeIntoEditor();
       syncThemeSelectUI();
 
@@ -4332,7 +4407,7 @@ function renderThemeLibrary() {
       const entry = library.find(t => t.name === name);
       if (entry) {
         const normalizedTheme = applyTheme(entry.theme);
-        setCurrentTheme(normalizedTheme);
+        setCurrentTheme(normalizedTheme, { source: `library:${name}` });
         loadThemeIntoEditor();
         showHudStatus(`✨ Loaded "${name}"`, 'success');
         setTimeout(hideHudStatus, 1600);
@@ -4357,6 +4432,7 @@ function renderThemeLibrary() {
 async function initDeckWithTheme() {
   await loadAndApplyTheme();
   await loadAutoLinks();
+  syncThemeSelectUI();
 
   let loadedSlides = null;
   let loadError = null;
@@ -4445,9 +4521,11 @@ async function initDeckWithTheme() {
   const saveDeckBtn = document.getElementById('save-deck-btn');
   if (saveDeckBtn) {
     saveDeckBtn.addEventListener('click', () => {
-      downloadDeck();
-      showHudStatus('💾 Deck downloaded', 'success');
-      setTimeout(hideHudStatus, 1600);
+      const persisted = downloadDeck();
+      if (persisted) {
+        showHudStatus('💾 Deck downloaded', 'success');
+        setTimeout(hideHudStatus, 1600);
+      }
     });
   }
 
@@ -4461,8 +4539,9 @@ async function initDeckWithTheme() {
         if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
         const theme = await response.json();
         const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme);
+        setCurrentTheme(normalizedTheme, { source: themePath });
         loadThemeIntoEditor(); // Update editor if drawer is open
+        syncThemeSelectUI();
         showHudStatus('✨ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {

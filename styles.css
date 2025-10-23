@@ -1261,6 +1261,8 @@ body[data-mode="overview"] .hud {
   }
 
   .slide {
+    inset: 0;
+    width: 100%;
     padding: 24px 20px;
     border-width: 3px;
     gap: clamp(12px, 2.5vh, 24px);
@@ -1300,6 +1302,16 @@ body[data-mode="overview"] .hud {
     max-height: 40vh;
   }
 
+  .slide__content,
+  .slide--title .slide__content,
+  .slide--split .slide__content,
+  .slide--pillars .slide__content,
+  .slide--gallery .slide__content,
+  .slide--quote .slide__content {
+    width: 100%;
+    margin-inline: clamp(12px, 4vw, 20px);
+  }
+
   .gallery {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1333,23 +1345,23 @@ body[data-mode="overview"] .hud {
   }
 
   body[data-mode="overview"] .slides {
-    grid-auto-flow: row;
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    width: 100%;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(var(--overview-column-count, 1), minmax(240px, min(80vw, 420px)));
+    grid-template-rows: 1fr;
+    width: max-content;
     min-width: 100%;
     height: auto;
     max-height: none;
     gap: 16px;
     padding: 16px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    scroll-snap-type: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
   }
 
   body[data-mode="overview"] .slide {
-    width: 100%;
-    scroll-snap-align: unset;
+    width: min(80vw, 420px);
+    scroll-snap-align: center;
   }
 
   .badge {
