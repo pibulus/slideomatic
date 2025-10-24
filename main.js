@@ -1211,6 +1211,15 @@ function createSlide(slide, index, rendererMap) {
   section.dataset.index = index;
   section.setAttribute("aria-hidden", "true");
 
+  if (slide.image) {
+    console.log('[DEBUG createSlide] Slide has image:', {
+      index,
+      srcPrefix: slide.image.src?.substring(0, 50),
+      hasImage: !!slide.image,
+      hasSrc: !!slide.image.src
+    });
+  }
+
   // Apply font preset or custom font
   if (slide.font) {
     const fontFamily = resolveFontFamily(slide.font);
@@ -1797,6 +1806,7 @@ function navigateToDeckHome() {
 
 function createImage(image, className = "slide__image", options = {}) {
   if (!image || !image.src) {
+    console.log('[DEBUG createImage] No src, creating placeholder');
     return createImagePlaceholder(image, className);
   }
   const img = document.createElement("img");
@@ -1804,6 +1814,13 @@ function createImage(image, className = "slide__image", options = {}) {
   const actualSrc = image.src;
   const modalSrc = image.modalSrc ?? actualSrc;
   const shouldLazyLoad = typeof actualSrc === "string" && !actualSrc.startsWith("data:");
+
+  console.log('[DEBUG createImage] Creating image:', {
+    srcPrefix: actualSrc.substring(0, 50),
+    shouldLazyLoad,
+    isBase64: actualSrc.startsWith('data:')
+  });
+
   img.alt = image.alt ?? "";
   img.dataset.modalSrc = modalSrc;
   if (image.alt) {
@@ -1818,6 +1835,7 @@ function createImage(image, className = "slide__image", options = {}) {
   if (shouldLazyLoad) {
     registerLazyImage(img, actualSrc);
   } else {
+    console.log('[DEBUG createImage] Setting base64 src directly');
     img.src = actualSrc;
   }
   if (image.aspectRatio) {
@@ -1949,8 +1967,9 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
     }
   });
 
-  // Store reference for paste handler
-  placeholder.dataset.placeholderFor = JSON.stringify(image);
+  // Store reference to the original image object
+  // This allows us to find and update the correct location in the slide data
+  placeholder._imageRef = image;
 
   return placeholder;
 }
@@ -2009,9 +2028,11 @@ async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
         compressedSize: sizeInBytes,
         compressedFormat: outputFormat,
         uploadedAt: Date.now()
-      });
+      }, placeholderElement);
 
       // Re-render the slide and preserve context
+      console.log('[DEBUG] Image uploaded, re-rendering slide', slideIndex);
+      console.log('[DEBUG] Slide image src:', slides[slideIndex].image?.src?.substring(0, 100));
       replaceSlideAt(slideIndex, { focus: false });
       if (!isOverview) {
         setActiveSlide(slideIndex);
@@ -2142,17 +2163,79 @@ function findSlideIndexForPlaceholder(placeholderElement) {
   return slideElements.indexOf(slideElement);
 }
 
-function updateSlideImage(slideIndex, imageData) {
+function updateSlideImage(slideIndex, imageData, placeholderElement) {
   if (slideIndex < 0 || slideIndex >= slides.length) return;
 
   const slide = slides[slideIndex];
 
-  // Update the slide's image data
+  // Try to find the exact image object that this placeholder represents
+  const targetImageRef = placeholderElement?._imageRef;
+
+  if (targetImageRef) {
+    // Search for this exact image object in the slide data structure
+    const updated = findAndUpdateImageInSlide(slide, targetImageRef, imageData);
+    if (updated) {
+      console.log('[DEBUG] Updated image in nested structure');
+      return;
+    }
+  }
+
+  // Fallback: update top-level slide.image
+  console.log('[DEBUG] Fallback to top-level slide.image');
   if (!slide.image) {
     slide.image = {};
   }
-
   Object.assign(slide.image, imageData);
+}
+
+function findAndUpdateImageInSlide(slide, targetImageRef, newImageData) {
+  // Check top-level image
+  if (slide.image === targetImageRef) {
+    Object.assign(slide.image, newImageData);
+    return true;
+  }
+
+  // Check media array (title slides)
+  if (Array.isArray(slide.media)) {
+    for (const mediaItem of slide.media) {
+      if (mediaItem.image === targetImageRef) {
+        Object.assign(mediaItem.image, newImageData);
+        return true;
+      }
+    }
+  }
+
+  // Check items array (gallery slides)
+  if (Array.isArray(slide.items)) {
+    for (const item of slide.items) {
+      if (item.image === targetImageRef) {
+        Object.assign(item.image, newImageData);
+        return true;
+      }
+    }
+  }
+
+  // Check split columns
+  if (slide.left?.image === targetImageRef) {
+    Object.assign(slide.left.image, newImageData);
+    return true;
+  }
+  if (slide.right?.image === targetImageRef) {
+    Object.assign(slide.right.image, newImageData);
+    return true;
+  }
+
+  // Check pillars
+  if (Array.isArray(slide.pillars)) {
+    for (const pillar of slide.pillars) {
+      if (pillar.image === targetImageRef) {
+        Object.assign(pillar.image, newImageData);
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function showImageError(placeholderElement, message) {
@@ -2693,6 +2776,16 @@ function prepareSlideForEditing(slide) {
     clone.image = replaceBase64WithToken(clone.image);
   }
 
+  // Handle media array (title slides)
+  if (Array.isArray(clone.media)) {
+    clone.media = clone.media.map(mediaItem => {
+      if (mediaItem.image) {
+        return { ...mediaItem, image: replaceBase64WithToken(mediaItem.image) };
+      }
+      return mediaItem;
+    });
+  }
+
   // Handle gallery items
   if (Array.isArray(clone.items)) {
     clone.items = clone.items.map(item => {
@@ -2749,6 +2842,16 @@ function restoreBase64FromTokens(editedSlide, originalSlide) {
   // Restore top-level image
   if (result.image && originalSlide.image) {
     result.image = restoreBase64InImage(result.image, originalSlide.image);
+  }
+
+  // Restore media array (title slides)
+  if (Array.isArray(result.media) && Array.isArray(originalSlide.media)) {
+    result.media = result.media.map((mediaItem, index) => {
+      if (mediaItem.image && originalSlide.media[index]?.image) {
+        return { ...mediaItem, image: restoreBase64InImage(mediaItem.image, originalSlide.media[index].image) };
+      }
+      return mediaItem;
+    });
   }
 
   // Restore gallery items
@@ -2881,8 +2984,14 @@ function saveCurrentSlide() {
     const editedSlide = JSON.parse(textarea.value);
     const originalSlide = slides[currentIndex];
 
+    console.log('[DEBUG] Saving slide...');
+    console.log('[DEBUG] Edited image src:', editedSlide.image?.src?.substring(0, 100));
+    console.log('[DEBUG] Original image src:', originalSlide.image?.src?.substring(0, 100));
+
     // Restore base64 data from tokens
     const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
+
+    console.log('[DEBUG] Restored image src:', restoredSlide.image?.src?.substring(0, 100));
 
     const targetIndex = currentIndex;
     slides[currentIndex] = restoredSlide;
