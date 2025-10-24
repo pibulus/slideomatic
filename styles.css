@@ -1876,6 +1876,19 @@ body[data-mode="overview"] .hud {
   transform: scale(1.1);
 }
 
+.edit-drawer__image-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.edit-drawer__image-item[draggable="true"] {
+  cursor: grab;
+}
+
+.edit-drawer__image-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    THEME DRAWER (RIGHT SIDE)
    ═══════════════════════════════════════════════════════════════════════════ */

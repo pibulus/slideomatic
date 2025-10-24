@@ -2976,7 +2976,7 @@ function buildImageManager(slide) {
     const displayName = isBase64 ? `${filename}${size}` : filename;
 
     html += `
-      <div class="edit-drawer__image-item">
+      <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
         <span class="edit-drawer__image-icon">📷</span>
         <span class="edit-drawer__image-name">${displayName}</span>
         <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
@@ -3144,6 +3144,12 @@ function renderEditForm() {
   // Setup quick-edit field sync
   setupQuickEditSync();
 
+  // Setup image remove buttons
+  setupImageRemoveButtons();
+
+  // Setup image drag-reorder
+  setupImageDragReorder();
+
 }
 
 function setupQuickEditSync() {
@@ -3190,6 +3196,261 @@ function syncQuickEditToJSON() {
   } catch (error) {
     // If JSON is invalid, don't try to sync
     console.warn('Cannot sync quick-edit: invalid JSON');
+  }
+}
+
+// ================================================================
+// Image Management - Remove & Reorder
+// ================================================================
+
+function setupImageRemoveButtons() {
+  const removeButtons = document.querySelectorAll('.edit-drawer__image-remove');
+
+  removeButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const imageIndex = parseInt(button.dataset.imageIndex, 10);
+      removeImageByIndex(imageIndex);
+    });
+  });
+}
+
+function removeImageByIndex(imageIndex) {
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  // Collect all image locations with their paths
+  const imageLocations = [];
+
+  // Top-level image
+  if (currentSlide.image?.src) {
+    imageLocations.push({ path: ['image'], image: currentSlide.image });
+  }
+
+  // Media array (title slides)
+  if (Array.isArray(currentSlide.media)) {
+    currentSlide.media.forEach((item, idx) => {
+      if (item.image?.src) {
+        imageLocations.push({ path: ['media', idx, 'image'], image: item.image });
+      }
+    });
+  }
+
+  // Gallery items
+  if (Array.isArray(currentSlide.items)) {
+    currentSlide.items.forEach((item, idx) => {
+      if (item.image?.src) {
+        imageLocations.push({ path: ['items', idx, 'image'], image: item.image });
+      }
+    });
+  }
+
+  // Split columns
+  if (currentSlide.left?.image?.src) {
+    imageLocations.push({ path: ['left', 'image'], image: currentSlide.left.image });
+  }
+  if (currentSlide.right?.image?.src) {
+    imageLocations.push({ path: ['right', 'image'], image: currentSlide.right.image });
+  }
+
+  // Pillars
+  if (Array.isArray(currentSlide.pillars)) {
+    currentSlide.pillars.forEach((pillar, idx) => {
+      if (pillar.image?.src) {
+        imageLocations.push({ path: ['pillars', idx, 'image'], image: pillar.image });
+      }
+    });
+  }
+
+  // Find the target image location
+  const targetLocation = imageLocations[imageIndex];
+  if (!targetLocation) {
+    console.warn('Image index out of bounds');
+    return;
+  }
+
+  // Remove the image by navigating the path
+  const path = targetLocation.path;
+  let current = currentSlide;
+
+  for (let i = 0; i < path.length - 1; i++) {
+    current = current[path[i]];
+  }
+
+  // Delete the final property
+  delete current[path[path.length - 1]];
+
+  // Update the slide
+  slides[currentIndex] = currentSlide;
+
+  // Re-render the edit form to show updated image list
+  renderEditForm();
+
+  // Show success message
+  showHudStatus('🗑️ Image removed', 'success');
+  setTimeout(hideHudStatus, 1600);
+
+  console.log('✓ Image removed from slide');
+}
+
+function setupImageDragReorder() {
+  const imageList = document.querySelector('.edit-drawer__image-list');
+  if (!imageList) return;
+
+  let draggedItem = null;
+  let draggedIndex = null;
+
+  imageList.addEventListener('dragstart', (event) => {
+    if (!event.target.classList.contains('edit-drawer__image-item')) return;
+
+    draggedItem = event.target;
+    draggedIndex = Array.from(imageList.children).indexOf(draggedItem);
+
+    draggedItem.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', draggedItem.innerHTML);
+  });
+
+  imageList.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+
+    const afterElement = getDragAfterElement(imageList, event.clientY);
+    const draggable = document.querySelector('.dragging');
+
+    if (afterElement == null) {
+      imageList.appendChild(draggable);
+    } else {
+      imageList.insertBefore(draggable, afterElement);
+    }
+  });
+
+  imageList.addEventListener('dragend', (event) => {
+    if (!draggedItem) return;
+
+    draggedItem.classList.remove('dragging');
+
+    // Calculate new index
+    const newIndex = Array.from(imageList.children).indexOf(draggedItem);
+
+    if (newIndex !== draggedIndex) {
+      reorderSlideImages(draggedIndex, newIndex);
+      showHudStatus('↕️ Images reordered', 'success');
+      setTimeout(hideHudStatus, 1600);
+    }
+
+    draggedItem = null;
+    draggedIndex = null;
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.edit-drawer__image-item:not(.dragging)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function reorderSlideImages(fromIndex, toIndex) {
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  // Get all images with their paths
+  const imageData = [];
+
+  // Top-level image
+  if (currentSlide.image?.src) {
+    imageData.push({
+      path: ['image'],
+      image: currentSlide.image,
+      getter: () => currentSlide.image,
+      setter: (img) => { currentSlide.image = img; }
+    });
+  }
+
+  // Media array (title slides)
+  if (Array.isArray(currentSlide.media)) {
+    currentSlide.media.forEach((item, idx) => {
+      if (item.image?.src) {
+        imageData.push({
+          path: ['media', idx, 'image'],
+          image: item.image,
+          getter: () => currentSlide.media[idx].image,
+          setter: (img) => { currentSlide.media[idx].image = img; }
+        });
+      }
+    });
+  }
+
+  // Gallery items
+  if (Array.isArray(currentSlide.items)) {
+    currentSlide.items.forEach((item, idx) => {
+      if (item.image?.src) {
+        imageData.push({
+          path: ['items', idx, 'image'],
+          image: item.image,
+          getter: () => currentSlide.items[idx].image,
+          setter: (img) => { currentSlide.items[idx].image = img; }
+        });
+      }
+    });
+  }
+
+  // Split columns
+  if (currentSlide.left?.image?.src) {
+    imageData.push({
+      path: ['left', 'image'],
+      image: currentSlide.left.image,
+      getter: () => currentSlide.left.image,
+      setter: (img) => { currentSlide.left.image = img; }
+    });
+  }
+  if (currentSlide.right?.image?.src) {
+    imageData.push({
+      path: ['right', 'image'],
+      image: currentSlide.right.image,
+      getter: () => currentSlide.right.image,
+      setter: (img) => { currentSlide.right.image = img; }
+    });
+  }
+
+  // Pillars
+  if (Array.isArray(currentSlide.pillars)) {
+    currentSlide.pillars.forEach((pillar, idx) => {
+      if (pillar.image?.src) {
+        imageData.push({
+          path: ['pillars', idx, 'image'],
+          image: pillar.image,
+          getter: () => currentSlide.pillars[idx].image,
+          setter: (img) => { currentSlide.pillars[idx].image = img; }
+        });
+      }
+    });
+  }
+
+  // Swap the images
+  if (fromIndex >= 0 && fromIndex < imageData.length && toIndex >= 0 && toIndex < imageData.length) {
+    const fromImage = imageData[fromIndex].getter();
+    const toImage = imageData[toIndex].getter();
+
+    imageData[fromIndex].setter(toImage);
+    imageData[toIndex].setter(fromImage);
+
+    // Update slides array
+    slides[currentIndex] = currentSlide;
+
+    // Re-render edit form
+    renderEditForm();
+
+    console.log(`✓ Reordered images: ${fromIndex} -> ${toIndex}`);
   }
 }
 
