@@ -3172,9 +3172,18 @@ function syncQuickEditToJSON() {
       // Handle body as array if it contains newlines
       if (field === 'body' && value.includes('\n')) {
         value = value.split('\n').filter(line => line.trim());
+        // If all lines were removed, use empty string instead of empty array
+        if (value.length === 0) {
+          value = '';
+        }
       }
 
-      slide[field] = value;
+      // Only set non-empty values or remove the key entirely
+      if (value === '' || value === null || value === undefined) {
+        delete slide[field];
+      } else {
+        slide[field] = value;
+      }
     });
 
     textarea.value = JSON.stringify(slide, null, 2);
@@ -3385,6 +3394,12 @@ function replaceSlideAt(index, options = {}) {
 
   const previousScroll = existing.scrollTop;
   slideScrollPositions.set(index, previousScroll);
+
+  // Clear stale placeholder references before replacing slide
+  const oldPlaceholders = existing.querySelectorAll('.image-placeholder');
+  oldPlaceholders.forEach(placeholder => {
+    delete placeholder._imageRef;
+  });
 
   const slideData = slides[index];
   const newSlide = createSlide(slideData, index, renderers);
