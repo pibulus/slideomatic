@@ -2885,6 +2885,149 @@ function restoreBase64FromTokens(editedSlide, originalSlide) {
   return result;
 }
 
+// ================================================================
+// Quick-Edit Fields - 80/20 UX Layer
+// ================================================================
+
+function buildQuickEditFields(slide) {
+  const type = slide.type || 'standard';
+  let html = `<div class="edit-drawer__quick-edit">`;
+
+  html += `<div class="edit-drawer__field edit-drawer__field--readonly">
+    <label class="edit-drawer__label">Type</label>
+    <div class="edit-drawer__type-display">${type}</div>
+  </div>`;
+
+  // Common text fields based on slide type
+  if (type === 'title') {
+    if ('eyebrow' in slide) {
+      html += buildTextField('eyebrow', 'Eyebrow', slide.eyebrow || '');
+    }
+    html += buildTextField('title', 'Title', slide.title || '');
+    if ('subtitle' in slide) {
+      html += buildTextField('subtitle', 'Subtitle', slide.subtitle || '');
+    }
+  } else if (type === 'quote') {
+    html += buildTextArea('quote', 'Quote', slide.quote || slide.headline || '');
+    html += buildTextField('attribution', 'Attribution', slide.attribution || slide.body || '');
+  } else {
+    // Standard, split, grid, gallery, etc.
+    if ('headline' in slide || type === 'standard' || type === 'gallery' || type === 'grid') {
+      html += buildTextField('headline', 'Headline', slide.headline || '');
+    }
+    if ('body' in slide || type === 'standard' || type === 'gallery') {
+      html += buildTextArea('body', 'Body', Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || ''));
+    }
+  }
+
+  // Image manager
+  html += buildImageManager(slide);
+
+  html += `</div>`;
+  return html;
+}
+
+function buildTextField(id, label, value) {
+  const escapedValue = String(value || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `
+    <div class="edit-drawer__field">
+      <label class="edit-drawer__label" for="quick-edit-${id}">${label}</label>
+      <input
+        type="text"
+        class="edit-drawer__input"
+        id="quick-edit-${id}"
+        data-field="${id}"
+        value="${escapedValue}"
+      />
+    </div>
+  `;
+}
+
+function buildTextArea(id, label, value) {
+  const escapedValue = String(value || '').replace(/</g, '&lt;');
+  return `
+    <div class="edit-drawer__field">
+      <label class="edit-drawer__label" for="quick-edit-${id}">${label}</label>
+      <textarea
+        class="edit-drawer__textarea edit-drawer__textarea--small"
+        id="quick-edit-${id}"
+        data-field="${id}"
+        rows="3"
+      >${escapedValue}</textarea>
+    </div>
+  `;
+}
+
+function buildImageManager(slide) {
+  const images = collectSlideImages(slide);
+
+  if (images.length === 0) return '';
+
+  let html = `
+    <div class="edit-drawer__field">
+      <label class="edit-drawer__label">Images (${images.length})</label>
+      <div class="edit-drawer__image-list">
+  `;
+
+  images.forEach((img, index) => {
+    const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
+    const isBase64 = img.src?.startsWith('data:');
+    const size = img.compressedSize ? ` (${formatBytes(img.compressedSize)})` : '';
+    const displayName = isBase64 ? `${filename}${size}` : filename;
+
+    html += `
+      <div class="edit-drawer__image-item">
+        <span class="edit-drawer__image-icon">📷</span>
+        <span class="edit-drawer__image-name">${displayName}</span>
+        <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  return html;
+}
+
+function collectSlideImages(slide) {
+  const images = [];
+
+  if (slide.image?.src) {
+    images.push(slide.image);
+  }
+
+  if (Array.isArray(slide.media)) {
+    slide.media.forEach(item => {
+      if (item.image?.src) images.push(item.image);
+    });
+  }
+
+  if (Array.isArray(slide.items)) {
+    slide.items.forEach(item => {
+      if (item.image?.src) images.push(item.image);
+    });
+  }
+
+  if (slide.left?.image?.src) {
+    images.push(slide.left.image);
+  }
+
+  if (slide.right?.image?.src) {
+    images.push(slide.right.image);
+  }
+
+  if (Array.isArray(slide.pillars)) {
+    slide.pillars.forEach(pillar => {
+      if (pillar.image?.src) images.push(pillar.image);
+    });
+  }
+
+  return images;
+}
+
 function renderEditForm() {
   const content = document.getElementById('edit-drawer-content');
   if (!content) return;
@@ -2895,16 +3038,26 @@ function renderEditForm() {
   // Prepare slide for display (replace base64 with tokens)
   const displaySlide = prepareSlideForEditing(currentSlide);
 
+  // Build quick-edit fields based on slide type
+  const quickEditHTML = buildQuickEditFields(currentSlide);
+
   content.innerHTML = `
     <form class="edit-drawer__form">
-      <div class="edit-drawer__field">
-        <label class="edit-drawer__label">Slide JSON</label>
-        <textarea
-          class="edit-drawer__textarea"
-          id="slide-json-editor"
-          rows="20"
-          style="font-family: var(--font-mono); font-size: 0.9rem;"
-        >${JSON.stringify(displaySlide, null, 2)}</textarea>
+      ${quickEditHTML}
+
+      <div class="edit-drawer__field edit-drawer__field--json">
+        <button type="button" class="edit-drawer__json-toggle" id="json-toggle">
+          <span class="edit-drawer__json-toggle-icon">▶</span>
+          <span class="edit-drawer__json-toggle-text">Advanced (JSON Editor)</span>
+        </button>
+        <div class="edit-drawer__json-container" id="json-container" style="display: none;">
+          <textarea
+            class="edit-drawer__textarea"
+            id="slide-json-editor"
+            rows="20"
+            style="font-family: var(--font-mono); font-size: 0.9rem;"
+          >${JSON.stringify(displaySlide, null, 2)}</textarea>
+        </div>
       </div>
       <div class="edit-drawer__field edit-drawer__field--template">
         <label class="edit-drawer__label">Add Template</label>
@@ -2974,9 +3127,67 @@ function renderEditForm() {
     });
   }
 
+  // Setup JSON toggle
+  const jsonToggle = document.getElementById('json-toggle');
+  if (jsonToggle) {
+    jsonToggle.addEventListener('click', () => {
+      const container = document.getElementById('json-container');
+      const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
+      if (container && icon) {
+        const isOpen = container.style.display !== 'none';
+        container.style.display = isOpen ? 'none' : 'block';
+        icon.textContent = isOpen ? '▶' : '▼';
+      }
+    });
+  }
+
+  // Setup quick-edit field sync
+  setupQuickEditSync();
+
+}
+
+function setupQuickEditSync() {
+  // Find all quick-edit input fields
+  const inputs = document.querySelectorAll('[data-field]');
+
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      syncQuickEditToJSON();
+    });
+  });
+}
+
+function syncQuickEditToJSON() {
+  const textarea = document.getElementById('slide-json-editor');
+  if (!textarea) return;
+
+  try {
+    const slide = JSON.parse(textarea.value);
+    const inputs = document.querySelectorAll('[data-field]');
+
+    inputs.forEach(input => {
+      const field = input.dataset.field;
+      let value = input.value;
+
+      // Handle body as array if it contains newlines
+      if (field === 'body' && value.includes('\n')) {
+        value = value.split('\n').filter(line => line.trim());
+      }
+
+      slide[field] = value;
+    });
+
+    textarea.value = JSON.stringify(slide, null, 2);
+  } catch (error) {
+    // If JSON is invalid, don't try to sync
+    console.warn('Cannot sync quick-edit: invalid JSON');
+  }
 }
 
 function saveCurrentSlide() {
+  // First, sync quick-edit fields to JSON
+  syncQuickEditToJSON();
+
   const textarea = document.getElementById('slide-json-editor');
   if (!textarea) return;
 

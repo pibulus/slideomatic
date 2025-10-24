@@ -1753,6 +1753,129 @@ body[data-mode="overview"] .hud {
   box-shadow: var(--shadow-sm);
 }
 
+/* Quick-Edit Layer */
+.edit-drawer__quick-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.edit-drawer__type-display {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-surface);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius);
+}
+
+.edit-drawer__textarea--small {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* JSON Toggle */
+.edit-drawer__json-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 12px 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  transition: color 140ms ease;
+}
+
+.edit-drawer__json-toggle:hover {
+  color: var(--color-ink);
+}
+
+.edit-drawer__json-toggle-icon {
+  font-size: 0.7em;
+  transition: transform 140ms ease;
+}
+
+.edit-drawer__json-container {
+  margin-top: 12px;
+}
+
+/* Image Manager */
+.edit-drawer__image-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius);
+  border: 2px dashed var(--color-muted);
+}
+
+.edit-drawer__image-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid var(--color-muted);
+  border-radius: var(--radius);
+  transition: border-color 140ms ease;
+}
+
+.edit-drawer__image-item:hover {
+  border-color: var(--color-surface);
+}
+
+.edit-drawer__image-icon {
+  font-size: 1.2em;
+  flex-shrink: 0;
+}
+
+.edit-drawer__image-name {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-drawer__image-remove {
+  appearance: none;
+  background: var(--color-surface-alt);
+  border: 2px solid var(--color-ink);
+  color: var(--color-ink);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 1.2em;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 140ms cubic-bezier(0.2, 2, 0.4, 1),
+              background 140ms ease;
+}
+
+.edit-drawer__image-remove:hover {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+  transform: scale(1.1);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    THEME DRAWER (RIGHT SIDE)
    ═══════════════════════════════════════════════════════════════════════════ */
