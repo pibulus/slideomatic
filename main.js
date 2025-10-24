@@ -2656,12 +2656,141 @@ function closeEditDrawer() {
   editDrawerPreviousFocus = null;
 }
 
+// ================================================================
+// Base64 Token System - Makes JSON Editor Readable
+// ================================================================
+
+function createBase64Token(imageData) {
+  const filename = imageData.originalFilename || 'image';
+  const size = imageData.compressedSize
+    ? formatBytes(imageData.compressedSize)
+    : 'unknown size';
+  return `{{BASE64_IMAGE: ${filename}, ${size}}}`;
+}
+
+function isBase64Token(str) {
+  return typeof str === 'string' && str.startsWith('{{BASE64_IMAGE:');
+}
+
+function replaceBase64WithToken(imageObj) {
+  if (!imageObj || typeof imageObj !== 'object') return imageObj;
+
+  const result = { ...imageObj };
+
+  if (result.src && typeof result.src === 'string' && result.src.startsWith('data:image')) {
+    result.src = createBase64Token(result);
+  }
+
+  return result;
+}
+
+function prepareSlideForEditing(slide) {
+  // Deep clone to avoid mutating original
+  const clone = JSON.parse(JSON.stringify(slide));
+
+  // Handle top-level image
+  if (clone.image) {
+    clone.image = replaceBase64WithToken(clone.image);
+  }
+
+  // Handle gallery items
+  if (Array.isArray(clone.items)) {
+    clone.items = clone.items.map(item => {
+      if (item.image) {
+        return { ...item, image: replaceBase64WithToken(item.image) };
+      }
+      return item;
+    });
+  }
+
+  // Handle split columns
+  if (clone.left?.image) {
+    clone.left = { ...clone.left, image: replaceBase64WithToken(clone.left.image) };
+  }
+  if (clone.right?.image) {
+    clone.right = { ...clone.right, image: replaceBase64WithToken(clone.right.image) };
+  }
+
+  // Handle pillars
+  if (Array.isArray(clone.pillars)) {
+    clone.pillars = clone.pillars.map(pillar => {
+      if (pillar.image) {
+        return { ...pillar, image: replaceBase64WithToken(pillar.image) };
+      }
+      return pillar;
+    });
+  }
+
+  return clone;
+}
+
+function restoreBase64InImage(editedImage, originalImage) {
+  if (!editedImage || typeof editedImage !== 'object') return editedImage;
+
+  const result = { ...editedImage };
+
+  // If the edited version has a token, restore original base64
+  if (isBase64Token(result.src)) {
+    if (originalImage?.src?.startsWith('data:image')) {
+      result.src = originalImage.src;
+    } else {
+      // Token but no original base64? User probably manually typed it wrong
+      console.warn('Base64 token found but no original image data to restore');
+      result.src = ''; // Clear it to show placeholder
+    }
+  }
+
+  return result;
+}
+
+function restoreBase64FromTokens(editedSlide, originalSlide) {
+  const result = { ...editedSlide };
+
+  // Restore top-level image
+  if (result.image && originalSlide.image) {
+    result.image = restoreBase64InImage(result.image, originalSlide.image);
+  }
+
+  // Restore gallery items
+  if (Array.isArray(result.items) && Array.isArray(originalSlide.items)) {
+    result.items = result.items.map((item, index) => {
+      if (item.image && originalSlide.items[index]?.image) {
+        return { ...item, image: restoreBase64InImage(item.image, originalSlide.items[index].image) };
+      }
+      return item;
+    });
+  }
+
+  // Restore split columns
+  if (result.left?.image && originalSlide.left?.image) {
+    result.left = { ...result.left, image: restoreBase64InImage(result.left.image, originalSlide.left.image) };
+  }
+  if (result.right?.image && originalSlide.right?.image) {
+    result.right = { ...result.right, image: restoreBase64InImage(result.right.image, originalSlide.right.image) };
+  }
+
+  // Restore pillars
+  if (Array.isArray(result.pillars) && Array.isArray(originalSlide.pillars)) {
+    result.pillars = result.pillars.map((pillar, index) => {
+      if (pillar.image && originalSlide.pillars[index]?.image) {
+        return { ...pillar, image: restoreBase64InImage(pillar.image, originalSlide.pillars[index].image) };
+      }
+      return pillar;
+    });
+  }
+
+  return result;
+}
+
 function renderEditForm() {
   const content = document.getElementById('edit-drawer-content');
   if (!content) return;
 
   const currentSlide = slides[currentIndex];
   if (!currentSlide) return;
+
+  // Prepare slide for display (replace base64 with tokens)
+  const displaySlide = prepareSlideForEditing(currentSlide);
 
   content.innerHTML = `
     <form class="edit-drawer__form">
@@ -2672,7 +2801,7 @@ function renderEditForm() {
           id="slide-json-editor"
           rows="20"
           style="font-family: var(--font-mono); font-size: 0.9rem;"
-        >${JSON.stringify(currentSlide, null, 2)}</textarea>
+        >${JSON.stringify(displaySlide, null, 2)}</textarea>
       </div>
       <div class="edit-drawer__field edit-drawer__field--template">
         <label class="edit-drawer__label">Add Template</label>
@@ -2749,9 +2878,14 @@ function saveCurrentSlide() {
   if (!textarea) return;
 
   try {
-    const updatedSlide = JSON.parse(textarea.value);
+    const editedSlide = JSON.parse(textarea.value);
+    const originalSlide = slides[currentIndex];
+
+    // Restore base64 data from tokens
+    const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
+
     const targetIndex = currentIndex;
-    slides[currentIndex] = updatedSlide;
+    slides[currentIndex] = restoredSlide;
     replaceSlideAt(targetIndex);
     closeEditDrawer();
     showHudStatus('✨ Slide updated', 'success');
