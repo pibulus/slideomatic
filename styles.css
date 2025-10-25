@@ -1764,16 +1764,25 @@ body[data-mode="overview"] .hud {
   box-shadow: var(--shadow-sm);
 }
 
-.edit-drawer__button--danger {
-  background: #ff6b6b;
-  color: white;
+.edit-drawer__button--delete {
+  color: #c92a2a;
   border-color: #c92a2a;
+  opacity: 0.7;
 }
 
-.edit-drawer__button--danger:hover {
-  background: #fa5252;
+.edit-drawer__button--delete:hover {
+  opacity: 1;
+  background: #ffe0e0;
+  color: #991b1b;
   transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 #c92a2a;
+  box-shadow: 2px 2px 0 #c92a2a;
+}
+
+.edit-drawer__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 /* Quick-Edit Layer */

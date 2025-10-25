@@ -342,18 +342,20 @@ export function renderEditForm(context) {
           </button>
         </div>
       </div>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-        🔒 LOCK IT IN
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-        Duplicate Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--danger" id="delete-slide-btn">
-        🗑️ Delete Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
-        Save Deck JSON
-      </button>
+      <div class="edit-drawer__actions">
+        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+          🔒 LOCK IT IN
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
+          Duplicate Slide
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
+          Save Deck JSON
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--ghost edit-drawer__button--delete" id="delete-slide-btn">
+          Delete Slide
+        </button>
+      </div>
     </form>
   `;
 
