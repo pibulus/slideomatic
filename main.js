@@ -1,5 +1,32 @@
-import { normalizeThemeTokens, REQUIRED_THEME_TOKENS } from './theme-utils.js';
+import {
+  loadTheme,
+  applyTheme,
+  validateTheme,
+  saveThemeToLibrary,
+  loadThemeLibrary,
+  deleteThemeFromLibrary,
+  getCurrentTheme,
+  setCurrentTheme,
+  getCurrentThemePath,
+  checkContrast,
+  LOCAL_THEME_SOURCE,
+  normalizeThemeTokens,
+} from './modules/theme-manager.js';
+import { formatBytes, clamp } from './modules/utils.js';
+import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './lazy-images.js';
+import { renderEditForm } from './modules/edit-drawer.js';
+import {
+  createDrawer,
+  openDrawer,
+  closeDrawer,
+} from './modules/drawer-base.js';
+import {
+  initVoiceButtons,
+  toggleVoiceRecording,
+  getGeminiApiKey,
+  STORAGE_KEY_API,
+} from './modules/voice-modes.js';
 import {
   initSlideIndex,
   toggleSlideIndex,
@@ -7,6 +34,7 @@ import {
   refreshSlideIndex,
   updateSlideIndexHighlight,
 } from './slide-index.js';
+import { initKeyboardNav } from './modules/keyboard-nav.js';
 
 const slidesRoot = document.getElementById("slides");
 const currentCounter = document.querySelector("[data-counter-current]");
@@ -32,18 +60,13 @@ let currentIndex = 0;
 let isOverview = false;
 const preloadedImages = new Set();
 let autoLinkConfigs = [];
-const voiceButtons = {};
-let activeVoiceMode = null;
-let voiceProcessing = false;
 const OVERVIEW_MAX_ROWS = 3;
 let overviewRowCount = 1;
 let overviewColumnCount = 0;
 let overviewCursor = 0;
 let lastOverviewHighlight = 0;
-let currentTheme = null;
 let isThemeDrawerOpen = false;
-let themeDrawerPreviousFocus = null;
-let currentThemePath = "theme.json";
+let themeDrawerInstance = null;
 const slideScrollPositions = new Map();
 const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
 let deckStorageKey = null;
@@ -59,134 +82,6 @@ initSlideIndex({
 // Theme Library - localStorage persistence
 // ================================================================
 
-const THEME_LIBRARY_KEY = 'slideomatic_themes';
-const CURRENT_THEME_KEY = 'slideomatic_current_theme';
-const CURRENT_THEME_PATH_KEY = 'slideomatic_current_theme_path';
-const LOCAL_THEME_SOURCE = '__local__';
-const FOCUSABLE_SELECTORS = [
-  'a[href]',
-  'area[href]',
-  'button:not([disabled])',
-  'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])'
-].join(',');
-
-function getFocusableElements(container) {
-  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter(
-    (el) =>
-      !el.hasAttribute('disabled') &&
-      el.getAttribute('tabindex') !== '-1' &&
-      typeof el.focus === 'function' &&
-      (el.offsetWidth > 0 ||
-        el.offsetHeight > 0 ||
-        el.getClientRects().length > 0)
-  );
-}
-
-function trapFocus(event, container) {
-  if (event.key !== 'Tab') return;
-  const focusable = getFocusableElements(container);
-  if (focusable.length === 0) {
-    event.preventDefault();
-    container.setAttribute('tabindex', '-1');
-    container.focus({ preventScroll: true });
-    return;
-  }
-
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-  const isShift = event.shiftKey;
-  const active = document.activeElement;
-
-  if (!isShift && active === last) {
-    event.preventDefault();
-    first.focus();
-  } else if (isShift && active === first) {
-    event.preventDefault();
-    last.focus();
-  }
-}
-
-function focusFirstElement(container) {
-  const focusable = getFocusableElements(container);
-  if (focusable.length > 0) {
-    focusable[0].focus();
-  } else {
-    container.setAttribute('tabindex', '-1');
-    container.focus({ preventScroll: true });
-  }
-}
-function getThemeLibrary() {
-  try {
-    const stored = localStorage.getItem(THEME_LIBRARY_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.warn('Failed to load theme library:', error);
-    return [];
-  }
-}
-
-function saveThemeToLibrary(name, theme) {
-  const library = getThemeLibrary();
-  const existing = library.findIndex(t => t.name === name);
-
-  const normalizedTheme = normalizeThemeTokens(theme);
-
-  const themeEntry = {
-    name,
-    theme: normalizedTheme,
-    created: existing >= 0 ? library[existing].created : Date.now(),
-    updated: Date.now()
-  };
-
-  if (existing >= 0) {
-    library[existing] = themeEntry;
-  } else {
-    library.push(themeEntry);
-  }
-
-  localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(library));
-  return themeEntry;
-}
-
-function deleteThemeFromLibrary(name) {
-  const library = getThemeLibrary();
-  const filtered = library.filter(t => t.name !== name);
-  localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(filtered));
-}
-
-function setCurrentTheme(theme, options = {}) {
-  const normalized = normalizeThemeTokens(theme);
-  currentTheme = normalized;
-  localStorage.setItem(CURRENT_THEME_KEY, JSON.stringify(normalized));
-  const source = options.source ?? currentThemePath ?? LOCAL_THEME_SOURCE;
-  currentThemePath = source;
-  try {
-    localStorage.setItem(CURRENT_THEME_PATH_KEY, source);
-  } catch (error) {
-    console.warn('Failed to store theme path:', error);
-  }
-  return normalized;
-}
-
-function getCurrentTheme() {
-  if (currentTheme) return currentTheme;
-  try {
-    const stored = localStorage.getItem(CURRENT_THEME_KEY);
-    if (!stored) return null;
-    const parsed = JSON.parse(stored);
-    currentTheme = normalizeThemeTokens(parsed);
-    const storedPath = localStorage.getItem(CURRENT_THEME_PATH_KEY);
-    currentThemePath = storedPath || LOCAL_THEME_SOURCE;
-    return currentTheme;
-  } catch (error) {
-    console.warn('Failed to load current theme:', error);
-    localStorage.removeItem(CURRENT_THEME_KEY);
-    return null;
-  }
-}
 
 // ================================================================
 // AI Theme Generation
@@ -523,7 +418,7 @@ async function initDeck() {
   updateOverviewLayout();
   refreshSlideIndex();
 
-  document.addEventListener("keydown", handleKeyboard);
+  initKeyboardNav(getKeyboardContext());
   slidesRoot.addEventListener("click", handleSlideClick);
   document.addEventListener("click", handleImageModalTrigger);
 
@@ -534,19 +429,21 @@ async function initDeck() {
   }
 
   // Setup voice-driven actions
-  const addBtn = document.getElementById('add-btn');
-  if (addBtn) {
-    voiceButtons.add = addBtn;
-    addBtn.addEventListener('click', () => toggleVoiceRecording('add'));
-    updateVoiceUI('add', 'idle');
-  }
-
-  const editBtn = document.getElementById('edit-btn');
-  if (editBtn) {
-    voiceButtons.edit = editBtn;
-    editBtn.addEventListener('click', () => toggleVoiceRecording('edit'));
-    updateVoiceUI('edit', 'idle');
-  }
+  initVoiceButtons({
+    openSettingsModal,
+    showApiKeyStatus,
+    showHudStatus,
+    hideHudStatus,
+    getCurrentIndex: () => currentIndex,
+    getSlides: () => slides,
+    insertSlideAt,
+    replaceSlideAt,
+    setActiveSlide,
+    setOverviewCursor: (index) => { overviewCursor = index; },
+    updateSlide: (index, slide) => { slides[index] = slide; },
+    validateSlides,
+    downloadTheme,
+  });
 
   const indexBtn = document.getElementById('index-btn');
   if (indexBtn) {
@@ -607,18 +504,12 @@ async function loadSlides() {
 
 async function loadAndApplyTheme() {
   const params = new URLSearchParams(window.location.search);
-  const themeParamProvided = params.has("theme");
+  const themeParamProvided = params.has('theme');
   const storedTheme = getCurrentTheme();
   if (storedTheme && !themeParamProvided) {
     applyTheme(storedTheme);
-    const storedPath = localStorage.getItem(CURRENT_THEME_PATH_KEY);
-    currentThemePath = storedPath || LOCAL_THEME_SOURCE;
-    if (!storedPath) {
-      try {
-        localStorage.setItem(CURRENT_THEME_PATH_KEY, currentThemePath);
-      } catch (error) {
-        console.warn('Failed to persist theme path:', error);
-      }
+    if (!getCurrentThemePath()) {
+      setCurrentTheme(storedTheme, { source: LOCAL_THEME_SOURCE });
     }
     syncThemeSelectUI();
     return;
@@ -626,15 +517,12 @@ async function loadAndApplyTheme() {
 
   const themePath = resolveThemePath();
   try {
-    const response = await fetch(themePath, { cache: "no-store" });
-    if (!response.ok) return;
-    const theme = await response.json();
-    const normalizedTheme = applyTheme(theme);
-    setCurrentTheme(normalizedTheme, { source: themePath });
-    currentThemePath = themePath;
+    const theme = await loadTheme(themePath);
+    applyTheme(theme);
+    setCurrentTheme(theme, { source: themePath });
     syncThemeSelectUI();
   } catch (error) {
-    console.warn("Unable to load custom theme, using defaults.", error);
+    console.warn('Unable to load custom theme, using defaults.', error);
   }
 }
 
@@ -649,18 +537,6 @@ function resolveThemePath() {
     return `${themeParam}.json`;
   }
   return `themes/${themeParam}.json`;
-}
-
-function applyTheme(theme) {
-  if (!theme || typeof theme !== "object") return;
-  const normalized = normalizeThemeTokens(theme);
-  currentTheme = normalized;
-  const root = document.documentElement;
-  Object.entries(normalized).forEach(([token, value]) => {
-    if (value == null) return;
-    root.style.setProperty(`--${token}`, value);
-  });
-  return normalized;
 }
 
 function resolveSlidesPath() {
@@ -852,167 +728,6 @@ function validateSlides(data) {
   });
 }
 
-function handleKeyboard(event) {
-  const target = event.target;
-  if (
-    target &&
-    target instanceof HTMLElement &&
-    (target.matches("input, textarea, select") ||
-      target.isContentEditable)
-  ) {
-    return;
-  }
-
-  const { key } = event;
-  const lowerKey = key.toLowerCase();
-
-  if (isOverview) {
-    if (key === "ArrowRight") {
-      event.preventDefault();
-      moveOverviewCursorBy(1, 0);
-      return;
-    }
-    if (key === "ArrowLeft") {
-      event.preventDefault();
-      moveOverviewCursorBy(-1, 0);
-      return;
-    }
-    if (key === "ArrowDown") {
-      event.preventDefault();
-      moveOverviewCursorBy(0, 1);
-      return;
-    }
-    if (key === "ArrowUp") {
-      event.preventDefault();
-      moveOverviewCursorBy(0, -1);
-      return;
-    }
-    if (key === "Enter" || key === " ") {
-      event.preventDefault();
-      flashKeyFeedback('↵');
-      exitOverview(overviewCursor);
-      return;
-    }
-    if (key === "Escape") {
-      event.preventDefault();
-      flashKeyFeedback('ESC');
-      exitOverview();
-      return;
-    }
-  }
-
-  if (key === "ArrowRight" || key === " ") {
-    event.preventDefault();
-    flashKeyFeedback('→');
-    setActiveSlide(currentIndex + 1);
-    return;
-  }
-
-  if (key === "ArrowLeft") {
-    event.preventDefault();
-    flashKeyFeedback('←');
-    setActiveSlide(currentIndex - 1);
-    return;
-  }
-
-  if (key === "Home") {
-    event.preventDefault();
-    flashKeyFeedback('⇤');
-    setActiveSlide(0);
-    return;
-  }
-
-  if (key === "End") {
-    event.preventDefault();
-    flashKeyFeedback('⇥');
-    setActiveSlide(slideElements.length - 1);
-    return;
-  }
-
-  if (lowerKey === "o") {
-    event.preventDefault();
-    flashKeyFeedback('O');
-    toggleOverview();
-    return;
-  }
-
-  if (lowerKey === "i") {
-    event.preventDefault();
-    flashKeyFeedback('I');
-    toggleSlideIndex();
-    return;
-  }
-
-  if (lowerKey === "d") {
-    event.preventDefault();
-    flashKeyFeedback('D');
-    downloadDeck();
-    return;
-  }
-
-  if (lowerKey === "n") {
-    event.preventDefault();
-    flashKeyFeedback('N');
-    toggleSpeakerNotes();
-    return;
-  }
-
-  if (lowerKey === "u") {
-    event.preventDefault();
-    flashKeyFeedback('U');
-    const uploadInput = document.getElementById('deck-upload');
-    if (uploadInput) uploadInput.click();
-    return;
-  }
-
-  if (lowerKey === "e") {
-    event.preventDefault();
-    flashKeyFeedback('E');
-    toggleEditDrawer();
-    return;
-  }
-
-  if (lowerKey === "v") {
-    event.preventDefault();
-    flashKeyFeedback('V');
-    toggleVoiceRecording('add');
-    return;
-  }
-
-  if (lowerKey === "t") {
-    event.preventDefault();
-    flashKeyFeedback('T');
-    toggleThemeDrawer();
-    return;
-  }
-
-  if (lowerKey === "s") {
-    event.preventDefault();
-    flashKeyFeedback('S');
-    openSettingsModal();
-    return;
-  }
-
-  if (key === "Escape") {
-    closeSettingsModal();
-  }
-}
-
-function flashKeyFeedback(key) {
-  const feedback = document.createElement('div');
-  feedback.className = 'key-feedback';
-  feedback.textContent = key;
-  document.body.appendChild(feedback);
-
-  requestAnimationFrame(() => {
-    feedback.classList.add('active');
-  });
-
-  setTimeout(() => {
-    feedback.classList.remove('active');
-    setTimeout(() => feedback.remove(), 300);
-  }, 400);
-}
 
 function handleSlideClick(event) {
   if (!isOverview) return;
@@ -1186,7 +901,7 @@ function setActiveSlide(nextIndex) {
   updateHud();
   updateSlideIndexHighlight(currentIndex);
   if (isEditDrawerOpen) {
-    renderEditForm();
+    renderEditForm(getEditDrawerContext());
   }
   preloadSlideImages(currentIndex);
   preloadSlideImages(currentIndex + 1);
@@ -2139,24 +1854,6 @@ async function fileToBase64(file) {
   });
 }
 
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes)) {
-    return '';
-  }
-  const thresh = 1024;
-  if (bytes < thresh) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let u = -1;
-  let value = bytes;
-  do {
-    value /= thresh;
-    ++u;
-  } while (value >= thresh && u < units.length - 1);
-  return `${value.toFixed(u === 0 ? 0 : 1)} ${units[u]}`;
-}
-
 function findSlideIndexForPlaceholder(placeholderElement) {
   const slideElement = placeholderElement.closest('.slide');
   if (!slideElement) return -1;
@@ -2376,10 +2073,6 @@ function createFootnote(text) {
   footnote.className = "slide__footnote";
   setRichContent(footnote, text);
   return footnote;
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function createMediaStrip(media) {
@@ -2668,839 +2361,91 @@ function reloadDeck(options = {}) {
 // ===================================================================
 
 let isEditDrawerOpen = false;
-let editDrawerPreviousFocus = null;
+let editDrawerInstance = null;
 
-document.getElementById('edit-drawer')?.setAttribute('aria-hidden', 'true');
-
-const handleEditDrawerKeydown = (event) => {
-  const drawer = document.getElementById('edit-drawer');
-  if (!drawer || !isEditDrawerOpen) return;
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeEditDrawer();
-  } else if (event.key === 'Tab') {
-    trapFocus(event, drawer);
-  }
-};
 
 function toggleEditDrawer() {
-  if (isEditDrawerOpen) {
-    closeEditDrawer();
+  if (!editDrawerInstance) return;
+  if (editDrawerInstance.isOpen) {
+    closeDrawer(editDrawerInstance);
   } else {
     openEditDrawer();
   }
 }
 
 function openEditDrawer() {
-  const drawer = document.getElementById('edit-drawer');
-  if (!drawer || isEditDrawerOpen) return;
-
-  if (isThemeDrawerOpen) {
-    closeThemeDrawer();
+  if (!editDrawerInstance) return;
+  if (themeDrawerInstance?.isOpen) {
+    closeDrawer(themeDrawerInstance, { restoreFocus: false });
   }
-
-  isEditDrawerOpen = true;
-  editDrawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-  drawer.classList.add('is-open', 'is-springing');
-  drawer.setAttribute('aria-hidden', 'false');
-  drawer.addEventListener(
-    'animationend',
-    () => drawer.classList.remove('is-springing'),
-    { once: true }
-  );
-
-  renderEditForm();
-
-  const closeBtn = drawer.querySelector('.edit-drawer__close');
-  if (closeBtn && !closeBtn.dataset.listenerAttached) {
-    closeBtn.addEventListener('click', closeEditDrawer);
-    closeBtn.dataset.listenerAttached = 'true';
-  }
-
-  focusFirstElement(drawer);
-  document.addEventListener('keydown', handleEditDrawerKeydown, true);
+  openDrawer(editDrawerInstance);
 }
 
 function closeEditDrawer() {
-  const drawer = document.getElementById('edit-drawer');
-  if (!drawer || !isEditDrawerOpen) return;
-
-  isEditDrawerOpen = false;
-  drawer.classList.remove('is-open');
-  drawer.classList.remove('is-springing');
-  drawer.setAttribute('aria-hidden', 'true');
-  document.removeEventListener('keydown', handleEditDrawerKeydown, true);
-
-  const target = editDrawerPreviousFocus && typeof editDrawerPreviousFocus.focus === 'function'
-    ? editDrawerPreviousFocus
-    : document.getElementById('edit-btn');
-  requestAnimationFrame(() => target?.focus());
-  editDrawerPreviousFocus = null;
+  if (!editDrawerInstance) return;
+  closeDrawer(editDrawerInstance);
 }
 
-// ================================================================
-// Base64 Token System - Makes JSON Editor Readable
-// ================================================================
 
-function createBase64Token(imageData) {
-  const filename = imageData.originalFilename || 'image';
-  const size = imageData.compressedSize
-    ? formatBytes(imageData.compressedSize)
-    : 'unknown size';
-  return `{{BASE64_IMAGE: ${filename}, ${size}}}`;
+function getEditDrawerContext() {
+  return {
+    getSlides: () => slides,
+    getCurrentIndex: () => currentIndex,
+    updateSlide: (index, slide) => {
+      slides[index] = slide;
+    },
+    replaceSlideAt: (index, options) => replaceSlideAt(index, options),
+    insertSlideAt: (index, slideData, options) => insertSlideAt(index, slideData, options),
+    downloadDeck,
+    getSlideTemplate,
+    showHudStatus,
+    hideHudStatus,
+    closeDrawer: () => closeDrawer(editDrawerInstance),
+  };
 }
 
-function isBase64Token(str) {
-  return typeof str === 'string' && str.startsWith('{{BASE64_IMAGE:');
+function getKeyboardContext() {
+  return {
+    isOverview: () => isOverview,
+    moveOverviewCursorBy,
+    exitOverview,
+    getOverviewCursor: () => overviewCursor,
+    toggleOverview,
+    toggleSlideIndex,
+    downloadDeck,
+    toggleSpeakerNotes,
+    setActiveSlide,
+    getCurrentIndex: () => currentIndex,
+    getSlideCount: () => slideElements.length,
+    toggleEditDrawer,
+    toggleVoiceRecording,
+    toggleThemeDrawer,
+    openSettingsModal,
+    closeSettingsModal,
+    triggerDeckUpload: () => {
+      const uploadInput = document.getElementById('deck-upload');
+      if (uploadInput) uploadInput.click();
+    },
+  };
 }
 
-function replaceBase64WithToken(imageObj) {
-  if (!imageObj || typeof imageObj !== 'object') return imageObj;
 
-  const result = { ...imageObj };
 
-  if (result.src && typeof result.src === 'string' && result.src.startsWith('data:image')) {
-    result.src = createBase64Token(result);
-  }
-
-  return result;
-}
-
-function prepareSlideForEditing(slide) {
-  // Deep clone to avoid mutating original
-  const clone = JSON.parse(JSON.stringify(slide));
-
-  // Handle top-level image
-  if (clone.image) {
-    clone.image = replaceBase64WithToken(clone.image);
-  }
-
-  // Handle media array (title slides)
-  if (Array.isArray(clone.media)) {
-    clone.media = clone.media.map(mediaItem => {
-      if (mediaItem.image) {
-        return { ...mediaItem, image: replaceBase64WithToken(mediaItem.image) };
-      }
-      return mediaItem;
-    });
-  }
-
-  // Handle gallery items
-  if (Array.isArray(clone.items)) {
-    clone.items = clone.items.map(item => {
-      if (item.image) {
-        return { ...item, image: replaceBase64WithToken(item.image) };
-      }
-      return item;
-    });
-  }
-
-  // Handle split columns
-  if (clone.left?.image) {
-    clone.left = { ...clone.left, image: replaceBase64WithToken(clone.left.image) };
-  }
-  if (clone.right?.image) {
-    clone.right = { ...clone.right, image: replaceBase64WithToken(clone.right.image) };
-  }
-
-  // Handle pillars
-  if (Array.isArray(clone.pillars)) {
-    clone.pillars = clone.pillars.map(pillar => {
-      if (pillar.image) {
-        return { ...pillar, image: replaceBase64WithToken(pillar.image) };
-      }
-      return pillar;
-    });
-  }
-
-  return clone;
-}
-
-function restoreBase64InImage(editedImage, originalImage) {
-  if (!editedImage || typeof editedImage !== 'object') return editedImage;
-
-  const result = { ...editedImage };
-
-  // If the edited version has a token, restore original base64
-  if (isBase64Token(result.src)) {
-    if (originalImage?.src?.startsWith('data:image')) {
-      result.src = originalImage.src;
-    } else {
-      // Token but no original base64? User probably manually typed it wrong
-      console.warn('Base64 token found but no original image data to restore');
-      result.src = ''; // Clear it to show placeholder
+editDrawerInstance = createDrawer({
+  id: 'edit-drawer',
+  onOpen: () => {
+    isEditDrawerOpen = true;
+    renderEditForm(getEditDrawerContext());
+    const closeBtn = editDrawerInstance.element.querySelector('.edit-drawer__close');
+    if (closeBtn && !closeBtn.dataset.listenerAttached) {
+      closeBtn.addEventListener('click', () => closeDrawer(editDrawerInstance));
+      closeBtn.dataset.listenerAttached = 'true';
     }
-  }
-
-  return result;
-}
-
-function restoreBase64FromTokens(editedSlide, originalSlide) {
-  const result = { ...editedSlide };
-
-  // Restore top-level image
-  if (result.image && originalSlide.image) {
-    result.image = restoreBase64InImage(result.image, originalSlide.image);
-  }
-
-  // Restore media array (title slides)
-  if (Array.isArray(result.media) && Array.isArray(originalSlide.media)) {
-    result.media = result.media.map((mediaItem, index) => {
-      if (mediaItem.image && originalSlide.media[index]?.image) {
-        return { ...mediaItem, image: restoreBase64InImage(mediaItem.image, originalSlide.media[index].image) };
-      }
-      return mediaItem;
-    });
-  }
-
-  // Restore gallery items
-  if (Array.isArray(result.items) && Array.isArray(originalSlide.items)) {
-    result.items = result.items.map((item, index) => {
-      if (item.image && originalSlide.items[index]?.image) {
-        return { ...item, image: restoreBase64InImage(item.image, originalSlide.items[index].image) };
-      }
-      return item;
-    });
-  }
-
-  // Restore split columns
-  if (result.left?.image && originalSlide.left?.image) {
-    result.left = { ...result.left, image: restoreBase64InImage(result.left.image, originalSlide.left.image) };
-  }
-  if (result.right?.image && originalSlide.right?.image) {
-    result.right = { ...result.right, image: restoreBase64InImage(result.right.image, originalSlide.right.image) };
-  }
-
-  // Restore pillars
-  if (Array.isArray(result.pillars) && Array.isArray(originalSlide.pillars)) {
-    result.pillars = result.pillars.map((pillar, index) => {
-      if (pillar.image && originalSlide.pillars[index]?.image) {
-        return { ...pillar, image: restoreBase64InImage(pillar.image, originalSlide.pillars[index].image) };
-      }
-      return pillar;
-    });
-  }
-
-  return result;
-}
-
-// ================================================================
-// Quick-Edit Fields - 80/20 UX Layer
-// ================================================================
-
-function buildQuickEditFields(slide) {
-  const type = slide.type || 'standard';
-  let html = `<div class="edit-drawer__quick-edit">`;
-
-  html += `<div class="edit-drawer__field edit-drawer__field--readonly">
-    <label class="edit-drawer__label">Type</label>
-    <div class="edit-drawer__type-display">${type}</div>
-  </div>`;
-
-  // Common text fields based on slide type
-  if (type === 'title') {
-    if ('eyebrow' in slide) {
-      html += buildTextField('eyebrow', 'Eyebrow', slide.eyebrow || '');
-    }
-    html += buildTextField('title', 'Title', slide.title || '');
-    if ('subtitle' in slide) {
-      html += buildTextField('subtitle', 'Subtitle', slide.subtitle || '');
-    }
-  } else if (type === 'quote') {
-    html += buildTextArea('quote', 'Quote', slide.quote || slide.headline || '');
-    html += buildTextField('attribution', 'Attribution', slide.attribution || slide.body || '');
-  } else {
-    // Standard, split, grid, gallery, etc.
-    if ('headline' in slide || type === 'standard' || type === 'gallery' || type === 'grid') {
-      html += buildTextField('headline', 'Headline', slide.headline || '');
-    }
-    if ('body' in slide || type === 'standard' || type === 'gallery') {
-      html += buildTextArea('body', 'Body', Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || ''));
-    }
-  }
-
-  // Image manager
-  html += buildImageManager(slide);
-
-  html += `</div>`;
-  return html;
-}
-
-function buildTextField(id, label, value) {
-  const escapedValue = String(value || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  return `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label" for="quick-edit-${id}">${label}</label>
-      <input
-        type="text"
-        class="edit-drawer__input"
-        id="quick-edit-${id}"
-        data-field="${id}"
-        value="${escapedValue}"
-      />
-    </div>
-  `;
-}
-
-function buildTextArea(id, label, value) {
-  const escapedValue = String(value || '').replace(/</g, '&lt;');
-  return `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label" for="quick-edit-${id}">${label}</label>
-      <textarea
-        class="edit-drawer__textarea edit-drawer__textarea--small"
-        id="quick-edit-${id}"
-        data-field="${id}"
-        rows="3"
-      >${escapedValue}</textarea>
-    </div>
-  `;
-}
-
-function buildImageManager(slide) {
-  const images = collectSlideImages(slide);
-
-  if (images.length === 0) return '';
-
-  let html = `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label">Images (${images.length})</label>
-      <div class="edit-drawer__image-list">
-  `;
-
-  images.forEach((img, index) => {
-    const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
-    const isBase64 = img.src?.startsWith('data:');
-    const size = img.compressedSize ? ` (${formatBytes(img.compressedSize)})` : '';
-    const displayName = isBase64 ? `${filename}${size}` : filename;
-
-    html += `
-      <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
-        <span class="edit-drawer__image-icon">📷</span>
-        <span class="edit-drawer__image-name">${displayName}</span>
-        <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
-      </div>
-    `;
-  });
-
-  html += `
-      </div>
-    </div>
-  `;
-
-  return html;
-}
-
-function collectSlideImages(slide) {
-  const images = [];
-
-  if (slide.image?.src) {
-    images.push(slide.image);
-  }
-
-  if (Array.isArray(slide.media)) {
-    slide.media.forEach(item => {
-      if (item.image?.src) images.push(item.image);
-    });
-  }
-
-  if (Array.isArray(slide.items)) {
-    slide.items.forEach(item => {
-      if (item.image?.src) images.push(item.image);
-    });
-  }
-
-  if (slide.left?.image?.src) {
-    images.push(slide.left.image);
-  }
-
-  if (slide.right?.image?.src) {
-    images.push(slide.right.image);
-  }
-
-  if (Array.isArray(slide.pillars)) {
-    slide.pillars.forEach(pillar => {
-      if (pillar.image?.src) images.push(pillar.image);
-    });
-  }
-
-  return images;
-}
-
-function renderEditForm() {
-  const content = document.getElementById('edit-drawer-content');
-  if (!content) return;
-
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  // Prepare slide for display (replace base64 with tokens)
-  const displaySlide = prepareSlideForEditing(currentSlide);
-
-  // Build quick-edit fields based on slide type
-  const quickEditHTML = buildQuickEditFields(currentSlide);
-
-  content.innerHTML = `
-    <form class="edit-drawer__form">
-      ${quickEditHTML}
-
-      <div class="edit-drawer__field edit-drawer__field--json">
-        <button type="button" class="edit-drawer__json-toggle" id="json-toggle">
-          <span class="edit-drawer__json-toggle-icon">▶</span>
-          <span class="edit-drawer__json-toggle-text">Advanced (JSON Editor)</span>
-        </button>
-        <div class="edit-drawer__json-container" id="json-container" style="display: none;">
-          <textarea
-            class="edit-drawer__textarea"
-            id="slide-json-editor"
-            rows="20"
-            style="font-family: var(--font-mono); font-size: 0.9rem;"
-          >${JSON.stringify(displaySlide, null, 2)}</textarea>
-        </div>
-      </div>
-      <div class="edit-drawer__field edit-drawer__field--template">
-        <label class="edit-drawer__label">Add Template</label>
-        <div class="edit-drawer__template-controls">
-          <select class="edit-drawer__select" id="slide-template-select">
-            <option value="">Choose slide type…</option>
-            <option value="title">Title</option>
-            <option value="standard">Standard</option>
-            <option value="quote">Quote</option>
-            <option value="split">Split</option>
-            <option value="grid">Grid</option>
-            <option value="pillars">Pillars</option>
-            <option value="gallery">Gallery</option>
-            <option value="image">Image</option>
-            <option value="typeface">Typeface</option>
-          </select>
-          <button type="button" class="edit-drawer__button" id="add-template-btn">
-            Add Template
-          </button>
-        </div>
-      </div>
-      <button type="button" class="edit-drawer__button" id="save-slide-btn">
-        Save & Reload
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-        Duplicate Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
-        Save Deck JSON
-      </button>
-    </form>
-  `;
-
-  // Setup save button
-  document.getElementById('save-slide-btn')?.addEventListener('click', saveCurrentSlide);
-  document.getElementById('duplicate-slide-btn')?.addEventListener('click', duplicateCurrentSlide);
-  document.getElementById('download-deck-btn')?.addEventListener('click', () => {
-    const persisted = downloadDeck();
-    if (persisted) {
-      showHudStatus('💾 Deck downloaded', 'success');
-      setTimeout(hideHudStatus, 1600);
-    }
-  });
-
-  const templateBtn = document.getElementById('add-template-btn');
-  if (templateBtn) {
-    templateBtn.addEventListener('click', () => {
-      const select = document.getElementById('slide-template-select');
-      const type = select ? select.value : '';
-      if (!type) {
-        alert('Select a slide type to add.');
-        return;
-      }
-
-      const template = getSlideTemplate(type);
-      if (!template) {
-        alert(`No template available for type "${type}".`);
-        return;
-      }
-
-      const insertIndex = currentIndex + 1;
-      insertSlideAt(insertIndex, template, { activate: true });
-      showHudStatus(`✨ Added ${type} template`, 'success');
-      setTimeout(hideHudStatus, 1600);
-      renderEditForm();
-      console.log(`✓ Added ${type} template slide`);
-    });
-  }
-
-  // Setup JSON toggle
-  const jsonToggle = document.getElementById('json-toggle');
-  if (jsonToggle) {
-    jsonToggle.addEventListener('click', () => {
-      const container = document.getElementById('json-container');
-      const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
-      if (container && icon) {
-        const isOpen = container.style.display !== 'none';
-        container.style.display = isOpen ? 'none' : 'block';
-        icon.textContent = isOpen ? '▶' : '▼';
-      }
-    });
-  }
-
-  // Setup quick-edit field sync
-  setupQuickEditSync();
-
-  // Setup image remove buttons
-  setupImageRemoveButtons();
-
-  // Setup image drag-reorder
-  setupImageDragReorder();
-
-}
-
-function setupQuickEditSync() {
-  // Find all quick-edit input fields
-  const inputs = document.querySelectorAll('[data-field]');
-
-  inputs.forEach(input => {
-    input.addEventListener('input', () => {
-      syncQuickEditToJSON();
-    });
-  });
-}
-
-function syncQuickEditToJSON() {
-  const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
-
-  try {
-    const slide = JSON.parse(textarea.value);
-    const inputs = document.querySelectorAll('[data-field]');
-
-    inputs.forEach(input => {
-      const field = input.dataset.field;
-      let value = input.value;
-
-      // Handle body as array if it contains newlines
-      if (field === 'body' && value.includes('\n')) {
-        value = value.split('\n').filter(line => line.trim());
-        // If all lines were removed, use empty string instead of empty array
-        if (value.length === 0) {
-          value = '';
-        }
-      }
-
-      // Only set non-empty values or remove the key entirely
-      if (value === '' || value === null || value === undefined) {
-        delete slide[field];
-      } else {
-        slide[field] = value;
-      }
-    });
-
-    textarea.value = JSON.stringify(slide, null, 2);
-  } catch (error) {
-    // If JSON is invalid, don't try to sync
-    console.warn('Cannot sync quick-edit: invalid JSON');
-  }
-}
-
-// ================================================================
-// Image Management - Remove & Reorder
-// ================================================================
-
-function setupImageRemoveButtons() {
-  const removeButtons = document.querySelectorAll('.edit-drawer__image-remove');
-
-  removeButtons.forEach(button => {
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
-      const imageIndex = parseInt(button.dataset.imageIndex, 10);
-      removeImageByIndex(imageIndex);
-    });
-  });
-}
-
-function removeImageByIndex(imageIndex) {
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  // Collect all image locations with their paths
-  const imageLocations = [];
-
-  // Top-level image
-  if (currentSlide.image?.src) {
-    imageLocations.push({ path: ['image'], image: currentSlide.image });
-  }
-
-  // Media array (title slides)
-  if (Array.isArray(currentSlide.media)) {
-    currentSlide.media.forEach((item, idx) => {
-      if (item.image?.src) {
-        imageLocations.push({ path: ['media', idx, 'image'], image: item.image });
-      }
-    });
-  }
-
-  // Gallery items
-  if (Array.isArray(currentSlide.items)) {
-    currentSlide.items.forEach((item, idx) => {
-      if (item.image?.src) {
-        imageLocations.push({ path: ['items', idx, 'image'], image: item.image });
-      }
-    });
-  }
-
-  // Split columns
-  if (currentSlide.left?.image?.src) {
-    imageLocations.push({ path: ['left', 'image'], image: currentSlide.left.image });
-  }
-  if (currentSlide.right?.image?.src) {
-    imageLocations.push({ path: ['right', 'image'], image: currentSlide.right.image });
-  }
-
-  // Pillars
-  if (Array.isArray(currentSlide.pillars)) {
-    currentSlide.pillars.forEach((pillar, idx) => {
-      if (pillar.image?.src) {
-        imageLocations.push({ path: ['pillars', idx, 'image'], image: pillar.image });
-      }
-    });
-  }
-
-  // Find the target image location
-  const targetLocation = imageLocations[imageIndex];
-  if (!targetLocation) {
-    console.warn('Image index out of bounds');
-    return;
-  }
-
-  // Remove the image by navigating the path
-  const path = targetLocation.path;
-  let current = currentSlide;
-
-  for (let i = 0; i < path.length - 1; i++) {
-    current = current[path[i]];
-  }
-
-  // Delete the final property
-  delete current[path[path.length - 1]];
-
-  // Update the slide
-  slides[currentIndex] = currentSlide;
-
-  // Re-render the edit form to show updated image list
-  renderEditForm();
-
-  // Show success message
-  showHudStatus('🗑️ Image removed', 'success');
-  setTimeout(hideHudStatus, 1600);
-
-  console.log('✓ Image removed from slide');
-}
-
-function setupImageDragReorder() {
-  const imageList = document.querySelector('.edit-drawer__image-list');
-  if (!imageList) return;
-
-  let draggedItem = null;
-  let draggedIndex = null;
-
-  imageList.addEventListener('dragstart', (event) => {
-    if (!event.target.classList.contains('edit-drawer__image-item')) return;
-
-    draggedItem = event.target;
-    draggedIndex = Array.from(imageList.children).indexOf(draggedItem);
-
-    draggedItem.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', draggedItem.innerHTML);
-  });
-
-  imageList.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-
-    const afterElement = getDragAfterElement(imageList, event.clientY);
-    const draggable = document.querySelector('.dragging');
-
-    if (afterElement == null) {
-      imageList.appendChild(draggable);
-    } else {
-      imageList.insertBefore(draggable, afterElement);
-    }
-  });
-
-  imageList.addEventListener('dragend', (event) => {
-    if (!draggedItem) return;
-
-    draggedItem.classList.remove('dragging');
-
-    // Calculate new index
-    const newIndex = Array.from(imageList.children).indexOf(draggedItem);
-
-    if (newIndex !== draggedIndex) {
-      reorderSlideImages(draggedIndex, newIndex);
-      showHudStatus('↕️ Images reordered', 'success');
-      setTimeout(hideHudStatus, 1600);
-    }
-
-    draggedItem = null;
-    draggedIndex = null;
-  });
-}
-
-function getDragAfterElement(container, y) {
-  const draggableElements = [...container.querySelectorAll('.edit-drawer__image-item:not(.dragging)')];
-
-  return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-
-    if (offset < 0 && offset > closest.offset) {
-      return { offset: offset, element: child };
-    } else {
-      return closest;
-    }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function reorderSlideImages(fromIndex, toIndex) {
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  // Get all images with their paths
-  const imageData = [];
-
-  // Top-level image
-  if (currentSlide.image?.src) {
-    imageData.push({
-      path: ['image'],
-      image: currentSlide.image,
-      getter: () => currentSlide.image,
-      setter: (img) => { currentSlide.image = img; }
-    });
-  }
-
-  // Media array (title slides)
-  if (Array.isArray(currentSlide.media)) {
-    currentSlide.media.forEach((item, idx) => {
-      if (item.image?.src) {
-        imageData.push({
-          path: ['media', idx, 'image'],
-          image: item.image,
-          getter: () => currentSlide.media[idx].image,
-          setter: (img) => { currentSlide.media[idx].image = img; }
-        });
-      }
-    });
-  }
-
-  // Gallery items
-  if (Array.isArray(currentSlide.items)) {
-    currentSlide.items.forEach((item, idx) => {
-      if (item.image?.src) {
-        imageData.push({
-          path: ['items', idx, 'image'],
-          image: item.image,
-          getter: () => currentSlide.items[idx].image,
-          setter: (img) => { currentSlide.items[idx].image = img; }
-        });
-      }
-    });
-  }
-
-  // Split columns
-  if (currentSlide.left?.image?.src) {
-    imageData.push({
-      path: ['left', 'image'],
-      image: currentSlide.left.image,
-      getter: () => currentSlide.left.image,
-      setter: (img) => { currentSlide.left.image = img; }
-    });
-  }
-  if (currentSlide.right?.image?.src) {
-    imageData.push({
-      path: ['right', 'image'],
-      image: currentSlide.right.image,
-      getter: () => currentSlide.right.image,
-      setter: (img) => { currentSlide.right.image = img; }
-    });
-  }
-
-  // Pillars
-  if (Array.isArray(currentSlide.pillars)) {
-    currentSlide.pillars.forEach((pillar, idx) => {
-      if (pillar.image?.src) {
-        imageData.push({
-          path: ['pillars', idx, 'image'],
-          image: pillar.image,
-          getter: () => currentSlide.pillars[idx].image,
-          setter: (img) => { currentSlide.pillars[idx].image = img; }
-        });
-      }
-    });
-  }
-
-  // Swap the images
-  if (fromIndex >= 0 && fromIndex < imageData.length && toIndex >= 0 && toIndex < imageData.length) {
-    const fromImage = imageData[fromIndex].getter();
-    const toImage = imageData[toIndex].getter();
-
-    imageData[fromIndex].setter(toImage);
-    imageData[toIndex].setter(fromImage);
-
-    // Update slides array
-    slides[currentIndex] = currentSlide;
-
-    // Re-render edit form
-    renderEditForm();
-
-    console.log(`✓ Reordered images: ${fromIndex} -> ${toIndex}`);
-  }
-}
-
-function saveCurrentSlide() {
-  // First, sync quick-edit fields to JSON
-  syncQuickEditToJSON();
-
-  const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
-
-  try {
-    const editedSlide = JSON.parse(textarea.value);
-    const originalSlide = slides[currentIndex];
-
-    console.log('[DEBUG] Saving slide...');
-    console.log('[DEBUG] Edited image src:', editedSlide.image?.src?.substring(0, 100));
-    console.log('[DEBUG] Original image src:', originalSlide.image?.src?.substring(0, 100));
-
-    // Restore base64 data from tokens
-    const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
-
-    console.log('[DEBUG] Restored image src:', restoredSlide.image?.src?.substring(0, 100));
-
-    const targetIndex = currentIndex;
-    slides[currentIndex] = restoredSlide;
-    replaceSlideAt(targetIndex);
-    closeEditDrawer();
-    showHudStatus('✨ Slide updated', 'success');
-    setTimeout(hideHudStatus, 1600);
-    console.log('✓ Slide updated');
-  } catch (error) {
-    alert(`Invalid JSON: ${error.message}`);
-  }
-}
-
-function duplicateCurrentSlide() {
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  // Deep clone the slide
-  const duplicatedSlide = JSON.parse(JSON.stringify(currentSlide));
-
-  // Insert after current slide
-  const newIndex = currentIndex + 1;
-  insertSlideAt(newIndex, duplicatedSlide, { activate: true });
-  closeEditDrawer();
-  showHudStatus('✨ Slide duplicated', 'success');
-  setTimeout(hideHudStatus, 1600);
-  console.log('✓ Slide duplicated');
-}
+  },
+  onClose: () => {
+    isEditDrawerOpen = false;
+  },
+});
 
 function shiftScrollPositions(startIndex, delta) {
   if (!slideScrollPositions.size || delta === 0) return;
@@ -3822,688 +2767,6 @@ function getSlideTemplate(type) {
   return JSON.parse(JSON.stringify(template));
 }
 
-// ===================================================================
-// VOICE-DRIVEN SLIDE ACTIONS
-// ===================================================================
-
-let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
-let mediaStream = null;
-
-// ===================================================================
-// API KEY MANAGEMENT
-// ===================================================================
-
-const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
-
-function getGeminiApiKey() {
-  return localStorage.getItem(STORAGE_KEY_API) || '';
-}
-
-function toggleVoiceRecording(mode = 'add') {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    openSettingsModal();
-    showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
-    return;
-  }
-
-  if (mode === 'edit' && !slideElements[currentIndex]) {
-    alert('No slide selected to edit.');
-    return;
-  }
-
-  if (voiceProcessing) {
-    return;
-  }
-
-  if (isRecording) {
-    if (activeVoiceMode === mode) {
-      stopVoiceRecording();
-    }
-    return;
-  }
-
-  startVoiceRecording(mode);
-}
-
-async function startVoiceRecording(mode) {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      }
-    });
-
-    const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
-    let mimeType = '';
-    for (const type of mimeTypes) {
-      if (!type || MediaRecorder.isTypeSupported(type)) {
-        mimeType = type;
-        break;
-      }
-    }
-
-    mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    audioChunks = [];
-    mediaStream = stream;
-    activeVoiceMode = mode;
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunks.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = async () => {
-      const currentMode = activeVoiceMode || mode;
-      const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-      voiceProcessing = true;
-      try {
-        await processVoiceAction(currentMode, audioBlob);
-      } finally {
-        cleanupVoiceRecording({ resetButton: false });
-        updateVoiceUI(currentMode, 'idle');
-        voiceProcessing = false;
-        activeVoiceMode = null;
-      }
-    };
-
-    mediaRecorder.start(1000);
-    isRecording = true;
-    updateVoiceUI(mode, 'recording');
-    console.log('🎙️ Recording started...');
-  } catch (error) {
-    console.error('❌ Error starting recording:', error);
-    alert('Failed to access microphone. Please check permissions.');
-    cleanupVoiceRecording({ resetButton: false });
-    updateVoiceUI(mode, 'idle');
-    activeVoiceMode = null;
-  }
-}
-
-function stopVoiceRecording() {
-  if (!mediaRecorder || !isRecording) return;
-
-  isRecording = false;
-  if (activeVoiceMode) {
-    updateVoiceUI(activeVoiceMode, 'processing');
-  }
-
-  if (mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-}
-
-function cleanupVoiceRecording({ resetButton = true } = {}) {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-    mediaStream = null;
-  }
-  mediaRecorder = null;
-  audioChunks = [];
-  isRecording = false;
-  if (resetButton && activeVoiceMode) {
-    updateVoiceUI(activeVoiceMode, 'idle');
-  }
-}
-
-function updateVoiceUI(mode, state) {
-  const button = voiceButtons[mode];
-  const hudStatus = document.getElementById('hud-status');
-  if (!button) return;
-
-  const baseLabel = mode === 'edit' ? 'Edit' : 'Add';
-  const shortcutHint = mode === 'add' ? ' (shortcut V)' : '';
-
-  if (state === 'recording') {
-    button.classList.add('is-recording');
-    button.classList.remove('is-processing');
-    button.textContent = 'Stop';
-    button.setAttribute('aria-label', 'Stop recording');
-    if (hudStatus) {
-      hudStatus.textContent = '🎙 Recording...';
-      hudStatus.className = 'hud__status hud__status--recording is-visible';
-    }
-    return;
-  }
-
-  if (state === 'processing') {
-    button.classList.remove('is-recording');
-    button.classList.add('is-processing');
-    button.textContent = baseLabel;
-    button.setAttribute('aria-label', `${baseLabel} slide from voice${shortcutHint}`);
-    if (hudStatus) {
-      hudStatus.textContent = mode === 'edit'
-        ? '⚡ Updating slide...'
-        : '⚡ Generating slide...';
-      hudStatus.className = 'hud__status hud__status--processing is-visible';
-    }
-    return;
-  }
-
-  button.classList.remove('is-recording', 'is-processing');
-  button.textContent = baseLabel;
-  button.setAttribute('aria-label', `${baseLabel} slide from voice${shortcutHint}`);
-}
-
-async function processVoiceAction(mode, audioBlob) {
-  const action = mode === 'edit' ? processVoiceEditSlide : processVoiceToSlide;
-  await action(audioBlob);
-}
-
-async function processVoiceToSlide(audioBlob) {
-  try {
-    console.log('🤖 Processing audio with Gemini...');
-    const uiStart = performance.now();
-
-    const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1];
-
-    const prompt = buildSlideDesignPrompt();
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
-    }
-
-    const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-    if (!generatedText) {
-      throw new Error('No response from Gemini');
-    }
-
-    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                      generatedText.match(/\{[\s\S]*\}/);
-
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const slideData = JSON.parse(jsonText);
-    validateSlides([slideData]);
-
-    const newIndex = insertSlideAfterCurrent(slideData);
-
-    await ensureMinimumDelay(uiStart, 1300);
-    showHudStatus('✨ Slide ready — Save Deck to export', 'success');
-    setActiveSlide(newIndex);
-    setTimeout(hideHudStatus, 2000);
-    console.log('✅ Slide created and inserted!');
-  } catch (error) {
-    console.error('❌ Error processing voice:', error);
-    alert(`Failed to create slide: ${error.message}`);
-  }
-}
-
-async function processVoiceEditSlide(audioBlob) {
-  try {
-    const targetIndex = currentIndex;
-    const slideToEdit = slides[targetIndex];
-    if (!slideToEdit) {
-      throw new Error('No slide selected to edit.');
-    }
-
-    console.log('🛠 Updating slide with Gemini...');
-    const uiStart = performance.now();
-
-    const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1];
-    const prompt = buildSlideEditPrompt(slideToEdit);
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 2048,
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
-    }
-
-    const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-    if (!generatedText) {
-      throw new Error('No response from Gemini');
-    }
-
-    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                      generatedText.match(/\{[\s\S]*\}/);
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const updatedSlide = JSON.parse(jsonText);
-    validateSlides([updatedSlide]);
-
-    slides[targetIndex] = updatedSlide;
-    replaceSlideAt(targetIndex);
-    overviewCursor = targetIndex;
-
-    await ensureMinimumDelay(uiStart, 1300);
-    showHudStatus('✨ Slide updated — Save Deck to export', 'success');
-    setTimeout(hideHudStatus, 2000);
-    console.log('✅ Slide updated via Gemini!');
-  } catch (error) {
-    console.error('❌ Error updating slide:', error);
-    alert(`Failed to update slide: ${error.message}`);
-  }
-}
-
-function buildSlideEditPrompt(slide) {
-  const slideJson = JSON.stringify(slide, null, 2);
-  return `You are an expert Slideomatic editor. Update the existing slide JSON based on the user's voice instructions.\n\nCURRENT SLIDE JSON:\n\n\`\`\`json\n${slideJson}\n\`\`\`\n\nRULES:\n- Preserve the slide's "type" and required keys for that type.\n- If the user requests additions or removals, update the relevant arrays (items, pillars, etc.).\n- Keep badge/headline/body values unless the user explicitly changes them.\n- Return ONLY a single valid JSON object with no commentary or markdown fences.\n- If the request is unclear, make a best effort improvement while keeping the structure consistent.`;
-}
-
-function buildSlideDesignPrompt() {
-  return `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's voice description.
-
-IMPORTANT RULES FOR IMAGE NAMES:
-- Image "alt" text is used for Google Image Search, so make it FINDABLE but not TOO SPECIFIC
-- Good: "vintage synthesizer", "mountain landscape sunset", "modern office workspace"
-- Bad: "moog model d serial 12345", "mount everest north face 1996", "apple macbook pro m1 2021"
-- Use common, searchable terms that will return good visual results
-- Think like a user searching Google Images - what would find the RIGHT kind of image?
-
-AVAILABLE SLIDE TYPES:
-1. "title" - Big hero slide with title, subtitle, optional media strip
-   Fields: type, title, subtitle, eyebrow, media (array of {image: {src, alt}}), footnote
-
-2. "standard" - Headline + body + optional image
-   Fields: type, headline, body (string or array), image {src, alt}, footnote
-
-3. "quote" - Large quote with attribution
-   Fields: type, quote, attribution
-
-4. "split" - Two-column layout
-   Fields: type, left {headline, body, image}, right {headline, body, image}
-
-5. "grid" - Grid of images/colors
-   Fields: type, headline, body, items (array of {image: {src, alt}, label})
-
-6. "pillars" - Feature cards
-   Fields: type, headline, pillars (array of {title, copy, image})
-
-7. "gallery" - Visual gallery
-   Fields: type, headline, items (array of {image, label, copy})
-
-  8. "image" - Full-bleed image slide
-     Fields: type, image {src, alt}, caption
-  
-  9. "graph" - AI-generated infographic/graph
-     Fields: type, title, description, orientation (landscape/portrait/square), imageData (base64)
-  
-  10. "typeface" - Font showcase
-      Fields: type, headline, fonts (array of {name, font, sample})
-
-AVAILABLE FONTS (use font field on ANY slide or in typeface showcase):
-- Presets: "sans" (Inter), "mono" (Space Mono), "grotesk" (Space Grotesk), "jetbrains" (JetBrains Mono), "pixel" (Press Start 2P)
-- Any system font: "Georgia", "Comic Sans MS", etc.
-- Font can be set per-slide in root level: {"type": "quote", "font": "pixel", ...}
-
-MARKDOWN & LINKS (use in headlines, body, quotes):
-- Bold: **text** or __text__
-- Italic: *text* or _text_
-- Links: [text](url) - example: [Visit Site](https://example.com)
-- Code: \`code\`
-- Combine: **[Bold Link](url)**
-
-DESIGN GUIDELINES:
-- Choose the slide type that best fits the user's description
-- For image searches, use FINDABLE alt text (see rules above)
-- Keep headlines punchy (5-7 words max)
-- Body text should be clear and concise
-- Use markdown for emphasis, links, code snippets
-- If user mentions multiple points, consider "pillars" or "grid"
-- If user wants a visual focus, use "image" or "gallery"
-- For quotes or testimonials, use "quote" type
-- Badge field is optional - use for section labels
-- Add font presets when user requests specific typography
-
-Return ONLY valid JSON matching the schema. No markdown, no explanations.
-
-Example output for "a slide about vintage synthesizers with some examples":
-{
-  "type": "grid",
-  "headline": "Vintage Synthesizers",
-  "body": "The machines that shaped electronic music",
-  "items": [
-    {"image": {"alt": "moog synthesizer"}, "label": "Moog"},
-    {"image": {"alt": "roland jupiter synthesizer"}, "label": "Roland Jupiter"},
-    {"image": {"alt": "arp odyssey synth"}, "label": "ARP Odyssey"}
-  ]
-}
-
-Now listen to the audio and create the slide:`;
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
-  const elapsed = performance.now() - startTimestamp;
-  if (elapsed >= minimumMs) return Promise.resolve();
-  return new Promise((resolve) => setTimeout(resolve, minimumMs - elapsed));
-}
-
-function insertSlideAfterCurrent(slideData) {
-  // Insert after current index
-  const newIndex = currentIndex + 1;
-  insertSlideAt(newIndex, slideData, { activate: true });
-  return newIndex;
-}
-
-// ===================================================================
-// VOICE-TO-THEME
-// ===================================================================
-
-let isRecordingTheme = false;
-let themeMediaRecorder = null;
-let themeAudioChunks = [];
-let themeMediaStream = null;
-
-function toggleVoiceTheme() {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    openSettingsModal();
-    showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
-    return;
-  }
-
-  if (isRecordingTheme) {
-    stopVoiceThemeRecording();
-  } else {
-    startVoiceThemeRecording();
-  }
-}
-
-async function startVoiceThemeRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      }
-    });
-
-    const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
-    let mimeType = '';
-    for (const type of mimeTypes) {
-      if (!type || MediaRecorder.isTypeSupported(type)) {
-        mimeType = type;
-        break;
-      }
-    }
-
-    themeMediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    themeAudioChunks = [];
-    themeMediaStream = stream;
-
-    themeMediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        themeAudioChunks.push(event.data);
-      }
-    };
-
-    themeMediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(themeAudioChunks, { type: mimeType || 'audio/webm' });
-      await processVoiceToTheme(audioBlob);
-      cleanupVoiceThemeRecording();
-    };
-
-    themeMediaRecorder.start(1000);
-    isRecordingTheme = true;
-
-    showHudStatus('🎨 Recording theme...', 'recording');
-    console.log('🎨 Recording theme description...');
-  } catch (error) {
-    console.error('❌ Error starting theme recording:', error);
-    alert('Failed to access microphone. Please check permissions.');
-    cleanupVoiceThemeRecording();
-  }
-}
-
-function stopVoiceThemeRecording() {
-  if (!themeMediaRecorder || !isRecordingTheme) return;
-
-  isRecordingTheme = false;
-  showHudStatus('🎨 Generating theme...', 'processing');
-
-  if (themeMediaRecorder.state !== 'inactive') {
-    themeMediaRecorder.stop();
-  }
-}
-
-function cleanupVoiceThemeRecording() {
-  if (themeMediaStream) {
-    themeMediaStream.getTracks().forEach(track => track.stop());
-    themeMediaStream = null;
-  }
-  themeMediaRecorder = null;
-  themeAudioChunks = [];
-  isRecordingTheme = false;
-}
-
-async function processVoiceToTheme(audioBlob) {
-  try {
-    console.log('🎨 Generating theme with Gemini...');
-    const uiStart = performance.now();
-
-    const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1];
-
-    const prompt = buildThemeDesignPrompt();
-
-    // Check for API key first
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 1.0,  // Higher temp for more creative themes
-            maxOutputTokens: 2048,
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
-    }
-
-    const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-
-    if (!generatedText) {
-      throw new Error('No response from Gemini');
-    }
-
-    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                      generatedText.match(/\{[\s\S]*\}/);
-
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const themeData = JSON.parse(jsonText);
-
-    // Apply the new theme
-    const normalizedTheme = applyTheme(themeData);
-
-    // Download theme.json automatically
-    downloadTheme(normalizedTheme);
-    setCurrentTheme(normalizedTheme, { source: '__ai__' });
-
-    await ensureMinimumDelay(uiStart, 1500);
-    showHudStatus('🎨 Theme created!', 'success');
-    setTimeout(hideHudStatus, 2200);
-    console.log('✅ Theme applied and downloaded!');
-  } catch (error) {
-    console.error('❌ Error processing theme:', error);
-    alert(`Failed to create theme: ${error.message}`);
-    hideHudStatus();
-  }
-}
-
-function buildThemeDesignPrompt() {
-  return `You are a theme designer for Slideomatic. Create a complete theme.json based on the user's voice description.
-
-THEME SCHEMA - ALL fields required:
-{
-  "color-bg": "#fffbf3",                    // Main background color
-  "background-surface": "radial-gradient(...)",  // Complex gradient or solid color
-  "background-overlay": "radial-gradient(...)",  // Texture/pattern overlay or ""
-  "background-opacity": "0.5",              // Opacity of overlay (0-1)
-  "slide-bg": "rgba(255, 251, 243, 0.88)", // Slide background (can be transparent)
-  "slide-border-color": "#1b1b1b",         // Slide border color
-  "slide-border-width": "5px",             // Border thickness (0px for none)
-  "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)", // Neo-brutalist shadow
-  "color-surface": "#ff9ff3",              // Primary accent color
-  "color-surface-alt": "#88d4ff",          // Secondary accent
-  "color-accent": "#feca57",               // Tertiary accent
-  "badge-bg": "#feca57",                   // Badge background
-  "badge-color": "#1b1b1b",                // Badge text color
-  "color-ink": "#000000",                  // Primary text color
-  "color-muted": "#2b2b2b",                // Secondary text color
-  "border-width": "5px",                   // Global border width
-  "gutter": "clamp(32px, 5vw, 72px)",      // Spacing unit
-  "radius": "12px",                        // Border radius
-  "font-sans": "\\"Inter\\", sans-serif",    // Sans font stack
-  "font-mono": "\\"Space Mono\\", monospace", // Mono font stack
-  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
-  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
-  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
-  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
-}
-
-DESIGN GUIDELINES:
-1. **Color Harmony** - Choose a cohesive palette (pastel-punk, dark mode, neon, retro, etc.)
-2. **Gradients** - Can use radial-gradient, linear-gradient, or solid colors
-3. **Shadows** - Neo-brutalist (hard offset shadows) or soft (box-shadow with blur)
-4. **Borders** - Can be thick (5px+), thin (1-2px), or none (0px)
-5. **Typography** - Suggest real font stacks (serif, sans, mono, display)
-6. **Contrast** - Ensure text is readable on backgrounds
-7. **Vibe** - Match the mood the user describes (playful, serious, retro, modern, etc.)
-
-STYLE ARCHETYPES:
-- **Pastel Punk** (default): Soft pastels + chunky borders + hard shadows
-- **Dark Brutalist**: Dark bg + neon accents + heavy borders
-- **Minimal Clean**: White/light grays + subtle borders + no gradients
-- **Retro Warm**: Warm browns/oranges + serif fonts + textured overlays
-- **Neon Cyber**: Dark bg + bright neons + glowing shadows
-- **Nature Soft**: Greens/earth tones + organic gradients + soft shadows
-
-Return ONLY valid JSON. No markdown, no explanations.
-
-Example for "dark cyberpunk with neon accents":
-{
-  "color-bg": "#0a0e27",
-  "background-surface": "radial-gradient(circle at 20% 30%, rgba(255, 0, 255, 0.15), transparent 50%), radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.15), transparent 50%), #0a0e27",
-  "background-overlay": "repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 255, 255, 0.03) 3px)",
-  "background-opacity": "0.8",
-  "slide-bg": "rgba(10, 14, 39, 0.95)",
-  "slide-border-color": "#ff00ff",
-  "slide-border-width": "3px",
-  "slide-shadow": "0 0 20px rgba(255, 0, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.3)",
-  "color-surface": "#ff00ff",
-  "color-surface-alt": "#00ffff",
-  "color-accent": "#ffff00",
-  "badge-bg": "#ff00ff",
-  "badge-color": "#0a0e27",
-  "color-ink": "#ffffff",
-  "color-muted": "#a0a0ff",
-  "border-width": "2px",
-  "gutter": "clamp(32px, 5vw, 72px)",
-  "radius": "8px",
-  "font-sans": "\\"Orbitron\\", \\"Arial\\", sans-serif",
-  "font-mono": "\\"Share Tech Mono\\", monospace",
-  "shadow-sm": "0 0 10px rgba(255, 0, 255, 0.4)",
-  "shadow-md": "0 0 20px rgba(255, 0, 255, 0.5)",
-  "shadow-lg": "0 0 30px rgba(255, 0, 255, 0.6)",
-  "shadow-xl": "0 0 40px rgba(255, 0, 255, 0.7)"
-}
-
-Now listen to the audio and create the theme:`;
-}
 
 function downloadTheme(themeData) {
   const json = JSON.stringify(themeData, null, 2);
@@ -4870,24 +3133,13 @@ The graph should be publication-ready with clear data visualization.`;
 // Theme Drawer UI & Management
 // ================================================================
 
-function handleThemeDrawerKeydown(event) {
-  if (!isThemeDrawerOpen) return;
-  const themeDrawer = document.getElementById('theme-drawer');
-  if (!themeDrawer) return;
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeThemeDrawer();
-  } else if (event.key === 'Tab') {
-    trapFocus(event, themeDrawer);
-  }
-}
-
 function syncThemeSelectUI() {
   const themeSelect = document.getElementById('theme-select');
   if (!themeSelect) return;
   const options = Array.from(themeSelect.options).map(option => option.value);
-  if (options.includes(currentThemePath)) {
-    themeSelect.value = currentThemePath;
+  const currentPath = getCurrentThemePath();
+  if (currentPath && options.includes(currentPath)) {
+    themeSelect.value = currentPath;
   } else {
     let customOption = themeSelect.querySelector('option[value="__custom__"]');
     if (!customOption) {
@@ -4901,68 +3153,57 @@ function syncThemeSelectUI() {
   }
 }
 
-function openThemeDrawer() {
-  const themeDrawer = document.getElementById('theme-drawer');
-  const themeBtn = document.getElementById('theme-btn');
-  if (!themeDrawer || isThemeDrawerOpen) return;
 
-  if (isEditDrawerOpen) {
-    closeEditDrawer();
-  }
-
-  isThemeDrawerOpen = true;
-  themeDrawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-  themeDrawer.classList.add('is-open', 'is-springing');
-  themeDrawer.setAttribute('aria-hidden', 'false');
-  themeBtn?.setAttribute('aria-expanded', 'true');
-  themeBtn?.classList.add('is-active');
-  themeDrawer.addEventListener(
-    'animationend',
-    () => themeDrawer.classList.remove('is-springing'),
-    { once: true }
-  );
-
-  loadThemeIntoEditor();
-  renderThemeLibrary();
-  syncThemeSelectUI();
-  focusFirstElement(themeDrawer);
-  document.addEventListener('keydown', handleThemeDrawerKeydown, true);
-}
-
-function closeThemeDrawer() {
-  const themeDrawer = document.getElementById('theme-drawer');
-  const themeBtn = document.getElementById('theme-btn');
-  if (!themeDrawer || !isThemeDrawerOpen) return;
-
-  isThemeDrawerOpen = false;
-  themeDrawer.classList.remove('is-open');
-  themeDrawer.classList.remove('is-springing');
-  themeDrawer.setAttribute('aria-hidden', 'true');
-  themeBtn?.setAttribute('aria-expanded', 'false');
-  themeBtn?.classList.remove('is-active');
-
-  document.removeEventListener('keydown', handleThemeDrawerKeydown, true);
-
-  const target = themeDrawerPreviousFocus && typeof themeDrawerPreviousFocus.focus === 'function'
-    ? themeDrawerPreviousFocus
-    : themeBtn;
-  requestAnimationFrame(() => target?.focus());
-  themeDrawerPreviousFocus = null;
-}
+themeDrawerInstance = createDrawer({
+  id: 'theme-drawer',
+  onOpen: () => {
+    const themeBtn = document.getElementById('theme-btn');
+    isThemeDrawerOpen = true;
+    themeBtn?.setAttribute('aria-expanded', 'true');
+    themeBtn?.classList.add('is-active');
+    loadThemeIntoEditor();
+    renderThemeLibrary();
+    syncThemeSelectUI();
+    const closeBtn = themeDrawerInstance.element.querySelector('.theme-drawer__close');
+    if (closeBtn && !closeBtn.dataset.listenerAttached) {
+      closeBtn.addEventListener('click', () => closeDrawer(themeDrawerInstance));
+      closeBtn.dataset.listenerAttached = 'true';
+    }
+  },
+  onClose: () => {
+    const themeBtn = document.getElementById('theme-btn');
+    isThemeDrawerOpen = false;
+    themeBtn?.setAttribute('aria-expanded', 'false');
+    themeBtn?.classList.remove('is-active');
+  },
+});
 
 function toggleThemeDrawer() {
-  if (isThemeDrawerOpen) {
-    closeThemeDrawer();
+  if (!themeDrawerInstance) return;
+  if (themeDrawerInstance.isOpen) {
+    closeDrawer(themeDrawerInstance);
   } else {
     openThemeDrawer();
   }
 }
 
+function openThemeDrawer() {
+  if (!themeDrawerInstance) return;
+  if (editDrawerInstance?.isOpen) {
+    closeDrawer(editDrawerInstance, { restoreFocus: false });
+  }
+  openDrawer(themeDrawerInstance);
+}
+
+function closeThemeDrawer() {
+  if (!themeDrawerInstance) return;
+  closeDrawer(themeDrawerInstance);
+}
+
+
 function initThemeDrawer() {
-  const themeDrawer = document.getElementById('theme-drawer');
+  const themeDrawer = themeDrawerInstance?.element;
   const themeBtn = document.getElementById('theme-btn');
-  const closeBtn = themeDrawer?.querySelector('.theme-drawer__close');
   const textarea = document.getElementById('theme-json-editor');
   const applyBtn = document.getElementById('theme-apply-btn');
   const saveBtn = document.getElementById('theme-save-btn');
@@ -4971,7 +3212,6 @@ function initThemeDrawer() {
 
   if (!themeDrawer) return;
 
-  themeDrawer.setAttribute('aria-hidden', 'true');
   themeBtn?.setAttribute('aria-expanded', 'false');
   themeBtn?.classList.remove('is-active');
 
@@ -4980,8 +3220,9 @@ function initThemeDrawer() {
     themeBtn.dataset.listenerAttached = 'true';
   }
 
+  const closeBtn = themeDrawer.querySelector('.theme-drawer__close');
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
-    closeBtn.addEventListener('click', closeThemeDrawer);
+    closeBtn.addEventListener('click', () => closeDrawer(themeDrawerInstance));
     closeBtn.dataset.listenerAttached = 'true';
   }
 
@@ -5020,7 +3261,7 @@ function initThemeDrawer() {
   });
 
   aiBtn?.addEventListener('click', async () => {
-    const description = prompt('Describe your theme:\\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
+    const description = prompt('Describe your theme:\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
     if (!description) return;
 
     try {
@@ -5066,11 +3307,13 @@ function initThemeDrawer() {
   syncThemeSelectUI();
 }
 
+
+
 function loadThemeIntoEditor() {
   const textarea = document.getElementById('theme-json-editor');
   if (!textarea) return;
 
-  const theme = getCurrentTheme() || currentTheme;
+  const theme = getCurrentTheme();
   if (theme) {
     textarea.value = JSON.stringify(theme, null, 2);
   } else {
@@ -5108,7 +3351,7 @@ function renderThemeLibrary() {
   const list = document.getElementById('theme-library-list');
   if (!list) return;
 
-  const library = getThemeLibrary();
+  const library = loadThemeLibrary();
 
   if (library.length === 0) {
     list.innerHTML = '<p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-muted); font-style: italic;">No saved themes yet</p>';
@@ -5133,7 +3376,7 @@ function renderThemeLibrary() {
   list.querySelectorAll('[data-action="load"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const name = btn.dataset.name;
-      const library = getThemeLibrary();
+      const library = loadThemeLibrary();
       const entry = library.find(t => t.name === name);
       if (entry) {
         const normalizedTheme = applyTheme(entry.theme);
@@ -5219,7 +3462,7 @@ async function initDeckWithTheme() {
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
 
-  document.addEventListener("keydown", handleKeyboard);
+  initKeyboardNav(getKeyboardContext());
   slidesRoot.addEventListener("click", handleSlideClick);
   document.addEventListener("click", handleImageModalTrigger);
   document.addEventListener("paste", handleGlobalPaste);
@@ -5229,19 +3472,21 @@ async function initDeckWithTheme() {
     uploadInput.addEventListener('change', handleDeckUpload);
   }
 
-  const addBtn = document.getElementById('add-btn');
-  if (addBtn) {
-    voiceButtons.add = addBtn;
-    addBtn.addEventListener('click', () => toggleVoiceRecording('add'));
-    updateVoiceUI('add', 'idle');
-  }
-
-  const editBtn = document.getElementById('edit-btn');
-  if (editBtn) {
-    voiceButtons.edit = editBtn;
-    editBtn.addEventListener('click', () => toggleVoiceRecording('edit'));
-    updateVoiceUI('edit', 'idle');
-  }
+  initVoiceButtons({
+    openSettingsModal,
+    showApiKeyStatus,
+    showHudStatus,
+    hideHudStatus,
+    getCurrentIndex: () => currentIndex,
+    getSlides: () => slides,
+    insertSlideAt,
+    replaceSlideAt,
+    setActiveSlide,
+    setOverviewCursor: (index) => { overviewCursor = index; },
+    updateSlide: (index, slide) => { slides[index] = slide; },
+    validateSlides,
+    downloadTheme,
+  });
 
   const overviewBtn = document.getElementById('overview-btn');
   if (overviewBtn) {
