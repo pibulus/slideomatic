@@ -2267,6 +2267,62 @@ body[data-mode="overview"] .hud {
   margin-bottom: 20px;
 }
 
+.theme-drawer__color-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.theme-drawer__color-field {
+  position: relative;
+  height: 60px;
+}
+
+.theme-drawer__color-input {
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  border: 3px solid var(--color-ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  padding: 0;
+}
+
+.theme-drawer__color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.theme-drawer__color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+}
+
+.theme-drawer__color-input::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+}
+
+.theme-drawer__color-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.theme-drawer__parallel-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .theme-drawer__input {
   appearance: none;
   width: 100%;
@@ -2284,26 +2340,6 @@ body[data-mode="overview"] .hud {
   outline: none;
   border-color: var(--color-surface);
   box-shadow: 0 0 0 3px rgba(255, 159, 243, 0.2);
-}
-
-.theme-drawer__input--color {
-  height: 48px;
-  padding: 4px;
-  cursor: pointer;
-}
-
-.theme-drawer__input--color::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.theme-drawer__input--color::-webkit-color-swatch {
-  border: 2px solid var(--color-ink);
-  border-radius: 6px;
-}
-
-.theme-drawer__input--color::-moz-color-swatch {
-  border: 2px solid var(--color-ink);
-  border-radius: 6px;
 }
 
 .theme-drawer__json-toggle {

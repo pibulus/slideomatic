@@ -32,34 +32,6 @@
         </div>
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
-            <div class="theme-drawer__section theme-drawer__section--editor">
-              <h3 class="theme-drawer__section-title">Theme Properties</h3>
-
-              <div class="theme-drawer__fields" id="theme-fields">
-                <!-- Quick-edit fields will be dynamically populated here -->
-              </div>
-
-              <div class="theme-drawer__field theme-drawer__field--json">
-                <button type="button" class="theme-drawer__json-toggle" id="theme-json-toggle">
-                  <span class="theme-drawer__json-toggle-icon">▶</span>
-                  <span class="theme-drawer__json-toggle-text">Advanced (Raw JSON)</span>
-                </button>
-                <div class="theme-drawer__json-container" id="theme-json-container" style="display: none;">
-                  <textarea
-                    class="theme-drawer__textarea"
-                    id="theme-json-editor"
-                    spellcheck="false"
-                    rows="15"
-                    placeholder='{"color-bg": "#fffbf3", ...}'
-                  ></textarea>
-                </div>
-              </div>
-
-              <button class="theme-drawer__apply-btn" type="button" id="theme-apply-btn">
-                Apply Changes
-              </button>
-            </div>
-
             <div class="theme-drawer__field">
               <label class="theme-drawer__label" for="theme-select">Active Theme</label>
               <select class="theme-drawer__select" id="theme-select" aria-label="Switch theme" title="Switch theme">
@@ -85,11 +57,39 @@
             <div class="theme-drawer__section">
               <div class="theme-drawer__section-header">
                 <h3>Saved Themes</h3>
-                <p>Load, rename, or remove presets you’ve captured.</p>
+                <p>Load, rename, or remove presets you've captured.</p>
               </div>
               <div class="theme-drawer__library-list" id="theme-library-list">
                 <!-- Saved themes will be populated here -->
               </div>
+            </div>
+
+            <div class="theme-drawer__section theme-drawer__section--editor">
+              <h3 class="theme-drawer__section-title">Customize</h3>
+
+              <div class="theme-drawer__fields" id="theme-fields">
+                <!-- Quick-edit fields will be dynamically populated here -->
+              </div>
+
+              <div class="theme-drawer__field theme-drawer__field--json">
+                <button type="button" class="theme-drawer__json-toggle" id="theme-json-toggle">
+                  <span class="theme-drawer__json-toggle-icon">▶</span>
+                  <span class="theme-drawer__json-toggle-text">Advanced (Raw JSON)</span>
+                </button>
+                <div class="theme-drawer__json-container" id="theme-json-container" style="display: none;">
+                  <textarea
+                    class="theme-drawer__textarea"
+                    id="theme-json-editor"
+                    spellcheck="false"
+                    rows="15"
+                    placeholder='{"color-bg": "#fffbf3", ...}'
+                  ></textarea>
+                </div>
+              </div>
+
+              <button class="theme-drawer__apply-btn" type="button" id="theme-apply-btn">
+                Apply Changes
+              </button>
             </div>
           </form>
         </div>

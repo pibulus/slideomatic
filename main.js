@@ -3359,39 +3359,109 @@ function buildThemeFields(theme) {
   const container = document.getElementById('theme-fields');
   if (!container) return;
 
-  const fields = [
-    { key: 'color-bg', label: 'Background Color', type: 'color' },
-    { key: 'color-ink', label: 'Text Color', type: 'color' },
-    { key: 'color-surface', label: 'Surface Color', type: 'color' },
-    { key: 'color-accent', label: 'Accent Color', type: 'color' },
-    { key: 'font-sans', label: 'Sans Font', type: 'text' },
-    { key: 'font-mono', label: 'Mono Font', type: 'text' },
-    { key: 'border-width', label: 'Border Width', type: 'text', hint: 'e.g., 5px' },
-    { key: 'radius', label: 'Border Radius', type: 'text', hint: 'e.g., 12px' },
+  const colorFields = [
+    { key: 'color-bg', label: 'Background' },
+    { key: 'color-ink', label: 'Text' },
+    { key: 'color-surface', label: 'Surface' },
+    { key: 'color-accent', label: 'Accent' },
   ];
 
-  let html = '';
-  fields.forEach(field => {
-    const value = theme[field.key] || '';
-    const displayValue = field.type === 'color' ? extractHexColor(value) : value;
+  const textFields = [
+    { key: 'font-sans', label: 'Sans Font' },
+    { key: 'font-mono', label: 'Mono Font' },
+  ];
 
+  const parallelFields = [
+    { key: 'border-width', label: 'Border' },
+    { key: 'radius', label: 'Radius' },
+  ];
+
+  let html = '<div class="theme-drawer__color-grid">';
+
+  colorFields.forEach(field => {
+    const value = extractHexColor(theme[field.key] || '#ffffff');
+    const textColor = getContrastColor(value);
+    html += `
+      <div class="theme-drawer__color-field">
+        <input
+          type="color"
+          class="theme-drawer__color-input"
+          id="theme-field-${field.key}"
+          data-theme-key="${field.key}"
+          value="${value}"
+        />
+        <label class="theme-drawer__color-label" for="theme-field-${field.key}" style="color: ${textColor}">
+          ${field.label}
+        </label>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  textFields.forEach(field => {
+    const value = theme[field.key] || '';
     html += `
       <div class="theme-drawer__field">
         <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
-        ${field.hint ? `<p class="theme-drawer__hint">${field.hint}</p>` : ''}
         <input
-          type="${field.type}"
-          class="theme-drawer__input${field.type === 'color' ? ' theme-drawer__input--color' : ''}"
+          type="text"
+          class="theme-drawer__input"
           id="theme-field-${field.key}"
           data-theme-key="${field.key}"
-          value="${displayValue}"
+          value="${value}"
         />
       </div>
     `;
   });
 
+  html += '<div class="theme-drawer__parallel-fields">';
+  parallelFields.forEach(field => {
+    const value = theme[field.key] || '';
+    html += `
+      <div class="theme-drawer__field">
+        <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
+        <input
+          type="text"
+          class="theme-drawer__input"
+          id="theme-field-${field.key}"
+          data-theme-key="${field.key}"
+          value="${value}"
+        />
+      </div>
+    `;
+  });
+  html += '</div>';
+
   container.innerHTML = html;
   setupThemeFieldSync();
+  setupColorFieldSync();
+}
+
+function getContrastColor(hexColor) {
+  // Convert hex to RGB
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  // Return black or white based on luminance
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
+function setupColorFieldSync() {
+  const colorInputs = document.querySelectorAll('.theme-drawer__color-input');
+  colorInputs.forEach(input => {
+    input.addEventListener('input', (e) => {
+      // Update label text color based on new background
+      const label = input.nextElementSibling;
+      if (label) {
+        label.style.color = getContrastColor(e.target.value);
+      }
+      syncThemeFieldsToJSON();
+    });
+  });
 }
 
 function extractHexColor(value) {
