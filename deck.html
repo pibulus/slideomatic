@@ -32,20 +32,14 @@
         </div>
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
-            <div class="theme-drawer__field">
-              <label class="theme-drawer__label" for="current-theme-name">Current Theme</label>
-              <input
-                type="text"
-                class="theme-drawer__input theme-drawer__input--theme-name"
-                id="current-theme-name"
-                placeholder="My Awesome Theme"
-                value="Untitled Theme"
-              />
+            <div class="theme-drawer__current">
+              <div class="theme-drawer__current-label">Current Theme</div>
+              <div class="theme-drawer__current-name" id="current-theme-name">Unsaved Theme</div>
             </div>
 
             <div class="theme-drawer__actions theme-drawer__actions--stacked">
               <button class="theme-drawer__btn theme-drawer__btn--primary" type="button" id="theme-save-btn">
-                💾 Save Changes
+                💾 Save Theme...
               </button>
             </div>
 
@@ -74,8 +68,18 @@
               </div>
             </div>
 
-            <div class="theme-drawer__section theme-drawer__section--editor">
-              <h3 class="theme-drawer__section-title">Customize</h3>
+            <div class="theme-drawer__section">
+              <div class="theme-drawer__section-header">
+                <h3>Customize</h3>
+                <p>Tweak colors, fonts, and visual details.</p>
+              </div>
+
+              <div class="theme-drawer__tabs">
+                <button class="theme-drawer__tab theme-drawer__tab--active" data-tab="background">Background</button>
+                <button class="theme-drawer__tab" data-tab="text">Text</button>
+                <button class="theme-drawer__tab" data-tab="surface">Surface</button>
+                <button class="theme-drawer__tab" data-tab="accent">Accent</button>
+              </div>
 
               <div class="theme-drawer__fields" id="theme-fields">
                 <!-- Quick-edit fields will be dynamically populated here -->

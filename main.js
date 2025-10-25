@@ -3260,6 +3260,27 @@ function initThemeDrawer() {
     jsonToggle.dataset.listenerAttached = 'true';
   }
 
+  // Tab switching
+  const tabs = themeDrawer.querySelectorAll('.theme-drawer__tab');
+  tabs.forEach(tab => {
+    if (!tab.dataset.tabListenerAttached) {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('theme-drawer__tab--active'));
+        tab.classList.add('theme-drawer__tab--active');
+
+        // Show/hide color grids based on active tab
+        const colorGrids = themeDrawer.querySelectorAll('[data-tab-content]');
+        colorGrids.forEach(grid => {
+          grid.style.display = grid.dataset.tabContent === tabName ? 'grid' : 'none';
+        });
+      });
+      tab.dataset.tabListenerAttached = 'true';
+    }
+  });
+
   applyBtn?.addEventListener('click', async () => {
     if (!textarea) return;
     try {
@@ -3281,11 +3302,22 @@ function initThemeDrawer() {
     try {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
-      const nameInput = document.getElementById('current-theme-name');
-      const name = nameInput?.value.trim() || 'Untitled Theme';
 
-      saveThemeToLibrary(name, theme);
+      // Get current theme name from label
+      const nameLabel = document.getElementById('current-theme-name');
+      const currentName = nameLabel?.textContent.trim() || 'Untitled Theme';
+
+      // Pre-fill prompt with current name if it's not "Unsaved Theme"
+      const defaultName = currentName === 'Unsaved Theme' ? '' : currentName;
+      const name = prompt('Name your theme:', defaultName);
+      if (!name || !name.trim()) return;
+
+      saveThemeToLibrary(name.trim(), theme);
       renderThemeLibrary();
+
+      // Update the current theme name label
+      if (nameLabel) nameLabel.textContent = name.trim();
+
       showHudStatus('💾 Theme saved', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3310,10 +3342,10 @@ function initThemeDrawer() {
       syncThemeSelectUI();
 
       // Update theme name with AI description (capitalize first letter)
-      const nameInput = document.getElementById('current-theme-name');
-      if (nameInput) {
+      const nameLabel = document.getElementById('current-theme-name');
+      if (nameLabel) {
         const themeName = description.charAt(0).toUpperCase() + description.slice(1);
-        nameInput.value = themeName.length > 30 ? themeName.slice(0, 30) + '...' : themeName;
+        nameLabel.textContent = themeName.length > 30 ? themeName.slice(0, 30) + '...' : themeName;
       }
 
       showHudStatus('✨ Theme generated!', 'success');
@@ -3338,8 +3370,8 @@ function initThemeDrawer() {
       syncThemeSelectUI();
 
       // Update theme name
-      const nameInput = document.getElementById('current-theme-name');
-      if (nameInput) nameInput.value = 'Random Theme';
+      const nameLabel = document.getElementById('current-theme-name');
+      if (nameLabel) nameLabel.textContent = 'Random Theme';
 
       showHudStatus('✨ Random theme applied!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3370,12 +3402,25 @@ function buildThemeFields(theme) {
   const container = document.getElementById('theme-fields');
   if (!container) return;
 
-  const colorFields = [
-    { key: 'color-bg', label: 'Background' },
-    { key: 'color-ink', label: 'Text' },
-    { key: 'color-surface', label: 'Surface' },
-    { key: 'color-accent', label: 'Accent' },
-  ];
+  // Organize color fields by tab
+  const colorFieldsByTab = {
+    background: [
+      { key: 'color-bg', label: 'Background' },
+      { key: 'color-muted', label: 'Muted' },
+    ],
+    text: [
+      { key: 'color-ink', label: 'Text' },
+    ],
+    surface: [
+      { key: 'color-surface', label: 'Surface' },
+      { key: 'color-surface-alt', label: 'Surface Alt' },
+    ],
+    accent: [
+      { key: 'color-accent', label: 'Accent' },
+      { key: 'badge-bg', label: 'Badge BG' },
+      { key: 'badge-color', label: 'Badge Text' },
+    ],
+  };
 
   const textFields = [
     { key: 'font-sans', label: 'Sans Font' },
@@ -3387,27 +3432,30 @@ function buildThemeFields(theme) {
     { key: 'radius', label: 'Radius' },
   ];
 
-  let html = '<div class="theme-drawer__color-grid">';
-
-  colorFields.forEach(field => {
-    const value = extractHexColor(theme[field.key] || '#ffffff');
-    const textColor = getContrastColor(value);
-    html += `
-      <div class="theme-drawer__color-field">
-        <input
-          type="color"
-          class="theme-drawer__color-input"
-          id="theme-field-${field.key}"
-          data-theme-key="${field.key}"
-          value="${value}"
-        />
-        <label class="theme-drawer__color-label" for="theme-field-${field.key}" style="color: ${textColor}">
-          ${field.label}
-        </label>
-      </div>
-    `;
+  // Build color grids for each tab
+  let html = '';
+  Object.entries(colorFieldsByTab).forEach(([tab, fields]) => {
+    html += `<div class="theme-drawer__color-grid" data-tab-content="${tab}" style="display: ${tab === 'background' ? 'grid' : 'none'};">`;
+    fields.forEach(field => {
+      const value = extractHexColor(theme[field.key] || '#ffffff');
+      const textColor = getContrastColor(value);
+      html += `
+        <div class="theme-drawer__color-field">
+          <input
+            type="color"
+            class="theme-drawer__color-input"
+            id="theme-field-${field.key}"
+            data-theme-key="${field.key}"
+            value="${value}"
+          />
+          <label class="theme-drawer__color-label" for="theme-field-${field.key}" style="color: ${textColor}">
+            ${field.label}
+          </label>
+        </div>
+      `;
+    });
+    html += '</div>';
   });
-  html += '</div>';
 
   // Font dropdowns
   const fontOptions = {
@@ -3608,9 +3656,9 @@ function renderThemeLibrary() {
         setCurrentTheme(normalizedTheme, { source: `library:${name}` });
         loadThemeIntoEditor();
 
-        // Update theme name input
-        const nameInput = document.getElementById('current-theme-name');
-        if (nameInput) nameInput.value = name;
+        // Update theme name label
+        const nameLabel = document.getElementById('current-theme-name');
+        if (nameLabel) nameLabel.textContent = name;
 
         showHudStatus(`✨ Loaded "${name}"`, 'success');
         setTimeout(hideHudStatus, 1600);
