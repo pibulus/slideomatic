@@ -3253,6 +3253,13 @@ function initThemeDrawer() {
     closeBtn.dataset.listenerAttached = 'true';
   }
 
+  // JSON toggle
+  const jsonToggle = document.getElementById('theme-json-toggle');
+  if (jsonToggle && !jsonToggle.dataset.listenerAttached) {
+    jsonToggle.addEventListener('click', handleThemeJsonToggle);
+    jsonToggle.dataset.listenerAttached = 'true';
+  }
+
   applyBtn?.addEventListener('click', async () => {
     if (!textarea) return;
     try {
@@ -3338,17 +3345,104 @@ function initThemeDrawer() {
 
 function loadThemeIntoEditor() {
   const textarea = document.getElementById('theme-json-editor');
+  const theme = getCurrentTheme() || extractCurrentThemeFromCSS();
+
+  if (textarea) {
+    textarea.value = JSON.stringify(theme, null, 2);
+  }
+
+  buildThemeFields(theme);
+  syncThemeSelectUI();
+}
+
+function buildThemeFields(theme) {
+  const container = document.getElementById('theme-fields');
+  if (!container) return;
+
+  const fields = [
+    { key: 'color-bg', label: 'Background Color', type: 'color' },
+    { key: 'color-ink', label: 'Text Color', type: 'color' },
+    { key: 'color-surface', label: 'Surface Color', type: 'color' },
+    { key: 'color-accent', label: 'Accent Color', type: 'color' },
+    { key: 'font-sans', label: 'Sans Font', type: 'text' },
+    { key: 'font-mono', label: 'Mono Font', type: 'text' },
+    { key: 'border-width', label: 'Border Width', type: 'text', hint: 'e.g., 5px' },
+    { key: 'radius', label: 'Border Radius', type: 'text', hint: 'e.g., 12px' },
+  ];
+
+  let html = '';
+  fields.forEach(field => {
+    const value = theme[field.key] || '';
+    const displayValue = field.type === 'color' ? extractHexColor(value) : value;
+
+    html += `
+      <div class="theme-drawer__field">
+        <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
+        ${field.hint ? `<p class="theme-drawer__hint">${field.hint}</p>` : ''}
+        <input
+          type="${field.type}"
+          class="theme-drawer__input${field.type === 'color' ? ' theme-drawer__input--color' : ''}"
+          id="theme-field-${field.key}"
+          data-theme-key="${field.key}"
+          value="${displayValue}"
+        />
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  setupThemeFieldSync();
+}
+
+function extractHexColor(value) {
+  // Extract hex color from string like "#fffbf3" or "rgba(255, 251, 243, 0.82)"
+  const hexMatch = value.match(/#[0-9a-fA-F]{6}/);
+  return hexMatch ? hexMatch[0] : '#ffffff';
+}
+
+function setupThemeFieldSync() {
+  const inputs = document.querySelectorAll('[data-theme-key]');
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      syncThemeFieldsToJSON();
+    });
+  });
+}
+
+function syncThemeFieldsToJSON() {
+  const textarea = document.getElementById('theme-json-editor');
   if (!textarea) return;
 
-  const theme = getCurrentTheme();
-  if (theme) {
+  try {
+    const theme = JSON.parse(textarea.value);
+    const inputs = document.querySelectorAll('[data-theme-key]');
+
+    inputs.forEach(input => {
+      const key = input.dataset.themeKey;
+      const value = input.value;
+
+      if (value) {
+        theme[key] = value;
+      }
+    });
+
     textarea.value = JSON.stringify(theme, null, 2);
-  } else {
-    // Load from CSS variables as fallback
-    const computedTheme = extractCurrentThemeFromCSS();
-    textarea.value = JSON.stringify(computedTheme, null, 2);
+  } catch (error) {
+    console.warn('Cannot sync theme fields: invalid JSON');
   }
-  syncThemeSelectUI();
+}
+
+function handleThemeJsonToggle() {
+  const container = document.getElementById('theme-json-container');
+  const toggle = document.getElementById('theme-json-toggle');
+  if (!container || !toggle) return;
+
+  const icon = toggle.querySelector('.theme-drawer__json-toggle-icon');
+  const isOpen = container.style.display !== 'none';
+  container.style.display = isOpen ? 'none' : 'block';
+  if (icon) {
+    icon.textContent = isOpen ? '▶' : '▼';
+  }
 }
 
 function extractCurrentThemeFromCSS() {

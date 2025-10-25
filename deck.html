@@ -33,14 +33,28 @@
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
             <div class="theme-drawer__section theme-drawer__section--editor">
-              <label class="theme-drawer__label" for="theme-json-editor">Current Theme JSON</label>
-              <p class="theme-drawer__hint">Edit tokens directly for precise control, then apply.</p>
-              <textarea
-                class="theme-drawer__textarea"
-                id="theme-json-editor"
-                spellcheck="false"
-                placeholder='{"color-bg": "#fffbf3", ...}'
-              ></textarea>
+              <h3 class="theme-drawer__section-title">Theme Properties</h3>
+
+              <div class="theme-drawer__fields" id="theme-fields">
+                <!-- Quick-edit fields will be dynamically populated here -->
+              </div>
+
+              <div class="theme-drawer__field theme-drawer__field--json">
+                <button type="button" class="theme-drawer__json-toggle" id="theme-json-toggle">
+                  <span class="theme-drawer__json-toggle-icon">▶</span>
+                  <span class="theme-drawer__json-toggle-text">Advanced (Raw JSON)</span>
+                </button>
+                <div class="theme-drawer__json-container" id="theme-json-container" style="display: none;">
+                  <textarea
+                    class="theme-drawer__textarea"
+                    id="theme-json-editor"
+                    spellcheck="false"
+                    rows="15"
+                    placeholder='{"color-bg": "#fffbf3", ...}'
+                  ></textarea>
+                </div>
+              </div>
+
               <button class="theme-drawer__apply-btn" type="button" id="theme-apply-btn">
                 Apply Changes
               </button>
