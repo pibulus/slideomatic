@@ -3409,18 +3409,41 @@ function buildThemeFields(theme) {
   });
   html += '</div>';
 
+  // Font dropdowns
+  const fontOptions = {
+    'font-sans': [
+      { value: '"Inter", "Helvetica Neue", Arial, sans-serif', label: 'Inter' },
+      { value: '"Space Grotesk", "Helvetica Neue", sans-serif', label: 'Space Grotesk' },
+      { value: '"Helvetica Neue", Helvetica, Arial, sans-serif', label: 'Helvetica' },
+      { value: 'Arial, sans-serif', label: 'Arial' },
+      { value: 'Georgia, serif', label: 'Georgia' },
+    ],
+    'font-mono': [
+      { value: '"Space Mono", "IBM Plex Mono", monospace', label: 'Space Mono' },
+      { value: '"JetBrains Mono", monospace', label: 'JetBrains Mono' },
+      { value: '"Press Start 2P", monospace', label: 'Press Start 2P' },
+      { value: '"Courier New", monospace', label: 'Courier New' },
+    ],
+  };
+
   textFields.forEach(field => {
     const value = theme[field.key] || '';
+    const options = fontOptions[field.key];
+
     html += `
       <div class="theme-drawer__field">
         <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
-        <input
-          type="text"
-          class="theme-drawer__input"
+        <select
+          class="theme-drawer__select"
           id="theme-field-${field.key}"
           data-theme-key="${field.key}"
-          value="${value}"
-        />
+        >
+          ${options.map(opt => `
+            <option value="${opt.value}" ${value.includes(opt.label) ? 'selected' : ''}>
+              ${opt.label}
+            </option>
+          `).join('')}
+        </select>
       </div>
     `;
   });
