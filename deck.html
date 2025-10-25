@@ -33,25 +33,35 @@
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
             <div class="theme-drawer__field">
-              <label class="theme-drawer__label" for="theme-select">Active Theme</label>
-              <select class="theme-drawer__select" id="theme-select" aria-label="Switch theme" title="Switch theme">
-                <option value="theme.json">Default</option>
-                <option value="themes/vaporwave.json">Vaporwave</option>
-                <option value="themes/slack.json">Slack</option>
-                <option value="themes/gameboy.json">Gameboy</option>
-              </select>
+              <label class="theme-drawer__label" for="current-theme-name">Current Theme</label>
+              <input
+                type="text"
+                class="theme-drawer__input theme-drawer__input--theme-name"
+                id="current-theme-name"
+                placeholder="My Awesome Theme"
+                value="Untitled Theme"
+              />
             </div>
 
             <div class="theme-drawer__actions theme-drawer__actions--stacked">
-              <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
-                🎲 Randomize
-              </button>
               <button class="theme-drawer__btn theme-drawer__btn--primary" type="button" id="theme-save-btn">
-                💾 Save to Library
+                💾 Save Changes
               </button>
-              <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
-                ✨ Ask AI
-              </button>
+            </div>
+
+            <div class="theme-drawer__section">
+              <div class="theme-drawer__section-header">
+                <h3>Discover</h3>
+                <p>Generate new themes with AI or randomization.</p>
+              </div>
+              <div class="theme-drawer__actions theme-drawer__actions--horizontal">
+                <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
+                  🎲 Randomize
+                </button>
+                <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
+                  ✨ Ask AI
+                </button>
+              </div>
             </div>
 
             <div class="theme-drawer__section">

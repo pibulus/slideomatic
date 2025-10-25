@@ -3281,8 +3281,8 @@ function initThemeDrawer() {
     try {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
-      const name = prompt('Name your theme:', 'My Theme');
-      if (!name) return;
+      const nameInput = document.getElementById('current-theme-name');
+      const name = nameInput?.value.trim() || 'Untitled Theme';
 
       saveThemeToLibrary(name, theme);
       renderThemeLibrary();
@@ -3309,6 +3309,13 @@ function initThemeDrawer() {
       loadThemeIntoEditor();
       syncThemeSelectUI();
 
+      // Update theme name with AI description (capitalize first letter)
+      const nameInput = document.getElementById('current-theme-name');
+      if (nameInput) {
+        const themeName = description.charAt(0).toUpperCase() + description.slice(1);
+        nameInput.value = themeName.length > 30 ? themeName.slice(0, 30) + '...' : themeName;
+      }
+
       showHudStatus('✨ Theme generated!', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3329,6 +3336,10 @@ function initThemeDrawer() {
       setCurrentTheme(normalizedTheme, { source: '__random__' });
       loadThemeIntoEditor();
       syncThemeSelectUI();
+
+      // Update theme name
+      const nameInput = document.getElementById('current-theme-name');
+      if (nameInput) nameInput.value = 'Random Theme';
 
       showHudStatus('✨ Random theme applied!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3573,6 +3584,11 @@ function renderThemeLibrary() {
         const normalizedTheme = applyTheme(entry.theme);
         setCurrentTheme(normalizedTheme, { source: `library:${name}` });
         loadThemeIntoEditor();
+
+        // Update theme name input
+        const nameInput = document.getElementById('current-theme-name');
+        if (nameInput) nameInput.value = name;
+
         showHudStatus(`✨ Loaded "${name}"`, 'success');
         setTimeout(hideHudStatus, 1600);
       }
