@@ -2863,13 +2863,21 @@ function saveApiKey() {
 
 async function testApiKey() {
   const key = getGeminiApiKey();
+  const testBtn = document.getElementById('test-api-key');
 
   if (!key) {
     showApiKeyStatus('error', 'No API key found. Please save one first.');
     return;
   }
 
-  showApiKeyStatus('info', 'Testing connection...');
+  // Animate button while testing
+  if (testBtn) {
+    testBtn.disabled = true;
+    testBtn.classList.add('is-loading');
+    testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+  }
+
+  showApiKeyStatus('info', '⏳ Testing connection...');
 
   try {
     const response = await fetch(
@@ -2884,13 +2892,32 @@ async function testApiKey() {
     );
 
     if (response.ok) {
-      showApiKeyStatus('success', '✓ Connection successful! Your API key is working.');
+      showApiKeyStatus('success', '✅ Connection successful! Your API key is working.');
+      if (testBtn) {
+        testBtn.classList.add('is-success');
+        testBtn.innerHTML = '✅ Connected!';
+        setTimeout(() => {
+          testBtn.classList.remove('is-success', 'is-loading');
+          testBtn.innerHTML = 'Test Connection';
+          testBtn.disabled = false;
+        }, 2000);
+      }
     } else {
       const error = await response.json();
-      showApiKeyStatus('error', `Invalid API key or connection failed: ${error.error?.message || 'Unknown error'}`);
+      showApiKeyStatus('error', `❌ Invalid API key or connection failed: ${error.error?.message || 'Unknown error'}`);
+      if (testBtn) {
+        testBtn.classList.remove('is-loading');
+        testBtn.innerHTML = 'Test Connection';
+        testBtn.disabled = false;
+      }
     }
   } catch (error) {
-    showApiKeyStatus('error', 'Connection test failed. Please check your internet connection.');
+    showApiKeyStatus('error', '❌ Connection test failed. Please check your internet connection.');
+    if (testBtn) {
+      testBtn.classList.remove('is-loading');
+      testBtn.innerHTML = 'Test Connection';
+      testBtn.disabled = false;
+    }
   }
 }
 

@@ -46,6 +46,23 @@ function ensureContext(context) {
       throw new Error(`Edit drawer context is missing required function "${key}"`);
     }
   });
+
+  // Add deleteSlideAt if not present
+  if (!context.deleteSlideAt) {
+    context.deleteSlideAt = (index) => {
+      const slides = context.getSlides();
+      if (slides.length <= 1) {
+        alert('Cannot delete the last slide!');
+        return false;
+      }
+      slides.splice(index, 1);
+      if (index >= slides.length) {
+        context.currentIndex = slides.length - 1;
+      }
+      return true;
+    };
+  }
+
   return context;
 }
 
@@ -116,11 +133,19 @@ function buildTextArea(id, label, value) {
   `;
 }
 
-function setupQuickEditSync() {
+let autoSaveTimeout = null;
+
+function setupQuickEditSync(context) {
   const inputs = document.querySelectorAll('[data-field]');
   inputs.forEach((input) => {
     input.addEventListener('input', () => {
       syncQuickEditToJSON();
+
+      // Auto-save after 1 second of idle typing
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveSlide(context);
+      }, 1000);
     });
   });
 }
@@ -156,6 +181,38 @@ function syncQuickEditToJSON() {
   } catch (error) {
     console.warn('Cannot sync quick-edit: invalid JSON');
   }
+}
+
+function autoSaveSlide(context) {
+  const ctx = ensureContext(context);
+  syncQuickEditToJSON();
+
+  const textarea = document.getElementById('slide-json-editor');
+  if (!textarea) return;
+
+  try {
+    const editedSlide = JSON.parse(textarea.value);
+    const slides = ctx.getSlides();
+    const currentIndex = ctx.getCurrentIndex();
+    const originalSlide = slides[currentIndex];
+
+    if (!originalSlide) return;
+
+    const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
+    ctx.updateSlide(currentIndex, restoredSlide);
+    ctx.replaceSlideAt(currentIndex);
+
+    // Show subtle "Saved ✓" indicator
+    showAutoSaveStatus(ctx);
+  } catch (error) {
+    console.warn('Auto-save failed:', error);
+  }
+}
+
+function showAutoSaveStatus(context) {
+  const ctx = ensureContext(context);
+  ctx.showHudStatus('✓ Saved', 'success');
+  setTimeout(() => ctx.hideHudStatus(), 800);
 }
 
 function handleTemplateInsert(context) {
@@ -285,11 +342,14 @@ export function renderEditForm(context) {
           </button>
         </div>
       </div>
-      <button type="button" class="edit-drawer__button" id="save-slide-btn">
-        Save & Reload
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+        🔒 LOCK IT IN
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
         Duplicate Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--danger" id="delete-slide-btn">
+        🗑️ Delete Slide
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
         Save Deck JSON
@@ -305,6 +365,10 @@ export function renderEditForm(context) {
     duplicateCurrentSlide(ctx);
   });
 
+  document.getElementById('delete-slide-btn')?.addEventListener('click', () => {
+    deleteCurrentSlide(ctx);
+  });
+
   document.getElementById('download-deck-btn')?.addEventListener('click', () => {
     handleDownloadDeck(ctx);
   });
@@ -315,7 +379,7 @@ export function renderEditForm(context) {
 
   document.getElementById('json-toggle')?.addEventListener('click', handleJsonToggle);
 
-  setupQuickEditSync();
+  setupQuickEditSync(ctx);
 
   setupImageRemoveButtons({
     root: content,
@@ -350,9 +414,18 @@ export function saveCurrentSlide(context) {
     ctx.updateSlide(currentIndex, restoredSlide);
     ctx.replaceSlideAt(currentIndex);
     ctx.closeDrawer();
-    ctx.showHudStatus('✨ Slide updated', 'success');
-    setTimeout(() => ctx.hideHudStatus(), 1600);
-    console.log('✓ Slide updated');
+
+    // Bigger celebration for explicit save
+    ctx.showHudStatus('🔒 LOCKED IN!', 'success');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
+
+    // Add pulse animation to the save button before it closes
+    const saveBtn = document.getElementById('save-slide-btn');
+    if (saveBtn) {
+      saveBtn.style.animation = 'pulse 0.3s ease';
+    }
+
+    console.log('✓ Slide locked in');
   } catch (error) {
     alert(`Invalid JSON: ${error.message}`);
   }
@@ -372,5 +445,28 @@ export function duplicateCurrentSlide(context) {
   ctx.showHudStatus('✨ Slide duplicated', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
   console.log('✓ Slide duplicated');
+}
+
+export function deleteCurrentSlide(context) {
+  const ctx = ensureContext(context);
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+
+  if (slides.length <= 1) {
+    alert('Cannot delete the last slide!');
+    return;
+  }
+
+  const confirmed = confirm('Delete this slide? This cannot be undone.');
+  if (!confirmed) return;
+
+  const success = ctx.deleteSlideAt(currentIndex);
+  if (success) {
+    ctx.replaceSlideAt(ctx.getCurrentIndex());
+    ctx.closeDrawer();
+    ctx.showHudStatus('🗑️ Slide deleted', 'success');
+    setTimeout(() => ctx.hideHudStatus(), 1600);
+    console.log('✓ Slide deleted');
+  }
 }
 
