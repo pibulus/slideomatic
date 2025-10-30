@@ -469,14 +469,31 @@ async function initDeck() {
   const themeSelect = document.getElementById('theme-select');
   if (themeSelect) {
     themeSelect.addEventListener('change', async (event) => {
-      const themePath = event.target.value;
+      const value = event.target.value;
       showHudStatus('🎨 Switching theme...', 'processing');
+
       try {
-        const response = await fetch(themePath, { cache: "no-store" });
-        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-        const theme = await response.json();
+        let theme;
+        let source;
+
+        // Check if it's a user-saved theme (starts with 'saved:')
+        if (value.startsWith('saved:')) {
+          const themeName = value.replace('saved:', '');
+          const library = loadThemeLibrary();
+          const entry = library.find(t => t.name === themeName);
+          if (!entry) throw new Error(`Theme "${themeName}" not found`);
+          theme = entry.theme;
+          source = `library:${themeName}`;
+        } else {
+          // It's a built-in theme (file path)
+          const response = await fetch(value, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+          theme = await response.json();
+          source = value;
+        }
+
         const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme, { source: themePath });
+        setCurrentTheme(normalizedTheme, { source });
         loadThemeIntoEditor();
         syncThemeSelectUI();
         showHudStatus('✨ Theme applied', 'success');
@@ -3303,20 +3320,24 @@ function initThemeDrawer() {
       const themeJson = textarea.value;
       const theme = JSON.parse(themeJson);
 
-      // Get current theme name from label
-      const nameLabel = document.getElementById('current-theme-name');
-      const currentName = nameLabel?.textContent.trim() || 'Untitled Theme';
+      // Get current theme from dropdown
+      const themeSelect = document.getElementById('theme-select');
+      const currentValue = themeSelect?.value || '';
 
-      // Pre-fill prompt with current name if it's not "Unsaved Theme"
-      const defaultName = currentName === 'Unsaved Theme' ? '' : currentName;
+      // Extract name if it's a saved theme, otherwise leave blank
+      let defaultName = '';
+      if (currentValue.startsWith('saved:')) {
+        defaultName = currentValue.replace('saved:', '');
+      }
+
       const name = prompt('Name your theme:', defaultName);
       if (!name || !name.trim()) return;
 
       saveThemeToLibrary(name.trim(), theme);
-      renderThemeLibrary();
+      populateThemeDropdown();
 
-      // Update the current theme name label
-      if (nameLabel) nameLabel.textContent = name.trim();
+      // Select the newly saved theme in dropdown
+      if (themeSelect) themeSelect.value = `saved:${name.trim()}`;
 
       showHudStatus('💾 Theme saved', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3341,13 +3362,6 @@ function initThemeDrawer() {
       loadThemeIntoEditor();
       syncThemeSelectUI();
 
-      // Update theme name with AI description (capitalize first letter)
-      const nameLabel = document.getElementById('current-theme-name');
-      if (nameLabel) {
-        const themeName = description.charAt(0).toUpperCase() + description.slice(1);
-        nameLabel.textContent = themeName.length > 30 ? themeName.slice(0, 30) + '...' : themeName;
-      }
-
       showHudStatus('✨ Theme generated!', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3369,10 +3383,6 @@ function initThemeDrawer() {
       loadThemeIntoEditor();
       syncThemeSelectUI();
 
-      // Update theme name
-      const nameLabel = document.getElementById('current-theme-name');
-      if (nameLabel) nameLabel.textContent = 'Random Theme';
-
       showHudStatus('✨ Random theme applied!', 'success');
       setTimeout(hideHudStatus, 1600);
     } catch (error) {
@@ -3382,6 +3392,7 @@ function initThemeDrawer() {
   });
 
   syncThemeSelectUI();
+  populateThemeDropdown();
 }
 
 
@@ -3620,62 +3631,26 @@ function extractCurrentThemeFromCSS() {
   return theme;
 }
 
-function renderThemeLibrary() {
-  const list = document.getElementById('theme-library-list');
-  if (!list) return;
+function populateThemeDropdown() {
+  const themeSelect = document.getElementById('theme-select');
+  if (!themeSelect) return;
 
   const library = loadThemeLibrary();
 
-  if (library.length === 0) {
-    list.innerHTML = '<p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--color-muted); font-style: italic;">No saved themes yet</p>';
-    return;
-  }
-
-  list.innerHTML = library.map(entry => `
-    <div class="theme-drawer__library-item">
-      <span class="theme-drawer__library-item-name">${entry.name}</span>
-      <div class="theme-drawer__library-item-actions">
-        <button class="theme-drawer__library-item-btn" data-action="load" data-name="${entry.name}">
-          Load
-        </button>
-        <button class="theme-drawer__library-item-btn theme-drawer__library-item-btn--delete" data-action="delete" data-name="${entry.name}">
-          Delete
-        </button>
-      </div>
-    </div>
-  `).join('');
-
-  // Wire up load/delete buttons
-  list.querySelectorAll('[data-action="load"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.name;
-      const library = loadThemeLibrary();
-      const entry = library.find(t => t.name === name);
-      if (entry) {
-        const normalizedTheme = applyTheme(entry.theme);
-        setCurrentTheme(normalizedTheme, { source: `library:${name}` });
-        loadThemeIntoEditor();
-
-        // Update theme name label
-        const nameLabel = document.getElementById('current-theme-name');
-        if (nameLabel) nameLabel.textContent = name;
-
-        showHudStatus(`✨ Loaded "${name}"`, 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-    });
+  // Remove old saved theme options (keep built-in themes)
+  const options = Array.from(themeSelect.options);
+  options.forEach(option => {
+    if (option.value.startsWith('saved:')) {
+      option.remove();
+    }
   });
 
-  list.querySelectorAll('[data-action="delete"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.name;
-      if (confirm(`Delete theme "${name}"?`)) {
-        deleteThemeFromLibrary(name);
-        renderThemeLibrary();
-        showHudStatus(`🗑️ Deleted "${name}"`, 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-    });
+  // Add saved themes to dropdown
+  library.forEach(entry => {
+    const option = document.createElement('option');
+    option.value = `saved:${entry.name}`;
+    option.textContent = entry.name;
+    themeSelect.appendChild(option);
   });
 }
 

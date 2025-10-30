@@ -32,9 +32,15 @@
         </div>
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
-            <div class="theme-drawer__current">
-              <div class="theme-drawer__current-label">Current Theme</div>
-              <div class="theme-drawer__current-name" id="current-theme-name">Unsaved Theme</div>
+            <div class="theme-drawer__field">
+              <label class="theme-drawer__label" for="theme-select">Current Theme</label>
+              <select class="theme-drawer__select" id="theme-select" aria-label="Select theme">
+                <option value="theme.json">Default</option>
+                <option value="themes/vaporwave.json">Vaporwave</option>
+                <option value="themes/slack.json">Slack</option>
+                <option value="themes/gameboy.json">Gameboy</option>
+                <!-- User-saved themes will be appended here -->
+              </select>
             </div>
 
             <div class="theme-drawer__actions theme-drawer__actions--stacked">
@@ -55,16 +61,6 @@
                 <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
                   ✨ Ask AI
                 </button>
-              </div>
-            </div>
-
-            <div class="theme-drawer__section">
-              <div class="theme-drawer__section-header">
-                <h3>Saved Themes</h3>
-                <p>Load, rename, or remove presets you've captured.</p>
-              </div>
-              <div class="theme-drawer__library-list" id="theme-library-list">
-                <!-- Saved themes will be populated here -->
               </div>
             </div>
 
