@@ -32,75 +32,35 @@
         </div>
         <div class="theme-drawer__content">
           <form class="theme-drawer__form">
-            <div class="theme-drawer__field">
-              <label class="theme-drawer__label" for="theme-select">Current Theme</label>
-              <select class="theme-drawer__select" id="theme-select" aria-label="Select theme">
-                <option value="theme.json">Default</option>
-                <option value="themes/vaporwave.json">Vaporwave</option>
-                <option value="themes/slack.json">Slack</option>
-                <option value="themes/gameboy.json">Gameboy</option>
-                <!-- User-saved themes will be appended here -->
-              </select>
-            </div>
-
-            <div class="theme-drawer__actions theme-drawer__actions--stacked">
+            <div class="theme-drawer__actions theme-drawer__actions--inline">
+              <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
+                🎲 Random
+              </button>
               <button class="theme-drawer__btn theme-drawer__btn--primary" type="button" id="theme-save-btn">
                 💾 Save Theme...
               </button>
-            </div>
-
-            <div class="theme-drawer__section">
-              <div class="theme-drawer__section-header">
-                <h3>Discover</h3>
-                <p>Generate new themes with AI or randomization.</p>
-              </div>
-              <div class="theme-drawer__actions theme-drawer__actions--horizontal">
-                <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
-                  🎲 Randomize
-                </button>
-                <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
-                  ✨ Ask AI
-                </button>
-              </div>
-            </div>
-
-            <div class="theme-drawer__section">
-              <div class="theme-drawer__section-header">
-                <h3>Customize</h3>
-                <p>Tweak colors, fonts, and visual details.</p>
-              </div>
-
-              <div class="theme-drawer__tabs">
-                <button class="theme-drawer__tab theme-drawer__tab--active" data-tab="background">Background</button>
-                <button class="theme-drawer__tab" data-tab="text">Text</button>
-                <button class="theme-drawer__tab" data-tab="surface">Surface</button>
-                <button class="theme-drawer__tab" data-tab="accent">Accent</button>
-              </div>
-
-              <div class="theme-drawer__fields" id="theme-fields">
-                <!-- Quick-edit fields will be dynamically populated here -->
-              </div>
-
-              <div class="theme-drawer__field theme-drawer__field--json">
-                <button type="button" class="theme-drawer__json-toggle" id="theme-json-toggle">
-                  <span class="theme-drawer__json-toggle-icon">▶</span>
-                  <span class="theme-drawer__json-toggle-text">Advanced (Raw JSON)</span>
-                </button>
-                <div class="theme-drawer__json-container" id="theme-json-container" style="display: none;">
-                  <textarea
-                    class="theme-drawer__textarea"
-                    id="theme-json-editor"
-                    spellcheck="false"
-                    rows="15"
-                    placeholder='{"color-bg": "#fffbf3", ...}'
-                  ></textarea>
-                </div>
-              </div>
-
-              <button class="theme-drawer__apply-btn" type="button" id="theme-apply-btn">
-                Apply Changes
+              <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
+                ✨ Ask AI
               </button>
             </div>
+
+            <div class="theme-drawer__field">
+              <label class="theme-drawer__label" for="theme-select">Current Theme</label>
+              <div class="theme-select" id="theme-select-wrapper">
+                <button type="button" class="theme-select__trigger" id="theme-select-trigger">
+                  <span class="theme-select__value">🎨 Default</span>
+                  <span class="theme-select__arrow">▼</span>
+                </button>
+                <div class="theme-select__dropdown" id="theme-select-dropdown" role="listbox">
+                  <button type="button" class="theme-select__option" data-value="theme.json">🎨 Default</button>
+                  <button type="button" class="theme-select__option" data-value="themes/vaporwave.json">🌴 Vaporwave</button>
+                  <button type="button" class="theme-select__option" data-value="themes/slack.json">👽 Slack</button>
+                  <button type="button" class="theme-select__option" data-value="themes/gameboy.json">🎮 Gameboy</button>
+                  <!-- User-saved themes will be appended here -->
+                </div>
+              </div>
+            </div>
+
           </form>
         </div>
       </aside>
@@ -234,10 +194,7 @@
       <footer class="hud">
         <div class="hud__controls">
           <button class="hud__action hud__add-btn" id="add-btn" aria-label="Add slide from voice (V)" title="Add slide from voice (V)">Add</button>
-          <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Ask Gemini to edit current slide" title="Edit current slide with Gemini">Edit</button>
-          <button class="hud__action hud__index-btn" id="index-btn" aria-label="Open slide index" title="Open slide index (I)">Index</button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides" title="View all slides">Overview</button>
-          <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download slides JSON" title="Download slides JSON">Save</button>
           <span class="hud__hint" title="Navigate slides">← / →</span>
           <div class="hud__status" id="hud-status"></div>
         </div>

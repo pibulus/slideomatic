@@ -27,13 +27,6 @@ import {
   getGeminiApiKey,
   STORAGE_KEY_API,
 } from './modules/voice-modes.js';
-import {
-  initSlideIndex,
-  toggleSlideIndex,
-  closeSlideIndex,
-  refreshSlideIndex,
-  updateSlideIndexHighlight,
-} from './slide-index.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
 
 const slidesRoot = document.getElementById("slides");
@@ -71,12 +64,6 @@ const slideScrollPositions = new Map();
 const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
 let deckStorageKey = null;
 let deckPersistFailureNotified = false;
-
-initSlideIndex({
-  getSlides: () => slides,
-  getCurrentIndex: () => currentIndex,
-  setActiveSlide: (index) => setActiveSlide(index),
-});
 
 // ================================================================
 // Theme Library - localStorage persistence
@@ -276,25 +263,9 @@ async function initDeck() {
     downloadTheme,
   });
 
-  const indexBtn = document.getElementById('index-btn');
-  if (indexBtn) {
-    indexBtn.addEventListener('click', toggleSlideIndex);
-  }
-
   const overviewBtn = document.getElementById('overview-btn');
   if (overviewBtn) {
     overviewBtn.addEventListener('click', toggleOverview);
-  }
-
-  const saveDeckBtn = document.getElementById('save-deck-btn');
-  if (saveDeckBtn) {
-    saveDeckBtn.addEventListener('click', () => {
-      const persisted = downloadDeck();
-      if (persisted) {
-        showHudStatus('💾 Deck downloaded', 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-    });
   }
 
   // Theme select now handled in initThemeDrawer()
@@ -2458,7 +2429,6 @@ function getKeyboardContext() {
     exitOverview,
     getOverviewCursor: () => overviewCursor,
     toggleOverview,
-    toggleSlideIndex,
     downloadDeck,
     toggleSpeakerNotes,
     setActiveSlide,

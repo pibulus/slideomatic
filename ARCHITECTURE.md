@@ -46,7 +46,7 @@ Slide-o-Matic is a **vanilla JavaScript** presentation engine with voice AI, dra
   setActiveSlide, updateSlide, validateSlides,
   showHudStatus, hideHudStatus, downloadDeck, downloadTheme,
   toggleOverview, exitOverview, moveOverviewCursorBy,
-  toggleEditDrawer, toggleThemeDrawer, toggleSlideIndex,
+  toggleEditDrawer, toggleThemeDrawer,
   openSettingsModal, closeSettingsModal
 }
 ```
@@ -408,7 +408,6 @@ Modules don't directly manipulate DOM or global state. Instead, `main.js` passes
   moveOverviewCursorBy: (dx, dy) => void,
   exitOverview: (index?) => void,
   toggleOverview: () => void,
-  toggleSlideIndex: () => void,
   toggleEditDrawer: () => void,
   toggleVoiceRecording: (mode) => void,
   toggleThemeDrawer: () => void,

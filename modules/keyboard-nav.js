@@ -18,7 +18,6 @@ const defaultContext = {
   exitOverview: () => {},
   getOverviewCursor: () => 0,
   toggleOverview: () => {},
-  toggleSlideIndex: () => {},
   downloadDeck: () => {},
   toggleSpeakerNotes: () => {},
   setActiveSlide: () => {},
@@ -126,13 +125,6 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
-    if (lowerKey === 'i') {
-      event.preventDefault();
-      flashKeyFeedback('I');
-      context.toggleSlideIndex();
-      return;
-    }
-
     if (lowerKey === 'd') {
       event.preventDefault();
       flashKeyFeedback('D');
@@ -212,4 +204,3 @@ function flashKeyFeedback(key) {
     setTimeout(() => feedback.remove(), 300);
   }, 400);
 }
-
