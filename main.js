@@ -1500,35 +1500,29 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   // This allows us to find and update the correct location in the slide data
   placeholder._imageRef = image;
 
-  // Add AI action buttons
-  const aiActions = document.createElement("div");
-  aiActions.className = "image-placeholder__ai-actions";
+  // Only show AI button when there's NO query (user hasn't specified a search term)
+  // If there's a query, the placeholder click already does Google search
+  if (!trimmedQuery) {
+    const aiActions = document.createElement("div");
+    aiActions.className = "image-placeholder__ai-actions";
 
-  const aiSearchBtn = document.createElement("button");
-  aiSearchBtn.type = "button";
-  aiSearchBtn.className = "image-placeholder__ai-btn image-placeholder__ai-btn--search";
-  aiSearchBtn.textContent = "🔍 AI Search";
-  aiSearchBtn.title = "Ask AI to suggest a search query";
-  aiSearchBtn.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    await getAISearchSuggestion(placeholder, image);
-  });
+    const aiBtn = document.createElement("button");
+    aiBtn.type = "button";
+    aiBtn.className = "image-placeholder__ai-btn";
+    aiBtn.textContent = "✨ Ask AI";
+    aiBtn.title = "Let AI decide whether to search or generate an image";
+    aiBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await askAIForImage(placeholder, image);
+    });
 
-  const aiGenerateBtn = document.createElement("button");
-  aiGenerateBtn.type = "button";
-  aiGenerateBtn.className = "image-placeholder__ai-btn image-placeholder__ai-btn--generate";
-  aiGenerateBtn.textContent = "✨ AI Generate";
-  aiGenerateBtn.title = "Generate an AI image for this slide";
-  aiGenerateBtn.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    await generateAIImage(placeholder, image);
-  });
-
-  aiActions.append(aiSearchBtn, aiGenerateBtn);
-
-  wrapper.append(placeholder, aiActions);
+    aiActions.appendChild(aiBtn);
+    wrapper.append(placeholder, aiActions);
+  } else {
+    // If there's a query, just show the placeholder
+    wrapper.appendChild(placeholder);
+  }
 
   // Store reference on wrapper too for backward compatibility
   wrapper._imageRef = image;
@@ -1547,7 +1541,7 @@ function buildImageSearchUrl(query) {
 // AI Image Suggestions
 // ================================================================
 
-async function getAISearchSuggestion(placeholderElement, imageConfig = {}) {
+async function askAIForImage(placeholderElement, imageConfig = {}) {
   const apiKey = localStorage.getItem('gemini_api_key');
   if (!apiKey) {
     alert('Please set your Gemini API key in Settings (⚙️ button) first!');
@@ -1563,22 +1557,30 @@ async function getAISearchSuggestion(placeholderElement, imageConfig = {}) {
   const headline = slide.headline || slide.title || '';
   const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
   const slideType = slide.type || 'standard';
-  const imageContext = imageConfig.alt || imageConfig.label || imageConfig.search || 'image';
 
-  showHudStatus('🤔 Asking AI for search suggestion...', 'info');
+  showHudStatus('🤔 Asking AI...', 'info');
 
   try {
-    const prompt = `You're helping find the perfect image for a presentation slide.
+    // First, ask AI to decide: search or generate?
+    const decisionPrompt = `You're helping find the perfect image for a presentation slide.
 
 Slide content:
 - Type: ${slideType}
 - Headline: ${headline}
 - Body: ${body}
-- Image context: ${imageContext}
 
-Suggest a concise, specific Google Images search query (max 6 words) that would find the most relevant, professional, high-quality image for this slide.
+Decide whether this slide needs:
+A) A real photograph/stock image (respond with "SEARCH: [refined query]")
+B) A custom illustration (respond with "GENERATE")
 
-Return ONLY the search query text, no explanation, no quotes.`;
+Guidelines:
+- Use SEARCH for: real people, specific places, products, concrete things
+- Use GENERATE for: concepts, abstract ideas, data visualization, creative illustrations
+
+Respond with ONLY one of these formats, nothing else:
+SEARCH: [your refined query here]
+or
+GENERATE`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
@@ -1586,10 +1588,10 @@ Return ONLY the search query text, no explanation, no quotes.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: [{ text: decisionPrompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 50,
+            maxOutputTokens: 100,
           }
         })
       }
@@ -1601,23 +1603,36 @@ Return ONLY the search query text, no explanation, no quotes.`;
     }
 
     const result = await response.json();
-    const suggestedQuery = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const decision = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    if (!suggestedQuery) {
-      throw new Error('No suggestion returned from AI');
+    if (!decision) {
+      throw new Error('No decision returned from AI');
     }
 
-    hideHudStatus();
+    // Parse decision
+    if (decision.toUpperCase().startsWith('SEARCH:')) {
+      // Extract search query
+      const query = decision.replace(/^SEARCH:\s*/i, '').trim();
+      hideHudStatus();
 
-    // Open Google Images with suggested query
-    const url = buildImageSearchUrl(suggestedQuery);
-    window.open(url, '_blank', 'noopener');
+      // Open Google Images with suggested query
+      const url = buildImageSearchUrl(query);
+      window.open(url, '_blank', 'noopener');
 
-    showHudStatus(`🔍 Searching: "${suggestedQuery}"`, 'success');
-    setTimeout(hideHudStatus, 3000);
+      showHudStatus(`🔍 Searching: "${query}"`, 'success');
+      setTimeout(hideHudStatus, 3000);
+
+    } else if (decision.toUpperCase().includes('GENERATE')) {
+      // Generate image
+      hideHudStatus();
+      await generateAIImage(placeholderElement, imageConfig);
+
+    } else {
+      throw new Error('AI returned unclear decision');
+    }
 
   } catch (error) {
-    console.error('AI search suggestion failed:', error);
+    console.error('AI image decision failed:', error);
     showHudStatus(`❌ ${error.message}`, 'error');
     setTimeout(hideHudStatus, 3000);
   }
