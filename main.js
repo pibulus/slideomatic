@@ -1420,9 +1420,13 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
     .split(/\s+/)
     .filter(Boolean);
 
+  // Create wrapper container
+  const wrapper = document.createElement("div");
+  wrapper.className = [...baseClasses, "image-placeholder-wrapper"].join(" ");
+
   const placeholder = document.createElement("button");
   placeholder.type = "button";
-  placeholder.className = [...baseClasses, "image-placeholder"].join(" ");
+  placeholder.className = "image-placeholder";
 
   const query =
     image.alt ||
@@ -1496,7 +1500,40 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   // This allows us to find and update the correct location in the slide data
   placeholder._imageRef = image;
 
-  return placeholder;
+  // Add AI action buttons
+  const aiActions = document.createElement("div");
+  aiActions.className = "image-placeholder__ai-actions";
+
+  const aiSearchBtn = document.createElement("button");
+  aiSearchBtn.type = "button";
+  aiSearchBtn.className = "image-placeholder__ai-btn image-placeholder__ai-btn--search";
+  aiSearchBtn.textContent = "🔍 AI Search";
+  aiSearchBtn.title = "Ask AI to suggest a search query";
+  aiSearchBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await getAISearchSuggestion(placeholder, image);
+  });
+
+  const aiGenerateBtn = document.createElement("button");
+  aiGenerateBtn.type = "button";
+  aiGenerateBtn.className = "image-placeholder__ai-btn image-placeholder__ai-btn--generate";
+  aiGenerateBtn.textContent = "✨ AI Generate";
+  aiGenerateBtn.title = "Generate an AI image for this slide";
+  aiGenerateBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await generateAIImage(placeholder, image);
+  });
+
+  aiActions.append(aiSearchBtn, aiGenerateBtn);
+
+  wrapper.append(placeholder, aiActions);
+
+  // Store reference on wrapper too for backward compatibility
+  wrapper._imageRef = image;
+
+  return wrapper;
 }
 
 function buildImageSearchUrl(query) {
@@ -1504,6 +1541,200 @@ function buildImageSearchUrl(query) {
   url.searchParams.set("tbm", "isch");
   url.searchParams.set("q", query);
   return url.toString();
+}
+
+// ================================================================
+// AI Image Suggestions
+// ================================================================
+
+async function getAISearchSuggestion(placeholderElement, imageConfig = {}) {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    return;
+  }
+
+  // Find slide context
+  const slideElement = placeholderElement.closest('.slide');
+  const slideIndex = slideElement ? slideElements.indexOf(slideElement) : -1;
+  const slide = slideIndex >= 0 ? slides[slideIndex] : {};
+
+  // Extract context
+  const headline = slide.headline || slide.title || '';
+  const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
+  const slideType = slide.type || 'standard';
+  const imageContext = imageConfig.alt || imageConfig.label || imageConfig.search || 'image';
+
+  showHudStatus('🤔 Asking AI for search suggestion...', 'info');
+
+  try {
+    const prompt = `You're helping find the perfect image for a presentation slide.
+
+Slide content:
+- Type: ${slideType}
+- Headline: ${headline}
+- Body: ${body}
+- Image context: ${imageContext}
+
+Suggest a concise, specific Google Images search query (max 6 words) that would find the most relevant, professional, high-quality image for this slide.
+
+Return ONLY the search query text, no explanation, no quotes.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 50,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const suggestedQuery = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!suggestedQuery) {
+      throw new Error('No suggestion returned from AI');
+    }
+
+    hideHudStatus();
+
+    // Open Google Images with suggested query
+    const url = buildImageSearchUrl(suggestedQuery);
+    window.open(url, '_blank', 'noopener');
+
+    showHudStatus(`🔍 Searching: "${suggestedQuery}"`, 'success');
+    setTimeout(hideHudStatus, 3000);
+
+  } catch (error) {
+    console.error('AI search suggestion failed:', error);
+    showHudStatus(`❌ ${error.message}`, 'error');
+    setTimeout(hideHudStatus, 3000);
+  }
+}
+
+async function generateAIImage(placeholderElement, imageConfig = {}) {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    return;
+  }
+
+  // Find slide context
+  const slideElement = placeholderElement.closest('.slide');
+  const slideIndex = slideElement ? slideElements.indexOf(slideElement) : -1;
+  const slide = slideIndex >= 0 ? slides[slideIndex] : {};
+
+  // Extract context
+  const headline = slide.headline || slide.title || '';
+  const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
+  const slideType = slide.type || 'standard';
+  const imageContext = imageConfig.alt || imageConfig.label || imageConfig.search || '';
+
+  // Get current theme colors
+  const rootStyles = getComputedStyle(document.documentElement);
+  const colorSurface = rootStyles.getPropertyValue('--color-surface').trim();
+  const colorSurfaceAlt = rootStyles.getPropertyValue('--color-surface-alt').trim();
+  const colorAccent = rootStyles.getPropertyValue('--color-accent').trim();
+
+  // Get theme mood
+  const themePath = getCurrentThemePath();
+  const themeName = themePath?.split('/').pop()?.replace('.json', '') || 'default';
+  const themeMoods = {
+    'vaporwave': 'dreamy, retro aesthetic, pink and cyan tones, nostalgic',
+    'slack': 'quirky, vibrant, playful, unconventional',
+    'gameboy': 'pixel art style, retro gaming, limited color palette',
+    'default': 'clean, professional, modern'
+  };
+  const themeMood = themeMoods[themeName] || themeMoods.default;
+
+  showHudStatus('✨ Generating AI image...', 'info');
+
+  try {
+    const prompt = `Create an illustration for a presentation slide about: ${imageContext || headline}.
+
+Slide context:
+${headline ? `- Headline: ${headline}` : ''}
+${body ? `- Content: ${body.substring(0, 200)}` : ''}
+
+Style requirements:
+- Risograph print aesthetic with bold, flat colors, ${themeMood}
+- Use complementary colors inspired by: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}
+- Clean, minimal composition
+- High contrast, professional quality
+- No text or labels in the image
+
+The image should be visually striking and support the slide content.`;
+
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ['Image'],
+            imageConfig: {
+              aspectRatio: '16:9'
+            }
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || `API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const imagePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+    if (!imagePart || !imagePart.inlineData) {
+      throw new Error('No image data returned from API');
+    }
+
+    // Build base64 data URL
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    const base64Data = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+
+    // Update the slide with generated image
+    if (slideIndex >= 0) {
+      updateSlideImage(slideIndex, {
+        src: base64Data,
+        alt: imageContext || headline || 'AI generated image',
+        originalFilename: 'ai-generated.png',
+        generatedAt: Date.now()
+      }, placeholderElement);
+
+      replaceSlideAt(slideIndex, { focus: false });
+      if (!isOverview) {
+        setActiveSlide(slideIndex);
+      }
+    }
+
+    showHudStatus('✨ Image generated!', 'success');
+    setTimeout(hideHudStatus, 2000);
+
+  } catch (error) {
+    console.error('AI image generation failed:', error);
+    showHudStatus(`❌ ${error.message}`, 'error');
+    setTimeout(hideHudStatus, 3000);
+  }
 }
 
 // ================================================================
