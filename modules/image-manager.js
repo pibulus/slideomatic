@@ -149,13 +149,26 @@ function buildImageManager(slide) {
     images.forEach((img, index) => {
       const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
       const isBase64 = img.src?.startsWith('data:');
+      const isEmpty = !img.src;
       const size = img.compressedSize ? ` (${formatBytes(img.compressedSize)})` : '';
       const displayName = isBase64 ? `${filename}${size}` : filename;
+      const altText = img.alt || img.label || img.search || '';
+      const statusIcon = isEmpty ? '⚪' : '📷';
 
       html += `
         <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
-          <span class="edit-drawer__image-icon">📷</span>
-          <span class="edit-drawer__image-name">${escapeHtml(displayName)}</span>
+          <span class="edit-drawer__image-icon">${statusIcon}</span>
+          <div class="edit-drawer__image-details">
+            <input
+              type="text"
+              class="edit-drawer__image-alt-input"
+              data-image-index="${index}"
+              value="${escapeHtml(altText)}"
+              placeholder="Name this image..."
+              title="Image name/alt text (used for search)"
+            />
+            ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
+          </div>
           <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
         </div>
       `;
@@ -282,12 +295,31 @@ function addImageToSlide(slide, imageData) {
   return updatedSlide;
 }
 
+function updateImageAltText(imageIndex, altText, slide) {
+  if (!slide) return slide;
+
+  const updatedSlide = cloneSlide(slide);
+  const imagePaths = collectImagePaths(updatedSlide);
+  const target = imagePaths[imageIndex];
+
+  if (!target || !target.image) {
+    console.warn('Image index out of bounds or no image found');
+    return updatedSlide;
+  }
+
+  // Update the alt text
+  target.image.alt = altText;
+
+  return updatedSlide;
+}
+
 export {
   collectSlideImages,
   collectImagePaths,
   removeImageByIndex,
   reorderSlideImages,
   addImageToSlide,
+  updateImageAltText,
   buildImageManager,
   setupImageRemoveButtons,
   setupImageDragReorder,

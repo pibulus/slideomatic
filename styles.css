@@ -1932,6 +1932,46 @@ body[data-mode="overview"] .hud {
   text-overflow: ellipsis;
 }
 
+.edit-drawer__image-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.edit-drawer__image-alt-input {
+  appearance: none;
+  border: 1px solid var(--color-muted);
+  background: white;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 2px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.edit-drawer__image-alt-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(254, 202, 87, 0.2);
+}
+
+.edit-drawer__image-alt-input::placeholder {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.edit-drawer__image-filename {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .edit-drawer__image-remove {
   appearance: none;
   background: var(--color-surface-alt);

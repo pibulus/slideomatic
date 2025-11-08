@@ -24,6 +24,7 @@ import {
   removeImageByIndex,
   reorderSlideImages,
   addImageToSlide,
+  updateImageAltText,
 } from './image-manager.js';
 
 function ensureContext(context) {
@@ -280,59 +281,37 @@ function handleImageReorder(context, fromIndex, toIndex) {
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
-async function handleImageAdd(context) {
+function handleImageAltUpdate(context, imageIndex, altText) {
+  const ctx = ensureContext(context);
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  const updatedSlide = updateImageAltText(imageIndex, altText, currentSlide);
+  ctx.updateSlide(currentIndex, updatedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  // Don't re-render form - that would lose focus on the input
+  // Just update the slide in the background
+}
+
+function handleImageAdd(context) {
   const ctx = ensureContext(context);
 
-  // Create hidden file input
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
 
-  input.onchange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Add empty placeholder (user can name it and then fill it via drag/drop, AI, or search)
+  const emptyImage = { alt: '' };
+  const updatedSlide = addImageToSlide(currentSlide, emptyImage);
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
+  ctx.updateSlide(currentIndex, updatedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  renderEditForm(ctx);
 
-    ctx.showHudStatus('📷 Compressing image...', 'info');
-
-    try {
-      // Use the global compressImage function from main.js if available
-      const compressed = await compressImageForEdit(file);
-      const base64 = await fileToBase64(compressed.file);
-
-      const imageData = {
-        src: base64,
-        alt: file.name.replace(/\.[^/.]+$/, ''),
-        originalFilename: file.name,
-        compressedSize: compressed.file.size,
-        compressedFormat: compressed.format,
-        uploadedAt: Date.now()
-      };
-
-      const slides = ctx.getSlides();
-      const currentIndex = ctx.getCurrentIndex();
-      const currentSlide = slides[currentIndex];
-
-      const updatedSlide = addImageToSlide(currentSlide, imageData);
-      ctx.updateSlide(currentIndex, updatedSlide);
-      ctx.replaceSlideAt(currentIndex);
-      renderEditForm(ctx);
-
-      const sizeLabel = formatBytes(compressed.file.size);
-      ctx.showHudStatus(`✅ Image added (${sizeLabel})`, 'success');
-      setTimeout(() => ctx.hideHudStatus(), 2000);
-    } catch (error) {
-      ctx.showHudStatus(`❌ ${error.message}`, 'error');
-      setTimeout(() => ctx.hideHudStatus(), 3000);
-      console.error('Image add failed:', error);
-    }
-  };
-
-  input.click();
+  ctx.showHudStatus('📷 Empty image added - name it or drag & drop!', 'success');
+  setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
 // Helper functions for image compression (simplified versions)
@@ -487,6 +466,17 @@ export function renderEditForm(context) {
   setupImageDragReorder({
     container: imageList,
     onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
+  });
+
+  // Setup alt text input event listeners
+  const altInputs = content.querySelectorAll('.edit-drawer__image-alt-input');
+  altInputs.forEach((input) => {
+    input.addEventListener('input', (event) => {
+      const imageIndex = Number.parseInt(input.dataset.imageIndex, 10);
+      if (Number.isNaN(imageIndex)) return;
+      const altText = input.value;
+      handleImageAltUpdate(ctx, imageIndex, altText);
+    });
   });
 }
 
