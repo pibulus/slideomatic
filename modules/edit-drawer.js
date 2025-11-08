@@ -23,6 +23,7 @@ import {
   setupImageDragReorder,
   removeImageByIndex,
   reorderSlideImages,
+  addImageToSlide,
 } from './image-manager.js';
 
 function ensureContext(context) {
@@ -258,6 +259,7 @@ function handleImageRemove(context, imageIndex) {
 
   const updatedSlide = removeImageByIndex(imageIndex, currentSlide);
   ctx.updateSlide(currentIndex, updatedSlide);
+  ctx.replaceSlideAt(currentIndex);
   renderEditForm(ctx);
   ctx.showHudStatus('🗑️ Image removed', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
@@ -276,6 +278,112 @@ function handleImageReorder(context, fromIndex, toIndex) {
   renderEditForm(ctx);
   ctx.showHudStatus('↕️ Images reordered', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
+}
+
+async function handleImageAdd(context) {
+  const ctx = ensureContext(context);
+
+  // Create hidden file input
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+
+  input.onchange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    ctx.showHudStatus('📷 Compressing image...', 'info');
+
+    try {
+      // Use the global compressImage function from main.js if available
+      const compressed = await compressImageForEdit(file);
+      const base64 = await fileToBase64ForEdit(compressed.file);
+
+      const imageData = {
+        src: base64,
+        alt: file.name.replace(/\.[^/.]+$/, ''),
+        originalFilename: file.name,
+        compressedSize: compressed.file.size,
+        compressedFormat: compressed.format,
+        uploadedAt: Date.now()
+      };
+
+      const slides = ctx.getSlides();
+      const currentIndex = ctx.getCurrentIndex();
+      const currentSlide = slides[currentIndex];
+
+      const updatedSlide = addImageToSlide(currentSlide, imageData);
+      ctx.updateSlide(currentIndex, updatedSlide);
+      ctx.replaceSlideAt(currentIndex);
+      renderEditForm(ctx);
+
+      const sizeLabel = formatBytes(compressed.file.size);
+      ctx.showHudStatus(`✅ Image added (${sizeLabel})`, 'success');
+      setTimeout(() => ctx.hideHudStatus(), 2000);
+    } catch (error) {
+      ctx.showHudStatus(`❌ ${error.message}`, 'error');
+      setTimeout(() => ctx.hideHudStatus(), 3000);
+      console.error('Image add failed:', error);
+    }
+  };
+
+  input.click();
+}
+
+// Helper functions for image compression (simplified versions)
+async function compressImageForEdit(file) {
+  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+  const TARGET_SIZE = 500 * 1024; // 500KB
+
+  if (typeof imageCompression === 'undefined') {
+    if (file.size > MAX_SIZE) {
+      throw new Error('Image too large. Please use a smaller image (<2MB).');
+    }
+    return { file, format: file.type || 'image/png' };
+  }
+
+  if (file.size <= TARGET_SIZE) {
+    return { file, format: file.type || 'image/png' };
+  }
+
+  try {
+    const compressed = await imageCompression(file, {
+      maxWidthOrHeight: 1920,
+      maxSizeMB: TARGET_SIZE / (1024 * 1024),
+      useWebWorker: true,
+      fileType: 'image/webp'
+    });
+
+    if (compressed.size > MAX_SIZE) {
+      throw new Error('Could not compress image below 2MB. Try a smaller source.');
+    }
+
+    return { file: compressed, format: 'image/webp' };
+  } catch (error) {
+    throw new Error(`Compression failed: ${error.message}`);
+  }
+}
+
+async function fileToBase64ForEdit(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i)) + ' ' + sizes[i];
 }
 
 function handleJsonToggle() {
@@ -380,6 +488,10 @@ export function renderEditForm(context) {
   });
 
   document.getElementById('json-toggle')?.addEventListener('click', handleJsonToggle);
+
+  document.getElementById('add-image-btn')?.addEventListener('click', () => {
+    handleImageAdd(ctx);
+  });
 
   setupQuickEditSync(ctx);
 

@@ -137,31 +137,37 @@ function reorderSlideImages(fromIndex, toIndex, slide) {
 
 function buildImageManager(slide) {
   const images = collectSlideImages(slide);
-  if (images.length === 0) return '';
 
   let html = `
     <div class="edit-drawer__field">
       <label class="edit-drawer__label">Images (${images.length})</label>
-      <div class="edit-drawer__image-list">
   `;
 
-  images.forEach((img, index) => {
-    const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
-    const isBase64 = img.src?.startsWith('data:');
-    const size = img.compressedSize ? ` (${formatBytes(img.compressedSize)})` : '';
-    const displayName = isBase64 ? `${filename}${size}` : filename;
+  if (images.length > 0) {
+    html += `<div class="edit-drawer__image-list">`;
 
-    html += `
-      <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
-        <span class="edit-drawer__image-icon">📷</span>
-        <span class="edit-drawer__image-name">${escapeHtml(displayName)}</span>
-        <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
-      </div>
-    `;
-  });
+    images.forEach((img, index) => {
+      const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
+      const isBase64 = img.src?.startsWith('data:');
+      const size = img.compressedSize ? ` (${formatBytes(img.compressedSize)})` : '';
+      const displayName = isBase64 ? `${filename}${size}` : filename;
+
+      html += `
+        <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
+          <span class="edit-drawer__image-icon">📷</span>
+          <span class="edit-drawer__image-name">${escapeHtml(displayName)}</span>
+          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  }
 
   html += `
-      </div>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
+        📷 Add Image
+      </button>
     </div>
   `;
 
@@ -244,11 +250,44 @@ function setupImageDragReorder({ container, onReorder }) {
   });
 }
 
+function addImageToSlide(slide, imageData) {
+  if (!slide) return slide;
+
+  const updatedSlide = cloneSlide(slide);
+  const type = updatedSlide.type || 'standard';
+
+  // Add to first available slot based on slide type
+  if (type === 'title' && Array.isArray(updatedSlide.media)) {
+    updatedSlide.media.push({ image: imageData });
+  } else if (type === 'gallery' && Array.isArray(updatedSlide.items)) {
+    updatedSlide.items.push({ image: imageData });
+  } else if (type === 'grid' && Array.isArray(updatedSlide.items)) {
+    updatedSlide.items.push({ image: imageData });
+  } else if (type === 'pillars' && Array.isArray(updatedSlide.pillars)) {
+    updatedSlide.pillars.push({ image: imageData });
+  } else if (type === 'split') {
+    // Add to left if empty, otherwise right
+    if (!updatedSlide.left) updatedSlide.left = {};
+    if (!updatedSlide.left.image) {
+      updatedSlide.left.image = imageData;
+    } else {
+      if (!updatedSlide.right) updatedSlide.right = {};
+      updatedSlide.right.image = imageData;
+    }
+  } else {
+    // Default: add to top-level image
+    updatedSlide.image = imageData;
+  }
+
+  return updatedSlide;
+}
+
 export {
   collectSlideImages,
   collectImagePaths,
   removeImageByIndex,
   reorderSlideImages,
+  addImageToSlide,
   buildImageManager,
   setupImageRemoveButtons,
   setupImageDragReorder,
