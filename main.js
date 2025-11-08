@@ -12,7 +12,7 @@ import {
   LOCAL_THEME_SOURCE,
   normalizeThemeTokens,
 } from './modules/theme-manager.js';
-import { formatBytes, clamp } from './modules/utils.js';
+import { formatBytes, clamp, fileToBase64 } from './modules/utils.js';
 import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './lazy-images.js';
 import { renderEditForm } from './modules/edit-drawer.js';
@@ -182,177 +182,8 @@ Return ONLY valid JSON, no markdown or explanation.`;
 }
 
 // ================================================================
-// Smart Random Theme Generator (Color Theory)
+// Old color-theory implementation removed - using archetype-based approach
 // ================================================================
-
-function generateRandomTheme() {
-  // Pick a random palette strategy
-  const strategies = ['analogous', 'triadic', 'complementary', 'split-complementary', 'monochromatic'];
-  const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-
-  // Generate base hue (0-360)
-  const baseHue = Math.floor(Math.random() * 360);
-
-  // Generate palette based on strategy
-  const palette = generatePalette(baseHue, strategy);
-
-  // Choose light or dark mode randomly (weighted toward light)
-  const isDark = Math.random() < 0.3;
-
-  // Pick random border style
-  const borderWidths = ['3px', '4px', '5px', '6px'];
-  const borderWidth = borderWidths[Math.floor(Math.random() * borderWidths.length)];
-
-  // Pick random shadow style
-  const shadowStyles = [
-    { sm: '6px 6px 0 rgba(0, 0, 0, 0.25)', md: '10px 10px 0 rgba(0, 0, 0, 0.3)', lg: '16px 16px 0 rgba(0, 0, 0, 0.35)', xl: '24px 24px 0 rgba(0, 0, 0, 0.4)' },
-    { sm: '4px 4px 0 rgba(0, 0, 0, 0.2)', md: '8px 8px 0 rgba(0, 0, 0, 0.25)', lg: '12px 12px 0 rgba(0, 0, 0, 0.3)', xl: '18px 18px 0 rgba(0, 0, 0, 0.35)' },
-    { sm: '0 4px 12px rgba(0, 0, 0, 0.15)', md: '0 8px 24px rgba(0, 0, 0, 0.2)', lg: '0 12px 32px rgba(0, 0, 0, 0.25)', xl: '0 18px 48px rgba(0, 0, 0, 0.3)' },
-  ];
-  const shadows = shadowStyles[Math.floor(Math.random() * shadowStyles.length)];
-
-  // Build theme object
-  const colorBg = isDark ? hslToHex(baseHue, 20, 10) : hslToHex(baseHue, 30, 95);
-  const colorInk = getAccessibleTextColor(colorBg);
-  const colorMuted =
-    colorInk === '#000000'
-      ? mixHexColors('#000000', '#666666', 0.6)
-      : mixHexColors('#ffffff', '#444444', 0.4);
-  const badgeTextColor = getAccessibleTextColor(palette.accent);
-
-  const theme = {
-    'color-bg': colorBg,
-    'background-surface': `radial-gradient(circle at 15% 20%, ${palette.primary}55, transparent 55%), radial-gradient(circle at 85% 30%, ${palette.secondary}55, transparent 55%), radial-gradient(circle at 40% 70%, ${palette.accent}45, transparent 60%), ${colorBg}`,
-    'background-overlay': 'radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.15) 0.5px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.1) 0.5px, transparent 1px)',
-    'background-opacity': '0.5',
-    'slide-bg': isDark ? `rgba(${hexToRgb(colorBg).join(', ')}, 0.92)` : `rgba(${hexToRgb(colorBg).join(', ')}, 0.82)`,
-    'slide-border-color': colorInk,
-    'slide-border-width': borderWidth,
-    'slide-shadow': shadows.md,
-    'color-surface': palette.primary,
-    'color-surface-alt': palette.secondary,
-    'color-accent': palette.accent,
-    'badge-bg': palette.accent,
-    'badge-color': badgeTextColor,
-    'color-ink': colorInk,
-    'color-muted': colorMuted,
-    'border-width': borderWidth,
-    'gutter': 'clamp(32px, 5vw, 72px)',
-    'radius': '12px',
-    'font-sans': '"Inter", "Helvetica Neue", Arial, sans-serif',
-    'font-mono': '"Space Mono", "IBM Plex Mono", monospace',
-    'shadow-sm': shadows.sm,
-    'shadow-md': shadows.md,
-    'shadow-lg': shadows.lg,
-    'shadow-xl': shadows.xl
-  };
-
-  return theme;
-}
-
-function generatePalette(baseHue, strategy) {
-  let hues = [];
-
-  switch (strategy) {
-    case 'analogous':
-      hues = [baseHue, (baseHue + 30) % 360, (baseHue + 60) % 360];
-      break;
-    case 'triadic':
-      hues = [baseHue, (baseHue + 120) % 360, (baseHue + 240) % 360];
-      break;
-    case 'complementary':
-      hues = [baseHue, (baseHue + 180) % 360, (baseHue + 30) % 360];
-      break;
-    case 'split-complementary':
-      hues = [baseHue, (baseHue + 150) % 360, (baseHue + 210) % 360];
-      break;
-    case 'monochromatic':
-      hues = [baseHue, baseHue, baseHue];
-      break;
-  }
-
-  // Generate colors with varied saturation/lightness for depth
-  const primary = hslToHex(hues[0], 70 + Math.random() * 25, 55 + Math.random() * 15);
-  const secondary = hslToHex(hues[1], 65 + Math.random() * 25, 60 + Math.random() * 15);
-  const accent = hslToHex(hues[2], 75 + Math.random() * 20, 50 + Math.random() * 20);
-
-  return { primary, secondary, accent };
-}
-
-function hslToHex(h, s, l) {
-  s /= 100;
-  l /= 100;
-
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  const m = l - c / 2;
-
-  let r = 0, g = 0, b = 0;
-
-  if (h >= 0 && h < 60) {
-    r = c; g = x; b = 0;
-  } else if (h >= 60 && h < 120) {
-    r = x; g = c; b = 0;
-  } else if (h >= 120 && h < 180) {
-    r = 0; g = c; b = x;
-  } else if (h >= 180 && h < 240) {
-    r = 0; g = x; b = c;
-  } else if (h >= 240 && h < 300) {
-    r = x; g = 0; b = c;
-  } else {
-    r = c; g = 0; b = x;
-  }
-
-  r = Math.round((r + m) * 255);
-  g = Math.round((g + m) * 255);
-  b = Math.round((b + m) * 255);
-
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
-
-function hexToRgb(hex) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-    : [255, 255, 255];
-}
-
-function getRelativeLuminance(hex) {
-  const [r, g, b] = hexToRgb(hex);
-  const [rs, gs, bs] = [r, g, b].map((value) => {
-    const channel = value / 255;
-    return channel <= 0.03928
-      ? channel / 12.92
-      : Math.pow((channel + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-}
-
-function getContrastRatio(foregroundHex, backgroundHex) {
-  const l1 = getRelativeLuminance(foregroundHex);
-  const l2 = getRelativeLuminance(backgroundHex);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function getAccessibleTextColor(backgroundHex) {
-  const blackContrast = getContrastRatio('#000000', backgroundHex);
-  const whiteContrast = getContrastRatio('#ffffff', backgroundHex);
-  return blackContrast >= whiteContrast ? '#000000' : '#ffffff';
-}
-
-function mixHexColors(colorA, colorB, ratio = 0.5) {
-  const [r1, g1, b1] = hexToRgb(colorA);
-  const [r2, g2, b2] = hexToRgb(colorB);
-  const mix = (a, b) => Math.round(a * (1 - ratio) + b * ratio);
-  return (
-    '#' +
-    [mix(r1, r2), mix(g1, g2), mix(b1, b2)]
-      .map((value) => value.toString(16).padStart(2, '0'))
-      .join('')
-  );
-}
 
 initDeckWithTheme();
 
@@ -466,45 +297,7 @@ async function initDeck() {
     });
   }
 
-  const themeSelect = document.getElementById('theme-select');
-  if (themeSelect) {
-    themeSelect.addEventListener('change', async (event) => {
-      const value = event.target.value;
-      showHudStatus('🎨 Switching theme...', 'processing');
-
-      try {
-        let theme;
-        let source;
-
-        // Check if it's a user-saved theme (starts with 'saved:')
-        if (value.startsWith('saved:')) {
-          const themeName = value.replace('saved:', '');
-          const library = loadThemeLibrary();
-          const entry = library.find(t => t.name === themeName);
-          if (!entry) throw new Error(`Theme "${themeName}" not found`);
-          theme = entry.theme;
-          source = `library:${themeName}`;
-        } else {
-          // It's a built-in theme (file path)
-          const response = await fetch(value, { cache: "no-store" });
-          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-          theme = await response.json();
-          source = value;
-        }
-
-        const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme, { source });
-        loadThemeIntoEditor();
-        syncThemeSelectUI();
-        showHudStatus('✨ Theme applied', 'success');
-        setTimeout(hideHudStatus, 1600);
-      } catch (error) {
-        console.error('Failed to apply theme:', error);
-        showHudStatus('❌ Theme failed', 'error');
-        setTimeout(hideHudStatus, 2000);
-      }
-    });
-  }
+  // Theme select now handled in initThemeDrawer()
 
   setActiveSlide(0);
   updateOverviewButton();
@@ -1862,15 +1655,6 @@ async function compressImage(file) {
   throw new Error('Could not shrink image under 2MB. Try exporting a smaller source.');
 }
 
-async function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function findSlideIndexForPlaceholder(placeholderElement) {
   const slideElement = placeholderElement.closest('.slide');
   if (!slideElement) return -1;
@@ -3177,23 +2961,409 @@ The graph should be publication-ready with clear data visualization.`;
 // Theme Drawer UI & Management
 // ================================================================
 
-function syncThemeSelectUI() {
-  const themeSelect = document.getElementById('theme-select');
-  if (!themeSelect) return;
-  const options = Array.from(themeSelect.options).map(option => option.value);
-  const currentPath = getCurrentThemePath();
-  if (currentPath && options.includes(currentPath)) {
-    themeSelect.value = currentPath;
+// ═══════════════════════════════════════════════════════════════════════════
+// Theme Generation - Palette Variants
+// ═══════════════════════════════════════════════════════════════════════════
+
+function generateRandomTheme() {
+  const baseTheme = getCurrentTheme();
+  const source = getCurrentThemePath();
+  const activeTheme = normalizeThemeTokens(baseTheme || {});
+  const baseSource = resolveBaseThemePath(source || '');
+  const randomizer = getThemeRandomizer(baseSource);
+  const randomizedTheme = randomizer(activeTheme, { baseSource });
+  return normalizeThemeTokens(randomizedTheme || activeTheme);
+}
+
+function resolveBaseThemePath(source = '') {
+  let value = (source || '').trim();
+  while (value.startsWith('random:')) {
+    value = value.slice(7).trim();
+  }
+  return value;
+}
+
+function getThemeRandomizer(baseSource = '') {
+  const normalized = baseSource.toLowerCase();
+
+  if (
+    normalized.startsWith('saved:') ||
+    normalized === '__ai__' ||
+    normalized === '__custom__' ||
+    normalized === '__local__'
+  ) {
+    return randomizeCustomTheme;
+  }
+
+  if (normalized === '__random__') {
+    return randomizeDefaultTheme;
+  }
+
+  if (normalized.endsWith('themes/gameboy.json')) {
+    return randomizeGameboyTheme;
+  }
+
+  if (normalized.endsWith('themes/vaporwave.json')) {
+    return randomizeVaporwaveTheme;
+  }
+
+  if (normalized.endsWith('themes/slack.json')) {
+    return randomizeSlackTheme;
+  }
+
+  if (normalized.endsWith('theme.json')) {
+    return randomizeDefaultTheme;
+  }
+
+  if (!baseSource) {
+    return randomizeDefaultTheme;
+  }
+
+  return randomizeCustomTheme;
+}
+
+function randomizeDefaultTheme(theme, context = {}) {
+  const baseHue = Math.floor(Math.random() * 360);
+  const strategies = ['analogous', 'triadic', 'complementary', 'split-complementary', 'monochromatic'];
+  const palette = generatePalette(baseHue, sample(strategies));
+
+  const isDefaultBase = !context.baseSource || context.baseSource === 'theme.json';
+  const isDark = isDefaultBase ? false : Math.random() < 0.25;
+
+  const colorBg = isDark
+    ? hslToHex(baseHue, clamp(22 + Math.random() * 12, 0, 100), clamp(14 + Math.random() * 10, 0, 100))
+    : hslToHex(baseHue, clamp(28 + Math.random() * 20, 0, 100), clamp(88 + Math.random() * 6, 0, 100));
+
+  const colorInk = isDefaultBase ? '#1b1b1b' : getAccessibleTextColor(colorBg);
+  const colorMuted =
+    colorInk === '#000000'
+      ? mixHexColors('#000000', '#555555', 0.55)
+      : mixHexColors('#ffffff', '#444444', 0.45);
+  const badgeTextColor = getAccessibleTextColor(palette.accent);
+
+  const borderCandidates = [
+    theme['border-width'],
+    theme['slide-border-width'],
+    '4px',
+    '5px',
+    '6px',
+  ].filter(Boolean);
+  const borderWidth = sample(borderCandidates) || '5px';
+
+  const shadowSets = [
+    {
+      sm: '6px 6px 0 rgba(0, 0, 0, 0.25)',
+      md: '10px 10px 0 rgba(0, 0, 0, 0.3)',
+      lg: '16px 16px 0 rgba(0, 0, 0, 0.35)',
+      xl: '24px 24px 0 rgba(0, 0, 0, 0.4)',
+    },
+    {
+      sm: '4px 4px 0 rgba(0, 0, 0, 0.22)',
+      md: '8px 8px 0 rgba(0, 0, 0, 0.26)',
+      lg: '12px 12px 0 rgba(0, 0, 0, 0.3)',
+      xl: '18px 18px 0 rgba(0, 0, 0, 0.32)',
+    },
+    {
+      sm: '0 4px 12px rgba(0, 0, 0, 0.18)',
+      md: '0 8px 24px rgba(0, 0, 0, 0.22)',
+      lg: '0 12px 36px rgba(0, 0, 0, 0.26)',
+      xl: '0 18px 54px rgba(0, 0, 0, 0.3)',
+    },
+    {
+      sm: theme['shadow-sm'],
+      md: theme['shadow-md'],
+      lg: theme['shadow-lg'],
+      xl: theme['shadow-xl'],
+    },
+  ].filter((set) => set.sm && set.md && set.lg && set.xl);
+  const shadows = sample(shadowSets) || shadowSets[0];
+
+  const surfacePrimary = palette.primary;
+  const surfaceSecondary = palette.secondary;
+  const surfaceAccent = palette.accent;
+
+  const updatedTheme = {
+    ...theme,
+    'color-bg': colorBg,
+    'background-surface': `radial-gradient(circle at 18% 22%, ${applyAlpha(surfacePrimary, 0.55)}, transparent 60%), radial-gradient(circle at 78% 32%, ${applyAlpha(surfaceSecondary, 0.55)}, transparent 60%), radial-gradient(circle at 48% 74%, ${applyAlpha(surfaceAccent, 0.35)}, transparent 62%), ${colorBg}`,
+    'slide-bg': hexToRgbaString(colorBg, isDark ? 0.9 : 0.82),
+    'slide-border-color': colorInk,
+    'slide-border-width': borderWidth,
+    'slide-shadow': shadows.md,
+    'color-surface': surfacePrimary,
+    'color-surface-alt': surfaceSecondary,
+    'color-accent': surfaceAccent,
+    'badge-bg': surfaceAccent,
+    'badge-color': badgeTextColor,
+    'color-ink': colorInk,
+    'color-muted': colorMuted,
+    'border-width': borderWidth,
+    'shadow-sm': shadows.sm,
+    'shadow-md': shadows.md,
+    'shadow-lg': shadows.lg,
+    'shadow-xl': shadows.xl,
+  };
+
+  return updatedTheme;
+}
+
+function randomizeGameboyTheme(theme) {
+  const baseHue = Math.floor(Math.random() * 360);
+  const light = hslToHex(baseHue, clamp(24 + Math.random() * 12, 0, 100), clamp(72 + Math.random() * 12, 0, 100));
+  const medium = hslToHex(baseHue, clamp(30 + Math.random() * 14, 0, 100), clamp(56 + Math.random() * 10, 0, 100));
+  const dark = hslToHex(baseHue, clamp(36 + Math.random() * 16, 0, 100), clamp(36 + Math.random() * 10, 0, 100));
+  const deepest = hslToHex(baseHue, clamp(38 + Math.random() * 12, 0, 100), clamp(22 + Math.random() * 10, 0, 100));
+  const borderWidth = theme['border-width'] || theme['slide-border-width'] || '6px';
+
+  return {
+    ...theme,
+    'color-bg': light,
+    'background-surface': `linear-gradient(135deg, ${medium} 0%, ${dark} 100%)`,
+    'background-overlay': `repeating-linear-gradient(0deg, ${applyAlpha(deepest, 0.75)} 0px, transparent 1px, transparent 2px, ${applyAlpha(deepest, 0.75)} 3px)`,
+    'slide-bg': hexToRgbaString(light, 0.82),
+    'slide-border-color': deepest,
+    'slide-border-width': borderWidth,
+    'slide-shadow': `8px 8px 0 ${applyAlpha(deepest, 0.55)}`,
+    'color-surface': medium,
+    'color-surface-alt': dark,
+    'color-accent': deepest,
+    'badge-bg': medium,
+    'badge-color': getAccessibleTextColor(medium),
+    'color-ink': deepest,
+    'color-muted': dark,
+    'border-width': borderWidth,
+    'shadow-sm': `4px 4px 0 ${applyAlpha(deepest, 0.8)}`,
+    'shadow-md': `8px 8px 0 ${applyAlpha(deepest, 0.8)}`,
+    'shadow-lg': `12px 12px 0 ${applyAlpha(deepest, 0.75)}`,
+    'shadow-xl': `16px 16px 0 ${applyAlpha(deepest, 0.7)}`,
+  };
+}
+
+function randomizeVaporwaveTheme(theme) {
+  const baseHue = Math.floor(Math.random() * 360);
+  const pink = hslToHex((baseHue + 320) % 360, 92, 68);
+  const cyan = hslToHex((baseHue + 180) % 360, 95, 62);
+  const mint = hslToHex((baseHue + 140) % 360, 90, 64);
+  const purple = hslToHex((baseHue + 280) % 360, 80, 58);
+  const neon = hslToHex((baseHue + 80) % 360, 95, 70);
+  const ink = shiftHex(purple, -0.55);
+
+  return {
+    ...theme,
+    'color-bg': pink,
+    'background-surface': `linear-gradient(140deg, ${cyan} 0%, ${mint} 50%, ${purple} 100%)`,
+    'background-overlay': theme['background-overlay'] || 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px)',
+    'slide-bg': hexToRgbaString(pink, 0.82),
+    'slide-border-color': cyan,
+    'slide-shadow': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
+    'color-surface': purple,
+    'color-surface-alt': mint,
+    'color-accent': neon,
+    'badge-bg': neon,
+    'badge-color': getAccessibleTextColor(neon),
+    'color-ink': ink,
+    'color-muted': mixHexColors(ink, '#ffffff', 0.25),
+    'shadow-sm': `8px 8px 0 ${applyAlpha(cyan, 0.42)}`,
+    'shadow-md': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
+    'shadow-lg': `16px 16px 0 ${applyAlpha(cyan, 0.6)}`,
+    'shadow-xl': `24px 24px 0 ${applyAlpha(cyan, 0.7)}`,
+  };
+}
+
+function randomizeSlackTheme(theme) {
+  const baseHue = Math.floor(Math.random() * 360);
+  const backdrop = hslToHex(baseHue, 95, 58);
+  const mid = hslToHex((baseHue + 12) % 360, 90, 46);
+  const deep = hslToHex((baseHue + 200) % 360, 90, 40);
+  const accent = hslToHex((baseHue + 140) % 360, 92, 52);
+  const badgeBg = hslToHex((baseHue + 320) % 360, 92, 40);
+  const ink = '#000000';
+
+  return {
+    ...theme,
+    'color-bg': backdrop,
+    'background-surface': `radial-gradient(circle at 25% 25%, ${backdrop} 0%, ${mid} 35%, ${deep} 100%)`,
+    'slide-bg': hexToRgbaString(backdrop, 0.82),
+    'slide-border-color': ink,
+    'slide-shadow': `12px 12px 0 ${applyAlpha(ink, 0.85)}`,
+    'color-surface': accent,
+    'color-surface-alt': deep,
+    'color-accent': ink,
+    'badge-bg': badgeBg,
+    'badge-color': getAccessibleTextColor(badgeBg),
+    'color-ink': ink,
+    'color-muted': mixHexColors(ink, '#666666', 0.45),
+    'shadow-sm': `6px 6px 0 ${applyAlpha(ink, 0.9)}`,
+    'shadow-md': `12px 12px 0 ${applyAlpha(ink, 0.9)}`,
+    'shadow-lg': `18px 18px 0 ${applyAlpha(ink, 0.9)}`,
+    'shadow-xl': `24px 24px 0 ${applyAlpha(ink, 0.9)}`,
+  };
+}
+
+function randomizeCustomTheme(theme, context = {}) {
+  const variant = randomizeDefaultTheme(theme, context);
+  return {
+    ...variant,
+    'font-sans': theme['font-sans'],
+    'font-mono': theme['font-mono'],
+    'radius': theme['radius'],
+    'background-overlay': theme['background-overlay'],
+    'background-opacity': theme['background-opacity'],
+  };
+}
+
+function generatePalette(baseHue, strategy = 'triadic') {
+  let hues;
+  switch (strategy) {
+    case 'analogous':
+      hues = [baseHue, (baseHue + 32) % 360, (baseHue + 64) % 360];
+      break;
+    case 'complementary':
+      hues = [baseHue, (baseHue + 180) % 360, (baseHue + 30) % 360];
+      break;
+    case 'split-complementary':
+      hues = [baseHue, (baseHue + 150) % 360, (baseHue + 210) % 360];
+      break;
+    case 'monochromatic':
+      hues = [baseHue, baseHue, baseHue];
+      break;
+    default:
+      hues = [baseHue, (baseHue + 120) % 360, (baseHue + 240) % 360];
+  }
+
+  const primary = hslToHex(hues[0], clamp(68 + Math.random() * 22, 0, 100), clamp(54 + Math.random() * 14, 0, 100));
+  const secondary = hslToHex(hues[1], clamp(60 + Math.random() * 24, 0, 100), clamp(58 + Math.random() * 16, 0, 100));
+  const accent = hslToHex(hues[2], clamp(70 + Math.random() * 20, 0, 100), clamp(52 + Math.random() * 18, 0, 100));
+
+  return { primary, secondary, accent };
+}
+
+function hslToHex(h, s, l) {
+  const hue = ((h % 360) + 360) % 360;
+  const saturation = clamp(s, 0, 100) / 100;
+  const lightness = clamp(l, 0, 100) / 100;
+
+  const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+  const m = lightness - c / 2;
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (hue < 60) {
+    r = c; g = x; b = 0;
+  } else if (hue < 120) {
+    r = x; g = c; b = 0;
+  } else if (hue < 180) {
+    r = 0; g = c; b = x;
+  } else if (hue < 240) {
+    r = 0; g = x; b = c;
+  } else if (hue < 300) {
+    r = x; g = 0; b = c;
   } else {
-    let customOption = themeSelect.querySelector('option[value="__custom__"]');
-    if (!customOption) {
-      customOption = document.createElement('option');
-      customOption.value = '__custom__';
-      customOption.textContent = 'Saved Theme';
-      customOption.dataset.generated = 'true';
-      themeSelect.appendChild(customOption);
-    }
-    themeSelect.value = '__custom__';
+    r = c; g = 0; b = x;
+  }
+
+  const toHex = (value) =>
+    Math.round((value + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function hexToRgb(hex) {
+  const sanitized = typeof hex === 'string' ? hex.replace('#', '') : '';
+  if (sanitized.length !== 6 || Number.isNaN(Number.parseInt(sanitized, 16))) {
+    return [255, 255, 255];
+  }
+  const intVal = Number.parseInt(sanitized, 16);
+  const r = (intVal >> 16) & 255;
+  const g = (intVal >> 8) & 255;
+  const b = intVal & 255;
+  return [r, g, b];
+}
+
+function hexToRgbaString(hex, alpha = 1) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
+}
+
+function getRelativeLuminance(hex) {
+  const [r, g, b] = hexToRgb(hex).map((channel) => {
+    const norm = channel / 255;
+    return norm <= 0.03928 ? norm / 12.92 : Math.pow((norm + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function getContrastRatio(foregroundHex, backgroundHex) {
+  const l1 = getRelativeLuminance(foregroundHex);
+  const l2 = getRelativeLuminance(backgroundHex);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function getAccessibleTextColor(backgroundHex) {
+  const blackContrast = getContrastRatio('#000000', backgroundHex);
+  const whiteContrast = getContrastRatio('#ffffff', backgroundHex);
+  return blackContrast >= whiteContrast ? '#000000' : '#ffffff';
+}
+
+function mixHexColors(colorA, colorB, ratio = 0.5) {
+  const [r1, g1, b1] = hexToRgb(colorA);
+  const [r2, g2, b2] = hexToRgb(colorB);
+  const blend = (a, b) => Math.round(a * (1 - ratio) + b * ratio);
+  return `#${[blend(r1, r2), blend(g1, g2), blend(b1, b2)]
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+function applyAlpha(hex, alpha) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
+}
+
+function shiftHex(hex, amount = 0) {
+  const ratio = clamp(Math.abs(amount), 0, 1);
+  const target = amount >= 0 ? '#ffffff' : '#000000';
+  return mixHexColors(hex, target, ratio);
+}
+
+function sample(list) {
+  if (!Array.isArray(list) || list.length === 0) return undefined;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function syncThemeSelectUI() {
+  const trigger = document.getElementById('theme-select-trigger');
+  const dropdown = document.getElementById('theme-select-dropdown');
+  if (!trigger || !dropdown) return;
+
+  const currentPath = getCurrentThemePath() || '';
+  const basePath = resolveBaseThemePath(currentPath);
+  const isRandom = currentPath.startsWith('random:');
+  const valueSpan = trigger.querySelector('.theme-select__value');
+  if (!valueSpan) return;
+
+  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
+  const matchingOption = options.find(opt => {
+    const value = opt.dataset.value;
+    if (!value) return false;
+    return value === currentPath || value === basePath;
+  });
+
+  if (matchingOption) {
+    const optionLabel = matchingOption.textContent.trim();
+    valueSpan.textContent = isRandom ? `🎲 ${optionLabel}` : matchingOption.textContent;
+    options.forEach(opt => {
+      opt.classList.toggle('is-selected', opt.dataset.value === basePath);
+    });
+  } else {
+    valueSpan.textContent = isRandom ? '🎲 Custom Theme' : '🎨 Custom Theme';
+    options.forEach(opt => opt.classList.remove('is-selected'));
   }
 }
 
@@ -3206,7 +3376,7 @@ themeDrawerInstance = createDrawer({
     themeBtn?.setAttribute('aria-expanded', 'true');
     themeBtn?.classList.add('is-active');
     loadThemeIntoEditor();
-    renderThemeLibrary();
+    populateThemeDropdown();
     syncThemeSelectUI();
     const closeBtn = themeDrawerInstance.element.querySelector('.theme-drawer__close');
     if (closeBtn && !closeBtn.dataset.listenerAttached) {
@@ -3248,8 +3418,6 @@ function closeThemeDrawer() {
 function initThemeDrawer() {
   const themeDrawer = themeDrawerInstance?.element;
   const themeBtn = document.getElementById('theme-btn');
-  const textarea = document.getElementById('theme-json-editor');
-  const applyBtn = document.getElementById('theme-apply-btn');
   const saveBtn = document.getElementById('theme-save-btn');
   const aiBtn = document.getElementById('theme-ai-btn');
   const randomBtn = document.getElementById('theme-random-btn');
@@ -3270,74 +3438,96 @@ function initThemeDrawer() {
     closeBtn.dataset.listenerAttached = 'true';
   }
 
-  // JSON toggle
-  const jsonToggle = document.getElementById('theme-json-toggle');
-  if (jsonToggle && !jsonToggle.dataset.listenerAttached) {
-    jsonToggle.addEventListener('click', handleThemeJsonToggle);
-    jsonToggle.dataset.listenerAttached = 'true';
+  // Custom dropdown logic
+  const trigger = document.getElementById('theme-select-trigger');
+  const dropdown = document.getElementById('theme-select-dropdown');
+
+  if (trigger && dropdown && !trigger.dataset.listenerAttached) {
+    const closeDropdown = () => {
+      trigger.classList.remove('is-open');
+      dropdown.classList.remove('is-open');
+    };
+
+    trigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isOpen = trigger.classList.contains('is-open');
+      if (isOpen) {
+        closeDropdown();
+      } else {
+        trigger.classList.add('is-open');
+        dropdown.classList.add('is-open');
+      }
+    });
+    trigger.dataset.listenerAttached = 'true';
+
+    document.addEventListener('click', (e) => {
+      if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+        closeDropdown();
+      }
+    });
+
+    dropdown.addEventListener('click', async (e) => {
+      const option = e.target.closest('.theme-select__option');
+      if (!option) return;
+
+      const themePath = option.dataset.value;
+      const themeLabel = option.textContent;
+
+      const valueSpan = trigger.querySelector('.theme-select__value');
+      if (valueSpan) valueSpan.textContent = themeLabel;
+
+      closeDropdown();
+
+      dropdown.querySelectorAll('.theme-select__option').forEach(opt => {
+        opt.classList.toggle('is-selected', opt === option);
+      });
+
+      showHudStatus('🎨 Switching theme...', 'processing');
+      try {
+        if (themePath.startsWith('saved:')) {
+          const savedName = themePath.replace('saved:', '');
+          const library = loadThemeLibrary();
+          const entry = library.find(e => e.name === savedName);
+          if (entry) {
+            const normalizedTheme = applyTheme(entry.theme);
+            setCurrentTheme(normalizedTheme, { source: themePath });
+          }
+        } else {
+          const response = await fetch(themePath, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+          const theme = await response.json();
+          const normalizedTheme = applyTheme(theme);
+          setCurrentTheme(normalizedTheme, { source: themePath });
+        }
+        showHudStatus('✨ Theme applied', 'success');
+        setTimeout(hideHudStatus, 1600);
+      } catch (error) {
+        console.error('Failed to apply theme:', error);
+        showHudStatus('❌ Theme failed', 'error');
+        setTimeout(hideHudStatus, 2000);
+      }
+    });
   }
 
-  // Tab switching
-  const tabs = themeDrawer.querySelectorAll('.theme-drawer__tab');
-  tabs.forEach(tab => {
-    if (!tab.dataset.tabListenerAttached) {
-      tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('theme-drawer__tab--active'));
-        tab.classList.add('theme-drawer__tab--active');
-
-        // Show/hide color grids based on active tab
-        const colorGrids = themeDrawer.querySelectorAll('[data-tab-content]');
-        colorGrids.forEach(grid => {
-          grid.style.display = grid.dataset.tabContent === tabName ? 'grid' : 'none';
-        });
-      });
-      tab.dataset.tabListenerAttached = 'true';
-    }
-  });
-
-  applyBtn?.addEventListener('click', async () => {
-    if (!textarea) return;
-    try {
-      const themeJson = textarea.value;
-      const theme = JSON.parse(themeJson);
-      const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme, { source: '__custom__' });
-      syncThemeSelectUI();
-      showHudStatus('✨ Theme applied', 'success');
-      setTimeout(hideHudStatus, 1600);
-    } catch (error) {
-      showHudStatus(`❌ Invalid JSON: ${error.message}`, 'error');
-      setTimeout(hideHudStatus, 3000);
-    }
-  });
-
   saveBtn?.addEventListener('click', () => {
-    if (!textarea) return;
     try {
-      const themeJson = textarea.value;
-      const theme = JSON.parse(themeJson);
+      const theme = getCurrentTheme();
 
-      // Get current theme from dropdown
-      const themeSelect = document.getElementById('theme-select');
-      const currentValue = themeSelect?.value || '';
-
-      // Extract name if it's a saved theme, otherwise leave blank
+      // Get current theme path to suggest a name
+      const currentPath = getCurrentThemePath() || '';
+      const basePath = resolveBaseThemePath(currentPath);
       let defaultName = '';
-      if (currentValue.startsWith('saved:')) {
-        defaultName = currentValue.replace('saved:', '');
+      if (basePath.startsWith('saved:')) {
+        defaultName = basePath.replace('saved:', '');
       }
 
       const name = prompt('Name your theme:', defaultName);
       if (!name || !name.trim()) return;
 
       saveThemeToLibrary(name.trim(), theme);
+      setCurrentTheme(theme, { source: `saved:${name.trim()}` });
       populateThemeDropdown();
-
-      // Select the newly saved theme in dropdown
-      if (themeSelect) themeSelect.value = `saved:${name.trim()}`;
+      syncThemeSelectUI();
 
       showHudStatus('💾 Theme saved', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3360,7 +3550,6 @@ function initThemeDrawer() {
       const normalizedTheme = applyTheme(theme);
       setCurrentTheme(normalizedTheme, { source: '__ai__' });
       loadThemeIntoEditor();
-      syncThemeSelectUI();
 
       showHudStatus('✨ Theme generated!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3376,12 +3565,12 @@ function initThemeDrawer() {
     try {
       showHudStatus('🎲 Generating random theme...', 'processing');
 
+      const baseSource = resolveBaseThemePath(getCurrentThemePath() || '') || 'theme.json';
       const theme = generateRandomTheme();
 
       const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme, { source: '__random__' });
+      setCurrentTheme(normalizedTheme, { source: `random:${baseSource}` });
       loadThemeIntoEditor();
-      syncThemeSelectUI();
 
       showHudStatus('✨ Random theme applied!', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -3391,222 +3580,20 @@ function initThemeDrawer() {
     }
   });
 
-  syncThemeSelectUI();
   populateThemeDropdown();
+  syncThemeSelectUI();
 }
 
 
 
 function loadThemeIntoEditor() {
-  const textarea = document.getElementById('theme-json-editor');
-  const theme = getCurrentTheme() || extractCurrentThemeFromCSS();
-
-  if (textarea) {
-    textarea.value = JSON.stringify(theme, null, 2);
-  }
-
-  buildThemeFields(theme);
+  // Note: Theme fields removed - using Random + AI + Save workflow
   syncThemeSelectUI();
 }
 
-function buildThemeFields(theme) {
-  const container = document.getElementById('theme-fields');
-  if (!container) return;
-
-  // Organize color fields by tab
-  const colorFieldsByTab = {
-    background: [
-      { key: 'color-bg', label: 'Background' },
-      { key: 'color-muted', label: 'Muted' },
-    ],
-    text: [
-      { key: 'color-ink', label: 'Text' },
-    ],
-    surface: [
-      { key: 'color-surface', label: 'Surface' },
-      { key: 'color-surface-alt', label: 'Surface Alt' },
-    ],
-    accent: [
-      { key: 'color-accent', label: 'Accent' },
-      { key: 'badge-bg', label: 'Badge BG' },
-      { key: 'badge-color', label: 'Badge Text' },
-    ],
-  };
-
-  const textFields = [
-    { key: 'font-sans', label: 'Sans Font' },
-    { key: 'font-mono', label: 'Mono Font' },
-  ];
-
-  const parallelFields = [
-    { key: 'border-width', label: 'Border' },
-    { key: 'radius', label: 'Radius' },
-  ];
-
-  // Build color grids for each tab
-  let html = '';
-  Object.entries(colorFieldsByTab).forEach(([tab, fields]) => {
-    html += `<div class="theme-drawer__color-grid" data-tab-content="${tab}" style="display: ${tab === 'background' ? 'grid' : 'none'};">`;
-    fields.forEach(field => {
-      const value = extractHexColor(theme[field.key] || '#ffffff');
-      const textColor = getContrastColor(value);
-      html += `
-        <div class="theme-drawer__color-field">
-          <input
-            type="color"
-            class="theme-drawer__color-input"
-            id="theme-field-${field.key}"
-            data-theme-key="${field.key}"
-            value="${value}"
-          />
-          <label class="theme-drawer__color-label" for="theme-field-${field.key}" style="color: ${textColor}">
-            ${field.label}
-          </label>
-        </div>
-      `;
-    });
-    html += '</div>';
-  });
-
-  // Font dropdowns
-  const fontOptions = {
-    'font-sans': [
-      { value: '"Inter", "Helvetica Neue", Arial, sans-serif', label: 'Inter' },
-      { value: '"Space Grotesk", "Helvetica Neue", sans-serif', label: 'Space Grotesk' },
-      { value: '"Helvetica Neue", Helvetica, Arial, sans-serif', label: 'Helvetica' },
-      { value: 'Arial, sans-serif', label: 'Arial' },
-      { value: 'Georgia, serif', label: 'Georgia' },
-    ],
-    'font-mono': [
-      { value: '"Space Mono", "IBM Plex Mono", monospace', label: 'Space Mono' },
-      { value: '"JetBrains Mono", monospace', label: 'JetBrains Mono' },
-      { value: '"Press Start 2P", monospace', label: 'Press Start 2P' },
-      { value: '"Courier New", monospace', label: 'Courier New' },
-    ],
-  };
-
-  textFields.forEach(field => {
-    const value = theme[field.key] || '';
-    const options = fontOptions[field.key];
-
-    html += `
-      <div class="theme-drawer__field">
-        <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
-        <select
-          class="theme-drawer__select"
-          id="theme-field-${field.key}"
-          data-theme-key="${field.key}"
-        >
-          ${options.map(opt => `
-            <option value="${opt.value}" ${value.includes(opt.label) ? 'selected' : ''}>
-              ${opt.label}
-            </option>
-          `).join('')}
-        </select>
-      </div>
-    `;
-  });
-
-  html += '<div class="theme-drawer__parallel-fields">';
-  parallelFields.forEach(field => {
-    const value = theme[field.key] || '';
-    html += `
-      <div class="theme-drawer__field">
-        <label class="theme-drawer__label" for="theme-field-${field.key}">${field.label}</label>
-        <input
-          type="text"
-          class="theme-drawer__input"
-          id="theme-field-${field.key}"
-          data-theme-key="${field.key}"
-          value="${value}"
-        />
-      </div>
-    `;
-  });
-  html += '</div>';
-
-  container.innerHTML = html;
-  setupThemeFieldSync();
-  setupColorFieldSync();
-}
-
-function getContrastColor(hexColor) {
-  // Convert hex to RGB
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-
-  // Calculate relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // Return black or white based on luminance
-  return luminance > 0.5 ? '#000000' : '#ffffff';
-}
-
-function setupColorFieldSync() {
-  const colorInputs = document.querySelectorAll('.theme-drawer__color-input');
-  colorInputs.forEach(input => {
-    input.addEventListener('input', (e) => {
-      // Update label text color based on new background
-      const label = input.nextElementSibling;
-      if (label) {
-        label.style.color = getContrastColor(e.target.value);
-      }
-      syncThemeFieldsToJSON();
-    });
-  });
-}
-
-function extractHexColor(value) {
-  // Extract hex color from string like "#fffbf3" or "rgba(255, 251, 243, 0.82)"
-  const hexMatch = value.match(/#[0-9a-fA-F]{6}/);
-  return hexMatch ? hexMatch[0] : '#ffffff';
-}
-
-function setupThemeFieldSync() {
-  const inputs = document.querySelectorAll('[data-theme-key]');
-  inputs.forEach(input => {
-    input.addEventListener('input', () => {
-      syncThemeFieldsToJSON();
-    });
-  });
-}
-
-function syncThemeFieldsToJSON() {
-  const textarea = document.getElementById('theme-json-editor');
-  if (!textarea) return;
-
-  try {
-    const theme = JSON.parse(textarea.value);
-    const inputs = document.querySelectorAll('[data-theme-key]');
-
-    inputs.forEach(input => {
-      const key = input.dataset.themeKey;
-      const value = input.value;
-
-      if (value) {
-        theme[key] = value;
-      }
-    });
-
-    textarea.value = JSON.stringify(theme, null, 2);
-  } catch (error) {
-    console.warn('Cannot sync theme fields: invalid JSON');
-  }
-}
-
-function handleThemeJsonToggle() {
-  const container = document.getElementById('theme-json-container');
-  const toggle = document.getElementById('theme-json-toggle');
-  if (!container || !toggle) return;
-
-  const icon = toggle.querySelector('.theme-drawer__json-toggle-icon');
-  const isOpen = container.style.display !== 'none';
-  container.style.display = isOpen ? 'none' : 'block';
-  if (icon) {
-    icon.textContent = isOpen ? '▶' : '▼';
-  }
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// Obsolete theme field functions removed - using Random + AI + Save workflow
+// ═══════════════════════════════════════════════════════════════════════════
 
 function extractCurrentThemeFromCSS() {
   const root = document.documentElement;
@@ -3632,25 +3619,28 @@ function extractCurrentThemeFromCSS() {
 }
 
 function populateThemeDropdown() {
-  const themeSelect = document.getElementById('theme-select');
-  if (!themeSelect) return;
+  const dropdown = document.getElementById('theme-select-dropdown');
+  if (!dropdown) return;
 
   const library = loadThemeLibrary();
 
   // Remove old saved theme options (keep built-in themes)
-  const options = Array.from(themeSelect.options);
+  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
   options.forEach(option => {
-    if (option.value.startsWith('saved:')) {
+    const value = option.dataset.value || '';
+    if (value.startsWith('saved:')) {
       option.remove();
     }
   });
 
   // Add saved themes to dropdown
   library.forEach(entry => {
-    const option = document.createElement('option');
-    option.value = `saved:${entry.name}`;
-    option.textContent = entry.name;
-    themeSelect.appendChild(option);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'theme-select__option';
+    button.dataset.value = `saved:${entry.name}`;
+    button.textContent = `✨ ${entry.name}`;
+    dropdown.appendChild(button);
   });
 }
 
@@ -3753,29 +3743,6 @@ async function initDeckWithTheme() {
       if (persisted) {
         showHudStatus('💾 Deck downloaded', 'success');
         setTimeout(hideHudStatus, 1600);
-      }
-    });
-  }
-
-  const themeSelect = document.getElementById('theme-select');
-  if (themeSelect) {
-    themeSelect.addEventListener('change', async (event) => {
-      const themePath = event.target.value;
-      showHudStatus('🎨 Switching theme...', 'processing');
-      try {
-        const response = await fetch(themePath, { cache: "no-store" });
-        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-        const theme = await response.json();
-        const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme, { source: themePath });
-        loadThemeIntoEditor(); // Update editor if drawer is open
-        syncThemeSelectUI();
-        showHudStatus('✨ Theme applied', 'success');
-        setTimeout(hideHudStatus, 1600);
-      } catch (error) {
-        console.error('Failed to apply theme:', error);
-        showHudStatus('❌ Theme failed', 'error');
-        setTimeout(hideHudStatus, 2000);
       }
     });
   }

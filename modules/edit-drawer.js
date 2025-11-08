@@ -12,7 +12,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { escapeHtml } from './utils.js';
+import { escapeHtml, formatBytes, fileToBase64 } from './utils.js';
 import {
   prepareSlideForEditing,
   restoreBase64FromTokens,
@@ -302,7 +302,7 @@ async function handleImageAdd(context) {
     try {
       // Use the global compressImage function from main.js if available
       const compressed = await compressImageForEdit(file);
-      const base64 = await fileToBase64ForEdit(compressed.file);
+      const base64 = await fileToBase64(compressed.file);
 
       const imageData = {
         src: base64,
@@ -367,23 +367,6 @@ async function compressImageForEdit(file) {
   } catch (error) {
     throw new Error(`Compression failed: ${error.message}`);
   }
-}
-
-async function fileToBase64ForEdit(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i)) + ' ' + sizes[i];
 }
 
 function handleJsonToggle() {

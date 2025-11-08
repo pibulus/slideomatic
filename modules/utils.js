@@ -66,3 +66,18 @@ export function escapeHtml(value) {
   return stringValue.replace(pattern, (char) => replacements[char] ?? char);
 }
 
+/**
+ * Convert a File object to a base64 data URL string.
+ * Used for embedding images directly in slide JSON.
+ * @param {File} file - The file to convert
+ * @returns {Promise<string>} - Data URL string (e.g., "data:image/png;base64,...")
+ */
+export async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
