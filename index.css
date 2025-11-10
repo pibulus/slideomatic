@@ -673,6 +673,40 @@ main {
   line-height: 1.6;
 }
 
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: rgba(18, 15, 26, 0.95);
+  color: #fff;
+  padding: 16px 24px;
+  border-radius: 16px;
+  border: 3px solid var(--border);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.toast.toast--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.toast--error {
+  background: rgba(255, 67, 54, 0.95);
+  border-color: #ff6b6b;
+}
+
+.toast.toast--success {
+  background: rgba(76, 175, 80, 0.95);
+  border-color: #81c784;
+}
+
 @media (max-width: 640px) {
   .button {
     width: 100%;

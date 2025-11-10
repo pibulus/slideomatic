@@ -196,6 +196,34 @@
       let pastePreviousFocus = null;
       let deckShelfCache = [];
 
+      // Toast notification system
+      let toastTimeout = null;
+      function showToast(message, type = 'default') {
+        // Remove any existing toast
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) {
+          existingToast.remove();
+        }
+        clearTimeout(toastTimeout);
+
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === 'error' ? 'toast--error' : type === 'success' ? 'toast--success' : ''}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+          toast.classList.add('toast--visible');
+        });
+
+        // Auto-remove after 4 seconds
+        toastTimeout = setTimeout(() => {
+          toast.classList.remove('toast--visible');
+          setTimeout(() => toast.remove(), 200);
+        }, 4000);
+      }
+
       renderDeckShelf();
       bindStartMenu();
       bindNewDeckButtons();
@@ -295,7 +323,7 @@
             try {
               JSON.parse(reader.result);
             } catch (error) {
-              alert('That file is not valid JSON. Please pick a deck JSON export.');
+              showToast('⚠️ That file is not valid JSON. Please try again.', 'error');
               input.value = '';
               return;
             }
@@ -309,7 +337,7 @@
           };
 
           reader.onerror = () => {
-            alert('Unable to read that file. Please try again.');
+            showToast('⚠️ Unable to read that file. Please try again.', 'error');
             input.value = '';
           };
 
@@ -458,8 +486,9 @@
         try {
           localStorage.setItem(buildDeckKey(deck.id), JSON.stringify(payload));
           renderDeckShelf();
+          showToast('✓ Deck renamed', 'success');
         } catch (error) {
-          alert('Unable to rename deck. Check local storage permissions.');
+          showToast('⚠️ Unable to save. Storage may be full.', 'error');
         }
       }
 
@@ -473,8 +502,9 @@
             localStorage.removeItem(LAST_DECK_KEY);
           }
           renderDeckShelf();
+          showToast('✓ Deck deleted', 'success');
         } catch (error) {
-          alert('Unable to delete deck. Check local storage permissions.');
+          showToast('⚠️ Unable to delete deck', 'error');
         }
       }
 
@@ -564,14 +594,14 @@
       function handlePasteSubmit() {
         const raw = pasteTextarea?.value?.trim();
         if (!raw) {
-          alert('Paste a deck JSON export first.');
+          showToast('⚠️ Paste a deck JSON export first.', 'error');
           return;
         }
         let parsed;
         try {
           parsed = JSON.parse(raw);
         } catch (error) {
-          alert('That is not valid JSON. Please try again.');
+          showToast('⚠️ That is not valid JSON. Please try again.', 'error');
           return;
         }
 
