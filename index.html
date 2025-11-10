@@ -13,33 +13,89 @@
   <body>
     <main class="landing">
       <section class="landing__hero">
-        <p class="landing__eyebrow">Pastel-punk presentation lab</p>
-        <h1 class="landing__title">Slide-o-Matic</h1>
-        <p class="landing__subtitle">
-          Kick off the default deck, dive straight into the editor, or drop in a JSON export. Slideomatic.app keeps the neon-soaked,
-          voice-ready tooling within reach.
-        </p>
-        <div class="landing__actions">
-          <a class="button button--primary" href="deck.html">Open default deck</a>
-          <a class="button button--secondary" href="admin.html">Start new deck</a>
-          <button class="button button--accent" type="button" id="upload-btn">Upload deck JSON</button>
-          <input type="file" id="upload-input" accept=".json,application/json" hidden />
+        <div class="landing__intro">
+          <p class="landing__eyebrow">Pastel-punk presentation lab</p>
+          <h1 class="landing__title">Slide-o-Matic</h1>
+          <p class="landing__subtitle">
+            Spin up as many decks as you need. Resume your last session, crack open a fresh live builder, or toss in raw JSON—
+            everything routes into the same neon runtime.
+          </p>
         </div>
+
+        <div class="landing__cta-grid">
+          <article class="cta-panel">
+            <div class="cta-panel__header">
+              <p class="cta-panel__eyebrow">Continue</p>
+              <h3>Resume a deck</h3>
+            </div>
+            <p>Pick up the last deck you touched or jump into the demo if you’re scouting the vibes.</p>
+            <div class="cta-panel__actions">
+              <button class="button button--primary" type="button" data-action="resume">Resume deck</button>
+              <button class="link-button" type="button" data-action="open-demo">Open demo deck</button>
+            </div>
+          </article>
+
+          <article class="cta-panel">
+            <div class="cta-panel__header">
+              <p class="cta-panel__eyebrow">Create</p>
+              <h3>Start new deck</h3>
+            </div>
+            <p>Choose how you want to build: live slide mode, structured constructor, or raw JSON.</p>
+            <div class="start-menu">
+              <button class="button button--secondary" type="button" data-start-toggle aria-expanded="false">
+                Start new deck
+              </button>
+              <div class="start-menu__list" data-start-menu hidden>
+                <button type="button" data-new-mode="live">
+                  <strong>Live builder</strong>
+                  <span>Blank canvas inside deck.html — edit drawer + AI voice shortcuts</span>
+                </button>
+                <button type="button" data-new-mode="constructor">
+                  <strong>Deck constructor</strong>
+                  <span>Open the admin/editor shell for list-driven edits</span>
+                </button>
+                <button type="button" data-new-mode="paste">
+                  <strong>Paste JSON</strong>
+                  <span>Drop raw JSON, preview, and launch instantly</span>
+                </button>
+                <button type="button" data-new-mode="upload">
+                  <strong>Upload JSON</strong>
+                  <span>Import an exported deck file (.json)</span>
+                </button>
+              </div>
+            </div>
+            <input type="file" id="upload-input" accept=".json,application/json" hidden />
+          </article>
+        </div>
+      </section>
+
+      <section class="deck-shelf" id="saved">
+        <header class="deck-shelf__header">
+          <div>
+            <p class="deck-shelf__eyebrow">Library</p>
+            <h2>Saved decks</h2>
+            <p class="deck-shelf__subtitle">Every deck you spin up locally lands here. Rename, reopen, or prune whenever.</p>
+          </div>
+          <button class="link-button" type="button" data-action="refresh-shelf">Refresh list</button>
+        </header>
+        <ul class="deck-shelf__list" id="deck-shelf-list">
+          <li class="deck-shelf__empty" id="deck-shelf-empty">Launch a new deck to see it appear here.</li>
+        </ul>
       </section>
 
       <section class="landing__grid" id="about">
         <article class="landing__panel">
           <h2>Pastel-punk slides, zero build steps.</h2>
           <p>
-            Slide-o-Matic bundles a live deck runtime, a JSON editor, and a theme drawer. Swap art direction with a dropdown, edit
-            slides while you present, or let Gemini draft new pages from voice prompts.
+            Slide-o-Matic bundles a live deck runtime, a JSON editor, and a theme drawer. Build slide-by-slide on stage, use the
+            constructor for bulk updates, or let Gemini draft new sections from voice prompts.
           </p>
         </article>
 
         <div class="landing__cards">
           <article class="landing__card">
-            <h3>Voice-first workflow</h3>
-            <p>Hold <strong>V</strong> or <strong>E</strong> inside the deck to add or edit slides by speaking — AI fills in the JSON.</p>
+            <h3>Live builder</h3>
+            <p>Open a blank deck with the edit drawer pinned. Hold <strong>V</strong> or <strong>E</strong> to let AI draft slides.</p>
           </article>
           <article class="landing__card">
             <h3>Theme everything</h3>
@@ -47,11 +103,25 @@
           </article>
           <article class="landing__card">
             <h3>JSON you can trust</h3>
-            <p>Download the deck at any time. The editor validates against the schema so your exports stay portable.</p>
+            <p>Upload/paste JSON exports anytime. Validation keeps your deck portable between tooling.</p>
           </article>
         </div>
       </section>
     </main>
+
+    <div class="paste-modal" id="paste-modal" aria-hidden="true">
+      <div class="paste-modal__backdrop" data-paste-cancel></div>
+      <article class="paste-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="paste-modal-title" tabindex="-1">
+        <button class="paste-modal__close" type="button" aria-label="Close paste JSON modal" data-paste-cancel>×</button>
+        <h2 class="paste-modal__title" id="paste-modal-title">Paste deck JSON</h2>
+        <p class="paste-modal__subtitle">Paste an exported Slide-o-Matic JSON array or object and we’ll boot the deck live.</p>
+        <textarea id="paste-json-input" class="paste-modal__textarea" rows="10" spellcheck="false" placeholder='[{ "type": "title", ... }]'></textarea>
+        <div class="paste-modal__actions">
+          <button class="button button--primary" type="button" data-paste-submit>Load deck</button>
+          <button class="link-button" type="button" data-paste-cancel>Cancel</button>
+        </div>
+      </article>
+    </div>
 
     <footer class="landing__footer">
       <div class="landing__footer-about">
@@ -95,54 +165,469 @@
     </div>
 
     <script type="module">
-      const uploadBtn = document.getElementById('upload-btn');
+      const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
+      const LAST_DECK_KEY = 'slideomatic:last-deck';
+
+      const resumeButton = document.querySelector('[data-action="resume"]');
+      const demoButton = document.querySelector('[data-action="open-demo"]');
+      const startToggle = document.querySelector('[data-start-toggle]');
+      const startMenu = document.querySelector('[data-start-menu]');
+      const startButtons = document.querySelectorAll('[data-new-mode]');
       const uploadInput = document.getElementById('upload-input');
+      const shelfList = document.getElementById('deck-shelf-list');
+      const shelfEmpty = document.getElementById('deck-shelf-empty');
+      const refreshShelfButton = document.querySelector('[data-action="refresh-shelf"]');
+      const pasteModal = document.getElementById('paste-modal');
+      const pasteDialog = pasteModal?.querySelector('.paste-modal__dialog');
+      const pasteTextarea = document.getElementById('paste-json-input');
+      const pasteSubmit = document.querySelector('[data-paste-submit]');
+      const pasteClosers = document.querySelectorAll('[data-paste-cancel]');
       const actionButtons = document.querySelectorAll('[data-open-intent]');
       const aboutModal = document.getElementById('about-modal');
       const aboutDialog = aboutModal?.querySelector('.about-modal__dialog');
       const aboutOpeners = document.querySelectorAll('[data-about-open]');
       const aboutClosers = aboutModal?.querySelectorAll('[data-about-close]');
+
+      const relativeTimeFormatter = typeof Intl !== 'undefined' && Intl.RelativeTimeFormat
+        ? new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+        : null;
+
       let aboutPreviousFocus = null;
+      let pastePreviousFocus = null;
+      let deckShelfCache = [];
 
-      uploadBtn?.addEventListener('click', () => uploadInput?.click());
+      renderDeckShelf();
+      bindStartMenu();
+      bindNewDeckButtons();
+      bindResumeButton();
+      bindDemoButton();
+      bindUploadInput();
+      bindShelfRefresh();
+      bindPasteModal();
+      bindFooterActions();
+      bindAboutModal();
 
-      uploadInput?.addEventListener('change', (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+      function bindStartMenu() {
+        if (!startToggle || !startMenu) return;
+        startToggle.addEventListener('click', () => {
+          const nextState = !startMenu.classList.contains('is-open');
+          setStartMenuState(nextState);
+        });
 
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            JSON.parse(reader.result);
-          } catch (error) {
-            alert('That file is not valid JSON. Please pick a deck JSON export.');
+        document.addEventListener('click', (event) => {
+          if (!startMenu.classList.contains('is-open')) return;
+          if (startMenu.contains(event.target) || event.target === startToggle) return;
+          setStartMenuState(false);
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            setStartMenuState(false);
+          }
+        });
+      }
+
+      function setStartMenuState(isOpen) {
+        if (!startMenu || !startToggle) return;
+        startMenu.hidden = !isOpen;
+        startMenu.classList.toggle('is-open', isOpen);
+        startToggle.setAttribute('aria-expanded', String(isOpen));
+      }
+
+      function bindNewDeckButtons() {
+        startButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            setStartMenuState(false);
+            handleNewDeckAction(button.dataset.newMode);
+          });
+        });
+      }
+
+      function handleNewDeckAction(mode) {
+        switch (mode) {
+          case 'live':
+            window.location.href = 'deck.html?deck=new&open=edit';
+            break;
+          case 'constructor':
+            window.location.href = 'admin.html';
+            break;
+          case 'paste':
+            openPasteModal();
+            break;
+          case 'upload':
+            uploadInput?.click();
+            break;
+          default:
+            break;
+        }
+      }
+
+      function bindResumeButton() {
+        if (!resumeButton) return;
+        resumeButton.addEventListener('click', () => {
+          const lastDeckId = getLastDeckId();
+          if (lastDeckId) {
+            openDeck(lastDeckId);
             return;
           }
-
-          const objectUrl = URL.createObjectURL(file);
-          const target = new URL('deck.html', window.location.href);
-          target.searchParams.set('slides', objectUrl);
-          target.searchParams.set('open', 'theme');
-          window.location.href = target.toString();
-        };
-
-        reader.onerror = () => {
-          alert('Unable to read that file. Please try again.');
-        };
-
-        reader.readAsText(file);
-      });
-
-      actionButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-          const intent = button.dataset.openIntent;
-          const target = new URL('deck.html', window.location.href);
-          if (intent) {
-            target.searchParams.set('open', intent);
+          if (deckShelfCache.length > 0) {
+            openDeck(deckShelfCache[0].id);
+            return;
           }
-          window.location.href = target.toString();
+          window.location.href = 'deck.html';
         });
-      });
+      }
+
+      function bindDemoButton() {
+        demoButton?.addEventListener('click', () => {
+          window.location.href = 'deck.html';
+        });
+      }
+
+      function bindUploadInput() {
+        uploadInput?.addEventListener('change', (event) => {
+          const input = event.target;
+          const file = input.files?.[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              JSON.parse(reader.result);
+            } catch (error) {
+              alert('That file is not valid JSON. Please pick a deck JSON export.');
+              input.value = '';
+              return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            const target = new URL('deck.html', window.location.href);
+            target.searchParams.set('slides', objectUrl);
+            target.searchParams.set('open', 'edit');
+            input.value = '';
+            window.location.href = target.toString();
+          };
+
+          reader.onerror = () => {
+            alert('Unable to read that file. Please try again.');
+            input.value = '';
+          };
+
+          reader.readAsText(file);
+        });
+      }
+
+      function bindShelfRefresh() {
+        refreshShelfButton?.addEventListener('click', () => {
+          renderDeckShelf();
+        });
+      }
+
+      function renderDeckShelf() {
+        deckShelfCache = getSavedDecks();
+        if (!shelfList) return;
+        shelfList.querySelectorAll('.deck-card').forEach((node) => node.remove());
+
+        if (deckShelfCache.length === 0) {
+          if (shelfEmpty) {
+            shelfEmpty.hidden = false;
+          }
+        } else {
+          if (shelfEmpty) {
+            shelfEmpty.hidden = true;
+          }
+          deckShelfCache.forEach((deck) => {
+            shelfList.appendChild(createDeckCard(deck));
+          });
+        }
+
+        updateResumeButtonLabel();
+      }
+
+      function updateResumeButtonLabel() {
+        if (!resumeButton) return;
+        if (deckShelfCache.length === 0) {
+          resumeButton.textContent = 'Resume deck';
+          return;
+        }
+        const lastDeckId = getLastDeckId();
+        const targetDeck = deckShelfCache.find((deck) => deck.id === lastDeckId) || deckShelfCache[0];
+        resumeButton.textContent = `Resume ${targetDeck.name}`;
+      }
+
+      function createDeckCard(deck) {
+        const item = document.createElement('li');
+        item.className = 'deck-card';
+
+        const meta = document.createElement('div');
+        meta.className = 'deck-card__meta';
+
+        const name = document.createElement('p');
+        name.className = 'deck-card__name';
+        name.textContent = deck.name;
+
+        const details = document.createElement('p');
+        details.className = 'deck-card__details';
+        details.textContent = `${deck.slideCount} ${deck.slideCount === 1 ? 'slide' : 'slides'} • ${formatDeckTimestamp(deck.updatedAt)}`;
+
+        meta.append(name, details);
+
+        const actions = document.createElement('div');
+        actions.className = 'deck-card__actions';
+
+        const openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.textContent = 'Open';
+        openBtn.addEventListener('click', () => openDeck(deck.id));
+
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.textContent = 'Rename';
+        renameBtn.addEventListener('click', () => renameDeck(deck));
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', () => deleteDeck(deck));
+
+        actions.append(openBtn, renameBtn, deleteBtn);
+        item.append(meta, actions);
+        return item;
+      }
+
+      function formatDeckTimestamp(timestamp) {
+        if (!timestamp) return 'Just now';
+        const delta = Date.now() - timestamp;
+        const minutes = 60 * 1000;
+        const hours = 60 * minutes;
+        const days = 24 * hours;
+
+        if (relativeTimeFormatter) {
+          if (delta >= days) {
+            return relativeTimeFormatter.format(-Math.round(delta / days), 'day');
+          }
+          if (delta >= hours) {
+            return relativeTimeFormatter.format(-Math.round(delta / hours), 'hour');
+          }
+          if (delta >= minutes) {
+            return relativeTimeFormatter.format(-Math.round(delta / minutes), 'minute');
+          }
+          return 'Just now';
+        }
+
+        return new Date(timestamp).toLocaleString();
+      }
+
+      function getSavedDecks() {
+        if (typeof localStorage === 'undefined') return [];
+        const decks = [];
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const key = localStorage.key(index);
+          if (!key || !key.startsWith(DECK_STORAGE_PREFIX)) continue;
+          const deckId = decodeURIComponent(key.slice(DECK_STORAGE_PREFIX.length));
+          if (!deckId || !deckId.startsWith('deck-')) continue;
+          const payload = safeParse(localStorage.getItem(key));
+          if (!payload || !Array.isArray(payload.slides)) continue;
+          const updatedAt = payload.meta?.updatedAt || payload.updatedAt || 0;
+          const name = typeof payload.meta?.name === 'string' && payload.meta.name.trim()
+            ? payload.meta.name.trim()
+            : deriveDeckName(payload.slides);
+          decks.push({
+            id: deckId,
+            name,
+            updatedAt,
+            slideCount: payload.slides.length,
+          });
+        }
+        return decks.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      }
+
+      function renameDeck(deck) {
+        if (!deck) return;
+        const proposed = window.prompt('Name this deck', deck.name);
+        if (!proposed) return;
+        const name = proposed.trim();
+        if (!name) return;
+        const payload = getDeckPayload(deck.id);
+        if (!payload) return;
+        payload.meta = {
+          ...(payload.meta || {}),
+          name,
+          updatedAt: Date.now(),
+        };
+        try {
+          localStorage.setItem(buildDeckKey(deck.id), JSON.stringify(payload));
+          renderDeckShelf();
+        } catch (error) {
+          alert('Unable to rename deck. Check local storage permissions.');
+        }
+      }
+
+      function deleteDeck(deck) {
+        if (!deck) return;
+        const confirmed = window.confirm(`Delete "${deck.name}" from this device?`);
+        if (!confirmed) return;
+        try {
+          localStorage.removeItem(buildDeckKey(deck.id));
+          if (getLastDeckId() === deck.id) {
+            localStorage.removeItem(LAST_DECK_KEY);
+          }
+          renderDeckShelf();
+        } catch (error) {
+          alert('Unable to delete deck. Check local storage permissions.');
+        }
+      }
+
+      function getDeckPayload(deckId) {
+        try {
+          return safeParse(localStorage.getItem(buildDeckKey(deckId)));
+        } catch (error) {
+          console.warn('Unable to read deck payload', error);
+          return null;
+        }
+      }
+
+      function safeParse(value) {
+        if (typeof value !== 'string') return null;
+        try {
+          return JSON.parse(value);
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function deriveDeckName(slideList) {
+        if (!Array.isArray(slideList) || slideList.length === 0) {
+          return 'Untitled deck';
+        }
+        const first = slideList[0] ?? {};
+        const candidate =
+          first.title ||
+          first.headline ||
+          first.eyebrow ||
+          first.quote ||
+          (Array.isArray(first.body) ? first.body[0] : first.body) ||
+          first.badge;
+        return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : 'Untitled deck';
+      }
+
+      function openDeck(deckId) {
+        if (!deckId) {
+          window.location.href = 'deck.html';
+          return;
+        }
+        const target = new URL('deck.html', window.location.href);
+        target.searchParams.set('deck', deckId);
+        window.location.href = target.toString();
+      }
+
+      function buildDeckKey(deckId) {
+        return `${DECK_STORAGE_PREFIX}${encodeURIComponent(deckId)}`;
+      }
+
+      function getLastDeckId() {
+        try {
+          return localStorage.getItem(LAST_DECK_KEY) || '';
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function bindPasteModal() {
+        if (!pasteModal || !pasteTextarea) return;
+        pasteSubmit?.addEventListener('click', handlePasteSubmit);
+        pasteClosers.forEach((button) => button.addEventListener('click', closePasteModal));
+      }
+
+      function openPasteModal() {
+        if (!pasteModal || pasteModal.classList.contains('is-open')) return;
+        pastePreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        pasteTextarea.value = '';
+        pasteModal.classList.add('is-open');
+        pasteModal.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(() => pasteDialog?.focus({ preventScroll: true }));
+        document.addEventListener('keydown', handlePasteKeydown, true);
+      }
+
+      function closePasteModal() {
+        if (!pasteModal || !pasteModal.classList.contains('is-open')) return;
+        pasteModal.classList.remove('is-open');
+        pasteModal.setAttribute('aria-hidden', 'true');
+        document.removeEventListener('keydown', handlePasteKeydown, true);
+        const target = pastePreviousFocus && typeof pastePreviousFocus.focus === 'function'
+          ? pastePreviousFocus
+          : null;
+        pastePreviousFocus = null;
+        requestAnimationFrame(() => target?.focus());
+      }
+
+      function handlePasteSubmit() {
+        const raw = pasteTextarea?.value?.trim();
+        if (!raw) {
+          alert('Paste a deck JSON export first.');
+          return;
+        }
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (error) {
+          alert('That is not valid JSON. Please try again.');
+          return;
+        }
+
+        const normalized = JSON.stringify(parsed, null, 2);
+        const blob = new Blob([normalized], { type: 'application/json' });
+        const objectUrl = URL.createObjectURL(blob);
+        const target = new URL('deck.html', window.location.href);
+        target.searchParams.set('slides', objectUrl);
+        target.searchParams.set('open', 'edit');
+        window.location.href = target.toString();
+      }
+
+      function handlePasteKeydown(event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closePasteModal();
+          return;
+        }
+        if (event.key !== 'Tab' || !pasteDialog) return;
+        const focusable = pasteDialog.querySelectorAll(
+          'a[href], button:not([disabled]), textarea, input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) {
+          event.preventDefault();
+          pasteDialog.focus({ preventScroll: true });
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      }
+
+      function bindFooterActions() {
+        actionButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const intent = button.dataset.openIntent;
+            const target = new URL('deck.html', window.location.href);
+            if (intent) {
+              target.searchParams.set('open', intent);
+            }
+            window.location.href = target.toString();
+          });
+        });
+      }
+
+      function bindAboutModal() {
+        aboutOpeners.forEach((button) => button.addEventListener('click', openAboutModal));
+        aboutClosers?.forEach((button) => button.addEventListener('click', closeAboutModal));
+      }
 
       function openAboutModal() {
         if (!aboutModal || aboutModal.classList.contains('is-open')) return;
@@ -169,9 +654,9 @@
         if (event.key === 'Escape') {
           event.preventDefault();
           closeAboutModal();
+          return;
         }
-        if (event.key !== 'Tab') return;
-        if (!aboutDialog) return;
+        if (event.key !== 'Tab' || !aboutDialog) return;
         const focusable = aboutDialog.querySelectorAll(
           'a[href], button:not([disabled]), textarea, input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -191,9 +676,6 @@
           last.focus();
         }
       }
-
-      aboutOpeners.forEach((button) => button.addEventListener('click', openAboutModal));
-      aboutClosers?.forEach((button) => button.addEventListener('click', closeAboutModal));
     </script>
   </body>
 </html>

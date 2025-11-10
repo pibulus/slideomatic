@@ -33,6 +33,8 @@ const slidesRoot = document.getElementById("slides");
 const currentCounter = document.querySelector("[data-counter-current]");
 const totalCounter = document.querySelector("[data-counter-total]");
 const progressBar = document.querySelector("[data-progress]");
+const urlParams = new URLSearchParams(window.location.search);
+const requestedDeck = urlParams.get('deck');
 
 const renderers = {
   title: renderTitleSlide,
@@ -62,8 +64,26 @@ let isThemeDrawerOpen = false;
 let themeDrawerInstance = null;
 const slideScrollPositions = new Map();
 const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
+const LAST_DECK_KEY = 'slideomatic:last-deck';
 let deckStorageKey = null;
 let deckPersistFailureNotified = false;
+let activeDeckId = null;
+let isNewDeckRequest = false;
+
+if (requestedDeck) {
+  if (requestedDeck === 'new') {
+    isNewDeckRequest = true;
+    activeDeckId = generateDeckId();
+    urlParams.set('deck', activeDeckId);
+    const nextSearch = urlParams.toString();
+    const nextUrl = `${window.location.pathname}?${nextSearch}${window.location.hash ?? ''}`;
+    if (window.history && typeof window.history.replaceState === 'function') {
+      window.history.replaceState({}, '', nextUrl);
+    }
+  } else {
+    activeDeckId = requestedDeck;
+  }
+}
 
 // ================================================================
 // Theme Library - localStorage persistence
@@ -186,10 +206,17 @@ async function initDeck() {
     loadError = error;
   }
 
-  const storedSlides = loadPersistedDeck();
+  const storedSlides = activeDeckId ? null : loadPersistedDeck();
+  let usedStoredDeck = false;
 
-  if (Array.isArray(storedSlides)) {
+  if (activeDeckId) {
+    if (Array.isArray(loadedSlides)) {
+      slides = loadedSlides;
+      usedStoredDeck = !isNewDeckRequest;
+    }
+  } else if (Array.isArray(storedSlides)) {
     slides = storedSlides;
+    usedStoredDeck = true;
   } else if (Array.isArray(loadedSlides)) {
     slides = loadedSlides;
   } else {
@@ -207,11 +234,11 @@ async function initDeck() {
     return;
   }
 
-  const usingPersistedSlides = Array.isArray(storedSlides);
-  if (usingPersistedSlides) {
+  if (usedStoredDeck) {
     console.info('Slide-o-Matic: loaded deck overrides from localStorage.');
   }
 
+  markDeckAsRecent();
   // Filter out schema/docs slides before rendering
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
 
@@ -276,6 +303,17 @@ async function initDeck() {
 }
 
 async function loadSlides() {
+  if (activeDeckId) {
+    const stored = loadPersistedDeck();
+    if (Array.isArray(stored)) {
+      return stored.slice();
+    }
+    // Bootstrap a blank deck if we were asked to start fresh or if the deck was removed.
+    slides = [getSlideTemplate('title')];
+    persistSlides({ suppressWarning: true });
+    return slides.slice();
+  }
+
   const response = await fetch(resolveSlidesPath(), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -334,6 +372,10 @@ function resolveSlidesPath() {
 
 function getDeckStorageKey() {
   if (deckStorageKey) return deckStorageKey;
+  if (activeDeckId) {
+    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
+    return deckStorageKey;
+  }
   const path = resolveSlidesPath();
   try {
     const url = new URL(path, window.location.href);
@@ -368,14 +410,22 @@ function persistSlides(options = {}) {
   const { suppressWarning = false } = options;
   if (!Array.isArray(slides)) return false;
   try {
+    const updatedAt = Date.now();
+    const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
     const payload = {
       version: 1,
-      updatedAt: Date.now(),
-      source: resolveSlidesPath(),
+      updatedAt,
+      source,
       slides,
+      meta: {
+        name: deriveDeckName(slides),
+        updatedAt,
+        deckId: activeDeckId ?? null,
+      },
     };
     localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
     deckPersistFailureNotified = false;
+    markDeckAsRecent();
     return true;
   } catch (error) {
     console.warn('Unable to persist deck edits to localStorage:', error);
@@ -399,6 +449,41 @@ function clearPersistedDeck() {
   } catch (error) {
     console.warn('Failed to clear deck overrides from localStorage:', error);
   }
+}
+
+function generateDeckId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `deck-${crypto.randomUUID()}`;
+  }
+  const randomPart = Math.random().toString(36).slice(2, 8);
+  return `deck-${Date.now().toString(36)}-${randomPart}`;
+}
+
+function markDeckAsRecent() {
+  if (!activeDeckId) return;
+  try {
+    localStorage.setItem(LAST_DECK_KEY, activeDeckId);
+  } catch (error) {
+    console.warn('Unable to record last deck ID:', error);
+  }
+}
+
+function deriveDeckName(slideList) {
+  if (!Array.isArray(slideList) || slideList.length === 0) {
+    return 'Untitled deck';
+  }
+  const first = slideList[0] ?? {};
+  const textCandidate =
+    first.title ||
+    first.headline ||
+    first.eyebrow ||
+    first.quote ||
+    (Array.isArray(first.body) ? first.body[0] : first.body) ||
+    first.badge;
+  if (typeof textCandidate === 'string' && textCandidate.trim()) {
+    return textCandidate.trim();
+  }
+  return 'Untitled deck';
 }
 
 async function loadAutoLinks() {
@@ -3985,6 +4070,8 @@ function handleInitialIntent() {
       openThemeDrawer();
     } else if (openIntent === 'settings') {
       openSettingsModal();
+    } else if (openIntent === 'edit') {
+      openEditDrawer();
     }
   });
 }
