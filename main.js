@@ -64,6 +64,10 @@ const renderers = {
   graph: renderGraphSlide,
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
 let slides = [];
 let slideElements = [];
 let currentIndex = 0;
@@ -203,9 +207,11 @@ Return ONLY valid JSON, no markdown or explanation.`;
   return normalizeThemeTokens(theme);
 }
 
-// ================================================================
-// Old color-theory implementation removed - using archetype-based approach
-// ================================================================
+// ═══════════════════════════════════════════════════════════════════════════
+// DECK INITIALIZATION & LOADING
+// ═══════════════════════════════════════════════════════════════════════════
+// Main entry point and deck setup orchestration
+// ═══════════════════════════════════════════════════════════════════════════
 
 initDeckWithTheme();
 
@@ -619,6 +625,12 @@ function handleSlideClick(event) {
   exitOverview(targetIndex);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// OVERVIEW MODE
+// ═══════════════════════════════════════════════════════════════════════════
+// Grid view of all slides for quick navigation
+// ═══════════════════════════════════════════════════════════════════════════
+
 function toggleOverview() {
   if (isOverview) {
     exitOverview();
@@ -735,6 +747,12 @@ window.addEventListener('resize', () => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NAVIGATION & SLIDE CONTROL
+// ═══════════════════════════════════════════════════════════════════════════
+// Functions for navigating between slides and managing active state
+// ═══════════════════════════════════════════════════════════════════════════
+
 function setActiveSlide(nextIndex) {
   const clamped = clamp(nextIndex, 0, slideElements.length - 1);
   if (!isOverview && clamped === currentIndex && slideElements[currentIndex].classList.contains("is-active")) {
@@ -799,6 +817,12 @@ function updateHud() {
   const progress = ((currentIndex + 1) / slideElements.length) * 100;
   progressBar.style.width = `${progress}%`;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SLIDE CONSTRUCTION & DOM HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+// Functions for building slide DOM elements and sub-components
+// ═══════════════════════════════════════════════════════════════════════════
 
 function createSlide(slide, index, rendererMap) {
   const type = slide.type ?? "standard";
@@ -920,6 +944,17 @@ function preloadSlideImages(index) {
     preloadImage(src);
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SLIDE TYPE RENDERERS
+// ═══════════════════════════════════════════════════════════════════════════
+// Each function below renders a specific slide type. All receive:
+// - section: the DOM element to populate
+// - slide: the slide data object
+//
+// Available types: title, standard, image, quote, split, grid, pillars,
+//                  gallery, graph, typeface
+// ═══════════════════════════════════════════════════════════════════════════
 
 function renderTitleSlide(section, slide) {
   if (slide.eyebrow) {
