@@ -29,6 +29,21 @@ import {
 } from './modules/voice-modes.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURATION & CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DEBUG = false; // Set to true to enable debug logging
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB max
+const TARGET_IMAGE_BYTES = 900 * 1024; // 900KB target for compression
+
+// Helper for debug logging
+const debug = (...args) => DEBUG && console.log('[Slideomatic]', ...args);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DOM REFERENCES
+// ═══════════════════════════════════════════════════════════════════════════
+
 const slidesRoot = document.getElementById("slides");
 const currentCounter = document.querySelector("[data-counter-current]");
 const totalCounter = document.querySelector("[data-counter-total]");
@@ -793,7 +808,7 @@ function createSlide(slide, index, rendererMap) {
   section.setAttribute("aria-hidden", "true");
 
   if (slide.image) {
-    console.log('[DEBUG createSlide] Slide has image:', {
+    debug('createSlide - Slide has image:', {
       index,
       srcPrefix: slide.image.src?.substring(0, 50),
       hasImage: !!slide.image,
@@ -1387,7 +1402,7 @@ function navigateToDeckHome() {
 
 function createImage(image, className = "slide__image", options = {}) {
   if (!image || !image.src) {
-    console.log('[DEBUG createImage] No src, creating placeholder');
+    debug('createImage - No src, creating placeholder');
     return createImagePlaceholder(image, className);
   }
   const img = document.createElement("img");
@@ -1396,7 +1411,7 @@ function createImage(image, className = "slide__image", options = {}) {
   const modalSrc = image.modalSrc ?? actualSrc;
   const shouldLazyLoad = typeof actualSrc === "string" && !actualSrc.startsWith("data:");
 
-  console.log('[DEBUG createImage] Creating image:', {
+  debug('createImage - Creating image:', {
     srcPrefix: actualSrc.substring(0, 50),
     shouldLazyLoad,
     isBase64: actualSrc.startsWith('data:')
@@ -1416,7 +1431,7 @@ function createImage(image, className = "slide__image", options = {}) {
   if (shouldLazyLoad) {
     registerLazyImage(img, actualSrc);
   } else {
-    console.log('[DEBUG createImage] Setting base64 src directly');
+    debug('createImage - Setting base64 src directly');
     img.src = actualSrc;
   }
   if (image.aspectRatio) {
@@ -1812,9 +1827,6 @@ The image should be visually striking and support the slide content.`;
 // Image Upload & Compression
 // ================================================================
 
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-const TARGET_IMAGE_BYTES = 900 * 1024;
-
 async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
   if (!file.type.startsWith("image/")) {
     showImageError(placeholderElement, "Please drop an image file");
@@ -1858,8 +1870,8 @@ async function handleImageUpload(file, placeholderElement, imageConfig = {}) {
       }, placeholderElement);
 
       // Re-render the slide and preserve context
-      console.log('[DEBUG] Image uploaded, re-rendering slide', slideIndex);
-      console.log('[DEBUG] Slide image src:', slides[slideIndex].image?.src?.substring(0, 100));
+      debug('Image uploaded, re-rendering slide', slideIndex);
+      debug('Slide image src:', slides[slideIndex].image?.src?.substring(0, 100));
       replaceSlideAt(slideIndex, { focus: false });
       if (!isOverview) {
         setActiveSlide(slideIndex);
@@ -1975,13 +1987,13 @@ function updateSlideImage(slideIndex, imageData, placeholderElement) {
     // Search for this exact image object in the slide data structure
     const updated = findAndUpdateImageInSlide(slide, targetImageRef, imageData);
     if (updated) {
-      console.log('[DEBUG] Updated image in nested structure');
+      debug('Updated image in nested structure');
       return;
     }
   }
 
   // Fallback: update top-level slide.image
-  console.log('[DEBUG] Fallback to top-level slide.image');
+  debug('Fallback to top-level slide.image');
   if (!slide.image) {
     slide.image = {};
   }

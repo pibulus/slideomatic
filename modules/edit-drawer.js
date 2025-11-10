@@ -27,6 +27,14 @@ import {
   updateImageAltText,
 } from './image-manager.js';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AUTO_SAVE_DELAY_MS = 1000; // Auto-save after 1 second of idle typing
+
+// ═══════════════════════════════════════════════════════════════════════════
+
 function ensureContext(context) {
   if (!context) {
     throw new Error('Edit drawer context missing');
@@ -143,11 +151,11 @@ function setupQuickEditSync(context) {
     input.addEventListener('input', () => {
       syncQuickEditToJSON();
 
-      // Auto-save after 1 second of idle typing
+      // Auto-save after idle typing
       clearTimeout(autoSaveTimeout);
       autoSaveTimeout = setTimeout(() => {
         autoSaveSlide(context);
-      }, 1000);
+      }, AUTO_SAVE_DELAY_MS);
     });
   });
 }
