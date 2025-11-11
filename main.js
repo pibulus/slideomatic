@@ -4518,27 +4518,3 @@ function initShareModal() {
     });
   }
 }
-
-// Also need to handle ?data= parameter for base64 encoded decks
-async function loadDataFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const dataParam = params.get('data');
-
-  if (dataParam) {
-    try {
-      const decoded = decodeURIComponent(escape(atob(dataParam)));
-      const data = JSON.parse(decoded);
-      if (Array.isArray(data)) {
-        showHudStatus('✓ Loaded deck from share link', 'success');
-        setTimeout(hideHudStatus, 2000);
-        return data;
-      }
-    } catch (error) {
-      console.error('Failed to load deck from data parameter', error);
-      showHudStatus('⚠️ Failed to load shared deck', 'error');
-      setTimeout(hideHudStatus, 3000);
-    }
-  }
-
-  return null;
-}
