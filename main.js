@@ -393,12 +393,8 @@ async function loadSlides() {
     return slides.slice();
   }
 
-  // Priority 3: Load default slides.json
-  const response = await fetch(resolveSlidesPath(), { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
-  }
-  return response.json();
+  // Priority 3: No defaults - start with a blank deck
+  return [getSlideTemplate('title')];
 }
 
 async function loadAndApplyTheme() {
