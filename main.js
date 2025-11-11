@@ -353,6 +353,28 @@ async function initDeck() {
 }
 
 async function loadSlides() {
+  // Priority 1: Check for ?url= parameter (shareable links)
+  const urlParam = urlParams.get("url");
+  if (urlParam) {
+    try {
+      const response = await fetch(urlParam);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from URL: ${urlParam}`);
+      }
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        showHudStatus('✓ Loaded deck from URL', 'success');
+        setTimeout(hideHudStatus, 2000);
+        return data;
+      }
+    } catch (error) {
+      console.error("Failed to load deck from URL", error);
+      showHudStatus('⚠️ Failed to load deck from URL', 'error');
+      setTimeout(hideHudStatus, 3000);
+    }
+  }
+
+  // Priority 2: Check for localStorage deck
   if (activeDeckId) {
     const stored = loadPersistedDeck();
     if (Array.isArray(stored)) {
@@ -364,6 +386,7 @@ async function loadSlides() {
     return slides.slice();
   }
 
+  // Priority 3: Load default slides.json
   const response = await fetch(resolveSlidesPath(), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
