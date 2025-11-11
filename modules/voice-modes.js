@@ -341,7 +341,8 @@ export async function processVoiceToSlide(audioBlob) {
     console.log('✅ Slide created and inserted!');
   } catch (error) {
     console.error('❌ Error processing voice:', error);
-    alert(`Failed to create slide: ${error.message}`);
+    context.showHudStatus(`❌ Failed: ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 4000);
   }
 }
 
@@ -420,7 +421,8 @@ async function processVoiceEditSlide(audioBlob) {
     console.log('✅ Slide updated via Gemini!');
   } catch (error) {
     console.error('❌ Error updating slide:', error);
-    alert(`Failed to update slide: ${error.message}`);
+    context.showHudStatus(`❌ Update failed: ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 4000);
   }
 }
 

@@ -1709,7 +1709,11 @@ function buildImageSearchUrl(query) {
 async function askAIForImage(placeholderElement, imageConfig = {}) {
   const apiKey = localStorage.getItem('gemini_api_key');
   if (!apiKey) {
-    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
+    setTimeout(() => {
+      hideHudStatus();
+      openSettingsModal();
+    }, 2000);
     return;
   }
 
@@ -1788,8 +1792,8 @@ GENERATE`;
       setTimeout(hideHudStatus, 3000);
 
     } else if (decision.toUpperCase().includes('GENERATE')) {
-      // Generate image
-      hideHudStatus();
+      // Generate image with AI
+      showHudStatus('🎨 Generating image...', 'processing');
       await generateAIImage(placeholderElement, imageConfig);
 
     } else {
@@ -1806,7 +1810,11 @@ GENERATE`;
 async function generateAIImage(placeholderElement, imageConfig = {}) {
   const apiKey = localStorage.getItem('gemini_api_key');
   if (!apiKey) {
-    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
+    setTimeout(() => {
+      hideHudStatus();
+      openSettingsModal();
+    }, 2000);
     return;
   }
 
