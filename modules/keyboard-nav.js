@@ -30,6 +30,7 @@ const defaultContext = {
   closeSettingsModal: () => {},
   triggerDeckUpload: () => {},
   toggleKeyboardHelp: () => {},
+  toggleSlideIndex: () => {},
 };
 
 let keyboardContext = { ...defaultContext };
@@ -172,6 +173,13 @@ export function initKeyboardNav(partialContext = {}) {
       event.preventDefault();
       flashKeyFeedback('S');
       context.openSettingsModal();
+      return;
+    }
+
+    if (lowerKey === 'i') {
+      event.preventDefault();
+      flashKeyFeedback('I');
+      context.toggleSlideIndex();
       return;
     }
 

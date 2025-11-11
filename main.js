@@ -28,6 +28,13 @@ import {
   STORAGE_KEY_API,
 } from './modules/voice-modes.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
+import {
+  initSlideIndex,
+  toggleSlideIndex,
+  closeSlideIndex,
+  refreshSlideIndex,
+  updateSlideIndexHighlight,
+} from './slide-index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION & CONSTANTS
@@ -282,6 +289,12 @@ async function initDeck() {
   });
   slidesRoot.appendChild(fragment);
   updateOverviewLayout();
+
+  initSlideIndex({
+    getSlides: () => slides,
+    getCurrentIndex: () => currentIndex,
+    setActiveSlide: (index) => setActiveSlide(index),
+  });
   refreshSlideIndex();
 
   initKeyboardNav(getKeyboardContext());
@@ -2588,6 +2601,7 @@ function getKeyboardContext() {
     openSettingsModal,
     closeSettingsModal,
     toggleKeyboardHelp,
+    toggleSlideIndex,
     triggerDeckUpload: () => {
       const uploadInput = document.getElementById('deck-upload');
       if (uploadInput) uploadInput.click();
