@@ -188,6 +188,7 @@
                 <li><kbd>O</kbd> Overview mode</li>
                 <li><kbd>N</kbd> Speaker notes</li>
                 <li><kbd>S</kbd> Settings (API key)</li>
+                <li><kbd>?</kbd> Show all shortcuts</li>
               </ul>
             </div>
 
@@ -201,7 +202,7 @@
             </div>
 
             <div class="intro-modal__section intro-modal__section--highlight">
-              <p>💡 <strong>Pro tip:</strong> Press <kbd>S</kbd> to add your Gemini API key for voice features</p>
+              <p>💡 <strong>Pro tip:</strong> Press <kbd>?</kbd> anytime to see all keyboard shortcuts, or <kbd>S</kbd> to add your Gemini API key for voice features</p>
             </div>
           </div>
           <div class="intro-modal__footer">
@@ -290,6 +291,9 @@
             <span class="hud__action-text">Save</span>
           </button>
           <span class="hud__hint" title="Press ? for all keyboard shortcuts">Press <strong>?</strong> for help</span>
+          <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
+            <span class="hud__notes-icon">📝</span>
+          </div>
           <div class="hud__status" id="hud-status"></div>
         </div>
         <div class="hud__counter">

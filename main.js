@@ -875,6 +875,19 @@ function updateHud() {
   currentCounter.textContent = currentIndex + 1;
   const progress = ((currentIndex + 1) / slideElements.length) * 100;
   progressBar.style.width = `${progress}%`;
+
+  // Update speaker notes indicator
+  const notesIndicator = document.getElementById('notes-indicator');
+  if (notesIndicator) {
+    const currentSlide = slides[currentIndex];
+    const hasNotes = currentSlide?.notes || currentSlide?.speaker_notes;
+    if (hasNotes) {
+      notesIndicator.removeAttribute('hidden');
+      notesIndicator.onclick = toggleSpeakerNotes;
+    } else {
+      notesIndicator.setAttribute('hidden', '');
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1802,8 +1815,10 @@ GENERATE`;
 
   } catch (error) {
     console.error('AI image decision failed:', error);
-    showHudStatus(`❌ ${error.message}`, 'error');
-    setTimeout(hideHudStatus, 3000);
+    showHudStatus(`❌ ${error.message}`, 'error', {
+      onRetry: () => askAIForImage(placeholderElement, imageConfig)
+    });
+    setTimeout(hideHudStatus, 6000);
   }
 }
 
@@ -3231,11 +3246,33 @@ function showApiKeyStatus(type, message) {
 // HUD STATUS HELPERS
 // ===================================================================
 
-function showHudStatus(message, type = '') {
+let lastFailedOperation = null; // Store last failed operation for retry
+
+function showHudStatus(message, type = '', options = {}) {
   const hudStatus = document.getElementById('hud-status');
   if (!hudStatus) return;
 
-  hudStatus.textContent = message;
+  // If this is an error and there's a retry function, add retry button
+  if (type === 'error' && options.onRetry) {
+    lastFailedOperation = options.onRetry;
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'hud__retry-btn';
+    retryBtn.textContent = '🔄 Retry';
+    retryBtn.onclick = () => {
+      hideHudStatus();
+      if (lastFailedOperation) {
+        lastFailedOperation();
+        lastFailedOperation = null;
+      }
+    };
+
+    hudStatus.textContent = message + ' ';
+    hudStatus.appendChild(retryBtn);
+  } else {
+    hudStatus.textContent = message;
+    lastFailedOperation = null;
+  }
+
   hudStatus.className = `hud__status is-visible ${type ? `hud__status--${type}` : ''}`;
 }
 
@@ -3244,6 +3281,7 @@ function hideHudStatus() {
   if (!hudStatus) return;
 
   hudStatus.classList.remove('is-visible');
+  lastFailedOperation = null;
   setTimeout(() => {
     hudStatus.textContent = '';
     hudStatus.className = 'hud__status';
@@ -3318,11 +3356,18 @@ if (notesModal) {
 async function generateGraphImage(slide, containerElement) {
   const apiKey = localStorage.getItem('gemini_api_key');
   if (!apiKey) {
-    alert('Please set your Gemini API key in Settings (⚙️ button) first!');
+    showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
+    setTimeout(() => {
+      hideHudStatus();
+      openSettingsModal();
+    }, 2000);
     return;
   }
 
-  // Show loading state
+  // Show HUD loading state
+  showHudStatus('📊 Generating graph...', 'processing');
+
+  // Show button loading state
   const button = containerElement.querySelector('.graph-generate-btn, .graph-regenerate-btn');
   if (button) {
     button.disabled = true;
@@ -3413,13 +3458,15 @@ The graph should be publication-ready with clear data visualization.`;
     containerElement.appendChild(img);
     containerElement.appendChild(regenerateBtn);
 
-    showHudStatus('✨ Graph generated', 'success');
+    showHudStatus('✨ Graph generated!', 'success');
     setTimeout(hideHudStatus, 2000);
 
   } catch (error) {
     console.error('Graph generation failed:', error);
-    showHudStatus(`❌ ${error.message}`, 'error');
-    setTimeout(hideHudStatus, 3000);
+    showHudStatus(`❌ Graph failed: ${error.message}`, 'error', {
+      onRetry: () => generateGraphImage(slide, containerElement)
+    });
+    setTimeout(hideHudStatus, 6000);
 
     // Reset button
     if (button) {
