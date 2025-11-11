@@ -1022,6 +1022,19 @@ body[data-mode="overview"] {
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: color 160ms ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.hud__action-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hud__action-text {
+  font-size: 0.82rem;
 }
 
 .hud__action:hover {
@@ -1380,7 +1393,28 @@ body[data-mode="overview"] .hud {
   .hud__controls {
     justify-content: center;
     font-size: 0.75rem;
-    gap: 12px;
+    gap: 16px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .hud__controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Show only icons on mobile */
+  .hud__action-text {
+    display: none;
+  }
+
+  .hud__action-icon {
+    font-size: 1.1rem;
+  }
+
+  .hud__hint {
+    display: none;
   }
 
   .hud__counter {

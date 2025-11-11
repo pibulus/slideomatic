@@ -324,6 +324,13 @@ async function initDeck() {
     downloadTheme,
   });
 
+  const homeBtn = document.getElementById('home-btn');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  }
+
   const editBtn = document.getElementById('edit-btn');
   if (editBtn) {
     editBtn.addEventListener('click', toggleEditDrawer);
