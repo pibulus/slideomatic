@@ -41,7 +41,7 @@
     "headline": "Press + to add a new slide",
     "body": [
       "You'll get options: title, standard, quote, gallery, and more.",
-      "Or hold **V** and describe what you want — AI will draft it for you.",
+      "Or hold **V** and describe what you want — it'll draft it for you.",
       "Either way works. You're in control."
     ]
   },
@@ -50,7 +50,7 @@
     "badge": "Voice assist",
     "headline": "Hold V when you're stuck on wording",
     "body": [
-      "Describe what you want to say, let go, and AI drafts it.",
+      "Describe what you want to say, let go, and it drafts suggestions.",
       "You can tweak, reject, or keep what it gives you.",
       "It's a helper, not the author. You're still driving."
     ]

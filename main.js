@@ -1701,8 +1701,8 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
     const aiBtn = document.createElement("button");
     aiBtn.type = "button";
     aiBtn.className = "image-placeholder__ai-btn";
-    aiBtn.textContent = "✨ Ask AI";
-    aiBtn.title = "Let AI decide whether to search or generate an image";
+    aiBtn.textContent = "✨";
+    aiBtn.title = "Generate image";
     aiBtn.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1754,7 +1754,7 @@ async function askAIForImage(placeholderElement, imageConfig = {}) {
   const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
   const slideType = slide.type || 'standard';
 
-  showHudStatus('🤔 Asking AI...', 'info');
+  showHudStatus('🤔 Deciding...', 'info');
 
   try {
     // First, ask AI to decide: search or generate?
@@ -1875,7 +1875,7 @@ async function generateAIImage(placeholderElement, imageConfig = {}) {
   };
   const themeMood = themeMoods[themeName] || themeMoods.default;
 
-  showHudStatus('✨ Generating AI image...', 'info');
+  showHudStatus('✨ Generating image...', 'info');
 
   try {
     const prompt = `Create an illustration for a presentation slide about: ${imageContext || headline}.
