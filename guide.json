@@ -1,0 +1,73 @@
+[
+  {
+    "type": "title",
+    "title": "Welcome to Slide-o-Matic",
+    "subtitle": "Let's get you up to speed in about 30 seconds",
+    "media": []
+  },
+  {
+    "type": "standard",
+    "badge": "Navigation",
+    "headline": "Use arrow keys to move around →",
+    "body": [
+      "That's it. Left and right arrows navigate slides.",
+      "Press **?** anytime to see all keyboard shortcuts.",
+      "Or just keep reading — you'll pick it up as you go."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Editing",
+    "headline": "Press E to edit this slide right now",
+    "body": [
+      "Seriously, try it. Press **E** and change this text.",
+      "You can add images, change layouts, whatever you want.",
+      "Press **Escape** when you're done editing."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Themes",
+    "headline": "Press T to open the theme drawer",
+    "body": [
+      "Try randomizing or picking a new vibe.",
+      "Themes change instantly — even mid-presentation.",
+      "Find one you like? It saves automatically."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Adding slides",
+    "headline": "Press + to add a new slide",
+    "body": [
+      "You'll get options: title, standard, quote, gallery, and more.",
+      "Or hold **V** and describe what you want — AI will draft it for you.",
+      "Either way works. You're in control."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Voice assist",
+    "headline": "Hold V when you're stuck on wording",
+    "body": [
+      "Describe what you want to say, let go, and AI drafts it.",
+      "You can tweak, reject, or keep what it gives you.",
+      "It's a helper, not the author. You're still driving."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Sharing",
+    "headline": "Press S to export as JSON",
+    "body": [
+      "Your deck saves to JSON — clean, portable, shareable.",
+      "You can also load decks via URL: `?url=https://example.com/deck.json`",
+      "Everything stays local in your browser unless you export it."
+    ]
+  },
+  {
+    "type": "quote",
+    "headline": "That's it. You're ready.",
+    "body": "Delete these slides or keep building. Press **?** for shortcuts. Have fun."
+  }
+]

@@ -5,24 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#FF9FF3" />
 
-    <title>Slide-o-Matic — Voice-Powered Presentation Builder</title>
+    <title>Slide-o-Matic — Slideshows that don't suck</title>
     <meta
       name="description"
-      content="Create stunning presentations with AI. Voice-powered slide generation, AI themes, and smart image suggestions. Zero-config, pastel-punk presentation engine."
+      content="Make slides that look good and share easy. Keyboard shortcuts for speed, voice assist when you need it. Zero install, all vibes."
     />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://slideomatic.app/" />
-    <meta property="og:title" content="Slide-o-Matic — Voice-Powered Presentation Builder" />
-    <meta property="og:description" content="Create stunning presentations with AI. Voice-powered slide generation, AI themes, and smart image suggestions." />
+    <meta property="og:title" content="Slide-o-Matic — Slideshows that don't suck" />
+    <meta property="og:description" content="Make slides that look good and share easy. Keyboard shortcuts for speed, voice assist when you need it." />
     <meta property="og:image" content="https://slideomatic.app/og-image.png" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://slideomatic.app/" />
-    <meta property="twitter:title" content="Slide-o-Matic — Voice-Powered Presentation Builder" />
-    <meta property="twitter:description" content="Create stunning presentations with AI. Voice-powered slide generation, AI themes, and smart image suggestions." />
+    <meta property="twitter:title" content="Slide-o-Matic — Slideshows that don't suck" />
+    <meta property="twitter:description" content="Make slides that look good and share easy. Keyboard shortcuts for speed, voice assist when you need it." />
     <meta property="twitter:image" content="https://slideomatic.app/og-image.png" />
 
     <!-- Favicon -->
@@ -34,53 +34,48 @@
     <main class="landing">
       <section class="landing__hero">
         <div class="landing__intro">
-          <p class="landing__eyebrow">Pastel-punk presentation lab</p>
-          <h1 class="landing__title">Slide-o-Matic</h1>
+          <p class="landing__eyebrow">Slide builder</p>
+          <h1 class="landing__title">Slideshows that don't suck</h1>
           <p class="landing__subtitle">
-            Spin up as many decks as you need. Resume your last session, crack open a fresh live builder, or toss in raw JSON—
-            everything routes into the same neon runtime.
+            Make slides that look good and share easy. Keyboard shortcuts for speed.
+            Voice assist when you need it. Zero install, works right now.
           </p>
         </div>
 
         <div class="landing__cta-grid">
           <article class="cta-panel">
             <div class="cta-panel__header">
-              <p class="cta-panel__eyebrow">Continue</p>
-              <h3>Resume a deck</h3>
+              <p class="cta-panel__eyebrow">First time?</p>
+              <h3>Take the tour</h3>
             </div>
-            <p>Pick up the last deck you touched or jump into the demo if you’re scouting the vibes.</p>
+            <p>Interactive guide deck that shows you around. Learn by doing, then keep building or start fresh.</p>
             <div class="cta-panel__actions">
-              <button class="button button--primary" type="button" data-action="resume">Resume deck</button>
-              <button class="link-button" type="button" data-action="open-demo">Open demo deck</button>
+              <button class="button button--primary" type="button" data-action="open-demo">Open guide deck</button>
             </div>
           </article>
 
           <article class="cta-panel">
             <div class="cta-panel__header">
-              <p class="cta-panel__eyebrow">Create</p>
-              <h3>Start new deck</h3>
+              <p class="cta-panel__eyebrow">Ready to go</p>
+              <h3>Start blank</h3>
             </div>
-            <p>Choose how you want to build: live slide mode, structured constructor, or raw JSON.</p>
+            <p>Jump straight in. Keyboard shortcuts are all there when you need them (press ? anytime).</p>
             <div class="start-menu">
               <button class="button button--secondary" type="button" data-start-toggle aria-expanded="false">
-                Start new deck
+                New deck
               </button>
               <div class="start-menu__list" data-start-menu hidden>
                 <button type="button" data-new-mode="live">
-                  <strong>Live builder</strong>
-                  <span>Blank canvas inside deck.html — edit drawer + AI voice shortcuts</span>
-                </button>
-                <button type="button" data-new-mode="constructor">
-                  <strong>Deck constructor</strong>
-                  <span>Open the admin/editor shell for list-driven edits</span>
+                  <strong>Blank deck</strong>
+                  <span>Start from scratch with full creative control</span>
                 </button>
                 <button type="button" data-new-mode="paste">
                   <strong>Paste JSON</strong>
-                  <span>Drop raw JSON, preview, and launch instantly</span>
+                  <span>Got exported slides? Drop 'em in and keep editing</span>
                 </button>
                 <button type="button" data-new-mode="upload">
                   <strong>Upload JSON</strong>
-                  <span>Import an exported deck file (.json)</span>
+                  <span>Import a deck file from your computer</span>
                 </button>
               </div>
             </div>
@@ -92,38 +87,38 @@
       <section class="deck-shelf" id="saved">
         <header class="deck-shelf__header">
           <div>
-            <p class="deck-shelf__eyebrow">Library</p>
-            <h2>Saved decks</h2>
-            <p class="deck-shelf__subtitle">Every deck you spin up locally lands here. Rename, reopen, or prune whenever.</p>
+            <p class="deck-shelf__eyebrow">Your decks</p>
+            <h2>Everything's local</h2>
+            <p class="deck-shelf__subtitle">Decks save in your browser. Pick up where you left off or start fresh anytime.</p>
           </div>
-          <button class="link-button" type="button" data-action="refresh-shelf">Refresh list</button>
+          <button class="link-button" type="button" data-action="refresh-shelf">Refresh</button>
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
-          <li class="deck-shelf__empty" id="deck-shelf-empty">Launch a new deck to see it appear here.</li>
+          <li class="deck-shelf__empty" id="deck-shelf-empty">Your decks will show up here once you make one.</li>
         </ul>
       </section>
 
       <section class="landing__grid" id="about">
         <article class="landing__panel">
-          <h2>Pastel-punk slides, zero build steps.</h2>
+          <h2>Fast, pretty, easy to share</h2>
           <p>
-            Slide-o-Matic bundles a live deck runtime, a JSON editor, and a theme drawer. Build slide-by-slide on stage, use the
-            constructor for bulk updates, or let Gemini draft new sections from voice prompts.
+            Keyboard shortcuts get you moving. Themes look good out the box. Voice assist when you're stuck.
+            Export as JSON and it just works. No accounts, no cloud, no fuss.
           </p>
         </article>
 
         <div class="landing__cards">
           <article class="landing__card">
-            <h3>Live builder</h3>
-            <p>Open a blank deck with the edit drawer pinned. Hold <strong>V</strong> or <strong>E</strong> to let AI draft slides.</p>
+            <h3>Keyboard-first</h3>
+            <p>Arrow keys navigate. <strong>E</strong> to edit. <strong>T</strong> for themes. <strong>?</strong> to see all shortcuts. You'll pick it up in 30 seconds.</p>
           </article>
           <article class="landing__card">
-            <h3>Theme everything</h3>
-            <p>Open the theme drawer to randomize palettes, prompt Gemini for a new vibe, or save presets to your local library.</p>
+            <h3>Looks good by default</h3>
+            <p>Pastel brutalist aesthetic. Randomize themes or dial in your own. Change vibes mid-presentation if you want.</p>
           </article>
           <article class="landing__card">
-            <h3>JSON you can trust</h3>
-            <p>Upload/paste JSON exports anytime. Validation keeps your deck portable between tooling.</p>
+            <h3>Help when you need it</h3>
+            <p>Hold <strong>V</strong> and describe what you want. AI suggests wording. You tweak it. You're still in control.</p>
           </article>
         </div>
       </section>
@@ -147,18 +142,17 @@
       <div class="landing__footer-about">
         <strong>About Slide-o-Matic</strong>
         <p>
-          A pastel-punk, neo-brutalist deck machine by
-          <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>. Designed for flow-state storytelling, rapid
-          prototyping, and on-stage theme swaps without build tooling.
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> for people who ship ideas fast.
+          No tracking, no accounts, no build tooling. Just slides that work.
         </p>
         <div class="landing__footer-buttons">
-          <button class="link-button" type="button" data-about-open>Read the origin story</button>
-          <a class="link-button link-button--kofi" href="https://ko-fi.com/pibulus" target="_blank" rel="noopener">☕ Support on Ko-fi</a>
+          <button class="link-button" type="button" data-about-open>More about this project</button>
+          <a class="link-button link-button--kofi" href="https://ko-fi.com/pibulus" target="_blank" rel="noopener">☕ Buy me a coffee</a>
         </div>
       </div>
       <div class="landing__footer-actions">
-        <button class="link-button" type="button" data-open-intent="theme">Open theme drawer</button>
-        <button class="link-button" type="button" data-open-intent="settings">Open settings</button>
+        <button class="link-button" type="button" data-open-intent="theme">Theme drawer</button>
+        <button class="link-button" type="button" data-open-intent="settings">Settings</button>
         <a class="link-button" href="README.md" target="_blank" rel="noopener">Docs</a>
       </div>
     </footer>
@@ -167,19 +161,20 @@
       <div class="about-modal__backdrop" data-about-close></div>
       <article class="about-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="about-modal-title" tabindex="-1">
         <button class="about-modal__close" type="button" aria-label="Close about" data-about-close>×</button>
-        <h2 class="about-modal__title" id="about-modal-title">Slide-o-Matic</h2>
+        <h2 class="about-modal__title" id="about-modal-title">About this project</h2>
         <p class="about-modal__lede">
-          Slide-o-Matic is a pastel-punk slideshow laboratory for people who ship stories fast. It pairs a JSON-first editor with voice
-          tooling so you can improvise slides, remix themes, and push exports without breaking flow.
+          Slide-o-Matic is for people who hate fussy presentation tools. It's keyboard-first, looks good by default,
+          and gives you voice assist when you need it—without taking over.
         </p>
         <ul class="about-modal__list">
-          <li>🎙️ Voice commands draft and edit slides mid-presentation.</li>
-          <li>🎨 Theme drawer flips palettes, gradients, and typography live.</li>
-          <li>📦 JSON exports stay schema-safe and portable between decks.</li>
+          <li>🎹 Keyboard shortcuts that actually make sense</li>
+          <li>🎨 Themes you can swap mid-presentation</li>
+          <li>🎙️ Voice assist when you're stuck on wording</li>
+          <li>📦 Export as JSON and it just works</li>
         </ul>
         <p class="about-modal__footer">
-          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo Alvarado</a>. If it sparks joy, grab a deck,
-          remix a theme, and share the vibe.
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> as a side project.
+          No tracking, no accounts, no BS. If it helps you ship something, that's cool with me.
         </p>
       </article>
     </div>
@@ -328,7 +323,7 @@
 
       function bindDemoButton() {
         demoButton?.addEventListener('click', () => {
-          window.location.href = 'deck.html';
+          window.location.href = 'deck.html?slides=guide';
         });
       }
 
