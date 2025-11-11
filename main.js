@@ -4500,21 +4500,120 @@ function initShareModal() {
 
   function generateQRCode(url) {
     if (!qrContainer) return;
-    if (typeof QRCode === 'undefined') {
+    if (typeof QRCodeStyling === 'undefined') {
       qrContainer.innerHTML = '<p style="color: #666;">QR code unavailable</p>';
       return;
     }
 
     qrContainer.innerHTML = '';
 
-    // Basic QR code for now - you'll enhance this with your other AI's tips!
-    new QRCode(qrContainer, {
-      text: url,
-      width: 256,
-      height: 256,
-      colorDark: '#120f1a',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H, // High error correction for styling
+    // Get colors from current theme, or use default pastel gradient
+    const themeColors = getThemeColorsForQR();
+
+    // QR code styling matching your QR buddy's approach!
+    const qrCode = new QRCodeStyling({
+      width: 400,
+      height: 400,
+      margin: 20,
+      type: "canvas",
+      data: url,
+      qrOptions: {
+        typeNumber: 0,
+        mode: "Byte",
+        errorCorrectionLevel: "Q" // 25% recovery - perfect for styled codes
+      },
+      dotsOptions: {
+        type: "rounded", // Better for gradients + scans
+        gradient: {
+          type: "linear",
+          rotation: 0.785, // 45deg
+          colorStops: [
+            { offset: 0, color: themeColors[0] },
+            { offset: 0.5, color: themeColors[1] },
+            { offset: 1, color: themeColors[2] }
+          ]
+        }
+      },
+      backgroundOptions: {
+        color: themeColors[3] // Background color
+      },
+      cornersSquareOptions: {
+        type: "extra-rounded",
+        gradient: {
+          type: "linear",
+          rotation: 0.785,
+          colorStops: [
+            { offset: 0, color: themeColors[0] },
+            { offset: 0.5, color: themeColors[1] },
+            { offset: 1, color: themeColors[2] }
+          ]
+        }
+      },
+      cornersDotOptions: {
+        type: "dot",
+        gradient: {
+          type: "linear",
+          rotation: 0.785,
+          colorStops: [
+            { offset: 0, color: themeColors[0] },
+            { offset: 0.5, color: themeColors[1] },
+            { offset: 1, color: themeColors[2] }
+          ]
+        }
+      }
     });
+
+    qrCode.append(qrContainer);
+  }
+
+  function getThemeColorsForQR() {
+    // Try to get colors from current theme
+    const currentTheme = getCurrentTheme();
+
+    if (currentTheme && currentTheme.palette) {
+      const palette = currentTheme.palette;
+
+      // Extract 3-4 vibrant colors from theme
+      const colors = [];
+
+      // Look for accent/primary colors first
+      if (palette.accent) colors.push(palette.accent);
+      if (palette.primary) colors.push(palette.primary);
+      if (palette.secondary) colors.push(palette.secondary);
+
+      // Fill in with other theme colors if needed
+      if (colors.length < 3 && palette.text) colors.push(palette.text);
+      if (colors.length < 3 && palette.background) {
+        // Use background but lightened
+        colors.push(lightenColor(palette.background, 0.3));
+      }
+
+      // Pad with defaults if theme doesn't have enough colors
+      while (colors.length < 3) {
+        colors.push('#FF73C8', '#9CCAFF', '#FFE26F');
+      }
+
+      // Background color (use theme bg or white)
+      const bgColor = palette.background || '#FFFFFF';
+
+      return [colors[0], colors[1], colors[2], bgColor];
+    }
+
+    // Default pastel gradient (matching your aesthetic)
+    return [
+      '#FF73C8', // Pink
+      '#9CCAFF', // Blue
+      '#FFE26F', // Yellow
+      '#FFFFFF'  // White bg
+    ];
+  }
+
+  function lightenColor(color, amount) {
+    // Simple color lightener
+    const num = parseInt(color.replace('#', ''), 16);
+    const r = Math.min(255, ((num >> 16) & 0xFF) + Math.floor(255 * amount));
+    const g = Math.min(255, ((num >> 8) & 0xFF) + Math.floor(255 * amount));
+    const b = Math.min(255, (num & 0xFF) + Math.floor(255 * amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
   }
 }
