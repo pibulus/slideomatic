@@ -29,6 +29,7 @@ const defaultContext = {
   openSettingsModal: () => {},
   closeSettingsModal: () => {},
   triggerDeckUpload: () => {},
+  toggleKeyboardHelp: () => {},
 };
 
 let keyboardContext = { ...defaultContext };
@@ -171,6 +172,13 @@ export function initKeyboardNav(partialContext = {}) {
       event.preventDefault();
       flashKeyFeedback('S');
       context.openSettingsModal();
+      return;
+    }
+
+    if (lowerKey === '?' || (event.shiftKey && lowerKey === '/')) {
+      event.preventDefault();
+      flashKeyFeedback('?');
+      context.toggleKeyboardHelp();
       return;
     }
 

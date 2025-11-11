@@ -2571,6 +2571,7 @@ function getKeyboardContext() {
     toggleThemeDrawer,
     openSettingsModal,
     closeSettingsModal,
+    toggleKeyboardHelp,
     triggerDeckUpload: () => {
       const uploadInput = document.getElementById('deck-upload');
       if (uploadInput) uploadInput.click();
@@ -2995,6 +2996,63 @@ function setupSettingsModalListeners() {
   if (toggleBtn && !toggleBtn.dataset.listenerAttached) {
     toggleBtn.addEventListener('click', toggleApiKeyVisibility);
     toggleBtn.dataset.listenerAttached = 'true';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KEYBOARD HELP MODAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function toggleKeyboardHelp() {
+  const modal = document.getElementById('keyboard-help-modal');
+  if (!modal) return;
+
+  const isOpen = modal.classList.contains('is-open');
+  if (isOpen) {
+    closeKeyboardHelp();
+  } else {
+    openKeyboardHelp();
+  }
+}
+
+function openKeyboardHelp() {
+  const modal = document.getElementById('keyboard-help-modal');
+  if (!modal) return;
+
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+
+  // Focus the dialog for accessibility
+  const dialog = modal.querySelector('.keyboard-help-modal__dialog');
+  if (dialog) {
+    requestAnimationFrame(() => dialog.focus());
+  }
+
+  // Set up listeners if not already done
+  setupKeyboardHelpListeners();
+}
+
+function closeKeyboardHelp() {
+  const modal = document.getElementById('keyboard-help-modal');
+  if (!modal) return;
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function setupKeyboardHelpListeners() {
+  // Close button
+  const closeBtn = document.getElementById('keyboard-help-close');
+  if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    closeBtn.addEventListener('click', closeKeyboardHelp);
+    closeBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Backdrop
+  const backdrop = document.querySelector('.keyboard-help-modal__backdrop');
+  if (backdrop && !backdrop.dataset.listenerAttached) {
+    backdrop.addEventListener('click', closeKeyboardHelp);
+    backdrop.dataset.listenerAttached = 'true';
   }
 }
 
