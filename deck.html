@@ -267,6 +267,47 @@
         </div>
       </div>
 
+      <!-- Share Modal -->
+      <div class="share-modal" id="share-modal" aria-hidden="true">
+        <div class="share-modal__backdrop"></div>
+        <div class="share-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+          <div class="share-modal__header">
+            <h2 id="share-modal-title">Share this deck</h2>
+            <button class="share-modal__close" aria-label="Close" id="share-modal-close">×</button>
+          </div>
+          <div class="share-modal__body">
+            <p class="share-modal__intro">Anyone with this link can view your deck. It's read-only and loads from the web.</p>
+
+            <div class="share-modal__section">
+              <label for="share-url-input" class="share-modal__label">Share link</label>
+              <div class="share-modal__input-group">
+                <input
+                  type="text"
+                  id="share-url-input"
+                  class="share-modal__input"
+                  readonly
+                  value=""
+                  placeholder="Generating link..."
+                />
+                <button class="share-modal__copy-btn" id="share-copy-btn" title="Copy to clipboard">
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="share-modal__section share-modal__section--qr">
+              <p class="share-modal__label">QR Code</p>
+              <div class="share-modal__qr" id="share-qr-code">
+                <!-- QR code will be generated here -->
+              </div>
+              <p class="share-modal__qr-hint">Scan to open on mobile</p>
+            </div>
+
+            <div class="share-modal__status" id="share-status"></div>
+          </div>
+        </div>
+      </div>
+
       <main class="slides" id="slides" aria-live="polite"></main>
       <footer class="hud">
         <div class="hud__controls">
@@ -290,6 +331,10 @@
             <span class="hud__action-icon">↓</span>
             <span class="hud__action-text">Save</span>
           </button>
+          <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share deck" title="Share deck">
+            <span class="hud__action-icon">↗</span>
+            <span class="hud__action-text">Share</span>
+          </button>
           <span class="hud__hint" title="Press ? for all keyboard shortcuts">Press <strong>?</strong> for help</span>
           <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
             <span class="hud__notes-icon">📝</span>
@@ -307,6 +352,7 @@
       </footer>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script type="module" src="main.js"></script>
   </body>
 </html>

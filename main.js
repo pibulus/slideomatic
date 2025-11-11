@@ -381,7 +381,25 @@ async function loadSlides() {
     }
   }
 
-  // Priority 2: Check for localStorage deck
+  // Priority 2: Check for ?data= parameter (base64 encoded deck)
+  const dataParam = urlParams.get("data");
+  if (dataParam) {
+    try {
+      const decoded = decodeURIComponent(escape(atob(dataParam)));
+      const data = JSON.parse(decoded);
+      if (Array.isArray(data)) {
+        showHudStatus('✓ Loaded deck from share link', 'success');
+        setTimeout(hideHudStatus, 2000);
+        return data;
+      }
+    } catch (error) {
+      console.error("Failed to load deck from data parameter", error);
+      showHudStatus('⚠️ Failed to load shared deck', 'error');
+      setTimeout(hideHudStatus, 3000);
+    }
+  }
+
+  // Priority 3: Check for localStorage deck
   if (activeDeckId) {
     const stored = loadPersistedDeck();
     if (Array.isArray(stored)) {
@@ -4270,6 +4288,9 @@ async function initDeckWithTheme() {
   // Show intro modal on first visit
   showIntroModalIfFirstVisit();
 
+  // Initialize share modal
+  initShareModal();
+
   setActiveSlide(0);
   updateOverviewButton();
   overviewCursor = currentIndex;
@@ -4325,4 +4346,199 @@ function showIntroModalIfFirstVisit() {
       localStorage.setItem(INTRO_SEEN_KEY, 'true');
     });
   }
+}
+
+// ================================================================
+// Share Modal & Functionality
+// ================================================================
+
+function initShareModal() {
+  const shareBtn = document.getElementById('share-deck-btn');
+  const shareModal = document.getElementById('share-modal');
+  const closeBtn = document.getElementById('share-modal-close');
+  const backdrop = shareModal?.querySelector('.share-modal__backdrop');
+  const copyBtn = document.getElementById('share-copy-btn');
+  const urlInput = document.getElementById('share-url-input');
+  const qrContainer = document.getElementById('share-qr-code');
+  const statusDiv = document.getElementById('share-status');
+
+  if (!shareBtn || !shareModal) return;
+
+  shareBtn.addEventListener('click', async () => {
+    await openShareModal();
+  });
+
+  closeBtn?.addEventListener('click', closeShareModal);
+  backdrop?.addEventListener('click', closeShareModal);
+
+  copyBtn?.addEventListener('click', () => {
+    if (urlInput?.value) {
+      navigator.clipboard.writeText(urlInput.value).then(() => {
+        showShareStatus('✓ Link copied to clipboard!', 'success');
+        setTimeout(() => hideShareStatus(), 2000);
+      }).catch(() => {
+        showShareStatus('⚠️ Failed to copy. Try selecting and copying manually.', 'error');
+      });
+    }
+  });
+
+  function showShareStatus(message, type) {
+    if (!statusDiv) return;
+    statusDiv.textContent = message;
+    statusDiv.className = `share-modal__status is-visible is-${type}`;
+  }
+
+  function hideShareStatus() {
+    if (!statusDiv) return;
+    statusDiv.className = 'share-modal__status';
+  }
+
+  async function openShareModal() {
+    shareModal.classList.add('is-open');
+    shareModal.setAttribute('aria-hidden', 'false');
+
+    // Reset state
+    if (urlInput) urlInput.value = '';
+    if (qrContainer) qrContainer.innerHTML = '';
+    showShareStatus('🔗 Generating share link...', 'loading');
+
+    try {
+      const shareUrl = await generateShareUrl();
+      if (urlInput) urlInput.value = shareUrl;
+      generateQRCode(shareUrl);
+      showShareStatus('✓ Ready to share!', 'success');
+      setTimeout(() => hideShareStatus(), 3000);
+    } catch (error) {
+      console.error('Share failed:', error);
+      showShareStatus(`❌ ${error.message}`, 'error');
+    }
+  }
+
+  function closeShareModal() {
+    shareModal.classList.remove('is-open');
+    shareModal.setAttribute('aria-hidden', 'true');
+    hideShareStatus();
+  }
+
+  async function generateShareUrl() {
+    const deckData = {
+      version: 1,
+      slides: slides,
+      theme: getCurrentTheme(),
+      meta: {
+        title: deriveDeckName(slides),
+        createdAt: Date.now(),
+      },
+    };
+
+    const jsonString = JSON.stringify(deckData.slides, null, 2);
+
+    // Try paste service first
+    try {
+      const pasteUrl = await uploadToPasteService(jsonString);
+      const baseUrl = window.location.origin + window.location.pathname;
+      return `${baseUrl}?url=${encodeURIComponent(pasteUrl)}`;
+    } catch (error) {
+      debug('Paste service failed, falling back to base64:', error);
+      // Fallback to base64 encoding in URL
+      const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+      const baseUrl = window.location.origin + window.location.pathname;
+      return `${baseUrl}?data=${encoded}`;
+    }
+  }
+
+  async function uploadToPasteService(content) {
+    // Try dpaste.com first
+    try {
+      const response = await fetch('https://dpaste.com/api/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          content: content,
+          syntax: 'json',
+          expiry_days: 365,
+        }),
+      });
+
+      if (!response.ok) throw new Error('dpaste.com failed');
+
+      const url = await response.text();
+      // dpaste returns the page URL, we need the raw URL
+      const rawUrl = url.trim() + '.txt';
+      return rawUrl;
+    } catch (error) {
+      debug('dpaste failed:', error);
+
+      // Fallback to paste.ee
+      try {
+        const response = await fetch('https://api.paste.ee/v1/pastes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            description: 'Slide-o-Matic Deck',
+            sections: [{
+              name: 'deck.json',
+              syntax: 'json',
+              contents: content,
+            }],
+          }),
+        });
+
+        if (!response.ok) throw new Error('paste.ee failed');
+
+        const data = await response.json();
+        return `https://api.paste.ee/v1/pastes/${data.id}/raw`;
+      } catch (error2) {
+        throw new Error('Upload services unavailable. Using fallback method.');
+      }
+    }
+  }
+
+  function generateQRCode(url) {
+    if (!qrContainer) return;
+    if (typeof QRCode === 'undefined') {
+      qrContainer.innerHTML = '<p style="color: #666;">QR code unavailable</p>';
+      return;
+    }
+
+    qrContainer.innerHTML = '';
+
+    // Basic QR code for now - you'll enhance this with your other AI's tips!
+    new QRCode(qrContainer, {
+      text: url,
+      width: 256,
+      height: 256,
+      colorDark: '#120f1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H, // High error correction for styling
+    });
+  }
+}
+
+// Also need to handle ?data= parameter for base64 encoded decks
+async function loadDataFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const dataParam = params.get('data');
+
+  if (dataParam) {
+    try {
+      const decoded = decodeURIComponent(escape(atob(dataParam)));
+      const data = JSON.parse(decoded);
+      if (Array.isArray(data)) {
+        showHudStatus('✓ Loaded deck from share link', 'success');
+        setTimeout(hideHudStatus, 2000);
+        return data;
+      }
+    } catch (error) {
+      console.error('Failed to load deck from data parameter', error);
+      showHudStatus('⚠️ Failed to load shared deck', 'error');
+      setTimeout(hideHudStatus, 3000);
+    }
+  }
+
+  return null;
 }
