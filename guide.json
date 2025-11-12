@@ -58,10 +58,10 @@
   {
     "type": "standard",
     "badge": "Sharing",
-    "headline": "Press S to export as JSON",
+    "headline": "Press D to download as JSON",
     "body": [
       "Your deck saves to JSON — clean, portable, shareable.",
-      "You can also load decks via URL: `?url=https://example.com/deck.json`",
+      "Press **D** to download, or **U** to upload a deck from your computer.",
       "Everything stays local in your browser unless you export it."
     ]
   },

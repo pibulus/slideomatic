@@ -440,7 +440,21 @@ async function loadSlides() {
     return slides.slice();
   }
 
-  // Priority 3: No defaults - start with a blank deck
+  // Priority 4: Fetch from file specified by ?slides= parameter or default slides.json
+  const slidesPath = resolveSlidesPath();
+  try {
+    const response = await fetch(slidesPath, { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        return data;
+      }
+    }
+  } catch (error) {
+    console.warn(`Unable to load slides from ${slidesPath}, starting with blank deck`, error);
+  }
+
+  // Priority 5: No file available - start with a blank deck
   return [getSlideTemplate('title')];
 }
 
