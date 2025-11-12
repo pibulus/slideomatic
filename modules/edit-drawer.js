@@ -534,12 +534,14 @@ export function renderEditForm(context) {
   setupImageRemoveButtons({
     root: content,
     onRemove: (imageIndex) => handleImageRemove(ctx, imageIndex),
+    addTrackedListener,
   });
 
   const imageList = content.querySelector('.edit-drawer__image-list');
   setupImageDragReorder({
     container: imageList,
     onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
+    addTrackedListener,
   });
 
   // Setup alt text input event listeners using event delegation
