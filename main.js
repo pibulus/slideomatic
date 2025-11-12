@@ -12,7 +12,7 @@ import {
   LOCAL_THEME_SOURCE,
   normalizeThemeTokens,
 } from './modules/theme-manager.js';
-import { formatBytes, clamp, fileToBase64 } from './modules/utils.js';
+import { formatBytes, clamp, fileToBase64, escapeHtml } from './modules/utils.js';
 import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './lazy-images.js';
 import { renderEditForm } from './modules/edit-drawer.js';
@@ -40,12 +40,42 @@ import {
 // CONFIGURATION & CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DEBUG = false; // Set to true to enable debug logging
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB max
-const TARGET_IMAGE_BYTES = 900 * 1024; // 900KB target for compression
+const CONFIG = {
+  DEBUG: false, // Set to true to enable debug logging
+
+  // Image handling
+  IMAGE: {
+    MAX_BYTES: 2 * 1024 * 1024,        // 2MB maximum file size
+    TARGET_BYTES: 900 * 1024,          // 900KB target for compression
+    DIMENSION_STEPS: [1920, 1600, 1440, 1280, 1024, 800],
+    QUALITY_STEPS: [0.82, 0.72, 0.62, 0.54, 0.46, 0.38],
+  },
+
+  // Toast notifications
+  TOAST: {
+    MAX_ACTIVE: 5,                     // Maximum simultaneous toasts
+    SUCCESS_DURATION: 2000,            // Auto-hide after 2s
+    ERROR_DURATION: 3000,              // Auto-hide after 3s
+    WARNING_DURATION: 3000,            // Auto-hide after 3s
+    INFO_DURATION: 2500,               // Auto-hide after 2.5s
+  },
+
+  // Auto-save (handled in edit-drawer module)
+  AUTO_SAVE_DELAY_MS: 1000,
+
+  // Overview mode
+  OVERVIEW: {
+    MAX_ROWS: 3,
+  },
+};
+
+// Backward compatibility - keep original constants for now
+const DEBUG = CONFIG.DEBUG;
+const MAX_IMAGE_BYTES = CONFIG.IMAGE.MAX_BYTES;
+const TARGET_IMAGE_BYTES = CONFIG.IMAGE.TARGET_BYTES;
 
 // Helper for debug logging
-const debug = (...args) => DEBUG && console.log('[Slideomatic]', ...args);
+const debug = (...args) => CONFIG.DEBUG && console.log('[Slideomatic]', ...args);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DOM REFERENCES
@@ -81,7 +111,6 @@ let currentIndex = 0;
 let isOverview = false;
 const preloadedImages = new Set();
 let autoLinkConfigs = [];
-const OVERVIEW_MAX_ROWS = 3;
 let overviewRowCount = 1;
 let overviewColumnCount = 0;
 let overviewCursor = 0;
@@ -2091,8 +2120,8 @@ async function compressImage(file) {
     preferredFormats.push('image/png');
   }
 
-  const dimensionSteps = [1920, 1600, 1440, 1280];
-  const qualitySteps = [0.82, 0.72, 0.62, 0.54, 0.46];
+  const dimensionSteps = CONFIG.IMAGE.DIMENSION_STEPS;
+  const qualitySteps = CONFIG.IMAGE.QUALITY_STEPS;
   let bestCandidate = null;
 
   for (const format of preferredFormats) {
@@ -2311,41 +2340,74 @@ function handleImageModalTrigger(event) {
   openImageModal(src, trigger.dataset.modalAlt ?? trigger.alt ?? "");
 }
 
-function openImageModal(src, alt) {
+// Singleton image modal - created once, reused forever
+let imageModal = null;
+let imageModalHandlers = null;
+
+/**
+ * Initialize the image modal singleton
+ * Creates modal once and sets up event listeners
+ * @returns {Object} Modal element and close function
+ */
+function initImageModal() {
+  if (imageModal) return { modal: imageModal, ...imageModalHandlers };
+
+  // Create modal element once
   const modal = document.createElement('div');
   modal.className = 'image-modal';
   modal.innerHTML = `
     <div class="image-modal__backdrop"></div>
     <div class="image-modal__content">
-      <img src="${src}" alt="${alt || ''}" loading="eager" decoding="sync" />
+      <img src="" alt="" loading="eager" decoding="sync" />
       <button class="image-modal__close" aria-label="Close">×</button>
     </div>
   `;
 
   document.body.appendChild(modal);
-  requestAnimationFrame(() => modal.classList.add('is-active'));
 
-  let handleEsc;
+  const img = modal.querySelector('.image-modal__content img');
+  const backdrop = modal.querySelector('.image-modal__backdrop');
+  const closeBtn = modal.querySelector('.image-modal__close');
 
+  // Close handler
   const closeModal = () => {
     modal.classList.remove('is-active');
-    document.removeEventListener('keydown', handleEsc);
-    setTimeout(() => modal.remove(), 300);
   };
 
-  modal.querySelector('.image-modal__backdrop').addEventListener('click', closeModal);
-  const contentImg = modal.querySelector('.image-modal__content img');
-  if (contentImg) {
-    contentImg.addEventListener('click', closeModal);
-  }
-  modal.querySelector('.image-modal__close').addEventListener('click', closeModal);
-
-  handleEsc = (e) => {
-    if (e.key === 'Escape') {
+  // ESC key handler
+  const handleEsc = (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('is-active')) {
       closeModal();
     }
   };
+
+  // Set up event listeners ONCE
+  backdrop.addEventListener('click', closeModal);
+  img.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
   document.addEventListener('keydown', handleEsc);
+
+  // Store references
+  imageModal = modal;
+  imageModalHandlers = { closeModal, img };
+
+  return { modal, closeModal, img };
+}
+
+/**
+ * Open image modal with specified image
+ * @param {string} src - Image source URL
+ * @param {string} alt - Image alt text
+ */
+function openImageModal(src, alt) {
+  const { modal, img } = initImageModal();
+
+  // Update image
+  img.src = src;
+  img.alt = alt || '';
+
+  // Show modal
+  requestAnimationFrame(() => modal.classList.add('is-active'));
 }
 
 function createFootnote(text) {
@@ -2386,20 +2448,76 @@ function setRichContent(element, html) {
   applyAutoLinksToElement(element);
 }
 
+/**
+ * Parse simple markdown with XSS protection
+ * Escapes HTML first, then applies markdown transformations
+ * @param {string} text - The markdown text to parse
+ * @returns {string} Safe HTML string
+ */
 function parseMarkdown(text) {
   if (typeof text !== 'string') return text;
 
-  return text
+  // First, escape all HTML to prevent XSS
+  let safe = escapeHtml(text);
+
+  // Now apply markdown transformations on the escaped text
+  safe = safe
     // Bold: **text** or __text__
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
     // Italic: *text* or _text_ (but not inside words)
     .replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>')
     .replace(/(?<!\w)_([^_]+?)_(?!\w)/g, '<em>$1</em>')
-    // Links: [text](url)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     // Code: `code`
     .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Links: [text](url) - with URL sanitization
+  safe = safe.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+    // Sanitize URL - only allow safe protocols
+    const sanitizedUrl = sanitizeUrl(url);
+    if (!sanitizedUrl) {
+      // Invalid URL - return just the text
+      return linkText;
+    }
+    return `<a href="${sanitizedUrl}" rel="noopener noreferrer">${linkText}</a>`;
+  });
+
+  return safe;
+}
+
+/**
+ * Sanitize URL to prevent javascript: and data: protocol attacks
+ * @param {string} url - The URL to sanitize
+ * @returns {string|null} Sanitized URL or null if invalid
+ */
+function sanitizeUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  try {
+    // Try to parse as absolute URL
+    const parsed = new URL(trimmed, window.location.href);
+
+    // Whitelist safe protocols
+    const safeProtocols = ['http:', 'https:', 'mailto:', 'tel:'];
+    if (safeProtocols.includes(parsed.protocol)) {
+      return parsed.href;
+    }
+
+    // Unsafe protocol
+    return null;
+  } catch (e) {
+    // If URL parsing fails, check if it's a relative URL
+    if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+      // Relative URLs are generally safe
+      return trimmed;
+    }
+
+    // Invalid URL
+    return null;
+  }
 }
 
 function maybeCreateQuoteElement(raw) {
@@ -3299,9 +3417,22 @@ function showApiKeyStatus(type, message) {
 let lastFailedOperation = null; // Store last failed operation for retry
 let activeToasts = new Map(); // Track active toasts
 
+/**
+ * Show a toast notification with auto-dismiss and max limit
+ * @param {string} message - The message to display
+ * @param {string} type - Toast type (success, error, warning, info, processing)
+ * @param {Object} options - Additional options (onRetry, duration)
+ * @returns {number} Toast ID
+ */
 function showHudStatus(message, type = '', options = {}) {
   const container = document.getElementById('toast-container');
-  if (!container) return;
+  if (!container) return null;
+
+  // Enforce max toast limit - remove oldest if at limit
+  if (activeToasts.size >= CONFIG.TOAST.MAX_ACTIVE) {
+    const oldestId = activeToasts.keys().next().value;
+    hideToast(oldestId);
+  }
 
   // Create toast element
   const toast = document.createElement('div');
@@ -3314,13 +3445,16 @@ function showHudStatus(message, type = '', options = {}) {
     const retryBtn = document.createElement('button');
     retryBtn.className = 'toast__retry-btn';
     retryBtn.textContent = '🔄 Retry';
-    retryBtn.onclick = () => {
+
+    const retryHandler = () => {
       hideToast(toastId);
       if (lastFailedOperation) {
         lastFailedOperation();
         lastFailedOperation = null;
       }
     };
+    retryBtn.addEventListener('click', retryHandler);
+    toast._retryHandler = retryHandler; // Store for cleanup
 
     toast.textContent = message + ' ';
     toast.appendChild(retryBtn);
@@ -3331,6 +3465,16 @@ function showHudStatus(message, type = '', options = {}) {
 
   container.appendChild(toast);
   activeToasts.set(toastId, toast);
+
+  // Auto-dismiss after duration (unless it's 'processing' or has retry button)
+  if (type !== 'processing' && !options.onRetry) {
+    const duration = options.duration || CONFIG.TOAST[`${type.toUpperCase()}_DURATION`] || CONFIG.TOAST.INFO_DURATION;
+    setTimeout(() => {
+      if (activeToasts.has(toastId)) {
+        hideToast(toastId);
+      }
+    }, duration);
+  }
 
   return toastId;
 }
@@ -3343,9 +3487,21 @@ function hideHudStatus() {
   }
 }
 
+/**
+ * Hide and remove a toast notification
+ * Properly cleans up event listeners
+ * @param {number} toastId - Toast ID to hide
+ */
 function hideToast(toastId) {
   const toast = activeToasts.get(toastId);
   if (!toast) return;
+
+  // Clean up retry button listener if exists
+  const retryBtn = toast.querySelector('.toast__retry-btn');
+  if (retryBtn && toast._retryHandler) {
+    retryBtn.removeEventListener('click', toast._retryHandler);
+    delete toast._retryHandler;
+  }
 
   toast.classList.add('toast--hiding');
   lastFailedOperation = null;
