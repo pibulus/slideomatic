@@ -1692,28 +1692,24 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   // This allows us to find and update the correct location in the slide data
   placeholder._imageRef = image;
 
+  wrapper.appendChild(placeholder);
+
   // Only show AI button when there's NO query (user hasn't specified a search term)
   // If there's a query, the placeholder click already does Google search
   if (!trimmedQuery) {
-    const aiActions = document.createElement("div");
-    aiActions.className = "image-placeholder__ai-actions";
-
     const aiBtn = document.createElement("button");
     aiBtn.type = "button";
-    aiBtn.className = "image-placeholder__ai-btn";
-    aiBtn.textContent = "✨";
-    aiBtn.title = "Generate image";
+    aiBtn.className = "image-placeholder__magic-btn";
+    aiBtn.textContent = "🪄";
+    aiBtn.title = "Generate image with AI";
+    aiBtn.setAttribute("aria-label", "Generate image with AI");
     aiBtn.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
       await askAIForImage(placeholder, image);
     });
 
-    aiActions.appendChild(aiBtn);
-    wrapper.append(placeholder, aiActions);
-  } else {
-    // If there's a query, just show the placeholder
-    wrapper.appendChild(placeholder);
+    wrapper.appendChild(aiBtn);
   }
 
   // Store reference on wrapper too for backward compatibility
