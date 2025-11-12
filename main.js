@@ -3261,44 +3261,62 @@ function showApiKeyStatus(type, message) {
 // ===================================================================
 
 let lastFailedOperation = null; // Store last failed operation for retry
+let activeToasts = new Map(); // Track active toasts
 
 function showHudStatus(message, type = '', options = {}) {
-  const hudStatus = document.getElementById('hud-status');
-  if (!hudStatus) return;
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  // Create toast element
+  const toast = document.createElement('div');
+  const toastId = Date.now() + Math.random();
+  toast.className = `toast ${type ? `toast--${type}` : ''}`;
 
   // If this is an error and there's a retry function, add retry button
   if (type === 'error' && options.onRetry) {
     lastFailedOperation = options.onRetry;
     const retryBtn = document.createElement('button');
-    retryBtn.className = 'hud__retry-btn';
+    retryBtn.className = 'toast__retry-btn';
     retryBtn.textContent = '🔄 Retry';
     retryBtn.onclick = () => {
-      hideHudStatus();
+      hideToast(toastId);
       if (lastFailedOperation) {
         lastFailedOperation();
         lastFailedOperation = null;
       }
     };
 
-    hudStatus.textContent = message + ' ';
-    hudStatus.appendChild(retryBtn);
+    toast.textContent = message + ' ';
+    toast.appendChild(retryBtn);
   } else {
-    hudStatus.textContent = message;
+    toast.textContent = message;
     lastFailedOperation = null;
   }
 
-  hudStatus.className = `hud__status is-visible ${type ? `hud__status--${type}` : ''}`;
+  container.appendChild(toast);
+  activeToasts.set(toastId, toast);
+
+  return toastId;
 }
 
 function hideHudStatus() {
-  const hudStatus = document.getElementById('hud-status');
-  if (!hudStatus) return;
+  // Hide the most recent toast
+  if (activeToasts.size > 0) {
+    const lastToastId = Array.from(activeToasts.keys()).pop();
+    hideToast(lastToastId);
+  }
+}
 
-  hudStatus.classList.remove('is-visible');
+function hideToast(toastId) {
+  const toast = activeToasts.get(toastId);
+  if (!toast) return;
+
+  toast.classList.add('toast--hiding');
   lastFailedOperation = null;
+
   setTimeout(() => {
-    hudStatus.textContent = '';
-    hudStatus.className = 'hud__status';
+    toast.remove();
+    activeToasts.delete(toastId);
   }, 200);
 }
 
