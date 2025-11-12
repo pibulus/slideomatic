@@ -34,6 +34,38 @@ import {
 const AUTO_SAVE_DELAY_MS = 1000; // Auto-save after 1 second of idle typing
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MODULE STATE - Event Listener Tracking
+// ═══════════════════════════════════════════════════════════════════════════
+
+let activeFormListeners = [];
+let autoSaveTimeout = null;
+
+/**
+ * Clean up all event listeners before re-rendering form
+ * Prevents memory leaks from accumulated listeners
+ */
+function cleanupFormListeners() {
+  activeFormListeners.forEach(({ element, event, handler }) => {
+    element?.removeEventListener(event, handler);
+  });
+  activeFormListeners = [];
+
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+  }
+}
+
+/**
+ * Register an event listener for cleanup tracking
+ */
+function addTrackedListener(element, event, handler) {
+  if (!element) return;
+  element.addEventListener(event, handler);
+  activeFormListeners.push({ element, event, handler });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 
 function ensureContext(context) {
   if (!context) {
@@ -143,21 +175,29 @@ function buildTextArea(id, label, value) {
   `;
 }
 
-let autoSaveTimeout = null;
-
+/**
+ * Set up quick-edit field synchronization using event delegation
+ * This prevents listener accumulation by using a single delegated handler
+ */
 function setupQuickEditSync(context) {
-  const inputs = document.querySelectorAll('[data-field]');
-  inputs.forEach((input) => {
-    input.addEventListener('input', () => {
-      syncQuickEditToJSON();
+  const content = document.getElementById('edit-drawer-content');
+  if (!content) return;
 
-      // Auto-save after idle typing
-      clearTimeout(autoSaveTimeout);
-      autoSaveTimeout = setTimeout(() => {
-        autoSaveSlide(context);
-      }, AUTO_SAVE_DELAY_MS);
-    });
-  });
+  // Use event delegation on the container instead of individual inputs
+  const handleInput = (event) => {
+    const input = event.target;
+    if (!input.matches('[data-field]')) return;
+
+    syncQuickEditToJSON();
+
+    // Auto-save after idle typing
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      autoSaveSlide(context);
+    }, AUTO_SAVE_DELAY_MS);
+  };
+
+  addTrackedListener(content, 'input', handleInput);
 }
 
 function syncQuickEditToJSON() {
@@ -374,6 +414,9 @@ export function renderEditForm(context) {
   const content = document.getElementById('edit-drawer-content');
   if (!content) return;
 
+  // Clean up all existing event listeners before re-rendering
+  cleanupFormListeners();
+
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
   const currentSlide = slides[currentIndex];
@@ -436,36 +479,55 @@ export function renderEditForm(context) {
     </form>
   `;
 
-  document.getElementById('save-slide-btn')?.addEventListener('click', () => {
-    saveCurrentSlide(ctx);
-  });
+  // Register all button click handlers with cleanup tracking
+  addTrackedListener(
+    document.getElementById('save-slide-btn'),
+    'click',
+    () => saveCurrentSlide(ctx)
+  );
 
-  document.getElementById('duplicate-slide-btn')?.addEventListener('click', () => {
-    duplicateCurrentSlide(ctx);
-  });
+  addTrackedListener(
+    document.getElementById('duplicate-slide-btn'),
+    'click',
+    () => duplicateCurrentSlide(ctx)
+  );
 
-  document.getElementById('delete-slide-btn')?.addEventListener('click', () => {
-    deleteCurrentSlide(ctx);
-  });
+  addTrackedListener(
+    document.getElementById('delete-slide-btn'),
+    'click',
+    () => deleteCurrentSlide(ctx)
+  );
 
-  document.getElementById('download-deck-btn')?.addEventListener('click', () => {
-    handleDownloadDeck(ctx);
-  });
+  addTrackedListener(
+    document.getElementById('download-deck-btn'),
+    'click',
+    () => handleDownloadDeck(ctx)
+  );
 
   // Change layout dropdown - trigger immediately on selection
-  document.getElementById('slide-template-select')?.addEventListener('change', (event) => {
-    const select = event.target;
-    if (select.value) {
-      handleTemplateInsert(ctx);
-      select.value = ''; // Reset dropdown after inserting
+  addTrackedListener(
+    document.getElementById('slide-template-select'),
+    'change',
+    (event) => {
+      const select = event.target;
+      if (select.value) {
+        handleTemplateInsert(ctx);
+        select.value = ''; // Reset dropdown after inserting
+      }
     }
-  });
+  );
 
-  document.getElementById('json-toggle')?.addEventListener('click', handleJsonToggle);
+  addTrackedListener(
+    document.getElementById('json-toggle'),
+    'click',
+    handleJsonToggle
+  );
 
-  document.getElementById('add-image-btn')?.addEventListener('click', () => {
-    handleImageAdd(ctx);
-  });
+  addTrackedListener(
+    document.getElementById('add-image-btn'),
+    'click',
+    () => handleImageAdd(ctx)
+  );
 
   setupQuickEditSync(ctx);
 
@@ -480,15 +542,15 @@ export function renderEditForm(context) {
     onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
   });
 
-  // Setup alt text input event listeners
-  const altInputs = content.querySelectorAll('.edit-drawer__image-alt-input');
-  altInputs.forEach((input) => {
-    input.addEventListener('input', (event) => {
-      const imageIndex = Number.parseInt(input.dataset.imageIndex, 10);
-      if (Number.isNaN(imageIndex)) return;
-      const altText = input.value;
-      handleImageAltUpdate(ctx, imageIndex, altText);
-    });
+  // Setup alt text input event listeners using event delegation
+  addTrackedListener(content, 'input', (event) => {
+    const input = event.target;
+    if (!input.matches('.edit-drawer__image-alt-input')) return;
+
+    const imageIndex = Number.parseInt(input.dataset.imageIndex, 10);
+    if (Number.isNaN(imageIndex)) return;
+    const altText = input.value;
+    handleImageAltUpdate(ctx, imageIndex, altText);
   });
 }
 

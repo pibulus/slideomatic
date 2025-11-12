@@ -1641,16 +1641,21 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
 
   placeholder.append(icon, text);
 
-  // Click handler for Google Image Search (keep existing behavior)
+  // Track event listeners for cleanup
+  const listeners = [];
+
+  // Click handler for Google Image Search
   if (trimmedQuery) {
     placeholder.dataset.searchQuery = trimmedQuery;
     placeholder.setAttribute("aria-label", `Search images for ${trimmedQuery} or drag and drop`);
-    placeholder.addEventListener("click", (event) => {
+    const clickHandler = (event) => {
       event.preventDefault();
       event.stopPropagation();
       const url = buildImageSearchUrl(trimmedQuery);
       window.open(url, "_blank", "noopener");
-    });
+    };
+    placeholder.addEventListener("click", clickHandler);
+    listeners.push({ element: placeholder, event: 'click', handler: clickHandler });
   } else {
     placeholder.setAttribute(
       "aria-label",
@@ -1659,23 +1664,27 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   }
 
   // Drag & drop handlers
-  placeholder.addEventListener("dragover", (event) => {
+  const dragoverHandler = (event) => {
     event.preventDefault();
     event.stopPropagation();
     placeholder.classList.add("image-placeholder--dragover");
     text.textContent = "Drop to add image";
-  });
+  };
+  placeholder.addEventListener("dragover", dragoverHandler);
+  listeners.push({ element: placeholder, event: 'dragover', handler: dragoverHandler });
 
-  placeholder.addEventListener("dragleave", (event) => {
+  const dragleaveHandler = (event) => {
     event.preventDefault();
     event.stopPropagation();
     placeholder.classList.remove("image-placeholder--dragover");
     text.textContent = trimmedQuery
       ? `Search "${trimmedQuery}" or drag & drop`
       : "Drag & drop or paste image";
-  });
+  };
+  placeholder.addEventListener("dragleave", dragleaveHandler);
+  listeners.push({ element: placeholder, event: 'dragleave', handler: dragleaveHandler });
 
-  placeholder.addEventListener("drop", async (event) => {
+  const dropHandler = async (event) => {
     event.preventDefault();
     event.stopPropagation();
     placeholder.classList.remove("image-placeholder--dragover");
@@ -1684,18 +1693,24 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
     const imageFile = files.find(f => f.type.startsWith("image/"));
 
     if (imageFile) {
-      await handleImageUpload(imageFile, placeholder, image);
+      try {
+        await handleImageUpload(imageFile, placeholder, image);
+      } catch (error) {
+        console.error('Drop upload failed:', error);
+        showHudStatus(`Upload failed: ${error.message}`, 'error');
+        setTimeout(hideHudStatus, 3000);
+      }
     }
-  });
+  };
+  placeholder.addEventListener("drop", dropHandler);
+  listeners.push({ element: placeholder, event: 'drop', handler: dropHandler });
 
   // Store reference to the original image object
-  // This allows us to find and update the correct location in the slide data
   placeholder._imageRef = image;
 
   wrapper.appendChild(placeholder);
 
-  // Only show AI button when there's NO query (user hasn't specified a search term)
-  // If there's a query, the placeholder click already does Google search
+  // Only show AI button when there's NO query
   if (!trimmedQuery) {
     const aiBtn = document.createElement("button");
     aiBtn.type = "button";
@@ -1703,17 +1718,28 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
     aiBtn.textContent = "🪄";
     aiBtn.title = "Generate image with AI";
     aiBtn.setAttribute("aria-label", "Generate image with AI");
-    aiBtn.addEventListener("click", async (event) => {
+
+    const aiClickHandler = async (event) => {
       event.preventDefault();
       event.stopPropagation();
       await askAIForImage(placeholder, image);
-    });
+    };
+    aiBtn.addEventListener("click", aiClickHandler);
+    listeners.push({ element: aiBtn, event: 'click', handler: aiClickHandler });
 
     wrapper.appendChild(aiBtn);
   }
 
-  // Store reference on wrapper too for backward compatibility
+  // Store reference on wrapper
   wrapper._imageRef = image;
+
+  // Add cleanup function to remove all event listeners
+  wrapper.cleanup = () => {
+    listeners.forEach(({ element, event, handler }) => {
+      element?.removeEventListener(event, handler);
+    });
+    listeners.length = 0;
+  };
 
   return wrapper;
 }
@@ -1726,10 +1752,14 @@ function buildImageSearchUrl(query) {
 }
 
 // ================================================================
-// AI Image Suggestions
+// AI Image Suggestions - Helper Functions
 // ================================================================
 
-async function askAIForImage(placeholderElement, imageConfig = {}) {
+/**
+ * Get Gemini API key with user prompt if missing
+ * @returns {string|null} API key or null if not set
+ */
+function requireGeminiApiKey() {
   const apiKey = localStorage.getItem('gemini_api_key');
   if (!apiKey) {
     showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
@@ -1737,18 +1767,40 @@ async function askAIForImage(placeholderElement, imageConfig = {}) {
       hideHudStatus();
       openSettingsModal();
     }, 2000);
-    return;
+    return null;
   }
+  return apiKey;
+}
 
-  // Find slide context
+/**
+ * Extract slide context from a placeholder element
+ * @param {HTMLElement} placeholderElement - The placeholder element
+ * @returns {Object} Slide context with headline, body, type, etc.
+ */
+function extractSlideContext(placeholderElement) {
   const slideElement = placeholderElement.closest('.slide');
   const slideIndex = slideElement ? slideElements.indexOf(slideElement) : -1;
   const slide = slideIndex >= 0 ? slides[slideIndex] : {};
 
-  // Extract context
-  const headline = slide.headline || slide.title || '';
-  const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
-  const slideType = slide.type || 'standard';
+  return {
+    slideIndex,
+    slide,
+    headline: slide.headline || slide.title || '',
+    body: Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || ''),
+    slideType: slide.type || 'standard'
+  };
+}
+
+// ================================================================
+// AI Image Suggestions
+// ================================================================
+
+async function askAIForImage(placeholderElement, imageConfig = {}) {
+  const apiKey = requireGeminiApiKey();
+  if (!apiKey) return;
+
+  const context = extractSlideContext(placeholderElement);
+  const { headline, body, slideType } = context;
 
   showHudStatus('🤔 Deciding...', 'info');
 
@@ -1833,25 +1885,11 @@ GENERATE`;
 }
 
 async function generateAIImage(placeholderElement, imageConfig = {}) {
-  const apiKey = localStorage.getItem('gemini_api_key');
-  if (!apiKey) {
-    showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
-    setTimeout(() => {
-      hideHudStatus();
-      openSettingsModal();
-    }, 2000);
-    return;
-  }
+  const apiKey = requireGeminiApiKey();
+  if (!apiKey) return;
 
-  // Find slide context
-  const slideElement = placeholderElement.closest('.slide');
-  const slideIndex = slideElement ? slideElements.indexOf(slideElement) : -1;
-  const slide = slideIndex >= 0 ? slides[slideIndex] : {};
-
-  // Extract context
-  const headline = slide.headline || slide.title || '';
-  const body = Array.isArray(slide.body) ? slide.body.join(' ') : (slide.body || '');
-  const slideType = slide.type || 'standard';
+  const context = extractSlideContext(placeholderElement);
+  const { slide, headline, body, slideType } = context;
   const imageContext = imageConfig.alt || imageConfig.label || imageConfig.search || '';
 
   // Get current theme colors
@@ -3384,15 +3422,8 @@ if (notesModal) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function generateGraphImage(slide, containerElement) {
-  const apiKey = localStorage.getItem('gemini_api_key');
-  if (!apiKey) {
-    showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
-    setTimeout(() => {
-      hideHudStatus();
-      openSettingsModal();
-    }, 2000);
-    return;
-  }
+  const apiKey = requireGeminiApiKey();
+  if (!apiKey) return;
 
   // Show HUD loading state
   showHudStatus('📊 Generating graph...', 'processing');
