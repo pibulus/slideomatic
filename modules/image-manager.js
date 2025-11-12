@@ -187,17 +187,29 @@ function buildImageManager(slide) {
   return html;
 }
 
-function setupImageRemoveButtons({ root, onRemove }) {
-  if (!root) return;
-  const buttons = root.querySelectorAll('.edit-drawer__image-remove');
-  buttons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
-      const index = Number.parseInt(button.dataset.imageIndex, 10);
-      if (Number.isNaN(index)) return;
-      onRemove?.(index);
-    });
-  });
+/**
+ * Setup remove buttons using event delegation to prevent listener accumulation
+ * Integrates with edit-drawer's tracked listener system
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onRemove - Callback function
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageRemoveButtons({ root, onRemove, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  // Use event delegation on the root instead of individual buttons
+  const handleRemove = (event) => {
+    const button = event.target.closest('.edit-drawer__image-remove');
+    if (!button) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    if (Number.isNaN(index)) return;
+    onRemove?.(index);
+  };
+
+  addTrackedListener(root, 'click', handleRemove);
 }
 
 function getDragAfterElement(container, y) {
@@ -214,13 +226,21 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-function setupImageDragReorder({ container, onReorder }) {
-  if (!container) return;
+/**
+ * Setup image drag reordering using tracked listeners
+ * Integrates with edit-drawer's tracked listener system to prevent leaks
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.container - Container element
+ * @param {Function} params.onReorder - Callback function
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageDragReorder({ container, onReorder, addTrackedListener }) {
+  if (!container || !addTrackedListener) return;
 
   let draggedItem = null;
   let draggedIndex = null;
 
-  container.addEventListener('dragstart', (event) => {
+  const handleDragStart = (event) => {
     const target = event.target;
     if (!target || !target.classList.contains('edit-drawer__image-item')) return;
 
@@ -230,9 +250,9 @@ function setupImageDragReorder({ container, onReorder }) {
     target.classList.add('dragging');
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/html', target.innerHTML);
-  });
+  };
 
-  container.addEventListener('dragover', (event) => {
+  const handleDragOver = (event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
 
@@ -246,9 +266,9 @@ function setupImageDragReorder({ container, onReorder }) {
     } else {
       container.insertBefore(draggable, afterElement);
     }
-  });
+  };
 
-  container.addEventListener('dragend', () => {
+  const handleDragEnd = () => {
     if (!draggedItem) return;
 
     draggedItem.classList.remove('dragging');
@@ -260,7 +280,12 @@ function setupImageDragReorder({ container, onReorder }) {
 
     draggedItem = null;
     draggedIndex = null;
-  });
+  };
+
+  // Track all three listeners for proper cleanup
+  addTrackedListener(container, 'dragstart', handleDragStart);
+  addTrackedListener(container, 'dragover', handleDragOver);
+  addTrackedListener(container, 'dragend', handleDragEnd);
 }
 
 function addImageToSlide(slide, imageData) {

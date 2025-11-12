@@ -299,7 +299,7 @@ async function initDeck() {
   // Filter out schema/docs slides before rendering
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
 
-  totalCounter.textContent = renderableSlides.length;
+  updateTotalCounter(renderableSlides.length);
 
   if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
     renderEmptyState();
@@ -841,13 +841,21 @@ function moveOverviewCursorBy(deltaColumn, deltaRow) {
   highlightOverviewSlide(nextIndex);
 }
 
-window.addEventListener('resize', () => {
+// Debounced resize handler to prevent excessive layout recalculations
+let resizeTimeout = null;
+const handleResize = () => {
   if (!slideElements.length) return;
-  updateOverviewLayout();
-  if (isOverview) {
-    highlightOverviewSlide(overviewCursor, { scroll: false });
-  }
-});
+
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    updateOverviewLayout();
+    if (isOverview) {
+      highlightOverviewSlide(overviewCursor, { scroll: false });
+    }
+  }, 150); // Debounce by 150ms
+};
+
+window.addEventListener('resize', handleResize);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // NAVIGATION & SLIDE CONTROL
@@ -909,15 +917,32 @@ function setActiveSlide(nextIndex) {
   preloadSlideImages(currentIndex + 2);
 }
 
-function updateHud() {
-  // Animate counter change
-  const counterEl = currentCounter.parentElement;
-  counterEl.classList.add('updating');
-  setTimeout(() => counterEl.classList.remove('updating'), 300);
+/**
+ * Safely update the total counter display
+ * @param {number} total - Total number of slides
+ */
+function updateTotalCounter(total) {
+  if (totalCounter) {
+    totalCounter.textContent = total;
+  }
+}
 
-  currentCounter.textContent = currentIndex + 1;
-  const progress = ((currentIndex + 1) / slideElements.length) * 100;
-  progressBar.style.width = `${progress}%`;
+function updateHud() {
+  // Animate counter change with null check
+  if (currentCounter) {
+    const counterEl = currentCounter.parentElement;
+    if (counterEl) {
+      counterEl.classList.add('updating');
+      setTimeout(() => counterEl.classList.remove('updating'), 300);
+    }
+    currentCounter.textContent = currentIndex + 1;
+  }
+
+  // Update progress bar with null check
+  if (progressBar) {
+    const progress = ((currentIndex + 1) / slideElements.length) * 100;
+    progressBar.style.width = `${progress}%`;
+  }
 
   // Update speaker notes indicator
   const notesIndicator = document.getElementById('notes-indicator');
@@ -2283,7 +2308,13 @@ async function handleGlobalPaste(event) {
 
       const placeholder = currentSlide.querySelector('.image-placeholder');
       if (placeholder) {
-        const imageConfig = JSON.parse(placeholder.dataset.placeholderFor || '{}');
+        // Safely parse placeholder config with error handling
+        let imageConfig = {};
+        try {
+          imageConfig = JSON.parse(placeholder.dataset.placeholderFor || '{}');
+        } catch (error) {
+          console.warn('Invalid placeholder config, using defaults:', error);
+        }
         await handleImageUpload(file, placeholder, imageConfig);
       } else {
         showHudStatus("No image placeholder on current slide", "warning");
@@ -2719,7 +2750,7 @@ function reloadDeck(options = {}) {
   // Filter out schema slides
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
 
-  totalCounter.textContent = renderableSlides.length;
+  updateTotalCounter(renderableSlides.length);
 
   if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
     renderEmptyState();
@@ -2908,7 +2939,7 @@ function insertSlideAt(index, slideData, options = {}) {
   slideElements.splice(index, 0, newSlideElement);
   reindexSlides(index);
 
-  totalCounter.textContent = slideElements.length;
+  updateTotalCounter(slideElements.length);
   updateOverviewLayout();
   refreshSlideIndex();
 
@@ -2957,7 +2988,7 @@ function removeSlideAt(index, options = {}) {
   if (!slideElements.length) {
     slidesRoot.innerHTML = '';
     renderEmptyState();
-    totalCounter.textContent = 0;
+    updateTotalCounter(0);
     currentIndex = 0;
     updateHud();
     refreshSlideIndex();
@@ -2966,7 +2997,7 @@ function removeSlideAt(index, options = {}) {
   }
 
   reindexSlides(index);
-  totalCounter.textContent = slideElements.length;
+  updateTotalCounter(slideElements.length);
   updateOverviewLayout();
   refreshSlideIndex();
 
@@ -4425,7 +4456,7 @@ async function initDeckWithTheme() {
   }
 
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
-  totalCounter.textContent = renderableSlides.length;
+  updateTotalCounter(renderableSlides.length);
 
   if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
     renderEmptyState();
