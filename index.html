@@ -38,29 +38,30 @@
           <p class="landing__eyebrow">Slide builder</p>
           <h1 class="landing__title">Slideshows that don't suck</h1>
           <p class="landing__subtitle">
-            Make slides that look good and share easy. Keyboard shortcuts for speed.
-            Voice assist when you need it. Zero install, works right now.
+            Make slides.<br>
+            Look good.<br>
+            Share easy.
           </p>
         </div>
 
         <div class="landing__cta-grid">
-          <article class="cta-panel">
+          <article class="cta-panel cta-panel--primary">
             <div class="cta-panel__header">
               <p class="cta-panel__eyebrow">First time?</p>
               <h3>Take the tour</h3>
             </div>
-            <p>Interactive guide deck that shows you around. Learn by doing, then keep building or start fresh.</p>
+            <p>Interactive guide shows you around. Keep building or start fresh.</p>
             <div class="cta-panel__actions">
               <button class="button button--primary" type="button" data-action="open-demo">Open guide deck</button>
             </div>
           </article>
 
-          <article class="cta-panel">
+          <article class="cta-panel cta-panel--secondary">
             <div class="cta-panel__header">
               <p class="cta-panel__eyebrow">Ready to go</p>
               <h3>Start blank</h3>
             </div>
-            <p>Jump straight in. Keyboard shortcuts are all there when you need them (press ? anytime).</p>
+            <p>Jump in. Press ? for shortcuts.</p>
             <div class="start-menu">
               <button class="button button--secondary" type="button" data-start-toggle aria-expanded="false">
                 New deck
@@ -72,7 +73,7 @@
                 </button>
                 <button type="button" data-new-mode="paste">
                   <strong>Paste JSON</strong>
-                  <span>Got exported slides? Drop 'em in and keep editing</span>
+                  <span>Got exported slides? Drop them in and keep editing</span>
                 </button>
                 <button type="button" data-new-mode="upload">
                   <strong>Upload JSON</strong>
@@ -88,25 +89,27 @@
       <!-- ===== FEATURES SECTION: Combined headline + cards ===== -->
       <section class="landing__features" id="about">
         <div class="landing__features-intro">
-          <h2>Fast, pretty, easy to share</h2>
+          <h2>Fast, pretty, no BS</h2>
           <p>
-            Keyboard shortcuts get you moving. Themes look good out the box. Voice assist when you're stuck.
-            Export as JSON and it just works. No accounts, no cloud, no fuss.
+            Keys get you moving. Themes look good. Voice helps when you're stuck. Export works.
           </p>
         </div>
 
         <div class="landing__cards">
           <article class="landing__card">
+            <div class="landing__card-icon">⌨️</div>
             <h3>Keyboard-first</h3>
-            <p>Arrow keys navigate. <strong>E</strong> to edit. <strong>T</strong> for themes. <strong>?</strong> to see all shortcuts. You'll pick it up in 30 seconds.</p>
+            <p>Arrows navigate. <strong>E</strong> edits. <strong>T</strong> themes. <strong>?</strong> shows all.</p>
           </article>
           <article class="landing__card">
-            <h3>Looks good by default</h3>
-            <p>Pastel brutalist aesthetic. Randomize themes or dial in your own. Change vibes mid-presentation if you want.</p>
+            <div class="landing__card-icon">🎨</div>
+            <h3>Looks good</h3>
+            <p>Pastel brutal aesthetic. Randomize or dial in. Change vibes mid-deck.</p>
           </article>
           <article class="landing__card">
-            <h3>Help when you need it</h3>
-            <p>Hold <strong>V</strong> and describe what you want. Get suggestions. Tweak them. You're still in control.</p>
+            <div class="landing__card-icon">🎙️</div>
+            <h3>Voice assist</h3>
+            <p>Hold <strong>V</strong>, describe what you want. Get suggestions. Stay in control.</p>
           </article>
         </div>
       </section>
@@ -117,12 +120,12 @@
           <div>
             <p class="deck-shelf__eyebrow">Your decks</p>
             <h2>Everything's local</h2>
-            <p class="deck-shelf__subtitle">Decks save in your browser. Pick up where you left off or start fresh anytime.</p>
+            <p class="deck-shelf__subtitle">Saves in your browser. Pick up or start fresh.</p>
           </div>
           <button class="link-button" type="button" data-action="refresh-shelf">Refresh</button>
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
-          <li class="deck-shelf__empty" id="deck-shelf-empty">Your decks will show up here once you make one.</li>
+          <li class="deck-shelf__empty" id="deck-shelf-empty">Make a deck and it'll show up here.</li>
         </ul>
       </section>
     </main>
@@ -132,7 +135,7 @@
       <article class="paste-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="paste-modal-title" tabindex="-1">
         <button class="paste-modal__close" type="button" aria-label="Close paste JSON modal" data-paste-cancel>×</button>
         <h2 class="paste-modal__title" id="paste-modal-title">Paste deck JSON</h2>
-        <p class="paste-modal__subtitle">Paste an exported Slide-o-Matic JSON array or object and we’ll boot the deck live.</p>
+        <p class="paste-modal__subtitle">Paste an exported Slide-o-Matic JSON array or object and we'll boot the deck live.</p>
         <textarea id="paste-json-input" class="paste-modal__textarea" rows="10" spellcheck="false" placeholder='[{ "type": "title", ... }]'></textarea>
         <div class="paste-modal__actions">
           <button class="button button--primary" type="button" data-paste-submit>Load deck</button>
@@ -143,10 +146,10 @@
 
     <footer class="landing__footer">
       <div class="landing__footer-about">
-        <strong>About Slide-o-Matic</strong>
+        <strong>About this thing</strong>
         <p>
-          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> for people who ship ideas fast.
-          No tracking, no accounts, no build tooling. Just slides that work.
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> for people who ship fast.
+          No tracking. No accounts. Just slides.
         </p>
         <div class="landing__footer-buttons">
           <button class="link-button" type="button" data-about-open>More about this project</button>
@@ -166,8 +169,8 @@
         <button class="about-modal__close" type="button" aria-label="Close about" data-about-close>×</button>
         <h2 class="about-modal__title" id="about-modal-title">About this project</h2>
         <p class="about-modal__lede">
-          Slide-o-Matic is for people who hate fussy presentation tools. It's keyboard-first, looks good by default,
-          and gives you voice assist when you need it—without taking over.
+          Slide-o-Matic is for people who hate fussy presentation tools. Keyboard-first, looks good by default,
+          voice assist when you need it—without taking over.
         </p>
         <ul class="about-modal__list">
           <li>🎹 Keyboard shortcuts that actually make sense</li>
@@ -341,7 +344,7 @@
             try {
               JSON.parse(reader.result);
             } catch (error) {
-              showToast('⚠️ That file is not valid JSON. Please try again.', 'error');
+              showToast('That file is not valid JSON. Try again.', 'error');
               input.value = '';
               return;
             }
@@ -355,7 +358,7 @@
           };
 
           reader.onerror = () => {
-            showToast('⚠️ Unable to read that file. Please try again.', 'error');
+            showToast('Unable to read that file. Try again.', 'error');
             input.value = '';
           };
 
@@ -504,9 +507,9 @@
         try {
           localStorage.setItem(buildDeckKey(deck.id), JSON.stringify(payload));
           renderDeckShelf();
-          showToast('✓ Deck renamed', 'success');
+          showToast('Deck renamed', 'success');
         } catch (error) {
-          showToast('⚠️ Unable to save. Storage may be full.', 'error');
+          showToast('Unable to save. Storage may be full.', 'error');
         }
       }
 
@@ -520,9 +523,9 @@
             localStorage.removeItem(LAST_DECK_KEY);
           }
           renderDeckShelf();
-          showToast('✓ Deck deleted', 'success');
+          showToast('Deck deleted', 'success');
         } catch (error) {
-          showToast('⚠️ Unable to delete deck', 'error');
+          showToast('Unable to delete deck', 'error');
         }
       }
 
@@ -612,14 +615,14 @@
       function handlePasteSubmit() {
         const raw = pasteTextarea?.value?.trim();
         if (!raw) {
-          showToast('⚠️ Paste a deck JSON export first.', 'error');
+          showToast('Paste a deck JSON export first.', 'error');
           return;
         }
         let parsed;
         try {
           parsed = JSON.parse(raw);
         } catch (error) {
-          showToast('⚠️ That is not valid JSON. Please try again.', 'error');
+          showToast('That is not valid JSON. Try again.', 'error');
           return;
         }
 
