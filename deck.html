@@ -44,6 +44,8 @@
   </head>
   <body>
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
     <div class="app" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
       <!-- Theme Editor Drawer (Right Side) -->
@@ -319,27 +321,18 @@
             <span class="hud__action-icon">+</span>
             <span class="hud__action-text">Add</span>
           </button>
-          <button class="hud__action hud__edit-btn" id="edit-btn" aria-label="Edit slide (E)" title="Edit slide (E)">
-            <span class="hud__action-icon">✎</span>
-            <span class="hud__action-text">Edit</span>
-          </button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
             <span class="hud__action-icon">⊞</span>
             <span class="hud__action-text">Overview</span>
-          </button>
-          <button class="hud__action hud__save-btn" id="save-deck-btn" aria-label="Download deck (D)" title="Download deck (D)">
-            <span class="hud__action-icon">↓</span>
-            <span class="hud__action-text">Save</span>
           </button>
           <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share deck" title="Share deck">
             <span class="hud__action-icon">↗</span>
             <span class="hud__action-text">Share</span>
           </button>
-          <span class="hud__hint" title="Press ? for all keyboard shortcuts">Press <strong>?</strong> for help</span>
+          <span class="hud__hint" title="Press ? for all keyboard shortcuts">? Help</span>
           <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
             <span class="hud__notes-icon">📝</span>
           </div>
-          <div class="hud__status" id="hud-status"></div>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>

@@ -1692,28 +1692,24 @@ function createImagePlaceholder(image = {}, className = "slide__image") {
   // This allows us to find and update the correct location in the slide data
   placeholder._imageRef = image;
 
+  wrapper.appendChild(placeholder);
+
   // Only show AI button when there's NO query (user hasn't specified a search term)
   // If there's a query, the placeholder click already does Google search
   if (!trimmedQuery) {
-    const aiActions = document.createElement("div");
-    aiActions.className = "image-placeholder__ai-actions";
-
     const aiBtn = document.createElement("button");
     aiBtn.type = "button";
-    aiBtn.className = "image-placeholder__ai-btn";
-    aiBtn.textContent = "✨";
-    aiBtn.title = "Generate image";
+    aiBtn.className = "image-placeholder__magic-btn";
+    aiBtn.textContent = "🪄";
+    aiBtn.title = "Generate image with AI";
+    aiBtn.setAttribute("aria-label", "Generate image with AI");
     aiBtn.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
       await askAIForImage(placeholder, image);
     });
 
-    aiActions.appendChild(aiBtn);
-    wrapper.append(placeholder, aiActions);
-  } else {
-    // If there's a query, just show the placeholder
-    wrapper.appendChild(placeholder);
+    wrapper.appendChild(aiBtn);
   }
 
   // Store reference on wrapper too for backward compatibility
@@ -3261,44 +3257,62 @@ function showApiKeyStatus(type, message) {
 // ===================================================================
 
 let lastFailedOperation = null; // Store last failed operation for retry
+let activeToasts = new Map(); // Track active toasts
 
 function showHudStatus(message, type = '', options = {}) {
-  const hudStatus = document.getElementById('hud-status');
-  if (!hudStatus) return;
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  // Create toast element
+  const toast = document.createElement('div');
+  const toastId = Date.now() + Math.random();
+  toast.className = `toast ${type ? `toast--${type}` : ''}`;
 
   // If this is an error and there's a retry function, add retry button
   if (type === 'error' && options.onRetry) {
     lastFailedOperation = options.onRetry;
     const retryBtn = document.createElement('button');
-    retryBtn.className = 'hud__retry-btn';
+    retryBtn.className = 'toast__retry-btn';
     retryBtn.textContent = '🔄 Retry';
     retryBtn.onclick = () => {
-      hideHudStatus();
+      hideToast(toastId);
       if (lastFailedOperation) {
         lastFailedOperation();
         lastFailedOperation = null;
       }
     };
 
-    hudStatus.textContent = message + ' ';
-    hudStatus.appendChild(retryBtn);
+    toast.textContent = message + ' ';
+    toast.appendChild(retryBtn);
   } else {
-    hudStatus.textContent = message;
+    toast.textContent = message;
     lastFailedOperation = null;
   }
 
-  hudStatus.className = `hud__status is-visible ${type ? `hud__status--${type}` : ''}`;
+  container.appendChild(toast);
+  activeToasts.set(toastId, toast);
+
+  return toastId;
 }
 
 function hideHudStatus() {
-  const hudStatus = document.getElementById('hud-status');
-  if (!hudStatus) return;
+  // Hide the most recent toast
+  if (activeToasts.size > 0) {
+    const lastToastId = Array.from(activeToasts.keys()).pop();
+    hideToast(lastToastId);
+  }
+}
 
-  hudStatus.classList.remove('is-visible');
+function hideToast(toastId) {
+  const toast = activeToasts.get(toastId);
+  if (!toast) return;
+
+  toast.classList.add('toast--hiding');
   lastFailedOperation = null;
+
   setTimeout(() => {
-    hudStatus.textContent = '';
-    hudStatus.className = 'hud__status';
+    toast.remove();
+    activeToasts.delete(toastId);
   }, 200);
 }
 

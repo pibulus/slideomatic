@@ -401,38 +401,37 @@ export function renderEditForm(context) {
         </div>
       </div>
       <div class="edit-drawer__field edit-drawer__field--template">
-        <label class="edit-drawer__label">Add Template</label>
-        <div class="edit-drawer__template-controls">
-          <select class="edit-drawer__select" id="slide-template-select">
-            <option value="">Choose slide type…</option>
-            <option value="title">Title</option>
-            <option value="standard">Standard</option>
-            <option value="quote">Quote</option>
-            <option value="split">Split</option>
-            <option value="grid">Grid</option>
-            <option value="pillars">Pillars</option>
-            <option value="gallery">Gallery</option>
-            <option value="image">Image</option>
-            <option value="typeface">Typeface</option>
-          </select>
-          <button type="button" class="edit-drawer__button" id="add-template-btn">
-            Add Template
+        <label class="edit-drawer__label">Change Layout</label>
+        <select class="edit-drawer__select" id="slide-template-select">
+          <option value="">Choose slide layout…</option>
+          <option value="title">Title</option>
+          <option value="standard">Standard</option>
+          <option value="quote">Quote</option>
+          <option value="split">Split</option>
+          <option value="grid">Grid</option>
+          <option value="pillars">Pillars</option>
+          <option value="gallery">Gallery</option>
+          <option value="image">Image</option>
+          <option value="typeface">Typeface</option>
+        </select>
+      </div>
+
+      <div class="edit-drawer__actions-section">
+        <label class="edit-drawer__label">Slide Actions</label>
+        <div class="edit-drawer__actions">
+          <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+            🔒 LOCK IT IN
+          </button>
+          <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
+            Duplicate Slide
+          </button>
+          <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
+            Save Deck JSON
+          </button>
+          <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn">
+            Delete Slide
           </button>
         </div>
-      </div>
-      <div class="edit-drawer__actions">
-        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-          🔒 LOCK IT IN
-        </button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-          Duplicate Slide
-        </button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
-          Save Deck JSON
-        </button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--ghost edit-drawer__button--delete" id="delete-slide-btn">
-          Delete Slide
-        </button>
       </div>
     </form>
   `;
@@ -453,8 +452,13 @@ export function renderEditForm(context) {
     handleDownloadDeck(ctx);
   });
 
-  document.getElementById('add-template-btn')?.addEventListener('click', () => {
-    handleTemplateInsert(ctx);
+  // Change layout dropdown - trigger immediately on selection
+  document.getElementById('slide-template-select')?.addEventListener('change', (event) => {
+    const select = event.target;
+    if (select.value) {
+      handleTemplateInsert(ctx);
+      select.value = ''; // Reset dropdown after inserting
+    }
   });
 
   document.getElementById('json-toggle')?.addEventListener('click', handleJsonToggle);
