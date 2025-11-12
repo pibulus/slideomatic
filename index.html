@@ -245,6 +245,9 @@
         }, 4000);
       }
 
+      // Clean up old guide.json cache if it exists
+      cleanupGuideCache();
+
       renderDeckShelf();
       bindStartMenu();
       bindNewDeckButtons();
@@ -255,6 +258,18 @@
       bindPasteModal();
       bindFooterActions();
       bindAboutModal();
+
+      function cleanupGuideCache() {
+        try {
+          const guideKey = `${DECK_STORAGE_PREFIX}guide.json`;
+          if (localStorage.getItem(guideKey)) {
+            localStorage.removeItem(guideKey);
+            console.log('Cleaned up old guide.json cache');
+          }
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
 
       function bindStartMenu() {
         if (!startToggle || !startMenu) return;
@@ -341,17 +356,54 @@
 
           const reader = new FileReader();
           reader.onload = () => {
+            let parsed;
             try {
-              JSON.parse(reader.result);
+              parsed = JSON.parse(reader.result);
             } catch (error) {
               showToast('That file is not valid JSON. Try again.', 'error');
               input.value = '';
               return;
             }
 
-            const objectUrl = URL.createObjectURL(file);
+            // Extract slides array from parsed data
+            const slides = Array.isArray(parsed)
+              ? parsed
+              : Array.isArray(parsed?.slides)
+              ? parsed.slides
+              : null;
+
+            if (!slides || slides.length === 0) {
+              showToast('File must contain slides.', 'error');
+              input.value = '';
+              return;
+            }
+
+            // Generate a new deck ID and save to localStorage
+            const deckId = generateDeckId();
+            const payload = {
+              version: 1,
+              updatedAt: Date.now(),
+              source: `upload:${file.name}`,
+              slides,
+              meta: {
+                name: deriveDeckName(slides),
+                updatedAt: Date.now(),
+                deckId: deckId
+              }
+            };
+
+            try {
+              localStorage.setItem(buildDeckKey(deckId), JSON.stringify(payload));
+              showToast(`Imported ${slides.length} slides`, 'success');
+            } catch (error) {
+              showToast('Unable to save. Storage may be full.', 'error');
+              input.value = '';
+              return;
+            }
+
+            // Navigate to the new deck
             const target = new URL('deck.html', window.location.href);
-            target.searchParams.set('slides', objectUrl);
+            target.searchParams.set('deck', deckId);
             target.searchParams.set('open', 'edit');
             input.value = '';
             window.location.href = target.toString();
@@ -584,6 +636,14 @@
         }
       }
 
+      function generateDeckId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return `deck-${crypto.randomUUID()}`;
+        }
+        const randomPart = Math.random().toString(36).slice(2, 8);
+        return `deck-${Date.now().toString(36)}-${randomPart}`;
+      }
+
       function bindPasteModal() {
         if (!pasteModal || !pasteTextarea) return;
         pasteSubmit?.addEventListener('click', handlePasteSubmit);
@@ -626,11 +686,43 @@
           return;
         }
 
-        const normalized = JSON.stringify(parsed, null, 2);
-        const blob = new Blob([normalized], { type: 'application/json' });
-        const objectUrl = URL.createObjectURL(blob);
+        // Extract slides array from parsed data
+        const slides = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.slides)
+          ? parsed.slides
+          : null;
+
+        if (!slides || slides.length === 0) {
+          showToast('JSON must contain slides.', 'error');
+          return;
+        }
+
+        // Generate a new deck ID and save to localStorage
+        const deckId = generateDeckId();
+        const payload = {
+          version: 1,
+          updatedAt: Date.now(),
+          source: 'paste',
+          slides,
+          meta: {
+            name: deriveDeckName(slides),
+            updatedAt: Date.now(),
+            deckId: deckId
+          }
+        };
+
+        try {
+          localStorage.setItem(buildDeckKey(deckId), JSON.stringify(payload));
+          showToast(`Imported ${slides.length} slides`, 'success');
+        } catch (error) {
+          showToast('Unable to save. Storage may be full.', 'error');
+          return;
+        }
+
+        // Navigate to the new deck
         const target = new URL('deck.html', window.location.href);
-        target.searchParams.set('slides', objectUrl);
+        target.searchParams.set('deck', deckId);
         target.searchParams.set('open', 'edit');
         window.location.href = target.toString();
       }
