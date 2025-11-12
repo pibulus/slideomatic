@@ -263,7 +263,9 @@ async function initDeck() {
     loadError = error;
   }
 
-  const storedSlides = activeDeckId ? null : loadPersistedDeck();
+  // Check if loading guide deck - always use fresh content, no cache
+  const isGuideDeck = !activeDeckId && resolveSlidesPath() === 'guide.json';
+  const storedSlides = (activeDeckId || isGuideDeck) ? null : loadPersistedDeck();
   let usedStoredDeck = false;
 
   if (activeDeckId) {
@@ -358,6 +360,16 @@ async function initDeck() {
     homeBtn.addEventListener('click', () => {
       window.location.href = 'index.html';
     });
+  }
+
+  // Show "Save deck" button for file-based loads (not for guide.json or decks with IDs)
+  const saveDeckBtn = document.getElementById('save-deck-btn');
+  if (saveDeckBtn && !activeDeckId) {
+    const isGuideDeck = resolveSlidesPath() === 'guide.json';
+    if (!isGuideDeck) {
+      saveDeckBtn.hidden = false;
+      saveDeckBtn.addEventListener('click', saveAsNewDeck);
+    }
   }
 
   const editBtn = document.getElementById('edit-btn');
@@ -546,6 +558,13 @@ function loadPersistedDeck() {
 function persistSlides(options = {}) {
   const { suppressWarning = false } = options;
   if (!Array.isArray(slides)) return false;
+
+  // Don't persist guide deck - it should always load fresh
+  const isGuideDeck = !activeDeckId && resolveSlidesPath() === 'guide.json';
+  if (isGuideDeck) {
+    return false;
+  }
+
   try {
     const updatedAt = Date.now();
     const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
@@ -594,6 +613,46 @@ function generateDeckId() {
   }
   const randomPart = Math.random().toString(36).slice(2, 8);
   return `deck-${Date.now().toString(36)}-${randomPart}`;
+}
+
+function saveAsNewDeck() {
+  if (!Array.isArray(slides) || slides.length === 0) {
+    showHudStatus('⚠️ No slides to save', 'warning');
+    setTimeout(hideHudStatus, 2000);
+    return;
+  }
+
+  // Generate new deck ID and save
+  const newDeckId = generateDeckId();
+  const payload = {
+    version: 1,
+    updatedAt: Date.now(),
+    source: `saved:${resolveSlidesPath()}`,
+    slides: slides.slice(), // Copy slides
+    meta: {
+      name: deriveDeckName(slides),
+      updatedAt: Date.now(),
+      deckId: newDeckId,
+    },
+  };
+
+  try {
+    const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(newDeckId)}`;
+    localStorage.setItem(key, JSON.stringify(payload));
+    showHudStatus('✓ Deck saved!', 'success');
+
+    // Navigate to the new deck after a brief delay
+    setTimeout(() => {
+      const target = new URL(window.location.href);
+      target.searchParams.delete('slides');
+      target.searchParams.set('deck', newDeckId);
+      window.location.href = target.toString();
+    }, 800);
+  } catch (error) {
+    console.error('Failed to save deck:', error);
+    showHudStatus('⚠️ Unable to save. Storage may be full.', 'error');
+    setTimeout(hideHudStatus, 3000);
+  }
 }
 
 function markDeckAsRecent() {
