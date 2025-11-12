@@ -449,30 +449,32 @@ body[data-mode="overview"] {
 
 .image-placeholder {
   appearance: none;
-  border: var(--border-width) dashed var(--color-muted);
-  background: rgba(255, 255, 255, 0.5);
+  border: 3px dashed rgba(156, 202, 255, 0.6);
+  background: linear-gradient(135deg, rgba(255, 234, 247, 0.4) 0%, rgba(223, 245, 255, 0.4) 100%);
   color: var(--color-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: clamp(16px, 3vw, 28px);
+  gap: 10px;
+  padding: clamp(20px, 4vw, 32px);
   text-align: center;
   font-family: var(--font-sans);
   font-size: clamp(0.95rem, 1.6vw, 1.2rem);
   cursor: pointer;
-  transition: transform 150ms cubic-bezier(0.2, 2, 0.4, 1),
-              border-color 150ms ease,
-              color 150ms ease,
-              background 150ms ease;
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
+  border-radius: 16px;
 }
 
 .image-placeholder:hover {
-  transform: translate(-2px, -2px);
-  border-color: var(--color-surface);
+  transform: translate(-2px, -2px) scale(1.01);
+  border-color: rgba(255, 115, 200, 0.8);
   color: var(--color-ink);
-  background: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, rgba(255, 234, 247, 0.7) 0%, rgba(223, 245, 255, 0.7) 100%);
 }
 
 .image-placeholder.is-disabled,
@@ -497,10 +499,11 @@ body[data-mode="overview"] {
 }
 
 .image-placeholder--dragover {
-  border-color: var(--color-accent);
-  background: rgba(254, 202, 87, 0.25);
-  transform: translate(-2px, -2px) scale(1.02);
-  box-shadow: var(--shadow-md);
+  border-color: rgba(255, 115, 200, 1);
+  border-style: solid;
+  background: linear-gradient(135deg, rgba(255, 115, 200, 0.2) 0%, rgba(156, 202, 255, 0.2) 100%);
+  transform: translate(-2px, -2px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(255, 115, 200, 0.3);
 }
 
 .image-placeholder--error {
@@ -534,30 +537,37 @@ body[data-mode="overview"] {
 
 .image-placeholder__ai-btn {
   appearance: none;
-  border: 2px solid var(--color-accent);
-  background: var(--slide-bg);
+  border: 3px solid var(--color-accent);
+  background: rgba(255, 255, 255, 0.9);
   color: var(--color-ink);
-  padding: 8px 16px;
+  padding: 10px 18px;
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: all 150ms cubic-bezier(0.2, 2, 0.4, 1);
-  box-shadow: 2px 2px 0 var(--color-accent);
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 180ms ease,
+    background 180ms ease,
+    filter 180ms ease;
+  box-shadow: 4px 5px 0 var(--color-accent);
+  border-radius: 14px;
 }
 
 .image-placeholder__ai-btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 var(--color-accent);
+  transform: translate(-2px, -2px) scale(1.02);
+  box-shadow: 6px 7px 0 var(--color-accent);
   background: var(--color-accent);
-  color: var(--slide-bg);
+  color: white;
+  filter: brightness(1.05);
 }
 
 .image-placeholder__ai-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--color-accent);
+  transform: translate(1px, 1px) scale(0.98);
+  box-shadow: 2px 3px 0 var(--color-accent);
+  transition-duration: 60ms;
 }
 
 .image-placeholder__ai-btn:disabled {

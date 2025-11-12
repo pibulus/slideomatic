@@ -32,6 +32,7 @@
   </head>
   <body>
     <main class="landing">
+      <!-- ===== HERO SECTION: Combined H1 + CTAs ===== -->
       <section class="landing__hero">
         <div class="landing__intro">
           <p class="landing__eyebrow">Slide builder</p>
@@ -84,28 +85,15 @@
         </div>
       </section>
 
-      <section class="deck-shelf" id="saved">
-        <header class="deck-shelf__header">
-          <div>
-            <p class="deck-shelf__eyebrow">Your decks</p>
-            <h2>Everything's local</h2>
-            <p class="deck-shelf__subtitle">Decks save in your browser. Pick up where you left off or start fresh anytime.</p>
-          </div>
-          <button class="link-button" type="button" data-action="refresh-shelf">Refresh</button>
-        </header>
-        <ul class="deck-shelf__list" id="deck-shelf-list">
-          <li class="deck-shelf__empty" id="deck-shelf-empty">Your decks will show up here once you make one.</li>
-        </ul>
-      </section>
-
-      <section class="landing__grid" id="about">
-        <article class="landing__panel">
+      <!-- ===== FEATURES SECTION: Combined headline + cards ===== -->
+      <section class="landing__features" id="about">
+        <div class="landing__features-intro">
           <h2>Fast, pretty, easy to share</h2>
           <p>
             Keyboard shortcuts get you moving. Themes look good out the box. Voice assist when you're stuck.
             Export as JSON and it just works. No accounts, no cloud, no fuss.
           </p>
-        </article>
+        </div>
 
         <div class="landing__cards">
           <article class="landing__card">
@@ -121,6 +109,21 @@
             <p>Hold <strong>V</strong> and describe what you want. Get suggestions. Tweak them. You're still in control.</p>
           </article>
         </div>
+      </section>
+
+      <!-- ===== YOUR DECKS: Simplified (moved to bottom) ===== -->
+      <section class="deck-shelf" id="saved">
+        <header class="deck-shelf__header">
+          <div>
+            <p class="deck-shelf__eyebrow">Your decks</p>
+            <h2>Everything's local</h2>
+            <p class="deck-shelf__subtitle">Decks save in your browser. Pick up where you left off or start fresh anytime.</p>
+          </div>
+          <button class="link-button" type="button" data-action="refresh-shelf">Refresh</button>
+        </header>
+        <ul class="deck-shelf__list" id="deck-shelf-list">
+          <li class="deck-shelf__empty" id="deck-shelf-empty">Your decks will show up here once you make one.</li>
+        </ul>
       </section>
     </main>
 
