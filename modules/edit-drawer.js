@@ -108,40 +108,168 @@ function ensureContext(context) {
   return context;
 }
 
-function buildQuickEditFields(slide) {
+function buildSection(title, content, options = {}) {
+  if (!content) return '';
+  const modifier = options.modifier ? ` ${options.modifier}` : '';
+  return `
+    <section class="edit-drawer__section${modifier}">
+      <div class="edit-drawer__section-header">
+        <p class="edit-drawer__section-title">${escapeHtml(title)}</p>
+      </div>
+      <div class="edit-drawer__section-body">
+        ${content}
+      </div>
+    </section>
+  `;
+}
+
+function buildStack(fields, modifier = '') {
+  if (!fields || fields.length === 0) return '';
+  const className = modifier ? `edit-drawer__stack ${modifier}` : 'edit-drawer__stack';
+  return `<div class="${className}">${fields.join('')}</div>`;
+}
+
+function buildPrimarySections(slide) {
   const type = slide.type || 'standard';
-  let html = '<div class="edit-drawer__quick-edit">';
+  const sections = [];
 
-  html += `<div class="edit-drawer__field edit-drawer__field--readonly">
-    <label class="edit-drawer__label">Type</label>
-    <div class="edit-drawer__type-display">${escapeHtml(type)}</div>
-  </div>`;
+  sections.push(
+    buildSection(
+      'Slide type',
+      `<div class="edit-drawer__type-display">${escapeHtml(type)}</div>`,
+      { modifier: ' edit-drawer__section--type' }
+    )
+  );
 
-  if (type === 'title') {
-    if ('eyebrow' in slide) {
-      html += buildTextField('eyebrow', 'Eyebrow', slide.eyebrow || '');
-    }
-    html += buildTextField('title', 'Title', slide.title || '');
-    if ('subtitle' in slide) {
-      html += buildTextField('subtitle', 'Subtitle', slide.subtitle || '');
-    }
-  } else if (type === 'quote') {
-    html += buildTextArea('quote', 'Quote', slide.quote || slide.headline || '');
-    html += buildTextField('attribution', 'Attribution', slide.attribution || slide.body || '');
-  } else {
-    if ('headline' in slide || type === 'standard' || type === 'gallery' || type === 'grid') {
-      html += buildTextField('headline', 'Headline', slide.headline || '');
-    }
-    if ('body' in slide || type === 'standard' || type === 'gallery') {
-      const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
-      html += buildTextArea('body', 'Body', bodyValue);
+  const headlineFields = buildHeadlineFields(slide, type);
+  if (headlineFields.length) {
+    sections.push(buildSection('Headline', buildStack(headlineFields)));
+  }
+
+  const bodyFields = buildBodyFields(slide, type);
+  if (bodyFields.length) {
+    sections.push(buildSection('Body', buildStack(bodyFields)));
+  }
+
+  sections.push(
+    buildSection(
+      'Images',
+      `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
+      { modifier: ' edit-drawer__section--images' }
+    )
+  );
+
+  return sections.join('');
+}
+
+function buildHeadlineFields(slide, type) {
+  const fields = [];
+
+  if ('eyebrow' in slide || type === 'title') {
+    fields.push(buildTextField('eyebrow', 'Eyebrow', slide.eyebrow || ''));
+  }
+
+  if (type === 'title' || 'title' in slide) {
+    if (type === 'title' || slide.title) {
+      fields.push(buildTextField('title', 'Title', slide.title || ''));
     }
   }
 
-  html += buildImageManager(slide);
+  const defaultHeadlineTypes = new Set(['standard', 'gallery', 'grid', 'pillars', 'split', 'image', 'typeface']);
+  if ('headline' in slide || defaultHeadlineTypes.has(type)) {
+    fields.push(buildTextField('headline', 'Headline', slide.headline || ''));
+  }
 
-  html += '</div>';
-  return html;
+  return fields.filter(Boolean);
+}
+
+function buildBodyFields(slide, type) {
+  const fields = [];
+
+  if (type === 'title') {
+    fields.push(buildTextArea('subtitle', 'Subtitle', slide.subtitle || ''));
+    return fields;
+  }
+
+  if (type === 'quote') {
+    fields.push(buildTextArea('quote', 'Quote', slide.quote || slide.headline || ''));
+    fields.push(buildTextField('attribution', 'Attribution', slide.attribution || slide.body || ''));
+    return fields.filter(Boolean);
+  }
+
+  if ('body' in slide || type === 'standard' || type === 'gallery') {
+    const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
+    fields.push(buildTextArea('body', 'Body text', bodyValue));
+  }
+
+  return fields.filter(Boolean);
+}
+
+function buildLayoutSection() {
+  const control = `
+    <div class="edit-drawer__field edit-drawer__field--layout">
+      <label class="edit-drawer__label" for="slide-template-select">Choose layout</label>
+      <select class="edit-drawer__select" id="slide-template-select">
+        <option value="">Switch layout…</option>
+        <option value="title">Title</option>
+        <option value="standard">Standard</option>
+        <option value="quote">Quote</option>
+        <option value="split">Split</option>
+        <option value="grid">Grid</option>
+        <option value="pillars">Pillars</option>
+        <option value="gallery">Gallery</option>
+        <option value="image">Image</option>
+        <option value="typeface">Typeface</option>
+      </select>
+    </div>
+  `;
+
+  return buildSection('Layout', control, { modifier: ' edit-drawer__section--layout' });
+}
+
+function buildActionsSection() {
+  return buildSection(
+    'Actions',
+    `
+      <div class="edit-drawer__actions-grid">
+        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+          Save slide
+        </button>
+        <div class="edit-drawer__actions-row">
+          <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
+            Duplicate
+          </button>
+          <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn">
+            Delete
+          </button>
+        </div>
+        <button type="button" class="edit-drawer__link-button" id="download-deck-btn">
+          Export deck JSON
+        </button>
+      </div>
+    `,
+    { modifier: ' edit-drawer__section--actions' }
+  );
+}
+
+function buildAdvancedSection(slide) {
+  const jsonString = JSON.stringify(slide, null, 2);
+  return `
+    <section class="edit-drawer__section edit-drawer__section--advanced">
+      <button type="button" class="edit-drawer__json-toggle" id="json-toggle" aria-expanded="false">
+        <span class="edit-drawer__json-toggle-icon">▶</span>
+        <span class="edit-drawer__json-toggle-text">Advanced JSON</span>
+      </button>
+      <div class="edit-drawer__json-container" id="json-container" hidden>
+        <textarea
+          class="edit-drawer__textarea"
+          id="slide-json-editor"
+          rows="20"
+          style="font-family: var(--font-mono); font-size: 0.9rem;"
+        >${jsonString}</textarea>
+      </div>
+    </section>
+  `;
 }
 
 function buildTextField(id, label, value) {
@@ -402,10 +530,16 @@ function handleJsonToggle() {
   if (!container || !jsonToggle) return;
 
   const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
-  const isOpen = container.style.display !== 'none';
-  container.style.display = isOpen ? 'none' : 'block';
-  if (icon) {
-    icon.textContent = isOpen ? '▶' : '▼';
+  const isHidden = container.hasAttribute('hidden');
+
+  if (isHidden) {
+    container.removeAttribute('hidden');
+    jsonToggle.setAttribute('aria-expanded', 'true');
+    if (icon) icon.textContent = '▼';
+  } else {
+    container.setAttribute('hidden', '');
+    jsonToggle.setAttribute('aria-expanded', 'false');
+    if (icon) icon.textContent = '▶';
   }
 }
 
@@ -423,59 +557,17 @@ export function renderEditForm(context) {
   if (!currentSlide) return;
 
   const displaySlide = prepareSlideForEditing(currentSlide);
-  const quickEditHTML = buildQuickEditFields(currentSlide);
+  const primarySections = buildPrimarySections(currentSlide);
+  const layoutSection = buildLayoutSection();
+  const actionsSection = buildActionsSection();
+  const advancedSection = buildAdvancedSection(displaySlide);
 
   content.innerHTML = `
     <form class="edit-drawer__form">
-      ${quickEditHTML}
-
-      <div class="edit-drawer__field edit-drawer__field--json">
-        <button type="button" class="edit-drawer__json-toggle" id="json-toggle">
-          <span class="edit-drawer__json-toggle-icon">▶</span>
-          <span class="edit-drawer__json-toggle-text">Advanced (JSON Editor)</span>
-        </button>
-        <div class="edit-drawer__json-container" id="json-container" style="display: none;">
-          <textarea
-            class="edit-drawer__textarea"
-            id="slide-json-editor"
-            rows="20"
-            style="font-family: var(--font-mono); font-size: 0.9rem;"
-          >${JSON.stringify(displaySlide, null, 2)}</textarea>
-        </div>
-      </div>
-      <div class="edit-drawer__field edit-drawer__field--template">
-        <label class="edit-drawer__label">Change Layout</label>
-        <select class="edit-drawer__select" id="slide-template-select">
-          <option value="">Choose slide layout…</option>
-          <option value="title">Title</option>
-          <option value="standard">Standard</option>
-          <option value="quote">Quote</option>
-          <option value="split">Split</option>
-          <option value="grid">Grid</option>
-          <option value="pillars">Pillars</option>
-          <option value="gallery">Gallery</option>
-          <option value="image">Image</option>
-          <option value="typeface">Typeface</option>
-        </select>
-      </div>
-
-      <div class="edit-drawer__actions-section">
-        <label class="edit-drawer__label">Slide Actions</label>
-        <div class="edit-drawer__actions">
-          <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-            🔒 LOCK IT IN
-          </button>
-          <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-            Duplicate Slide
-          </button>
-          <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="download-deck-btn">
-            Save Deck JSON
-          </button>
-          <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn">
-            Delete Slide
-          </button>
-        </div>
-      </div>
+      ${primarySections}
+      ${layoutSection}
+      ${actionsSection}
+      ${advancedSection}
     </form>
   `;
 
@@ -579,7 +671,7 @@ export function saveCurrentSlide(context) {
     ctx.closeDrawer();
 
     // Bigger celebration for explicit save
-    ctx.showHudStatus('🔒 LOCKED IN!', 'success');
+    ctx.showHudStatus('✓ Slide saved', 'success');
     setTimeout(() => ctx.hideHudStatus(), 2000);
 
     // Add pulse animation to the save button before it closes
@@ -588,7 +680,7 @@ export function saveCurrentSlide(context) {
       saveBtn.style.animation = 'pulse 0.3s ease';
     }
 
-    console.log('✓ Slide locked in');
+    console.log('✓ Slide saved');
   } catch (error) {
     alert(`Invalid JSON: ${error.message}`);
   }
@@ -632,4 +724,3 @@ export function deleteCurrentSlide(context) {
     console.log('✓ Slide deleted');
   }
 }
-

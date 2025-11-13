@@ -137,11 +137,7 @@ function reorderSlideImages(fromIndex, toIndex, slide) {
 
 function buildImageManager(slide) {
   const images = collectSlideImages(slide);
-
-  let html = `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label">Images (${images.length})</label>
-  `;
+  let html = '';
 
   if (images.length > 0) {
     html += `<div class="edit-drawer__image-list">`;
@@ -175,13 +171,14 @@ function buildImageManager(slide) {
     });
 
     html += `</div>`;
+  } else {
+    html += `<p class="edit-drawer__empty-note">No images yet.</p>`;
   }
 
   html += `
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
-        📷 Add Image
-      </button>
-    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
+      Add image
+    </button>
   `;
 
   return html;
@@ -349,4 +346,3 @@ export {
   setupImageRemoveButtons,
   setupImageDragReorder,
 };
-
