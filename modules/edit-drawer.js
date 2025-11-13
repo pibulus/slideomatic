@@ -109,28 +109,20 @@ function ensureContext(context) {
 }
 
 const LAYOUT_OPTIONS = [
-  { value: 'title', label: 'Title', description: 'Hero opener' },
-  { value: 'standard', label: 'Standard', description: 'Flexible body slide' },
+  { value: 'title', label: 'Title', description: 'Hero intro' },
+  { value: 'standard', label: 'Standard', description: 'Flexible content' },
   { value: 'quote', label: 'Quote', description: 'Pull quote' },
-  { value: 'split', label: 'Split', description: 'Two-column story' },
+  { value: 'split', label: 'Split', description: 'Two-column' },
   { value: 'grid', label: 'Grid', description: '3-up highlights' },
-  { value: 'pillars', label: 'Pillars', description: 'Stacked comparisons' },
-  { value: 'gallery', label: 'Gallery', description: 'Image-forward' },
-  { value: 'image', label: 'Image', description: 'Single hero visual' },
-  { value: 'typeface', label: 'Typeface', description: 'Typography focus' },
+  { value: 'pillars', label: 'Pillars', description: 'Stacked cards' },
+  { value: 'gallery', label: 'Gallery', description: 'Image grid' },
+  { value: 'image', label: 'Image', description: 'Hero visual' },
+  { value: 'typeface', label: 'Typeface', description: 'Type specimen' },
 ];
 
-const TYPE_NOTES = {
-  title: 'Hero intro',
-  standard: 'Flexible content slide',
-  quote: 'Pull quote',
-  split: 'Two-column story',
-  grid: 'Multi-card highlights',
-  pillars: 'Stacked comparisons',
-  gallery: 'Image grid',
-  image: 'Hero image',
-  typeface: 'Typography focus',
-};
+const TYPE_NOTES = Object.fromEntries(
+  LAYOUT_OPTIONS.map(({ value, description, label }) => [value, description || label])
+);
 
 function getLayoutMeta(value) {
   return LAYOUT_OPTIONS.find((option) => option.value === value);
@@ -160,8 +152,7 @@ function buildStack(fields, modifier = '') {
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
-    buildTypeSection(type),
-    buildLayoutSection(type),
+    buildLayoutControl(type),
     buildHeadlineSection(slide, type),
     buildBodySection(slide, type),
     buildImagesSection(slide),
@@ -169,23 +160,11 @@ function buildMainSections(slide) {
   return sections.join('');
 }
 
-function buildTypeSection(type) {
-  const note = TYPE_NOTES[type] || 'Slide layout';
-  const meta = getLayoutMeta(type);
-  const label = meta?.label ?? type;
-  const pill = `
-    <div class="edit-drawer__type-pill" title="${escapeHtml(note)}">
-      ${escapeHtml(label)}
-    </div>
-  `;
-  return buildSection('Slide type', pill, { modifier: ' edit-drawer__section--type' });
-}
-
 function getLayoutDescription(value) {
   return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
 }
 
-function buildLayoutSection(currentType) {
+function buildLayoutControl(currentType) {
   const selectTitle = getLayoutDescription(currentType) || 'Choose layout';
   const options = LAYOUT_OPTIONS.map(({ value, label }) => {
     const selected = value === currentType ? 'selected' : '';
@@ -248,7 +227,7 @@ function buildBodyFields(slide, type) {
   if (type === 'title') {
     return {
       title: 'Subtitle',
-      fields: [buildTextArea('subtitle', 'Subtitle', slide.subtitle || '')],
+      fields: [buildTextArea('subtitle', 'Text', slide.subtitle || '')],
     };
   }
 
@@ -256,8 +235,8 @@ function buildBodyFields(slide, type) {
     return {
       title: 'Quote',
       fields: [
-        buildTextArea('quote', 'Quote text', slide.quote || slide.headline || ''),
-        buildTextField('attribution', 'Attribution', slide.attribution || slide.body || ''),
+        buildTextArea('quote', 'Text', slide.quote || slide.headline || ''),
+        buildTextField('attribution', 'Source', slide.attribution || slide.body || ''),
       ].filter(Boolean),
     };
   }
@@ -265,7 +244,7 @@ function buildBodyFields(slide, type) {
   const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
   const fields = [];
   if ('body' in slide || type === 'standard' || type === 'gallery') {
-    fields.push(buildTextArea('body', 'Body text', bodyValue));
+    fields.push(buildTextArea('body', 'Copy', bodyValue));
   }
 
   return { title: 'Body', fields: fields.filter(Boolean) };

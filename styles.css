@@ -1819,7 +1819,7 @@ body[data-mode="overview"] .hud {
   border: var(--border-width) solid var(--color-ink);
   border-radius: calc(var(--radius) + 2px);
   padding: 18px 20px;
-  background: #fffefc;
+  background: linear-gradient(180deg, #fffefc 0%, #fff5eb 100%);
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.12);
 }
 
@@ -1861,32 +1861,17 @@ body[data-mode="overview"] .hud {
 }
 
 .edit-drawer__section--images {
-  background: #fff9f2;
+  background: linear-gradient(180deg, #fff9f2 0%, #fff1e2 100%);
 }
 
 .edit-drawer__section--actions {
-  background: #fffefd;
+  background: linear-gradient(180deg, #fffefd 0%, #fff6f1 100%);
 }
 
 .edit-drawer__section--advanced {
   border-style: dashed;
   background: #fffdf8;
   box-shadow: none;
-}
-
-.edit-drawer__type-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border: var(--border-width) solid var(--color-ink);
-  border-radius: calc(var(--radius) + 2px);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
 }
 
 .edit-drawer__layout-controls {
