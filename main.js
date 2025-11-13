@@ -86,11 +86,16 @@ const currentCounter = document.querySelector("[data-counter-current]");
 const totalCounter = document.querySelector("[data-counter-total]");
 const progressBar = document.querySelector("[data-progress]");
 const urlParams = new URLSearchParams(window.location.search);
-const requestedDeck = urlParams.get('deck');
+// Also check hash params (for servers that strip query strings)
+const hashParams = new URLSearchParams(window.location.hash.slice(1));
+const requestedDeck = urlParams.get('deck') || hashParams.get('deck');
 console.log('[Init] ==================== DECK.HTML LOADING ====================');
 console.log('[Init] Full URL:', window.location.href);
 console.log('[Init] Search params:', window.location.search);
-console.log('[Init] Requested deck:', requestedDeck);
+console.log('[Init] Hash:', window.location.hash);
+console.log('[Init] Requested deck (from search):', urlParams.get('deck'));
+console.log('[Init] Requested deck (from hash):', hashParams.get('deck'));
+console.log('[Init] Final requested deck:', requestedDeck);
 console.log('[Init] =========================================================');
 
 const renderers = {
