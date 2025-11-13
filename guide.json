@@ -58,16 +58,21 @@
   {
     "type": "standard",
     "badge": "Sharing",
-    "headline": "Press D to download as JSON",
+    "headline": "Press D to export as JSON",
     "body": [
-      "Your deck saves to JSON — clean, portable, shareable.",
-      "Press **D** to download, or **U** to upload a deck from your computer.",
+      "Your deck exports to JSON — clean, portable, shareable.",
+      "Press **D** to export, or **U** to upload a deck from your computer.",
       "Everything stays local in your browser unless you export it."
     ]
   },
   {
-    "type": "quote",
-    "headline": "That's it. You're ready.",
-    "body": "Delete these slides or keep building. Press **?** for shortcuts. Have fun."
+    "type": "standard",
+    "badge": "Ready to build?",
+    "headline": "You're all set. Now what?",
+    "body": [
+      "💾 Click **Save as copy** in the HUD to keep this guide as a starting template.",
+      "🏠 Or click **Back** to return home and create a fresh blank deck.",
+      "Press **?** anytime for full keyboard shortcuts. Have fun building! ✨"
+    ]
   }
 ]

@@ -241,7 +241,7 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `V` – **Voice-to-slide** (record audio, AI generates slide)
 - `T` – **Open theme drawer** (select themes, randomize, or use voice-to-theme)
 - `E` – Edit current slide
-- `D` – Download deck as JSON
+- `D` – Export deck as JSON
 - `U` – Upload deck from JSON
 - `S` – Settings (configure Gemini API key)
 - `I` – Toggle slide index
