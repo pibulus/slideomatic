@@ -184,12 +184,12 @@ function resolveField(slide, candidates) {
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
+    buildLayoutControl(type),
     buildLabelSection(slide),
     buildHeadlineSection(slide, type),
     buildSubtitleSection(slide, type),
     buildBodySection(slide, type),
     buildImagesSection(slide),
-    buildLayoutControl(type),
   ].filter(Boolean);
   return sections.join('');
 }

@@ -1907,7 +1907,10 @@ body[data-mode="overview"] .hud {
   background: #fffdf7;
   color: var(--color-ink);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 160ms ease;
 }
 
 .edit-drawer__input:focus,
@@ -1918,6 +1921,15 @@ body[data-mode="overview"] .hud {
   box-shadow:
     4px 4px 0 rgba(0, 0, 0, 0.12),
     0 0 0 3px rgba(255, 159, 243, 0.2);
+}
+
+.edit-drawer__input:hover,
+.edit-drawer__textarea:hover,
+.edit-drawer__select:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow:
+    5px 5px 0 rgba(0, 0, 0, 0.14),
+    0 0 0 2px rgba(255, 159, 243, 0.15);
 }
 
 .edit-drawer__textarea {
