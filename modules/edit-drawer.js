@@ -121,15 +121,15 @@ const LAYOUT_OPTIONS = [
 ];
 
 const TYPE_NOTES = {
-  title: 'Big intro moment with title + subtitle.',
-  standard: 'Headline, copy, and supporting media.',
-  quote: 'Pull quote with attribution.',
-  split: 'Two-column comparison layout.',
-  grid: 'Multi-card overview for quick hits.',
-  pillars: 'Tall cards for pillars or steps.',
-  gallery: 'Image grid with captions.',
-  image: 'Single hero image with caption.',
-  typeface: 'Typography specimen slide.',
+  title: 'Hero intro',
+  standard: 'Flexible content slide',
+  quote: 'Pull quote',
+  split: 'Two-column story',
+  grid: 'Multi-card highlights',
+  pillars: 'Stacked comparisons',
+  gallery: 'Image grid',
+  image: 'Hero image',
+  typeface: 'Typography focus',
 };
 
 function getLayoutMeta(value) {
@@ -143,7 +143,6 @@ function buildSection(title, content, options = {}) {
     <section class="edit-drawer__section${modifier}">
       <div class="edit-drawer__section-header">
         <p class="edit-drawer__section-title">${escapeHtml(title)}</p>
-        ${options.hint ?? ''}
       </div>
       <div class="edit-drawer__section-body">
         ${content}
@@ -171,7 +170,7 @@ function buildMainSections(slide) {
 }
 
 function buildTypeSection(type) {
-  const note = TYPE_NOTES[type] || 'Content-forward slide layout.';
+  const note = TYPE_NOTES[type] || 'Slide layout';
   const meta = getLayoutMeta(type);
   const label = meta?.label ?? type;
   const pill = `
@@ -179,30 +178,33 @@ function buildTypeSection(type) {
       ${escapeHtml(label)}
     </div>
   `;
-  const hint = `<span class="edit-drawer__hint" title="${escapeHtml(note)}">${escapeHtml(note)}</span>`;
-  return buildSection('Slide type', pill, { hint, modifier: ' edit-drawer__section--type' });
+  return buildSection('Slide type', pill, { modifier: ' edit-drawer__section--type' });
+}
+
+function getLayoutDescription(value) {
+  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
 }
 
 function buildLayoutSection(currentType) {
-  const options = LAYOUT_OPTIONS.map(({ value, label, description }) => {
-    const suffix = description ? ` · ${description}` : '';
+  const selectTitle = getLayoutDescription(currentType) || 'Choose layout';
+  const options = LAYOUT_OPTIONS.map(({ value, label }) => {
     const selected = value === currentType ? 'selected' : '';
-    return `<option value="${value}" ${selected}>${label}${suffix}</option>`;
+    const optionTitle = getLayoutDescription(value) || label;
+    return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
   }).join('');
 
   const content = `
     <div class="edit-drawer__layout-controls">
       <label class="edit-drawer__label" for="slide-layout-select">Layout</label>
       <div class="edit-drawer__layout-row">
-        <select class="edit-drawer__select" id="slide-layout-select">
+        <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
           ${options}
         </select>
       </div>
       <div class="edit-drawer__layout-buttons">
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">Apply to this slide</button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="layout-insert-btn" title="Insert a new slide with the selected layout">Add new slide</button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">Apply</button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="layout-insert-btn" title="Insert a new slide with the selected layout">Add</button>
       </div>
-      <p class="edit-drawer__hint">Apply updates the current slide while keeping your text. Add inserts a fresh slide after this one.</p>
     </div>
   `;
 
@@ -283,7 +285,7 @@ function buildActionsSection() {
     `
       <div class="edit-drawer__actions-grid">
         <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-          Save slide
+          Save
         </button>
         <div class="edit-drawer__actions-row">
           <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
@@ -294,7 +296,7 @@ function buildActionsSection() {
           </button>
         </div>
         <button type="button" class="edit-drawer__link-button" id="download-deck-btn">
-          Export deck JSON
+          Export
         </button>
       </div>
     `,
@@ -446,6 +448,16 @@ function showAutoSaveStatus(context) {
 function getSelectedLayoutValue() {
   const select = document.getElementById('slide-layout-select');
   return select?.value || '';
+}
+
+function updateLayoutSelectTooltip(select) {
+  if (!select) return;
+  const desc = getLayoutDescription(select.value);
+  if (desc) {
+    select.title = desc;
+  } else {
+    select.removeAttribute('title');
+  }
 }
 
 function handleLayoutApply(context) {
@@ -729,6 +741,12 @@ export function renderEditForm(context) {
     'click',
     () => handleLayoutInsert(ctx)
   );
+
+  const layoutSelect = document.getElementById('slide-layout-select');
+  if (layoutSelect) {
+    updateLayoutSelectTooltip(layoutSelect);
+    addTrackedListener(layoutSelect, 'change', () => updateLayoutSelectTooltip(layoutSelect));
+  }
 
   addTrackedListener(
     document.getElementById('json-toggle'),
