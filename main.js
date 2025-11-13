@@ -88,7 +88,13 @@ const progressBar = document.querySelector("[data-progress]");
 const urlParams = new URLSearchParams(window.location.search);
 // Also check hash params (for servers that strip query strings)
 const hashParams = new URLSearchParams(window.location.hash.slice(1));
-const requestedDeck = urlParams.get('deck') || hashParams.get('deck');
+
+// Helper to get param from search OR hash
+function getParam(name) {
+  return urlParams.get(name) || hashParams.get(name);
+}
+
+const requestedDeck = getParam('deck');
 console.log('[Init] ==================== DECK.HTML LOADING ====================');
 console.log('[Init] Full URL:', window.location.href);
 console.log('[Init] Search params:', window.location.search);
@@ -403,8 +409,8 @@ async function initDeck() {
 }
 
 async function loadSlides() {
-  // Priority 1: Check for ?url= parameter (shareable links)
-  const urlParam = urlParams.get("url");
+  // Priority 1: Check for url= parameter (shareable links) from search or hash
+  const urlParam = getParam("url");
   if (urlParam) {
     try {
       const response = await fetch(urlParam);
@@ -424,8 +430,8 @@ async function loadSlides() {
     }
   }
 
-  // Priority 2: Check for ?data= parameter (base64 encoded deck)
-  const dataParam = urlParams.get("data");
+  // Priority 2: Check for data= parameter (base64 encoded deck) from search or hash
+  const dataParam = getParam("data");
   if (dataParam) {
     try {
       const decoded = decodeURIComponent(escape(atob(dataParam)));
@@ -500,8 +506,7 @@ async function loadAndApplyTheme() {
 }
 
 function resolveThemePath() {
-  const params = new URLSearchParams(window.location.search);
-  const themeParam = params.get("theme");
+  const themeParam = getParam("theme");
   if (!themeParam) return "theme.json";
   if (themeParam.endsWith(".json")) {
     return themeParam;
@@ -513,8 +518,7 @@ function resolveThemePath() {
 }
 
 function resolveSlidesPath() {
-  const params = new URLSearchParams(window.location.search);
-  const slidesParam = params.get("slides");
+  const slidesParam = getParam("slides");
   if (!slidesParam) {
     return "slides.json";
   }
@@ -4748,8 +4752,7 @@ async function initDeckWithTheme() {
 }
 
 function handleInitialIntent() {
-  const params = new URLSearchParams(window.location.search);
-  const openIntent = params.get('open');
+  const openIntent = getParam('open');
   if (!openIntent) return;
 
   requestAnimationFrame(() => {
