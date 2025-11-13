@@ -1230,6 +1230,62 @@ body[data-mode="overview"] {
   }
 }
 
+.hud__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  min-width: 120px;
+}
+
+.hud__deck-name {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 150ms ease;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud__deck-name:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.hud__save-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.hud__save-status[data-state="saving"] {
+  opacity: 0.6;
+}
+
+.hud__save-status[data-state="saved"] {
+  opacity: 1;
+  animation: save-pulse 600ms ease;
+}
+
+@keyframes save-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.hud__save-icon {
+  font-size: 0.85rem;
+}
+
 .hud__counter {
   display: flex;
   gap: 8px;

@@ -362,14 +362,11 @@ async function initDeck() {
     });
   }
 
-  // Show "Save deck" button for file-based loads (not for guide.json or decks with IDs)
+  // Show "Save as copy" button for file-based loads (including guide deck)
   const saveDeckBtn = document.getElementById('save-deck-btn');
   if (saveDeckBtn && !activeDeckId) {
-    const isGuideDeck = resolveSlidesPath() === 'guide.json';
-    if (!isGuideDeck) {
-      saveDeckBtn.hidden = false;
-      saveDeckBtn.addEventListener('click', saveAsNewDeck);
-    }
+    saveDeckBtn.hidden = false;
+    saveDeckBtn.addEventListener('click', saveAsNewDeck);
   }
 
   const editBtn = document.getElementById('edit-btn');
@@ -394,6 +391,12 @@ async function initDeck() {
   }
 
   // Theme select now handled in initThemeDrawer()
+
+  // Initialize deck name display and rename functionality
+  initDeckName();
+
+  // Initialize auto-save indicator
+  initSaveStatus();
 
   setActiveSlide(0);
   updateOverviewButton();
@@ -556,13 +559,18 @@ function loadPersistedDeck() {
 }
 
 function persistSlides(options = {}) {
-  const { suppressWarning = false } = options;
+  const { suppressWarning = false, silent = false } = options;
   if (!Array.isArray(slides)) return false;
 
   // Don't persist guide deck - it should always load fresh
   const isGuideDeck = !activeDeckId && resolveSlidesPath() === 'guide.json';
   if (isGuideDeck) {
     return false;
+  }
+
+  // Show saving indicator
+  if (!silent && activeDeckId) {
+    showSaveStatus('saving');
   }
 
   try {
@@ -582,6 +590,13 @@ function persistSlides(options = {}) {
     localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
     deckPersistFailureNotified = false;
     markDeckAsRecent();
+    updateDeckNameDisplay();
+
+    // Show saved indicator
+    if (!silent && activeDeckId) {
+      showSaveStatus('saved');
+    }
+
     return true;
   } catch (error) {
     console.warn('Unable to persist deck edits to localStorage:', error);
@@ -661,6 +676,102 @@ function markDeckAsRecent() {
     localStorage.setItem(LAST_DECK_KEY, activeDeckId);
   } catch (error) {
     console.warn('Unable to record last deck ID:', error);
+  }
+}
+
+function initDeckName() {
+  const deckNameEl = document.getElementById('deck-name');
+  const deckNameText = document.getElementById('deck-name-text');
+  if (!deckNameEl || !deckNameText) return;
+
+  // Update deck name display
+  updateDeckNameDisplay();
+
+  // Click to rename
+  deckNameEl.addEventListener('click', renameDeck);
+}
+
+function updateDeckNameDisplay() {
+  const deckNameText = document.getElementById('deck-name-text');
+  if (!deckNameText) return;
+
+  let name = 'Untitled deck';
+
+  if (activeDeckId) {
+    // Get name from localStorage
+    try {
+      const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
+      const payload = JSON.parse(localStorage.getItem(key) || '{}');
+      name = payload.meta?.name || deriveDeckName(slides);
+    } catch (error) {
+      name = deriveDeckName(slides);
+    }
+  } else {
+    name = deriveDeckName(slides);
+  }
+
+  deckNameText.textContent = name;
+  document.title = `${name} — Slide-o-Matic`;
+}
+
+function renameDeck() {
+  if (!activeDeckId) {
+    showHudStatus('Save as copy first to rename', 'info');
+    setTimeout(hideHudStatus, 2000);
+    return;
+  }
+
+  const currentName = document.getElementById('deck-name-text')?.textContent || 'Untitled deck';
+  const newName = window.prompt('Rename deck:', currentName);
+
+  if (!newName || newName.trim() === '' || newName === currentName) return;
+
+  try {
+    const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
+    const payload = JSON.parse(localStorage.getItem(key) || '{}');
+    payload.meta = {
+      ...(payload.meta || {}),
+      name: newName.trim(),
+      updatedAt: Date.now(),
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+    updateDeckNameDisplay();
+    showHudStatus('✓ Deck renamed', 'success');
+    setTimeout(hideHudStatus, 1500);
+  } catch (error) {
+    console.error('Failed to rename deck:', error);
+    showHudStatus('⚠️ Unable to rename', 'error');
+    setTimeout(hideHudStatus, 2000);
+  }
+}
+
+let saveStatusTimeout = null;
+
+function initSaveStatus() {
+  // Save status is updated by showSaveStatus() function
+}
+
+function showSaveStatus(state = 'saved') {
+  const saveStatus = document.getElementById('save-status');
+  const saveText = saveStatus?.querySelector('.hud__save-text');
+  if (!saveStatus || !saveText) return;
+
+  clearTimeout(saveStatusTimeout);
+
+  if (state === 'saving') {
+    saveText.textContent = 'Saving...';
+    saveStatus.setAttribute('data-state', 'saving');
+    saveStatus.hidden = false;
+  } else if (state === 'saved') {
+    saveText.textContent = 'Saved';
+    saveStatus.setAttribute('data-state', 'saved');
+    saveStatus.hidden = false;
+
+    // Auto-hide after 2 seconds
+    saveStatusTimeout = setTimeout(() => {
+      saveStatus.hidden = true;
+      saveStatus.removeAttribute('data-state');
+    }, 2000);
   }
 }
 
