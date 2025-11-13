@@ -172,7 +172,7 @@ function buildImageManager(slide) {
 
     html += `</div>`;
   } else {
-    html += `<p class="edit-drawer__empty-note">No images yet.</p>`;
+    html += `<p class="edit-drawer__empty-note">Drop files or click Add image to get started.</p>`;
   }
 
   html += `
