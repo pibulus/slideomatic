@@ -87,6 +87,8 @@ const totalCounter = document.querySelector("[data-counter-total]");
 const progressBar = document.querySelector("[data-progress]");
 const urlParams = new URLSearchParams(window.location.search);
 const requestedDeck = urlParams.get('deck');
+console.log('[Init] URL params:', window.location.search);
+console.log('[Init] Requested deck:', requestedDeck);
 
 const renderers = {
   title: renderTitleSlide,
@@ -129,6 +131,7 @@ if (requestedDeck) {
   if (requestedDeck === 'new') {
     isNewDeckRequest = true;
     activeDeckId = generateDeckId();
+    console.log('[Init] New deck request, generated ID:', activeDeckId);
     urlParams.set('deck', activeDeckId);
     const nextSearch = urlParams.toString();
     const nextUrl = `${window.location.pathname}?${nextSearch}${window.location.hash ?? ''}`;
@@ -137,6 +140,7 @@ if (requestedDeck) {
     }
   } else {
     activeDeckId = requestedDeck;
+    console.log('[Init] Loading existing deck, ID:', activeDeckId);
   }
 }
 
@@ -432,11 +436,14 @@ async function loadSlides() {
 
   // Priority 3: Check for localStorage deck
   if (activeDeckId) {
+    console.log('[loadSlides] Priority 3: Loading deck from localStorage, activeDeckId:', activeDeckId);
     const stored = loadPersistedDeck();
     if (Array.isArray(stored)) {
+      console.log('[loadSlides] Successfully loaded deck with', stored.length, 'slides');
       return stored.slice();
     }
     // Bootstrap a blank deck if we were asked to start fresh or if the deck was removed.
+    console.warn('[loadSlides] No stored deck found, creating blank template');
     slides = [getSlideTemplate('title')];
     persistSlides({ suppressWarning: true });
     return slides.slice();
@@ -528,11 +535,24 @@ function getDeckStorageKey() {
 
 function loadPersistedDeck() {
   try {
-    const stored = localStorage.getItem(getDeckStorageKey());
-    if (!stored) return null;
+    const key = getDeckStorageKey();
+    console.log('[loadPersistedDeck] Looking for deck with key:', key);
+    const stored = localStorage.getItem(key);
+    if (!stored) {
+      console.log('[loadPersistedDeck] No deck found in localStorage for key:', key);
+      return null;
+    }
+    console.log('[loadPersistedDeck] Found deck in localStorage, parsing...');
     const payload = JSON.parse(stored);
-    if (!payload || typeof payload !== 'object') return null;
-    if (!Array.isArray(payload.slides)) return null;
+    if (!payload || typeof payload !== 'object') {
+      console.warn('[loadPersistedDeck] Invalid payload structure');
+      return null;
+    }
+    if (!Array.isArray(payload.slides)) {
+      console.warn('[loadPersistedDeck] payload.slides is not an array');
+      return null;
+    }
+    console.log('[loadPersistedDeck] Successfully loaded', payload.slides.length, 'slides');
     return payload.slides;
   } catch (error) {
     console.warn('Failed to load deck overrides from localStorage:', error);

@@ -383,6 +383,7 @@
 
             // Generate a new deck ID and save to localStorage
             const deckId = generateDeckId();
+            const key = buildDeckKey(deckId);
             const payload = {
               version: 1,
               updatedAt: Date.now(),
@@ -395,10 +396,25 @@
               }
             };
 
+            console.log('[Upload] Generated deck ID:', deckId);
+            console.log('[Upload] Storage key:', key);
+            console.log('[Upload] Payload has', slides.length, 'slides');
+
             try {
-              localStorage.setItem(buildDeckKey(deckId), JSON.stringify(payload));
+              localStorage.setItem(key, JSON.stringify(payload));
+              console.log('[Upload] Successfully saved to localStorage');
+
+              // Verify it was saved
+              const verification = localStorage.getItem(key);
+              if (verification) {
+                console.log('[Upload] Verification: deck exists in localStorage');
+              } else {
+                console.error('[Upload] Verification FAILED: deck not found after save!');
+              }
+
               showToast(`Imported ${slides.length} slides`, 'success');
             } catch (error) {
+              console.error('[Upload] Failed to save to localStorage:', error);
               showToast('Unable to save. Storage may be full.', 'error');
               input.value = '';
               return;
@@ -408,6 +424,7 @@
             const target = new URL('deck.html', window.location.href);
             target.searchParams.set('deck', deckId);
             target.searchParams.set('open', 'edit');
+            console.log('[Upload] Navigating to:', target.toString());
             input.value = '';
             window.location.href = target.toString();
           };
