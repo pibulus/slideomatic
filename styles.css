@@ -1805,7 +1805,7 @@ body[data-mode="overview"] .hud {
 .edit-drawer__content {
   flex: 1;
   overflow-y: auto;
-  padding: 28px;
+  padding: 24px;
   background: linear-gradient(180deg, #fffdfa 0%, #fff6ec 100%);
 }
 
@@ -1824,15 +1824,14 @@ body[data-mode="overview"] .hud {
 }
 
 .edit-drawer__section + .edit-drawer__section {
-  margin-top: 4px;
+  margin-top: 12px;
 }
 
 .edit-drawer__section-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .edit-drawer__section-title {
@@ -1847,7 +1846,7 @@ body[data-mode="overview"] .hud {
 .edit-drawer__section-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .edit-drawer__stack {
@@ -1877,18 +1876,6 @@ body[data-mode="overview"] .hud {
 .edit-drawer__layout-controls {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.edit-drawer__layout-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.edit-drawer__layout-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px;
 }
 
@@ -2010,13 +1997,13 @@ body[data-mode="overview"] .hud {
 .edit-drawer__actions-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .edit-drawer__actions-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .edit-drawer__link-button {

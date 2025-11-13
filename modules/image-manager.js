@@ -160,7 +160,7 @@ function buildImageManager(slide) {
               class="edit-drawer__image-alt-input"
               data-image-index="${index}"
               value="${escapeHtml(altText)}"
-              placeholder="Name this image..."
+              placeholder="Image name"
               title="Image name/alt text (used for search)"
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
@@ -172,7 +172,7 @@ function buildImageManager(slide) {
 
     html += `</div>`;
   } else {
-    html += `<p class="edit-drawer__empty-note">Drop files or click Add image to get started.</p>`;
+    html += `<p class="edit-drawer__empty-note">Add or drop images.</p>`;
   }
 
   html += `

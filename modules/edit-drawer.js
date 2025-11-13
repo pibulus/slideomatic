@@ -143,19 +143,53 @@ function buildSection(title, content, options = {}) {
   `;
 }
 
-function buildStack(fields, modifier = '') {
-  if (!fields || fields.length === 0) return '';
-  const className = modifier ? `edit-drawer__stack ${modifier}` : 'edit-drawer__stack';
-  return `<div class="${className}">${fields.join('')}</div>`;
+function buildInputField(field, value, placeholder) {
+  const safeField = escapeHtml(field);
+  return `
+    <input
+      type="text"
+      class="edit-drawer__input"
+      id="quick-edit-${safeField}"
+      data-field="${safeField}"
+      value="${escapeHtml(value ?? '')}"
+      placeholder="${escapeHtml(placeholder)}"
+      aria-label="${escapeHtml(placeholder)}"
+    />
+  `;
+}
+
+function buildTextareaField(field, value, placeholder) {
+  const safeField = escapeHtml(field);
+  return `
+    <textarea
+      class="edit-drawer__textarea"
+      id="quick-edit-${safeField}"
+      data-field="${safeField}"
+      rows="4"
+      placeholder="${escapeHtml(placeholder)}"
+      aria-label="${escapeHtml(placeholder)}"
+    >${escapeHtml(value ?? '')}</textarea>
+  `;
+}
+
+function resolveField(slide, candidates) {
+  for (const key of candidates) {
+    if (Object.prototype.hasOwnProperty.call(slide, key)) {
+      return { field: key, value: slide[key] ?? '' };
+    }
+  }
+  return null;
 }
 
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
-    buildLayoutControl(type),
+    buildLabelSection(slide),
     buildHeadlineSection(slide, type),
+    buildSubtitleSection(slide, type),
     buildBodySection(slide, type),
     buildImagesSection(slide),
+    buildLayoutControl(type),
   ].filter(Boolean);
   return sections.join('');
 }
@@ -174,80 +208,78 @@ function buildLayoutControl(currentType) {
 
   const content = `
     <div class="edit-drawer__layout-controls">
-      <label class="edit-drawer__label" for="slide-layout-select">Layout</label>
-      <div class="edit-drawer__layout-row">
-        <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
-          ${options}
-        </select>
-      </div>
-      <div class="edit-drawer__layout-buttons">
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">Apply</button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="layout-insert-btn" title="Insert a new slide with the selected layout">Add</button>
-      </div>
+      <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
+        ${options}
+      </select>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">
+        Apply layout
+      </button>
     </div>
   `;
 
   return buildSection('Layout', content, { modifier: ' edit-drawer__section--layout' });
 }
 
-function buildHeadlineSection(slide, type) {
-  const fields = buildHeadlineFields(slide, type);
-  if (!fields.length) return '';
-  return buildSection('Headline', buildStack(fields));
+function buildLabelSection(slide) {
+  if (!Object.prototype.hasOwnProperty.call(slide, 'eyebrow')) return '';
+  return buildSection('Label', buildInputField('eyebrow', slide.eyebrow || '', 'Label'));
 }
 
-function buildHeadlineFields(slide, type) {
-  const fields = [];
+function buildHeadlineSection(slide, type) {
+  const descriptor = resolveField(
+    slide,
+    type === 'title'
+      ? ['title', 'headline']
+      : type === 'quote'
+        ? ['quote', 'headline']
+        : ['headline', 'title']
+  );
+  );
+  const fallbackField =
+    type === 'title'
+      ? 'title'
+      : type === 'quote'
+        ? 'quote'
+        : 'headline';
 
-  if ('eyebrow' in slide || type === 'title') {
-    fields.push(buildTextField('eyebrow', 'Label', slide.eyebrow || ''));
+  const fieldData = descriptor ?? { field: fallbackField, value: '' };
+  const placeholder = type === 'quote' ? 'Quote' : 'Headline';
+  return buildSection('Headline', buildInputField(fieldData.field, fieldData.value, placeholder));
+}
+
+function buildSubtitleSection(slide, type) {
+  let candidates = [];
+  let placeholder = 'Subtitle';
+  let title = 'Subtitle';
+  let fallback = null;
+
+  if (type === 'title') {
+    candidates = ['subtitle'];
+    fallback = 'subtitle';
+  } else if (type === 'quote') {
+    candidates = ['attribution'];
+    placeholder = 'Source';
+    title = 'Source';
+    fallback = 'attribution';
+  } else {
+    candidates = ['subtitle'];
+    fallback = 'subtitle';
   }
 
-  if (type === 'title' || 'title' in slide) {
-    if (type === 'title' || slide.title) {
-      fields.push(buildTextField('title', 'Title', slide.title || ''));
-    }
-  }
-
-  const defaultHeadlineTypes = new Set(['standard', 'gallery', 'grid', 'pillars', 'split', 'image', 'typeface']);
-  if ('headline' in slide || defaultHeadlineTypes.has(type)) {
-    fields.push(buildTextField('headline', 'Headline', slide.headline || ''));
-  }
-
-  return fields.filter(Boolean);
+  const descriptor = resolveField(slide, candidates);
+  if (!descriptor && !fallback) return '';
+  const fieldData = descriptor ?? { field: fallback, value: '' };
+  if (!fieldData.field) return '';
+  return buildSection(title, buildInputField(fieldData.field, fieldData.value, placeholder));
 }
 
 function buildBodySection(slide, type) {
-  const { title, fields } = buildBodyFields(slide, type);
-  if (!fields.length) return '';
-  return buildSection(title, buildStack(fields));
-}
-
-function buildBodyFields(slide, type) {
-  if (type === 'title') {
-    return {
-      title: 'Subtitle',
-      fields: [buildTextArea('subtitle', 'Text', slide.subtitle || '')],
-    };
-  }
-
-  if (type === 'quote') {
-    return {
-      title: 'Quote',
-      fields: [
-        buildTextArea('quote', 'Text', slide.quote || slide.headline || ''),
-        buildTextField('attribution', 'Source', slide.attribution || slide.body || ''),
-      ].filter(Boolean),
-    };
-  }
-
+  const shouldShow =
+    Object.prototype.hasOwnProperty.call(slide, 'body') ||
+    ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
+  if (!shouldShow) return '';
   const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
-  const fields = [];
-  if ('body' in slide || type === 'standard' || type === 'gallery') {
-    fields.push(buildTextArea('body', 'Copy', bodyValue));
-  }
-
-  return { title: 'Body', fields: fields.filter(Boolean) };
+  return buildSection('Body', buildTextareaField('body', bodyValue, 'Body copy'));
 }
 
 function buildImagesSection(slide) {
@@ -300,37 +332,6 @@ function buildAdvancedSection(slide) {
         >${jsonString}</textarea>
       </div>
     </section>
-  `;
-}
-
-function buildTextField(id, label, value) {
-  const escapedValue = escapeHtml(value ?? '');
-  return `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label" for="quick-edit-${id}">${escapeHtml(label)}</label>
-      <input
-        type="text"
-        class="edit-drawer__input"
-        id="quick-edit-${id}"
-        data-field="${escapeHtml(id)}"
-        value="${escapedValue}"
-      />
-    </div>
-  `;
-}
-
-function buildTextArea(id, label, value) {
-  const escapedValue = escapeHtml(value ?? '');
-  return `
-    <div class="edit-drawer__field">
-      <label class="edit-drawer__label" for="quick-edit-${id}">${escapeHtml(label)}</label>
-      <textarea
-        class="edit-drawer__textarea edit-drawer__textarea--small"
-        id="quick-edit-${id}"
-        data-field="${escapeHtml(id)}"
-        rows="3"
-      >${escapedValue}</textarea>
-    </div>
   `;
 }
 
@@ -450,17 +451,6 @@ function handleLayoutApply(context) {
   applyLayoutToCurrentSlide(ctx, layout);
 }
 
-function handleLayoutInsert(context) {
-  const layout = getSelectedLayoutValue();
-  const ctx = ensureContext(context);
-  if (!layout) {
-    ctx.showHudStatus('Select a layout first', 'warning');
-    setTimeout(() => ctx.hideHudStatus(), 1500);
-    return;
-  }
-  insertLayoutAfterCurrent(ctx, layout);
-}
-
 const PRESERVED_FIELDS = [
   'headline',
   'body',
@@ -496,21 +486,6 @@ function applyLayoutToCurrentSlide(ctx, layout) {
   const label = getLayoutMeta(layout)?.label || layout;
   ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
-}
-
-function insertLayoutAfterCurrent(ctx, layout) {
-  const template = ctx.getSlideTemplate(layout);
-  if (!template) {
-    alert(`No template available for type "${layout}".`);
-    return;
-  }
-
-  const insertIndex = ctx.getCurrentIndex() + 1;
-  const freshSlide = JSON.parse(JSON.stringify(template));
-  ctx.insertSlideAt(insertIndex, freshSlide, { activate: true });
-  ctx.showHudStatus(`➕ Added ${getLayoutMeta(layout)?.label || layout} slide`, 'success');
-  setTimeout(() => ctx.hideHudStatus(), 1600);
-  renderEditForm(ctx);
 }
 
 function mergeSlideWithTemplate(template, currentSlide) {
@@ -713,12 +688,6 @@ export function renderEditForm(context) {
     document.getElementById('layout-apply-btn'),
     'click',
     () => handleLayoutApply(ctx)
-  );
-
-  addTrackedListener(
-    document.getElementById('layout-insert-btn'),
-    'click',
-    () => handleLayoutInsert(ctx)
   );
 
   const layoutSelect = document.getElementById('slide-layout-select');
