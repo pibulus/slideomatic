@@ -81,7 +81,7 @@
                 </button>
               </div>
             </div>
-            <input type="file" id="upload-input" accept=".json,application/json" hidden />
+            <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
           </article>
         </div>
       </section>
@@ -375,12 +375,17 @@
           return;
         }
         console.log('[bindUploadInput] Binding change listener to input#upload-input');
-        uploadInput.addEventListener('change', (event) => {
-          console.log('[Upload] File input changed, processing...');
+
+        // Use both 'change' and 'input' events as fallback
+        const handleFileSelect = (event) => {
+          console.log('[Upload] ===== FILE SELECTION EVENT FIRED =====');
+          console.log('[Upload] Event type:', event.type);
           const input = event.target;
+          console.log('[Upload] Input element:', input);
+          console.log('[Upload] Files:', input.files);
           const file = input.files?.[0];
           if (!file) {
-            console.log('[Upload] No file selected');
+            console.log('[Upload] No file selected, files.length:', input.files?.length);
             return;
           }
           console.log('[Upload] File selected:', file.name, 'Size:', file.size, 'bytes');
@@ -452,12 +457,12 @@
             }
 
             // Navigate to the new deck
-            const target = new URL('deck.html', window.location.href);
-            target.searchParams.set('deck', deckId);
-            target.searchParams.set('open', 'edit');
-            console.log('[Upload] Navigating to:', target.toString());
+            // Try using hash instead of query params to work with URL rewriting servers
+            const targetUrl = `deck.html#deck=${encodeURIComponent(deckId)}&open=edit`;
+            console.log('[Upload] Navigating to:', targetUrl);
+            console.log('[Upload] Full URL will be:', new URL(targetUrl, window.location.href).toString());
             input.value = '';
-            window.location.href = target.toString();
+            window.location.href = targetUrl;
           };
 
           reader.onerror = () => {
@@ -466,7 +471,12 @@
           };
 
           reader.readAsText(file);
-        });
+        };
+
+        // Bind to both change and input events
+        uploadInput.addEventListener('change', handleFileSelect);
+        uploadInput.addEventListener('input', handleFileSelect);
+        console.log('[bindUploadInput] Listeners bound to both change and input events');
       }
 
       function bindShelfRefresh() {
