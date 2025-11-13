@@ -234,7 +234,6 @@ function buildHeadlineSection(slide, type) {
         ? ['quote', 'headline']
         : ['headline', 'title']
   );
-  );
   const fallbackField =
     type === 'title'
       ? 'title'
