@@ -248,6 +248,9 @@
         }, 4000);
       }
 
+      console.log('[Index] ==================== INDEX.HTML INIT ====================');
+      console.log('[Index] uploadInput element:', uploadInput);
+
       // Clean up old guide.json cache if it exists
       cleanupGuideCache();
 
@@ -261,6 +264,9 @@
       bindPasteModal();
       bindFooterActions();
       bindAboutModal();
+
+      console.log('[Index] All bindings complete');
+      console.log('[Index] =========================================================');
 
       function cleanupGuideCache() {
         try {
@@ -311,20 +317,31 @@
       }
 
       function handleNewDeckAction(mode) {
+        console.log('[handleNewDeckAction] Mode:', mode);
         switch (mode) {
           case 'live':
+            console.log('[handleNewDeckAction] Navigating to new blank deck');
             window.location.href = 'deck.html?deck=new&open=edit';
             break;
           case 'constructor':
+            console.log('[handleNewDeckAction] Navigating to admin');
             window.location.href = 'admin.html';
             break;
           case 'paste':
+            console.log('[handleNewDeckAction] Opening paste modal');
             openPasteModal();
             break;
           case 'upload':
-            uploadInput?.click();
+            console.log('[handleNewDeckAction] Triggering file input click, uploadInput exists?', !!uploadInput);
+            if (uploadInput) {
+              console.log('[handleNewDeckAction] Calling uploadInput.click()');
+              uploadInput.click();
+            } else {
+              console.error('[handleNewDeckAction] uploadInput is null/undefined!');
+            }
             break;
           default:
+            console.warn('[handleNewDeckAction] Unknown mode:', mode);
             break;
         }
       }
@@ -352,8 +369,13 @@
       }
 
       function bindUploadInput() {
-        console.log('[Upload] Binding upload input listener');
-        uploadInput?.addEventListener('change', (event) => {
+        console.log('[bindUploadInput] Called, uploadInput exists?', !!uploadInput);
+        if (!uploadInput) {
+          console.error('[bindUploadInput] uploadInput is null! Cannot bind listener');
+          return;
+        }
+        console.log('[bindUploadInput] Binding change listener to input#upload-input');
+        uploadInput.addEventListener('change', (event) => {
           console.log('[Upload] File input changed, processing...');
           const input = event.target;
           const file = input.files?.[0];
