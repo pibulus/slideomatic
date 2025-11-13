@@ -352,17 +352,26 @@
       }
 
       function bindUploadInput() {
+        console.log('[Upload] Binding upload input listener');
         uploadInput?.addEventListener('change', (event) => {
+          console.log('[Upload] File input changed, processing...');
           const input = event.target;
           const file = input.files?.[0];
-          if (!file) return;
+          if (!file) {
+            console.log('[Upload] No file selected');
+            return;
+          }
+          console.log('[Upload] File selected:', file.name, 'Size:', file.size, 'bytes');
 
           const reader = new FileReader();
           reader.onload = () => {
+            console.log('[Upload] File read complete, parsing JSON...');
             let parsed;
             try {
               parsed = JSON.parse(reader.result);
+              console.log('[Upload] JSON parsed successfully');
             } catch (error) {
+              console.error('[Upload] JSON parse error:', error);
               showToast('That file is not valid JSON. Try again.', 'error');
               input.value = '';
               return;
