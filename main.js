@@ -4475,7 +4475,6 @@ function initThemeDrawer() {
         opt.classList.toggle('is-selected', opt === option);
       });
 
-      showHudStatus('🎨 Switching theme...', 'processing');
       try {
         if (themePath.startsWith('saved:')) {
           const savedName = themePath.replace('saved:', '');
@@ -4556,8 +4555,6 @@ function initThemeDrawer() {
 
   randomBtn?.addEventListener('click', () => {
     try {
-      showHudStatus('🎲 Generating random theme...', 'processing');
-
       const baseSource = resolveBaseThemePath(getCurrentThemePath() || '') || 'theme.json';
       const theme = generateRandomTheme();
 
