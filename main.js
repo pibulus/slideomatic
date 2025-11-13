@@ -362,11 +362,9 @@ async function initDeck() {
     });
   }
 
-  // Show "Save as copy" button for file-based loads (including guide deck)
-  const saveDeckBtn = document.getElementById('save-deck-btn');
-  if (saveDeckBtn && !activeDeckId) {
-    saveDeckBtn.hidden = false;
-    saveDeckBtn.addEventListener('click', saveAsNewDeck);
+  const helpBtn = document.getElementById('help-btn');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', openKeyboardHelp);
   }
 
   const editBtn = document.getElementById('edit-btn');
@@ -681,8 +679,9 @@ function initDeckName() {
 }
 
 function updateDeckNameDisplay() {
+  const deckNameEl = document.getElementById('deck-name');
   const deckNameText = document.getElementById('deck-name-text');
-  if (!deckNameText) return;
+  if (!deckNameText || !deckNameEl) return;
 
   let name = 'Untitled deck';
 
@@ -699,7 +698,14 @@ function updateDeckNameDisplay() {
     name = deriveDeckName(slides);
   }
 
-  deckNameText.textContent = name;
+  // Hide deck name if it's untitled
+  if (name === 'Untitled deck') {
+    deckNameEl.hidden = true;
+  } else {
+    deckNameEl.hidden = false;
+    deckNameText.textContent = name;
+  }
+
   document.title = `${name} — Slide-o-Matic`;
 }
 
@@ -4675,10 +4681,25 @@ async function initDeckWithTheme() {
     downloadTheme,
   });
 
+  const homeBtn = document.getElementById('home-btn');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  }
+
+  const helpBtn = document.getElementById('help-btn');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', openKeyboardHelp);
+  }
+
   const overviewBtn = document.getElementById('overview-btn');
   if (overviewBtn) {
     overviewBtn.addEventListener('click', toggleOverview);
   }
+
+  // Initialize deck name display and rename functionality
+  initDeckName();
 
   // Initialize theme drawer
   initThemeDrawer();

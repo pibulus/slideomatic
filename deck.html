@@ -358,28 +358,20 @@
             <span class="hud__action-icon">⊞</span>
             <span class="hud__action-text">Overview</span>
           </button>
-          <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share link" title="Share link to this deck">
-            <span class="hud__action-icon">↗</span>
-            <span class="hud__action-text">Share</span>
+          <button class="hud__action hud__help-btn" id="help-btn" aria-label="Keyboard shortcuts (?)" title="Press ? for all keyboard shortcuts">
+            <span class="hud__action-icon">?</span>
+            <span class="hud__action-text">Help</span>
           </button>
-          <span class="hud__hint" title="Press ? for all keyboard shortcuts">? Help</span>
-          <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
-            <span class="hud__notes-icon">📝</span>
-          </div>
-        </div>
-        <div class="hud__info">
-          <div class="hud__deck-name" id="deck-name" title="Click to rename deck">
-            <span id="deck-name-text">Untitled deck</span>
-          </div>
-          <div class="hud__save-status" id="save-status" hidden>
-            <span class="hud__save-icon">💾</span>
-            <span class="hud__save-text">Saved</span>
-          </div>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>
           <span class="hud__divider">/</span>
           <span data-counter-total>1</span>
+        </div>
+        <div class="hud__info">
+          <div class="hud__deck-name" id="deck-name" title="Click to rename deck" hidden>
+            <span id="deck-name-text"></span>
+          </div>
         </div>
         <div class="hud__progress">
           <div class="hud__progress-bar" data-progress></div>
