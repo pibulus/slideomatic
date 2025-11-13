@@ -321,7 +321,7 @@
         switch (mode) {
           case 'live':
             console.log('[handleNewDeckAction] Navigating to new blank deck');
-            window.location.href = 'deck.html?deck=new&open=edit';
+            window.location.href = 'deck.html#deck=new&open=edit';
             break;
           case 'constructor':
             console.log('[handleNewDeckAction] Navigating to admin');
@@ -364,7 +364,7 @@
 
       function bindDemoButton() {
         demoButton?.addEventListener('click', () => {
-          window.location.href = 'deck.html?slides=guide';
+          window.location.href = 'deck.html#slides=guide';
         });
       }
 
