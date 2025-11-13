@@ -87,8 +87,11 @@ const totalCounter = document.querySelector("[data-counter-total]");
 const progressBar = document.querySelector("[data-progress]");
 const urlParams = new URLSearchParams(window.location.search);
 const requestedDeck = urlParams.get('deck');
-console.log('[Init] URL params:', window.location.search);
+console.log('[Init] ==================== DECK.HTML LOADING ====================');
+console.log('[Init] Full URL:', window.location.href);
+console.log('[Init] Search params:', window.location.search);
 console.log('[Init] Requested deck:', requestedDeck);
+console.log('[Init] =========================================================');
 
 const renderers = {
   title: renderTitleSlide,
