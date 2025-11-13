@@ -269,6 +269,43 @@
         </div>
       </div>
 
+      <!-- Keyboard Hints Modal (First Visit) -->
+      <div class="hints-modal" id="hints-modal" aria-hidden="true">
+        <div class="hints-modal__backdrop"></div>
+        <div class="hints-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
+          <button class="hints-modal__close" aria-label="Close hints" id="hints-modal-close">×</button>
+          <div class="hints-modal__header">
+            <h2 id="hints-modal-title">⌨️ Quick Start</h2>
+            <p class="hints-modal__subtitle">Five shortcuts to get you moving</p>
+          </div>
+          <div class="hints-modal__body">
+            <div class="hint-item">
+              <div class="hint-item__key">→</div>
+              <div class="hint-item__desc">Next slide</div>
+            </div>
+            <div class="hint-item">
+              <div class="hint-item__key">E</div>
+              <div class="hint-item__desc">Edit current slide</div>
+            </div>
+            <div class="hint-item">
+              <div class="hint-item__key">O</div>
+              <div class="hint-item__desc">Overview (see all slides)</div>
+            </div>
+            <div class="hint-item">
+              <div class="hint-item__key">V</div>
+              <div class="hint-item__desc">Voice-to-slide (AI assist)</div>
+            </div>
+            <div class="hint-item">
+              <div class="hint-item__key">?</div>
+              <div class="hint-item__desc">Show all shortcuts</div>
+            </div>
+          </div>
+          <div class="hints-modal__footer">
+            <button class="hints-modal__btn" id="hints-modal-got-it">Got it, let's go!</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Share Modal -->
       <div class="share-modal" id="share-modal" aria-hidden="true">
         <div class="share-modal__backdrop"></div>

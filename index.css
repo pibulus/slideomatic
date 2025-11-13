@@ -692,6 +692,11 @@ main {
     box-shadow 120ms ease;
 }
 
+.deck-card--starred {
+  background: rgba(255, 249, 200, 0.85);
+  border-color: #ffc107;
+}
+
 .deck-card:hover {
   transform: translateX(3px);
   box-shadow: 6px 6px 0 rgba(26, 21, 34, 0.2);
@@ -701,6 +706,33 @@ main {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+
+.deck-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-card__star {
+  border: none;
+  background: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+  opacity: 0.5;
+}
+
+.deck-card__star:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.deck-card--starred .deck-card__star {
+  opacity: 1;
+  color: #ffc107;
 }
 
 .deck-card__name {

@@ -462,19 +462,34 @@
       function createDeckCard(deck) {
         const item = document.createElement('li');
         item.className = 'deck-card';
+        if (deck.starred) {
+          item.classList.add('deck-card--starred');
+        }
 
         const meta = document.createElement('div');
         meta.className = 'deck-card__meta';
+
+        const nameRow = document.createElement('div');
+        nameRow.className = 'deck-card__name-row';
+
+        const starBtn = document.createElement('button');
+        starBtn.type = 'button';
+        starBtn.className = 'deck-card__star';
+        starBtn.setAttribute('aria-label', deck.starred ? 'Remove from favorites' : 'Add to favorites');
+        starBtn.textContent = deck.starred ? '★' : '☆';
+        starBtn.addEventListener('click', () => toggleDeckStar(deck));
 
         const name = document.createElement('p');
         name.className = 'deck-card__name';
         name.textContent = deck.name;
 
+        nameRow.append(starBtn, name);
+
         const details = document.createElement('p');
         details.className = 'deck-card__details';
         details.textContent = `${deck.slideCount} ${deck.slideCount === 1 ? 'slide' : 'slides'} • ${formatDeckTimestamp(deck.updatedAt)}`;
 
-        meta.append(name, details);
+        meta.append(nameRow, details);
 
         const actions = document.createElement('div');
         actions.className = 'deck-card__actions';
@@ -536,14 +551,21 @@
           const name = typeof payload.meta?.name === 'string' && payload.meta.name.trim()
             ? payload.meta.name.trim()
             : deriveDeckName(payload.slides);
+          const starred = payload.meta?.starred === true;
           decks.push({
             id: deckId,
             name,
             updatedAt,
             slideCount: payload.slides.length,
+            starred,
           });
         }
-        return decks.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        // Sort: starred first, then by date
+        return decks.sort((a, b) => {
+          if (a.starred && !b.starred) return -1;
+          if (!a.starred && b.starred) return 1;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
       }
 
       function renameDeck(deck) {
@@ -581,6 +603,27 @@
           showToast('Deck deleted', 'success');
         } catch (error) {
           showToast('Unable to delete deck', 'error');
+        }
+      }
+
+      function toggleDeckStar(deck) {
+        if (!deck) return;
+        const payload = getDeckPayload(deck.id);
+        if (!payload) return;
+
+        const newStarredState = !deck.starred;
+        payload.meta = {
+          ...(payload.meta || {}),
+          starred: newStarredState,
+          updatedAt: Date.now(),
+        };
+
+        try {
+          localStorage.setItem(buildDeckKey(deck.id), JSON.stringify(payload));
+          renderDeckShelf();
+          showToast(newStarredState ? '★ Added to favorites' : 'Removed from favorites', 'success');
+        } catch (error) {
+          showToast('Unable to update deck', 'error');
         }
       }
 

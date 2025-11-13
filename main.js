@@ -4708,6 +4708,9 @@ async function initDeckWithTheme() {
   // Show intro modal on first visit
   showIntroModalIfFirstVisit();
 
+  // Show keyboard hints on first visit
+  showKeyboardHintsIfFirstVisit();
+
   // Initialize share modal
   initShareModal();
 
@@ -4764,6 +4767,48 @@ function showIntroModalIfFirstVisit() {
     backdrop?.addEventListener('click', () => {
       introModal.classList.remove('is-open');
       localStorage.setItem(INTRO_SEEN_KEY, 'true');
+    });
+  }
+}
+
+function showKeyboardHintsIfFirstVisit() {
+  const HINTS_SEEN_KEY = 'slideomatic_hints_seen';
+  const hintsModal = document.getElementById('hints-modal');
+  const closeBtn = document.getElementById('hints-modal-close');
+  const gotItBtn = document.getElementById('hints-modal-got-it');
+  const backdrop = hintsModal?.querySelector('.hints-modal__backdrop');
+
+  if (!hintsModal) return;
+
+  // Check if user has seen hints before
+  const hasSeenHints = localStorage.getItem(HINTS_SEEN_KEY);
+
+  if (!hasSeenHints) {
+    // Show hints modal with slight delay for effect
+    setTimeout(() => {
+      hintsModal.setAttribute('aria-hidden', 'false');
+    }, 1000);
+
+    const closeHints = () => {
+      hintsModal.setAttribute('aria-hidden', 'true');
+      localStorage.setItem(HINTS_SEEN_KEY, 'true');
+    };
+
+    // Close button handler
+    closeBtn?.addEventListener('click', closeHints);
+
+    // "Got it" button handler
+    gotItBtn?.addEventListener('click', closeHints);
+
+    // Backdrop click to close
+    backdrop?.addEventListener('click', closeHints);
+
+    // ESC key to close
+    document.addEventListener('keydown', function handleHintsEsc(event) {
+      if (event.key === 'Escape' && hintsModal.getAttribute('aria-hidden') === 'false') {
+        closeHints();
+        document.removeEventListener('keydown', handleHintsEsc);
+      }
     });
   }
 }
