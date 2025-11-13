@@ -53,11 +53,11 @@ const CONFIG = {
 
   // Toast notifications
   TOAST: {
-    MAX_ACTIVE: 5,                     // Maximum simultaneous toasts
-    SUCCESS_DURATION: 2000,            // Auto-hide after 2s
-    ERROR_DURATION: 3000,              // Auto-hide after 3s
-    WARNING_DURATION: 3000,            // Auto-hide after 3s
-    INFO_DURATION: 2500,               // Auto-hide after 2.5s
+    MAX_ACTIVE: 3,                     // Maximum simultaneous toasts
+    SUCCESS_DURATION: 1500,            // Auto-hide after 1.5s
+    ERROR_DURATION: 2000,              // Auto-hide after 2s
+    WARNING_DURATION: 2000,            // Auto-hide after 2s
+    INFO_DURATION: 1500,               // Auto-hide after 1.5s
   },
 
   // Auto-save (handled in edit-drawer module)
@@ -3708,6 +3708,11 @@ function showHudStatus(message, type = '', options = {}) {
   container.appendChild(toast);
   activeToasts.set(toastId, toast);
 
+  // Click to dismiss
+  const dismissHandler = () => hideToast(toastId);
+  toast.addEventListener('click', dismissHandler);
+  toast._dismissHandler = dismissHandler; // Store for cleanup
+
   // Auto-dismiss after duration (unless it's 'processing' or has retry button)
   if (type !== 'processing' && !options.onRetry) {
     const duration = options.duration || CONFIG.TOAST[`${type.toUpperCase()}_DURATION`] || CONFIG.TOAST.INFO_DURATION;
@@ -3743,6 +3748,12 @@ function hideToast(toastId) {
   if (retryBtn && toast._retryHandler) {
     retryBtn.removeEventListener('click', toast._retryHandler);
     delete toast._retryHandler;
+  }
+
+  // Clean up dismiss listener
+  if (toast._dismissHandler) {
+    toast.removeEventListener('click', toast._dismissHandler);
+    delete toast._dismissHandler;
   }
 
   toast.classList.add('toast--hiding');
