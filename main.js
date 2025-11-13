@@ -379,17 +379,6 @@ async function initDeck() {
     overviewBtn.addEventListener('click', toggleOverview);
   }
 
-  const saveDeckBtn = document.getElementById('save-deck-btn');
-  if (saveDeckBtn) {
-    saveDeckBtn.addEventListener('click', () => {
-      const persisted = downloadDeck();
-      if (persisted) {
-        showHudStatus('💾 Deck downloaded', 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-    });
-  }
-
   // Theme select now handled in initThemeDrawer()
 
   // Initialize deck name display and rename functionality
@@ -4689,17 +4678,6 @@ async function initDeckWithTheme() {
   const overviewBtn = document.getElementById('overview-btn');
   if (overviewBtn) {
     overviewBtn.addEventListener('click', toggleOverview);
-  }
-
-  const saveDeckBtn = document.getElementById('save-deck-btn');
-  if (saveDeckBtn) {
-    saveDeckBtn.addEventListener('click', () => {
-      const persisted = downloadDeck();
-      if (persisted) {
-        showHudStatus('💾 Deck downloaded', 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-    });
   }
 
   // Initialize theme drawer
