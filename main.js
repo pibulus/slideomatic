@@ -2620,6 +2620,8 @@ function openEditDrawer() {
   if (themeDrawerInstance?.isOpen) {
     closeDrawer(themeDrawerInstance, { restoreFocus: false });
   }
+  // Pre-render the form BEFORE opening to avoid DOM manipulation during animation
+  renderEditForm(getEditDrawerContext());
   openDrawer(editDrawerInstance);
 }
 
@@ -2678,7 +2680,7 @@ editDrawerInstance = createDrawer({
   id: 'edit-drawer',
   onOpen: () => {
     isEditDrawerOpen = true;
-    renderEditForm(getEditDrawerContext());
+    // renderEditForm is now called before opening for smooth animation
     const closeBtn = editDrawerInstance.element.querySelector('.edit-drawer__close');
     if (closeBtn && !closeBtn.dataset.listenerAttached) {
       closeBtn.addEventListener('click', () => closeDrawer(editDrawerInstance));
@@ -3924,9 +3926,7 @@ themeDrawerInstance = createDrawer({
     isThemeDrawerOpen = true;
     themeBtn?.setAttribute('aria-expanded', 'true');
     themeBtn?.classList.add('is-active');
-    loadThemeIntoEditor();
-    populateThemeDropdown();
-    syncThemeSelectUI();
+    // Theme content is now pre-populated before opening for smooth animation
     const closeBtn = themeDrawerInstance.element.querySelector('.theme-drawer__close');
     if (closeBtn && !closeBtn.dataset.listenerAttached) {
       closeBtn.addEventListener('click', () => closeDrawer(themeDrawerInstance));
@@ -3955,6 +3955,10 @@ function openThemeDrawer() {
   if (editDrawerInstance?.isOpen) {
     closeDrawer(editDrawerInstance, { restoreFocus: false });
   }
+  // Pre-populate theme content BEFORE opening for smooth animation
+  loadThemeIntoEditor();
+  populateThemeDropdown();
+  syncThemeSelectUI();
   openDrawer(themeDrawerInstance);
 }
 
