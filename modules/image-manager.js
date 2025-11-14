@@ -172,7 +172,12 @@ function buildImageManager(slide) {
 
     html += `</div>`;
   } else {
-    html += `<p class="edit-drawer__empty-note">Add or drop images.</p>`;
+    html += `
+      <div class="edit-drawer__image-dropzone">
+        <span class="edit-drawer__image-dropzone-icon">✶</span>
+        <p>Add or drop images</p>
+      </div>
+    `;
   }
 
   html += `
@@ -181,7 +186,7 @@ function buildImageManager(slide) {
     </button>
   `;
 
-  return html;
+  return { html, count: images.length };
 }
 
 /**
