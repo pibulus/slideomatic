@@ -2128,6 +2128,12 @@ body[data-mode="overview"] .hud {
   animation: none;
 }
 
+.edit-drawer__image-dropzone:hover {
+  border-color: var(--color-surface);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
 .edit-drawer__image-item {
   display: flex;
   align-items: center;
