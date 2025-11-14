@@ -186,7 +186,7 @@ function buildImageManager(slide) {
     </button>
   `;
 
-  return { html, count: images.length };
+  return html;
 }
 
 /**

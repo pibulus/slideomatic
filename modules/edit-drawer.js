@@ -131,19 +131,15 @@ function getLayoutMeta(value) {
 function buildSection(title, content, options = {}) {
   if (!content) return '';
   const modifier = options.modifier ? ` ${options.modifier}` : '';
-  const summaryText = options.summary ? escapeHtml(options.summary) : '';
-  const emptySummaryAttr = options.emptySummary ? escapeHtml(options.emptySummary) : '';
-  const openAttr = options.initiallyOpen === false ? '' : ' open';
   return `
-    <details class="edit-drawer__section${modifier}"${openAttr}>
-      <summary class="edit-drawer__section-header">
-        <span class="edit-drawer__section-title">${escapeHtml(title)}</span>
-        ${summaryText ? `<span class="edit-drawer__section-summary" data-section-summary${emptySummaryAttr ? ` data-empty-summary="${emptySummaryAttr}"` : ''} title="${summaryText}">${summaryText}</span>` : ''}
-      </summary>
+    <section class="edit-drawer__section${modifier}">
+      <div class="edit-drawer__section-header">
+        <p class="edit-drawer__section-title">${escapeHtml(title)}</p>
+      </div>
       <div class="edit-drawer__section-body">
         ${content}
       </div>
-    </details>
+    </section>
   `;
 }
 
@@ -198,13 +194,6 @@ function buildMainSections(slide) {
   return sections.join('');
 }
 
-function summarizeText(value, fallback = '') {
-  if (value == null) return fallback;
-  const text = String(value).trim();
-  if (!text) return fallback;
-  return text.length > 28 ? `${text.slice(0, 25)}…` : text;
-}
-
 function getLayoutDescription(value) {
   return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
 }
@@ -222,29 +211,18 @@ function buildLayoutControl(currentType) {
       <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
         ${options}
       </select>
-      <button type="button" class="edit-drawer__button edit-drawer__button--ghost" id="layout-apply-btn" title="Apply the selected layout to this slide">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">
         Apply layout
       </button>
     </div>
   `;
 
-  const summary = getLayoutMeta(currentType)?.label || currentType;
-  return buildSection('Layout', content, {
-    modifier: ' edit-drawer__section--layout',
-    summary,
-    emptySummary: 'Select',
-    initiallyOpen: true,
-  });
+  return buildSection('Layout', content, { modifier: ' edit-drawer__section--layout' });
 }
 
 function buildLabelSection(slide) {
   if (!Object.prototype.hasOwnProperty.call(slide, 'eyebrow')) return '';
-  const value = slide.eyebrow || '';
-  return buildSection('Label', buildInputField('eyebrow', value, 'Label'), {
-    summary: summarizeText(value, 'Set'),
-    emptySummary: 'Set',
-    initiallyOpen: !value,
-  });
+  return buildSection('Label', buildInputField('eyebrow', slide.eyebrow || '', 'Label'));
 }
 
 function buildHeadlineSection(slide, type) {
@@ -265,11 +243,7 @@ function buildHeadlineSection(slide, type) {
 
   const fieldData = descriptor ?? { field: fallbackField, value: '' };
   const placeholder = type === 'quote' ? 'Quote' : 'Headline';
-  return buildSection('Headline', buildInputField(fieldData.field, fieldData.value, placeholder), {
-    summary: summarizeText(fieldData.value, 'Empty'),
-    emptySummary: 'Empty',
-    initiallyOpen: !fieldData.value,
-  });
+  return buildSection('Headline', buildInputField(fieldData.field, fieldData.value, placeholder));
 }
 
 function buildSubtitleSection(slide, type) {
@@ -295,11 +269,7 @@ function buildSubtitleSection(slide, type) {
   if (!descriptor && !fallback) return '';
   const fieldData = descriptor ?? { field: fallback, value: '' };
   if (!fieldData.field) return '';
-  return buildSection(title, buildInputField(fieldData.field, fieldData.value, placeholder), {
-    summary: summarizeText(fieldData.value, 'Empty'),
-    emptySummary: 'Empty',
-    initiallyOpen: !fieldData.value,
-  });
+  return buildSection(title, buildInputField(fieldData.field, fieldData.value, placeholder));
 }
 
 function buildBodySection(slide, type) {
@@ -308,23 +278,15 @@ function buildBodySection(slide, type) {
     ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
   if (!shouldShow) return '';
   const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
-  return buildSection('Body', buildTextareaField('body', bodyValue, 'Body copy'), {
-    summary: summarizeText(bodyValue, 'Empty'),
-    emptySummary: 'Empty',
-    initiallyOpen: !bodyValue,
-  });
+  return buildSection('Body', buildTextareaField('body', bodyValue, 'Body copy'));
 }
 
 function buildImagesSection(slide) {
-  const { html, count } = buildImageManager(slide);
-  const summary = count ? `${count} image${count === 1 ? '' : 's'}` : 'None';
-  const body = `<div class="edit-drawer__stack edit-drawer__stack--images">${html}</div>`;
-  return buildSection('Images', body, {
-    modifier: ' edit-drawer__section--images',
-    summary,
-    emptySummary: 'None',
-    initiallyOpen: count === 0,
-  });
+  return buildSection(
+    'Images',
+    `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
+    { modifier: ' edit-drawer__section--images' }
+  );
 }
 
 function buildActionsSection() {
@@ -354,26 +316,22 @@ function buildActionsSection() {
 
 function buildAdvancedSection(slide) {
   const jsonString = JSON.stringify(slide, null, 2);
-  const content = `
-    <button type="button" class="edit-drawer__json-toggle" id="json-toggle" aria-expanded="false">
-      <span class="edit-drawer__json-toggle-icon">▶</span>
-      <span class="edit-drawer__json-toggle-text">Power Mode</span>
-    </button>
-    <div class="edit-drawer__json-container" id="json-container" hidden>
-      <textarea
-        class="edit-drawer__textarea"
-        id="slide-json-editor"
-        rows="20"
-        style="font-family: var(--font-mono); font-size: 0.9rem;"
-      >${jsonString}</textarea>
-    </div>
+  return `
+    <section class="edit-drawer__section edit-drawer__section--advanced">
+      <button type="button" class="edit-drawer__json-toggle" id="json-toggle" aria-expanded="false">
+        <span class="edit-drawer__json-toggle-icon">▶</span>
+        <span class="edit-drawer__json-toggle-text">Advanced JSON</span>
+      </button>
+      <div class="edit-drawer__json-container" id="json-container" hidden>
+        <textarea
+          class="edit-drawer__textarea"
+          id="slide-json-editor"
+          rows="20"
+          style="font-family: var(--font-mono); font-size: 0.9rem;"
+        >${jsonString}</textarea>
+      </div>
+    </section>
   `;
-  return buildSection('Power Mode (JSON)', content, {
-    modifier: ' edit-drawer__section--advanced',
-    summary: 'Collapsed',
-    emptySummary: 'Collapsed',
-    initiallyOpen: false,
-  });
 }
 
 /**
@@ -388,12 +346,6 @@ function setupQuickEditSync(context) {
   const handleInput = (event) => {
     const input = event.target;
     if (!input.matches('[data-field]')) return;
-
-    const summaryEl = input.closest('.edit-drawer__section')?.querySelector('[data-section-summary]');
-    if (summaryEl) {
-      const fallback = summaryEl.getAttribute('data-empty-summary') || 'Empty';
-      summaryEl.textContent = summarizeText(input.value, fallback);
-    }
 
     syncQuickEditToJSON();
 
@@ -484,11 +436,6 @@ function updateLayoutSelectTooltip(select) {
     select.title = desc;
   } else {
     select.removeAttribute('title');
-  }
-  const summaryEl = select.closest('.edit-drawer__section')?.querySelector('[data-section-summary]');
-  if (summaryEl) {
-    const label = select.selectedOptions[0]?.textContent?.trim() || '';
-    summaryEl.textContent = summarizeText(label || desc, 'Select');
   }
 }
 
@@ -672,19 +619,16 @@ function handleJsonToggle() {
   if (!container || !jsonToggle) return;
 
   const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
-  const summaryEl = jsonToggle.closest('.edit-drawer__section')?.querySelector('[data-section-summary]');
   const isHidden = container.hasAttribute('hidden');
 
   if (isHidden) {
     container.removeAttribute('hidden');
     jsonToggle.setAttribute('aria-expanded', 'true');
     if (icon) icon.textContent = '▼';
-    if (summaryEl) summaryEl.textContent = 'Editing';
   } else {
     container.setAttribute('hidden', '');
     jsonToggle.setAttribute('aria-expanded', 'false');
     if (icon) icon.textContent = '▶';
-    if (summaryEl) summaryEl.textContent = 'Collapsed';
   }
 }
 
