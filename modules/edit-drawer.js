@@ -715,6 +715,38 @@ export function renderEditForm(context) {
     addTrackedListener,
   });
 
+  const dropzone = document.getElementById('image-dropzone');
+  if (dropzone) {
+    const fileInput = document.getElementById('deck-upload');
+    const triggerUpload = () => {
+      const addButton = document.getElementById('add-image-btn');
+      if (addButton) addButton.click();
+    };
+
+    addTrackedListener(dropzone, 'click', (event) => {
+      event.preventDefault();
+      triggerUpload();
+    });
+
+    addTrackedListener(dropzone, 'dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('is-drag-over');
+    });
+
+    addTrackedListener(dropzone, 'dragleave', () => {
+      dropzone.classList.remove('is-drag-over');
+    });
+
+    addTrackedListener(dropzone, 'drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('is-drag-over');
+      if (!event.dataTransfer?.files?.length) return;
+      if (!fileInput) return;
+      fileInput.files = event.dataTransfer.files;
+      triggerUpload();
+    });
+  }
+
   const imageList = content.querySelector('.edit-drawer__image-list');
   setupImageDragReorder({
     container: imageList,

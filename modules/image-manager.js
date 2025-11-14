@@ -173,7 +173,7 @@ function buildImageManager(slide) {
     html += `</div>`;
   } else {
     html += `
-      <div class="edit-drawer__image-dropzone">
+      <div class="edit-drawer__image-dropzone" id="image-dropzone">
         <span class="edit-drawer__image-dropzone-icon">✶</span>
         <p>Add or drop images</p>
       </div>

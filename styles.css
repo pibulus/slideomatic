@@ -2101,6 +2101,8 @@ body[data-mode="overview"] .hud {
   gap: 8px;
   align-items: center;
   animation: dropzonePulse 3s ease-in-out infinite;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
 }
 
 .edit-drawer__image-dropzone-icon {
@@ -2117,6 +2119,13 @@ body[data-mode="overview"] .hud {
 @keyframes dropzonePulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.02); }
+}
+
+.edit-drawer__image-dropzone.is-drag-over {
+  border-color: var(--color-surface);
+  background: rgba(255, 255, 255, 0.98);
+  transform: translateY(-1px) scale(1.01);
+  animation: none;
 }
 
 .edit-drawer__image-item {
