@@ -579,6 +579,41 @@ function handleImageAdd(context) {
   setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
+async function handleImageFile(context, file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const ctx = ensureContext(context);
+
+  try {
+    const { file: compressed, format } = await compressImageForEdit(file);
+    const dataUrl = await fileToBase64(compressed);
+
+    const imageData = {
+      src: dataUrl,
+      alt: file.name,
+      originalFilename: file.name,
+      compressedSize: compressed.size,
+      format,
+    };
+
+    const slides = ctx.getSlides();
+    const currentIndex = ctx.getCurrentIndex();
+    const currentSlide = slides[currentIndex];
+    if (!currentSlide) return;
+
+    const updatedSlide = addImageToSlide(currentSlide, imageData);
+    ctx.updateSlide(currentIndex, updatedSlide);
+    ctx.replaceSlideAt(currentIndex);
+    renderEditForm(ctx);
+
+    ctx.showHudStatus('📷 Image added!', 'success');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
+  } catch (error) {
+    console.warn('Image upload failed:', error);
+    ctx.showHudStatus('⚠️ Unable to add that image', 'error');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
+  }
+}
+
 // Helper functions for image compression (simplified versions)
 async function compressImageForEdit(file) {
   const MAX_SIZE = 2 * 1024 * 1024; // 2MB
@@ -717,15 +752,27 @@ export function renderEditForm(context) {
 
   const dropzone = document.getElementById('image-dropzone');
   if (dropzone) {
-    const fileInput = document.getElementById('deck-upload');
-    const triggerUpload = () => {
-      const addButton = document.getElementById('add-image-btn');
-      if (addButton) addButton.click();
+    let imagePicker = null;
+    const getImagePicker = () => {
+      if (imagePicker) return imagePicker;
+      imagePicker = document.createElement('input');
+      imagePicker.type = 'file';
+      imagePicker.accept = 'image/*';
+      imagePicker.style.display = 'none';
+      imagePicker.addEventListener('change', () => {
+        const file = imagePicker.files?.[0];
+        if (file) {
+          handleImageFile(ctx, file);
+        }
+        imagePicker.value = '';
+      });
+      document.body.appendChild(imagePicker);
+      return imagePicker;
     };
 
     addTrackedListener(dropzone, 'click', (event) => {
       event.preventDefault();
-      triggerUpload();
+      getImagePicker().click();
     });
 
     addTrackedListener(dropzone, 'dragover', (event) => {
@@ -740,10 +787,11 @@ export function renderEditForm(context) {
     addTrackedListener(dropzone, 'drop', (event) => {
       event.preventDefault();
       dropzone.classList.remove('is-drag-over');
-      if (!event.dataTransfer?.files?.length) return;
-      if (!fileInput) return;
-      fileInput.files = event.dataTransfer.files;
-      triggerUpload();
+      const files = Array.from(event.dataTransfer?.files || []);
+      const imageFile = files.find((file) => file.type.startsWith('image/'));
+      if (imageFile) {
+        handleImageFile(ctx, imageFile);
+      }
     });
   }
 
