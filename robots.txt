@@ -1,0 +1,9 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin.html
+
+# Sitemap (update with actual URL when deployed)
+Sitemap: https://slideomatic.app/sitemap.xml
