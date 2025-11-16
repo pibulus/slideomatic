@@ -51,6 +51,7 @@ export function refreshSlideIndex() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'slide-index__button';
+    button.dataset.slideIndex = String(index);
 
     const number = document.createElement('span');
     number.className = 'slide-index__number';
@@ -61,10 +62,6 @@ export function refreshSlideIndex() {
     label.textContent = deriveSlideLabel(slide, index);
 
     button.append(number, label);
-    button.addEventListener('click', () => {
-      closeSlideIndex();
-      setActiveSlide(index);
-    });
 
     item.appendChild(button);
     listEl.appendChild(item);
@@ -186,10 +183,23 @@ function ensurePanel() {
   panel.append(backdrop, panelContent);
   document.body.appendChild(panel);
 
+  // Use event delegation to handle both close buttons and slide selection
   panel.addEventListener('click', (event) => {
     const target = event.target;
-    if (target instanceof HTMLElement && target.dataset.indexClose === 'true') {
-      closeSlideIndex();
+    if (target instanceof HTMLElement) {
+      if (target.dataset.indexClose === 'true') {
+        closeSlideIndex();
+        return;
+      }
+      // Handle slide button clicks via delegation
+      const button = target.closest('.slide-index__button');
+      if (button && button.dataset.slideIndex) {
+        const index = Number.parseInt(button.dataset.slideIndex, 10);
+        if (!Number.isNaN(index)) {
+          closeSlideIndex();
+          setActiveSlide(index);
+        }
+      }
     }
   });
 }

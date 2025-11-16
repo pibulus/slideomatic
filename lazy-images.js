@@ -14,6 +14,13 @@ function getLazyImageObserver() {
   return lazyImageObserver;
 }
 
+export function disconnectLazyImageObserver() {
+  if (lazyImageObserver) {
+    lazyImageObserver.disconnect();
+    lazyImageObserver = null;
+  }
+}
+
 export function registerLazyImage(img, src) {
   if (!img || !src) return;
   img.dataset.src = src;

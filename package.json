@@ -11,8 +11,5 @@
   },
   "devDependencies": {
     "serve": "^14.2.1"
-  },
-  "dependencies": {
-    "run-deepseek-cli": "0.1.1"
   }
 }
