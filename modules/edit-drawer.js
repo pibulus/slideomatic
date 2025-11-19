@@ -185,9 +185,7 @@ function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
     buildLayoutControl(type),
-    buildLabelSection(slide),
-    buildHeadlineSection(slide, type),
-    buildSubtitleSection(slide, type),
+    buildContentFieldsSection(slide, type),
     buildBodySection(slide, type),
     buildImagesSection(slide),
   ].filter(Boolean);
@@ -220,13 +218,16 @@ function buildLayoutControl(currentType) {
   return buildSection('Layout', content, { modifier: ' edit-drawer__section--layout' });
 }
 
-function buildLabelSection(slide) {
-  if (!Object.prototype.hasOwnProperty.call(slide, 'eyebrow')) return '';
-  return buildSection('Label', buildInputField('eyebrow', slide.eyebrow || '', 'Label'));
-}
+function buildContentFieldsSection(slide, type) {
+  const fields = [];
 
-function buildHeadlineSection(slide, type) {
-  const descriptor = resolveField(
+  // Label/Eyebrow
+  if (Object.prototype.hasOwnProperty.call(slide, 'eyebrow')) {
+    fields.push(buildInputField('eyebrow', slide.eyebrow || '', 'Label'));
+  }
+
+  // Headline
+  const headlineDescriptor = resolveField(
     slide,
     type === 'title'
       ? ['title', 'headline']
@@ -234,42 +235,48 @@ function buildHeadlineSection(slide, type) {
         ? ['quote', 'headline']
         : ['headline', 'title']
   );
-  const fallbackField =
+  const fallbackHeadlineField =
     type === 'title'
       ? 'title'
       : type === 'quote'
         ? 'quote'
         : 'headline';
+  const headlineData = headlineDescriptor ?? { field: fallbackHeadlineField, value: '' };
+  const headlinePlaceholder = type === 'quote' ? 'Quote' : 'Headline';
+  fields.push(buildInputField(headlineData.field, headlineData.value, headlinePlaceholder));
 
-  const fieldData = descriptor ?? { field: fallbackField, value: '' };
-  const placeholder = type === 'quote' ? 'Quote' : 'Headline';
-  return buildSection('Headline', buildInputField(fieldData.field, fieldData.value, placeholder));
-}
-
-function buildSubtitleSection(slide, type) {
-  let candidates = [];
-  let placeholder = 'Subtitle';
-  let title = 'Subtitle';
-  let fallback = null;
+  // Subtitle/Attribution
+  let subtitleCandidates = [];
+  let subtitlePlaceholder = 'Subtitle';
+  let subtitleFallback = null;
 
   if (type === 'title') {
-    candidates = ['subtitle'];
-    fallback = 'subtitle';
+    subtitleCandidates = ['subtitle'];
+    subtitleFallback = 'subtitle';
   } else if (type === 'quote') {
-    candidates = ['attribution'];
-    placeholder = 'Source';
-    title = 'Source';
-    fallback = 'attribution';
+    subtitleCandidates = ['attribution'];
+    subtitlePlaceholder = 'Source';
+    subtitleFallback = 'attribution';
   } else {
-    candidates = ['subtitle'];
-    fallback = 'subtitle';
+    subtitleCandidates = ['subtitle'];
+    subtitleFallback = 'subtitle';
   }
 
-  const descriptor = resolveField(slide, candidates);
-  if (!descriptor && !fallback) return '';
-  const fieldData = descriptor ?? { field: fallback, value: '' };
-  if (!fieldData.field) return '';
-  return buildSection(title, buildInputField(fieldData.field, fieldData.value, placeholder));
+  const subtitleDescriptor = resolveField(slide, subtitleCandidates);
+  const subtitleData = subtitleDescriptor ?? { field: subtitleFallback, value: '' };
+  if (subtitleData.field) {
+    fields.push(buildInputField(subtitleData.field, subtitleData.value, subtitlePlaceholder));
+  }
+
+  if (fields.length === 0) return '';
+
+  const content = `
+    <div class="edit-drawer__stack">
+      ${fields.join('')}
+    </div>
+  `;
+
+  return buildSection('Content', content);
 }
 
 function buildBodySection(slide, type) {

@@ -145,6 +145,7 @@ if (requestedDeck) {
   if (requestedDeck === 'new') {
     isNewDeckRequest = true;
     activeDeckId = generateDeckId();
+    deckStorageKey = null; // Clear cache so getDeckStorageKey() rebuilds with new ID
     console.log('[Init] New deck request, generated ID:', activeDeckId);
     urlParams.set('deck', activeDeckId);
     const nextSearch = urlParams.toString();
@@ -154,6 +155,7 @@ if (requestedDeck) {
     }
   } else {
     activeDeckId = requestedDeck;
+    deckStorageKey = null; // Clear cache so getDeckStorageKey() rebuilds with deck ID
     console.log('[Init] Loading existing deck, ID:', activeDeckId);
   }
 }
@@ -267,146 +269,19 @@ Return ONLY valid JSON, no markdown or explanation.`;
 // Main entry point and deck setup orchestration
 // ═══════════════════════════════════════════════════════════════════════════
 
-initDeckWithTheme();
+let isInitializing = false;
+let isInitialized = false;
 
-async function initDeck() {
-  await loadAndApplyTheme();
-  await loadAutoLinks();
-
-  let loadedSlides = null;
-  let loadError = null;
-  try {
-    loadedSlides = await loadSlides();
-  } catch (error) {
-    loadError = error;
-  }
-
-  // Check if loading guide deck - always use fresh content, no cache
-  const isGuideDeck = !activeDeckId && resolveSlidesPath() === 'guide.json';
-  const storedSlides = (activeDeckId || isGuideDeck) ? null : loadPersistedDeck();
-  let usedStoredDeck = false;
-
-  if (activeDeckId) {
-    if (Array.isArray(loadedSlides)) {
-      slides = loadedSlides;
-      usedStoredDeck = !isNewDeckRequest;
-    }
-  } else if (Array.isArray(storedSlides)) {
-    slides = storedSlides;
-    usedStoredDeck = true;
-  } else if (Array.isArray(loadedSlides)) {
-    slides = loadedSlides;
-  } else {
-    const finalError = loadError || new Error("Unable to load slides");
-    console.error("Failed to load slides", finalError);
-    renderLoadError(finalError);
-    return;
-  }
-
-  try {
-    validateSlides(slides);
-  } catch (validationError) {
-    console.error("Failed to validate slides", validationError);
-    renderLoadError(validationError);
-    return;
-  }
-
-  if (usedStoredDeck) {
-    console.info('Slide-o-Matic: loaded deck overrides from localStorage.');
-  }
-
-  markDeckAsRecent();
-  // Filter out schema/docs slides before rendering
-  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
-
-  updateTotalCounter(renderableSlides.length);
-
-  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  slideElements = renderableSlides.map((slide, index) =>
-    createSlide(slide, index, renderers)
-  );
-
-  const fragment = document.createDocumentFragment();
-  slideElements.forEach((slide) => {
-    slide.style.visibility = "hidden";
-    slide.style.pointerEvents = "none";
-    fragment.appendChild(slide);
-  });
-  slidesRoot.appendChild(fragment);
-  updateOverviewLayout();
-
-  initSlideIndex({
-    getSlides: () => slides,
-    getCurrentIndex: () => currentIndex,
-    setActiveSlide: (index) => setActiveSlide(index),
-  });
-  refreshSlideIndex();
-
-  initKeyboardNav(getKeyboardContext());
-  slidesRoot.addEventListener("click", handleSlideClick);
-  document.addEventListener("click", handleImageModalTrigger);
-
-  // Setup deck upload
-  const uploadInput = document.getElementById('deck-upload');
-  if (uploadInput) {
-    uploadInput.addEventListener('change', handleDeckUpload);
-  }
-
-  // Setup voice-driven actions
-  initVoiceButtons({
-    openSettingsModal,
-    showApiKeyStatus,
-    showHudStatus,
-    hideHudStatus,
-    getCurrentIndex: () => currentIndex,
-    getSlides: () => slides,
-    insertSlideAt,
-    replaceSlideAt,
-    setActiveSlide,
-    setOverviewCursor: (index) => { overviewCursor = index; },
-    updateSlide: (index, slide) => { slides[index] = slide; },
-    validateSlides,
-    downloadTheme,
-  });
-
-  const homeBtn = document.getElementById('home-btn');
-  if (homeBtn) {
-    homeBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
-  }
-
-  const helpBtn = document.getElementById('help-btn');
-  if (helpBtn) {
-    helpBtn.addEventListener('click', openKeyboardHelp);
-  }
-
-  const editBtn = document.getElementById('edit-btn');
-  if (editBtn) {
-    editBtn.addEventListener('click', toggleEditDrawer);
-  }
-
-  const overviewBtn = document.getElementById('overview-btn');
-  if (overviewBtn) {
-    overviewBtn.addEventListener('click', toggleOverview);
-  }
-
-  // Theme select now handled in initThemeDrawer()
-
-  // Initialize deck name display and rename functionality
-  initDeckName();
-
-  // Initialize auto-save indicator
-  initSaveStatus();
-
-  setActiveSlide(0);
-  updateOverviewButton();
-  overviewCursor = currentIndex;
+if (!isInitializing && !isInitialized) {
+  isInitializing = true;
+  console.log('[Init] Starting initDeckWithTheme - FIRST TIME');
+  initDeckWithTheme();
+} else {
+  console.warn('[Init] Attempted double initialization - BLOCKED');
 }
+
+// Note: Main initialization logic is in initDeckWithTheme() at bottom of file
+// (old initDeck() removed to avoid duplication)
 
 async function loadSlides() {
   // Priority 1: Check for url= parameter (shareable links) from search or hash
@@ -529,9 +404,13 @@ function resolveSlidesPath() {
 }
 
 function getDeckStorageKey() {
-  if (deckStorageKey) return deckStorageKey;
+  if (deckStorageKey) {
+    console.log('[getDeckStorageKey] Using cached key:', deckStorageKey);
+    return deckStorageKey;
+  }
   if (activeDeckId) {
     deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
+    console.log('[getDeckStorageKey] Built key from activeDeckId:', activeDeckId, '→', deckStorageKey);
     return deckStorageKey;
   }
   const path = resolveSlidesPath();
@@ -539,8 +418,10 @@ function getDeckStorageKey() {
     const url = new URL(path, window.location.href);
     const keySource = `${url.origin}${url.pathname}${url.search ?? ""}`;
     deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(keySource)}`;
+    console.log('[getDeckStorageKey] Built key from path URL:', keySource, '→', deckStorageKey);
   } catch (error) {
     deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(path)}`;
+    console.log('[getDeckStorageKey] Built key from path:', path, '→', deckStorageKey);
   }
   return deckStorageKey;
 }
@@ -587,6 +468,8 @@ function persistSlides(options = {}) {
     return false;
   }
 
+  console.log('[persistSlides] Saving deck, activeDeckId:', activeDeckId);
+
   // Show saving indicator
   if (!silent && activeDeckId) {
     showSaveStatus('saving');
@@ -595,6 +478,8 @@ function persistSlides(options = {}) {
   try {
     const updatedAt = Date.now();
     const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
+    const storageKey = getDeckStorageKey();
+    console.log('[persistSlides] Using storage key:', storageKey);
     const payload = {
       version: 1,
       updatedAt,
@@ -4648,11 +4533,7 @@ async function initDeckWithTheme() {
     loadError = error;
   }
 
-  const storedSlides = loadPersistedDeck();
-
-  if (Array.isArray(storedSlides)) {
-    slides = storedSlides;
-  } else if (Array.isArray(loadedSlides)) {
+  if (Array.isArray(loadedSlides)) {
     slides = loadedSlides;
   } else {
     const finalError = loadError || new Error("Unable to load slides");
@@ -4667,11 +4548,6 @@ async function initDeckWithTheme() {
     console.error("Failed to validate slides", validationError);
     renderLoadError(validationError);
     return;
-  }
-
-  const usingPersistedSlides = Array.isArray(storedSlides);
-  if (usingPersistedSlides) {
-    console.info('Slide-o-Matic: loaded deck overrides from localStorage.');
   }
 
   const renderableSlides = slides.filter(slide => slide.type !== "_schema");
@@ -4757,6 +4633,11 @@ async function initDeckWithTheme() {
   updateOverviewButton();
   overviewCursor = currentIndex;
   handleInitialIntent();
+
+  // Mark initialization as complete
+  isInitializing = false;
+  isInitialized = true;
+  console.log('[Init] initDeckWithTheme completed');
 }
 
 function handleInitialIntent() {

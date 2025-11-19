@@ -473,10 +473,9 @@
           reader.readAsText(file);
         };
 
-        // Bind to both change and input events
+        // Bind to change event (standard for file inputs)
         uploadInput.addEventListener('change', handleFileSelect);
-        uploadInput.addEventListener('input', handleFileSelect);
-        console.log('[bindUploadInput] Listeners bound to both change and input events');
+        console.log('[bindUploadInput] Change listener bound to input#upload-input');
       }
 
       function bindShelfRefresh() {
@@ -723,9 +722,8 @@
           window.location.href = 'deck.html';
           return;
         }
-        const target = new URL('deck.html', window.location.href);
-        target.searchParams.set('deck', deckId);
-        window.location.href = target.toString();
+        // Use hash format to match deck.html's hash-based routing
+        window.location.href = `deck.html#deck=${encodeURIComponent(deckId)}`;
       }
 
       function buildDeckKey(deckId) {
@@ -824,11 +822,8 @@
           return;
         }
 
-        // Navigate to the new deck
-        const target = new URL('deck.html', window.location.href);
-        target.searchParams.set('deck', deckId);
-        target.searchParams.set('open', 'edit');
-        window.location.href = target.toString();
+        // Navigate to the new deck using hash format
+        window.location.href = `deck.html#deck=${encodeURIComponent(deckId)}&open=edit`;
       }
 
       function handlePasteKeydown(event) {
@@ -862,11 +857,9 @@
         actionButtons.forEach((button) => {
           button.addEventListener('click', () => {
             const intent = button.dataset.openIntent;
-            const target = new URL('deck.html', window.location.href);
-            if (intent) {
-              target.searchParams.set('open', intent);
-            }
-            window.location.href = target.toString();
+            // Use hash format if there's an intent parameter
+            const hash = intent ? `#open=${encodeURIComponent(intent)}` : '';
+            window.location.href = `deck.html${hash}`;
           });
         });
       }
