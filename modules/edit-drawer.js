@@ -20,8 +20,10 @@ import {
 import {
   buildImageManager,
   setupImageRemoveButtons,
+  setupImageReplaceButtons,
   setupImageDragReorder,
   removeImageByIndex,
+  replaceImageByIndex,
   reorderSlideImages,
   addImageToSlide,
   updateImageAltText,
@@ -539,6 +541,22 @@ function handleImageRemove(context, imageIndex) {
   console.log('✓ Image removed from slide');
 }
 
+function handleImageReplace(context, imageIndex) {
+  const ctx = ensureContext(context);
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  const updatedSlide = replaceImageByIndex(imageIndex, currentSlide);
+  ctx.updateSlide(currentIndex, updatedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  renderEditForm(ctx);
+  ctx.showHudStatus('↻ Image cleared', 'success');
+  setTimeout(() => ctx.hideHudStatus(), 1600);
+  console.log('✓ Image replaced - src cleared, title preserved');
+}
+
 function handleImageReorder(context, fromIndex, toIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -754,6 +772,12 @@ export function renderEditForm(context) {
   setupImageRemoveButtons({
     root: content,
     onRemove: (imageIndex) => handleImageRemove(ctx, imageIndex),
+    addTrackedListener,
+  });
+
+  setupImageReplaceButtons({
+    root: content,
+    onReplace: (imageIndex) => handleImageReplace(ctx, imageIndex),
     addTrackedListener,
   });
 

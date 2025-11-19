@@ -101,6 +101,25 @@ function removeImageByIndex(imageIndex, slide) {
   return updatedSlide;
 }
 
+function replaceImageByIndex(imageIndex, slide) {
+  if (!slide) return slide;
+
+  const updatedSlide = cloneSlide(slide);
+  const imagePaths = collectImagePaths(updatedSlide);
+  const target = imagePaths[imageIndex];
+  if (!target || !target.image) {
+    console.warn('Image index out of bounds');
+    return updatedSlide;
+  }
+
+  // Clear src but keep the image object with its alt/label/search text
+  target.image.src = '';
+  delete target.image.originalFilename;
+  delete target.image.compressedSize;
+
+  return updatedSlide;
+}
+
 function setImageAtPath(slide, path, image) {
   const location = getContainerAtPath(slide, path);
   if (!location) return;
@@ -160,12 +179,13 @@ function buildImageManager(slide) {
               class="edit-drawer__image-alt-input"
               data-image-index="${index}"
               value="${escapeHtml(altText)}"
-              placeholder="Image name"
-              title="Image name/alt text (used for search)"
+              placeholder="${isEmpty ? 'Image title (for search)' : 'Image name'}"
+              title="${isEmpty ? 'Image title used for Google search' : 'Image name/alt text'}"
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
-          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image">×</button>
+          ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image">↻</button>` : ''}
+          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot">×</button>
         </div>
       `;
     });
@@ -212,6 +232,29 @@ function setupImageRemoveButtons({ root, onRemove, addTrackedListener }) {
   };
 
   addTrackedListener(root, 'click', handleRemove);
+}
+
+/**
+ * Setup replace buttons using event delegation
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onReplace - Callback function
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageReplaceButtons({ root, onReplace, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  const handleReplace = (event) => {
+    const button = event.target.closest('.edit-drawer__image-replace');
+    if (!button) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    if (Number.isNaN(index)) return;
+    onReplace?.(index);
+  };
+
+  addTrackedListener(root, 'click', handleReplace);
 }
 
 function getDragAfterElement(container, y) {
@@ -344,10 +387,12 @@ export {
   collectSlideImages,
   collectImagePaths,
   removeImageByIndex,
+  replaceImageByIndex,
   reorderSlideImages,
   addImageToSlide,
   updateImageAltText,
   buildImageManager,
   setupImageRemoveButtons,
+  setupImageReplaceButtons,
   setupImageDragReorder,
 };

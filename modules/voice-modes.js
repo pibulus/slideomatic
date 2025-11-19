@@ -288,29 +288,31 @@ export async function processVoiceToSlide(audioBlob) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                }
-              }
-            ]
-          }],
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: audioBlob.type || "audio/webm",
+                    data: audioData,
+                  },
+                },
+              ],
+            },
+          ],
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048,
-          }
-        })
+          },
+        }),
       }
     );
 
@@ -368,29 +370,31 @@ async function processVoiceEditSlide(audioBlob) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                }
-              }
-            ]
-          }],
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: audioBlob.type || "audio/webm",
+                    data: audioData,
+                  },
+                },
+              ],
+            },
+          ],
           generationConfig: {
             temperature: 0.6,
             maxOutputTokens: 2048,
-          }
-        })
+          },
+        }),
       }
     );
 
@@ -443,29 +447,31 @@ export async function processVoiceToTheme(audioBlob) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                }
-              }
-            ]
-          }],
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: audioBlob.type || "audio/webm",
+                    data: audioData,
+                  },
+                },
+              ],
+            },
+          ],
           generationConfig: {
             temperature: 1.0,
             maxOutputTokens: 2048,
-          }
-        })
+          },
+        }),
       }
     );
 
