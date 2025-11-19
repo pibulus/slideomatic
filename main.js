@@ -3366,10 +3366,10 @@ function setupSettingsModalListeners() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function toggleKeyboardHelp() {
-  const modal = document.getElementById('keyboard-help-modal');
+  const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
-  const isOpen = modal.classList.contains('is-open');
+  const isOpen = modal.getAttribute('aria-hidden') === 'false';
   if (isOpen) {
     closeKeyboardHelp();
   } else {
@@ -3378,40 +3378,39 @@ function toggleKeyboardHelp() {
 }
 
 function openKeyboardHelp() {
-  const modal = document.getElementById('keyboard-help-modal');
+  const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
-  modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
-
-  // Focus the dialog for accessibility
-  const dialog = modal.querySelector('.keyboard-help-modal__dialog');
-  if (dialog) {
-    requestAnimationFrame(() => dialog.focus());
-  }
 
   // Set up listeners if not already done
   setupKeyboardHelpListeners();
 }
 
 function closeKeyboardHelp() {
-  const modal = document.getElementById('keyboard-help-modal');
+  const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
-  modal.classList.remove('is-open');
   modal.setAttribute('aria-hidden', 'true');
 }
 
 function setupKeyboardHelpListeners() {
   // Close button
-  const closeBtn = document.getElementById('keyboard-help-close');
+  const closeBtn = document.getElementById('hints-modal-close');
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
     closeBtn.addEventListener('click', closeKeyboardHelp);
     closeBtn.dataset.listenerAttached = 'true';
   }
 
+  // Got it button
+  const gotItBtn = document.getElementById('hints-modal-got-it');
+  if (gotItBtn && !gotItBtn.dataset.listenerAttached) {
+    gotItBtn.addEventListener('click', closeKeyboardHelp);
+    gotItBtn.dataset.listenerAttached = 'true';
+  }
+
   // Backdrop
-  const backdrop = document.querySelector('.keyboard-help-modal__backdrop');
+  const backdrop = document.querySelector('.hints-modal__backdrop');
   if (backdrop && !backdrop.dataset.listenerAttached) {
     backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';
