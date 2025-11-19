@@ -12,7 +12,7 @@ import {
   LOCAL_THEME_SOURCE,
   normalizeThemeTokens,
 } from './modules/theme-manager.js';
-import { formatBytes, clamp, fileToBase64, escapeHtml } from './modules/utils.js';
+import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone } from './modules/utils.js';
 import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './lazy-images.js';
 import { renderEditForm } from './modules/edit-drawer.js';
@@ -687,23 +687,7 @@ function showSaveStatus(state = 'saved') {
   }
 }
 
-function deriveDeckName(slideList) {
-  if (!Array.isArray(slideList) || slideList.length === 0) {
-    return 'Untitled deck';
-  }
-  const first = slideList[0] ?? {};
-  const textCandidate =
-    first.title ||
-    first.headline ||
-    first.eyebrow ||
-    first.quote ||
-    (Array.isArray(first.body) ? first.body[0] : first.body) ||
-    first.badge;
-  if (typeof textCandidate === 'string' && textCandidate.trim()) {
-    return textCandidate.trim();
-  }
-  return 'Untitled deck';
-}
+// deriveDeckName() now imported from utils.js
 
 async function loadAutoLinks() {
   try {
@@ -3292,7 +3276,7 @@ function getSlideTemplate(type) {
 
   const template = templates[type];
   if (!template) return null;
-  return JSON.parse(JSON.stringify(template));
+  return deepClone(template);
 }
 
 

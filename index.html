@@ -189,6 +189,8 @@
     </div>
 
     <script type="module">
+      import { safeParse, deriveDeckName } from './modules/utils.js';
+
       const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
       const LAST_DECK_KEY = 'slideomatic:last-deck';
 
@@ -693,29 +695,7 @@
         }
       }
 
-      function safeParse(value) {
-        if (typeof value !== 'string') return null;
-        try {
-          return JSON.parse(value);
-        } catch (error) {
-          return null;
-        }
-      }
-
-      function deriveDeckName(slideList) {
-        if (!Array.isArray(slideList) || slideList.length === 0) {
-          return 'Untitled deck';
-        }
-        const first = slideList[0] ?? {};
-        const candidate =
-          first.title ||
-          first.headline ||
-          first.eyebrow ||
-          first.quote ||
-          (Array.isArray(first.body) ? first.body[0] : first.body) ||
-          first.badge;
-        return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : 'Untitled deck';
-      }
+      // safeParse() and deriveDeckName() imported from utils.js
 
       function openDeck(deckId) {
         if (!deckId) {

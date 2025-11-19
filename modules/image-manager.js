@@ -13,7 +13,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { formatBytes, escapeHtml } from './utils.js';
+import { formatBytes, escapeHtml, deepClone } from './utils.js';
 
 function collectImagePaths(slide) {
   if (!slide || typeof slide !== 'object') return [];
@@ -61,7 +61,7 @@ function collectSlideImages(slide) {
 }
 
 function cloneSlide(slide) {
-  return JSON.parse(JSON.stringify(slide));
+  return deepClone(slide);
 }
 
 function getContainerAtPath(slide, path) {

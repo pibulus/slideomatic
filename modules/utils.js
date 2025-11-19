@@ -81,3 +81,52 @@ export async function fileToBase64(file) {
   });
 }
 
+/**
+ * Safely parse JSON string, returning null on error.
+ * Used for localStorage data parsing where invalid JSON should be handled gracefully.
+ * @param {string} value - JSON string to parse
+ * @returns {any|null} - Parsed object or null if parsing fails
+ */
+export function safeParse(value) {
+  if (typeof value !== 'string') return null;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Derive a deck name from the first slide's content.
+ * Falls back to "Untitled deck" if no suitable content found.
+ * @param {Array} slideList - Array of slide objects
+ * @returns {string} - Deck name
+ */
+export function deriveDeckName(slideList) {
+  if (!Array.isArray(slideList) || slideList.length === 0) {
+    return 'Untitled deck';
+  }
+  const first = slideList[0] ?? {};
+  const candidate =
+    first.title ||
+    first.headline ||
+    first.eyebrow ||
+    first.quote ||
+    (Array.isArray(first.body) ? first.body[0] : first.body) ||
+    first.badge;
+  return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : 'Untitled deck';
+}
+
+/**
+ * Deep clone a plain object or array.
+ * Uses JSON serialization for simplicity - only works with JSON-serializable data
+ * (no functions, dates, undefined, symbols, etc).
+ * Suitable for slide objects and theme data which are plain JSON structures.
+ *
+ * @param {Object|Array} obj - Object to clone
+ * @returns {Object|Array} - Deep cloned copy
+ */
+export function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
