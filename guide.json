@@ -2,8 +2,24 @@
   {
     "type": "title",
     "title": "Quick guide",
-    "subtitle": "How this works (still a work in progress)",
-    "media": []
+    "subtitle": "How this works",
+    "media": [
+      {
+        "type": "image",
+        "src": "og-image.jpg",
+        "alt": "Slide-o-Matic - Easy slideshow builder"
+      }
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Welcome",
+    "headline": "Some stuff is jank, but it's gonna get better",
+    "body": [
+      "This tool is actively being improved.",
+      "You can unlock superpowers like **graph generation** and **image suggestions** by adding your Gemini API key in Settings (press **S**).",
+      "Gemini API keys are like passwords Google gives you to use their things—they're super easy to get and free!"
+    ]
   },
   {
     "type": "standard",

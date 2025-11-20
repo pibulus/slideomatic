@@ -94,6 +94,7 @@ function createDrawer(config) {
     isOpen: element.classList.contains('is-open'),
     previousFocus: null,
     keydownHandler: null,
+    clickOutsideHandler: null,
   };
 }
 
@@ -122,6 +123,17 @@ function openDrawer(drawer) {
     document.addEventListener('keydown', drawer.keydownHandler, true);
   }
 
+  // Add click-outside-to-close handler
+  drawer.clickOutsideHandler = (event) => {
+    if (!element.contains(event.target)) {
+      closeDrawer(drawer, { restoreFocus: true });
+    }
+  };
+  // Use a slight delay to prevent the opening click from immediately closing the drawer
+  setTimeout(() => {
+    document.addEventListener('click', drawer.clickOutsideHandler, true);
+  }, 100);
+
   focusFirstElement(element);
   drawer.onOpen?.(drawer);
 }
@@ -139,6 +151,11 @@ function closeDrawer(drawer, options = {}) {
   if (drawer.keydownHandler) {
     document.removeEventListener('keydown', drawer.keydownHandler, true);
     drawer.keydownHandler = null;
+  }
+
+  if (drawer.clickOutsideHandler) {
+    document.removeEventListener('click', drawer.clickOutsideHandler, true);
+    drawer.clickOutsideHandler = null;
   }
 
   const target = restoreFocus && drawer.previousFocus && typeof drawer.previousFocus.focus === 'function'
