@@ -17,8 +17,8 @@
     "headline": "Some stuff is jank, but it's gonna get better",
     "body": [
       "Slideomatic is actively being improved.",
-      "Feel free to email me on pibulus@gmail.com.",
-      "I genuinely think its easier and faster than anything else out there! XD"
+      "Hit up bonesouprules@gmail.com",
+      "Presentating made easy! XD"
     ]
   },
   {
@@ -26,7 +26,7 @@
     "badge": "Navigation",
     "headline": "Arrow keys move between slides",
     "body": [
-      "Left and right arrows navigate.",
+      "Left and right arrows navigate. (Mobile Nav coming soon)",
       "Press **?** to see all keyboard shortcuts."
     ]
   },
@@ -46,7 +46,7 @@
     "headline": "Press T for themes",
     "body": [
       "Switch between presets or hit random.",
-      "Themes update live, even mid-deck."
+      "Themes update live, and can be saved and named."
     ]
   },
   {
@@ -54,9 +54,9 @@
     "badge": "What's JSON?",
     "headline": "Everything exports as JSON",
     "body": [
-      "JSON is just a way to list things with basic code.",
-      "Press **D** to export your deck. Press **U** to upload one.",
-      "AI tools (like ChatGPT) can help edit JSON files if you want."
+      "JSON is a file format that stores data (slides) in a simple, list-like structure.",
+      "Press **D** to export a deck as JSON. Press **U** to upload one.",
+      "AI tools can help edit JSON files."
     ]
   },
   {
@@ -64,17 +64,17 @@
     "badge": "Saving",
     "headline": "Everything saves locally",
     "body": [
-      "Your deck auto-saves in your browser.",
+      "Decks auto-save in the browser.",
       "Nothing leaves your device unless you export it."
     ]
   },
   {
     "type": "standard",
     "badge": "That's it",
-    "headline": "Go make something",
+    "headline": "Make slides and go wild",
     "body": [
       "Click **Back** to start a new deck.",
-      "Press **?** for keyboard shortcuts."
+      "**?** for keyboard shortcuts."
     ]
   }
 ]
