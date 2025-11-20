@@ -106,9 +106,9 @@
             <p>Pastel brutal aesthetic. Randomize or dial in. Change vibes mid-deck.</p>
           </article>
           <article class="landing__card">
-            <div class="landing__card-icon">🎙️</div>
-            <h3>Voice assist</h3>
-            <p>Hold <strong>V</strong>, describe what you want. Get suggestions. Stay in control.</p>
+            <div class="landing__card-icon">⭐</div>
+            <h3>Save favorites</h3>
+            <p>Star your best decks. Edit and experiment freely. Everything stays local.</p>
           </article>
         </div>
       </section>
@@ -150,8 +150,7 @@
       <div class="landing__footer-about">
         <strong>About this thing</strong>
         <p>
-          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> for people who ship fast.
-          No tracking. No accounts. Just slides.
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> who couldn't deal with the other slideshow generators.
         </p>
         <div class="landing__footer-buttons">
           <button class="link-button" type="button" data-about-open>More about this project</button>
@@ -159,9 +158,6 @@
         </div>
       </div>
       <div class="landing__footer-actions">
-        <button class="link-button" type="button" data-open-intent="theme">Theme drawer</button>
-        <button class="link-button" type="button" data-open-intent="settings">Settings</button>
-        <a class="link-button" href="README.md" target="_blank" rel="noopener">Docs</a>
       </div>
     </footer>
 
@@ -485,23 +481,31 @@
         });
       }
 
-      function renderDeckShelf() {
+      async function renderDeckShelf() {
         deckShelfCache = getSavedDecks();
+
+        // Add built-in demo deck
+        const builtInDeck = {
+          id: 'demo-deck',
+          name: 'Demo: Brand Presentation',
+          updatedAt: 0, // Will appear at the bottom
+          slideCount: '?',
+          isBuiltIn: true,
+          starred: false,
+        };
+
+        const allDecks = [builtInDeck, ...deckShelfCache];
+
         if (!shelfList) return;
         shelfList.querySelectorAll('.deck-card').forEach((node) => node.remove());
 
-        if (deckShelfCache.length === 0) {
-          if (shelfEmpty) {
-            shelfEmpty.hidden = false;
-          }
-        } else {
-          if (shelfEmpty) {
-            shelfEmpty.hidden = true;
-          }
-          deckShelfCache.forEach((deck) => {
-            shelfList.appendChild(createDeckCard(deck));
-          });
+        if (shelfEmpty) {
+          shelfEmpty.hidden = true;
         }
+
+        allDecks.forEach((deck) => {
+          shelfList.appendChild(createDeckCard(deck));
+        });
 
         updateResumeButtonLabel();
       }
@@ -523,6 +527,9 @@
         if (deck.starred) {
           item.classList.add('deck-card--starred');
         }
+        if (deck.isBuiltIn) {
+          item.classList.add('deck-card--builtin');
+        }
 
         const meta = document.createElement('div');
         meta.className = 'deck-card__meta';
@@ -530,22 +537,30 @@
         const nameRow = document.createElement('div');
         nameRow.className = 'deck-card__name-row';
 
-        const starBtn = document.createElement('button');
-        starBtn.type = 'button';
-        starBtn.className = 'deck-card__star';
-        starBtn.setAttribute('aria-label', deck.starred ? 'Remove from favorites' : 'Add to favorites');
-        starBtn.textContent = deck.starred ? '★' : '☆';
-        starBtn.addEventListener('click', () => toggleDeckStar(deck));
+        // Only show star button for user decks, not built-in
+        if (!deck.isBuiltIn) {
+          const starBtn = document.createElement('button');
+          starBtn.type = 'button';
+          starBtn.className = 'deck-card__star';
+          starBtn.setAttribute('aria-label', deck.starred ? 'Remove from favorites' : 'Add to favorites');
+          starBtn.textContent = deck.starred ? '★' : '☆';
+          starBtn.addEventListener('click', () => toggleDeckStar(deck));
+          nameRow.append(starBtn);
+        }
 
         const name = document.createElement('p');
         name.className = 'deck-card__name';
         name.textContent = deck.name;
 
-        nameRow.append(starBtn, name);
+        nameRow.append(name);
 
         const details = document.createElement('p');
         details.className = 'deck-card__details';
-        details.textContent = `${deck.slideCount} ${deck.slideCount === 1 ? 'slide' : 'slides'} • ${formatDeckTimestamp(deck.updatedAt)}`;
+        if (deck.isBuiltIn) {
+          details.textContent = 'Built-in example deck';
+        } else {
+          details.textContent = `${deck.slideCount} ${deck.slideCount === 1 ? 'slide' : 'slides'} • ${formatDeckTimestamp(deck.updatedAt)}`;
+        }
 
         meta.append(nameRow, details);
 
@@ -557,17 +572,23 @@
         openBtn.textContent = 'Open';
         openBtn.addEventListener('click', () => openDeck(deck.id));
 
-        const renameBtn = document.createElement('button');
-        renameBtn.type = 'button';
-        renameBtn.textContent = 'Rename';
-        renameBtn.addEventListener('click', () => renameDeck(deck));
+        // Only show rename/delete for user decks
+        if (!deck.isBuiltIn) {
+          const renameBtn = document.createElement('button');
+          renameBtn.type = 'button';
+          renameBtn.textContent = 'Rename';
+          renameBtn.addEventListener('click', () => renameDeck(deck));
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.addEventListener('click', () => deleteDeck(deck));
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', () => deleteDeck(deck));
 
-        actions.append(openBtn, renameBtn, deleteBtn);
+          actions.append(openBtn, renameBtn, deleteBtn);
+        } else {
+          actions.append(openBtn);
+        }
+
         item.append(meta, actions);
         return item;
       }
@@ -699,6 +720,11 @@
       function openDeck(deckId) {
         if (!deckId) {
           window.location.href = 'deck.html';
+          return;
+        }
+        // Handle built-in demo deck with slides parameter
+        if (deckId === 'demo-deck') {
+          window.location.href = 'deck.html#slides=demo-deck';
           return;
         }
         // Use hash format to match deck.html's hash-based routing

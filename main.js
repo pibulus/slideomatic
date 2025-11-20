@@ -1896,7 +1896,7 @@ function buildImageSearchUrl(query) {
  * @returns {string|null} API key or null if not set
  */
 function requireGeminiApiKey() {
-  const apiKey = localStorage.getItem('gemini_api_key');
+  const apiKey = localStorage.getItem(STORAGE_KEY_API);
   if (!apiKey) {
     showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
     setTimeout(() => {
