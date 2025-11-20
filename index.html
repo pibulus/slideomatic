@@ -545,6 +545,10 @@
           item.classList.add('deck-card--builtin');
         }
 
+        // Make entire card clickable to open deck
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => openDeck(deck.id));
+
         const meta = document.createElement('div');
         meta.className = 'deck-card__meta';
 
@@ -558,7 +562,10 @@
           starBtn.className = 'deck-card__star';
           starBtn.setAttribute('aria-label', deck.starred ? 'Remove from favorites' : 'Add to favorites');
           starBtn.textContent = deck.starred ? '★' : '☆';
-          starBtn.addEventListener('click', () => toggleDeckStar(deck));
+          starBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click
+            toggleDeckStar(deck);
+          });
           nameRow.append(starBtn);
         }
 
@@ -581,26 +588,25 @@
         const actions = document.createElement('div');
         actions.className = 'deck-card__actions';
 
-        const openBtn = document.createElement('button');
-        openBtn.type = 'button';
-        openBtn.textContent = 'Open';
-        openBtn.addEventListener('click', () => openDeck(deck.id));
-
-        // Only show rename/delete for user decks
+        // Only show rename/delete for user decks (no Open button needed since card is clickable)
         if (!deck.isBuiltIn) {
           const renameBtn = document.createElement('button');
           renameBtn.type = 'button';
           renameBtn.textContent = 'Rename';
-          renameBtn.addEventListener('click', () => renameDeck(deck));
+          renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click
+            renameDeck(deck);
+          });
 
           const deleteBtn = document.createElement('button');
           deleteBtn.type = 'button';
           deleteBtn.textContent = 'Delete';
-          deleteBtn.addEventListener('click', () => deleteDeck(deck));
+          deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click
+            deleteDeck(deck);
+          });
 
-          actions.append(openBtn, renameBtn, deleteBtn);
-        } else {
-          actions.append(openBtn);
+          actions.append(renameBtn, deleteBtn);
         }
 
         item.append(meta, actions);
