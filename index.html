@@ -88,27 +88,27 @@
       <!-- ===== FEATURES SECTION: Combined headline + cards ===== -->
       <section class="landing__features" id="about">
         <div class="landing__features-intro">
-          <h2>Make slides, look good</h2>
+          <h2>Easy slides that get the job done</h2>
           <p>
-            Keyboard shortcuts, swappable themes, and export that actually works.
+            Quick to navigate, loads of themes, easy to save and share.
           </p>
         </div>
 
         <div class="landing__cards">
           <article class="landing__card">
-            <div class="landing__card-icon">⌨️</div>
-            <h3>Keyboard-first</h3>
-            <p>Arrows navigate. <strong>E</strong> edits. <strong>T</strong> themes. <strong>?</strong> shows all.</p>
+            <div class="landing__card-icon">⚡</div>
+            <h3>Super quick</h3>
+            <p>Heaps of layouts. Navigate with arrows, edit with <strong>E</strong>, themes with <strong>T</strong>.</p>
           </article>
           <article class="landing__card">
             <div class="landing__card-icon">🎨</div>
-            <h3>Looks good</h3>
-            <p>Pastel brutal aesthetic. Randomize or dial in. Change vibes mid-deck.</p>
+            <h3>Make it yours</h3>
+            <p>Tons of themes plus random generators. Switch vibes anytime.</p>
           </article>
           <article class="landing__card">
-            <div class="landing__card-icon">⭐</div>
-            <h3>Save favorites</h3>
-            <p>Star your best decks. Edit and experiment freely. Everything stays local.</p>
+            <div class="landing__card-icon">💾</div>
+            <h3>Save and experiment</h3>
+            <p>Star your favorites. Export to share. Everything saves locally.</p>
           </article>
         </div>
       </section>
@@ -119,9 +119,7 @@
           <div>
             <p class="deck-shelf__eyebrow">Your decks</p>
             <h2>Everything's local</h2>
-            <p class="deck-shelf__subtitle">Saves in your browser. Pick up or start fresh.</p>
           </div>
-          <button class="link-button" type="button" data-action="refresh-shelf">Refresh</button>
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
           <li class="deck-shelf__empty" id="deck-shelf-empty">
@@ -150,7 +148,7 @@
       <div class="landing__footer-about">
         <strong>About this thing</strong>
         <p>
-          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a> who couldn't deal with the other slideshow generators.
+          Built by <a href="https://bento.me/pibulus" target="_blank" rel="noopener">Pablo</a>.
         </p>
         <div class="landing__footer-buttons">
           <button class="link-button" type="button" data-about-open>More about this project</button>
@@ -487,7 +485,7 @@
         // Add built-in demo deck
         const builtInDeck = {
           id: 'demo-deck',
-          name: 'Demo: Brand Presentation',
+          name: 'Brand and Visual Presentation',
           updatedAt: 0, // Will appear at the bottom
           slideCount: '?',
           isBuiltIn: true,
@@ -557,7 +555,7 @@
         const details = document.createElement('p');
         details.className = 'deck-card__details';
         if (deck.isBuiltIn) {
-          details.textContent = 'Built-in example deck';
+          details.textContent = '';
         } else {
           details.textContent = `${deck.slideCount} ${deck.slideCount === 1 ? 'slide' : 'slides'} • ${formatDeckTimestamp(deck.updatedAt)}`;
         }
