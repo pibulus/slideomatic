@@ -488,17 +488,27 @@
       async function renderDeckShelf() {
         deckShelfCache = getSavedDecks();
 
-        // Add built-in demo deck
-        const builtInDeck = {
-          id: 'demo-deck',
-          name: 'Brand and Visual Presentation',
-          updatedAt: 0, // Will appear at the bottom
-          slideCount: '?',
-          isBuiltIn: true,
-          starred: false,
-        };
+        // Add built-in demo decks
+        const builtInDecks = [
+          {
+            id: 'design-resources',
+            name: 'Free Design Resources',
+            updatedAt: 1, // Will appear above demo-deck
+            slideCount: '?',
+            isBuiltIn: true,
+            starred: false,
+          },
+          {
+            id: 'demo-deck',
+            name: 'Brand and Visual Presentation',
+            updatedAt: 0, // Will appear at the bottom
+            slideCount: '?',
+            isBuiltIn: true,
+            starred: false,
+          }
+        ];
 
-        const allDecks = [builtInDeck, ...deckShelfCache];
+        const allDecks = [...builtInDecks, ...deckShelfCache];
 
         if (!shelfList) return;
         shelfList.querySelectorAll('.deck-card').forEach((node) => node.remove());
@@ -726,7 +736,11 @@
           window.location.href = 'deck.html';
           return;
         }
-        // Handle built-in demo deck with slides parameter
+        // Handle built-in decks with slides parameter
+        if (deckId === 'design-resources') {
+          window.location.href = 'deck.html#slides=design-resources';
+          return;
+        }
         if (deckId === 'demo-deck') {
           window.location.href = 'deck.html#slides=demo-deck';
           return;

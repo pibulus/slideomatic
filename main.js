@@ -464,9 +464,14 @@ function persistSlides(options = {}) {
   const { suppressWarning = false, silent = false } = options;
   if (!Array.isArray(slides)) return false;
 
-  // Don't persist guide deck - it should always load fresh
-  const isGuideDeck = !activeDeckId && resolveSlidesPath() === 'guide.json';
-  if (isGuideDeck) {
+  // Don't persist built-in decks - they should always load fresh
+  const slidesPath = resolveSlidesPath();
+  const isBuiltInDeck = !activeDeckId && (
+    slidesPath === 'guide.json' ||
+    slidesPath === 'design-resources.json' ||
+    slidesPath === 'demo-deck.json'
+  );
+  if (isBuiltInDeck) {
     return false;
   }
 

@@ -1,0 +1,402 @@
+[
+  {
+    "type": "title",
+    "title": "Free Design Resources",
+    "subtitle": "Tools, cheat codes, and hidden gems that don't suck",
+    "media": []
+  },
+  {
+    "type": "standard",
+    "badge": "Welcome",
+    "headline": "Save money, save time, make cool stuff",
+    "body": [
+      "Anti-corporate tools that actually feel good to use.",
+      "Design shortcuts the pros know.",
+      "Permission to steal like an artist.",
+      "Everything here is **free** or has a solid free tier."
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🎨 Color Palettes",
+    "subtitle": "Never stare at a blank canvas again"
+  },
+  {
+    "type": "standard",
+    "badge": "Colors",
+    "headline": "The essentials",
+    "body": [
+      "**[Coolors](https://coolors.co)** - Super-fast palette generator that learns your taste",
+      "**[Color Hunt](https://colorhunt.co)** - Curated palettes updated daily, perfect for quick inspiration",
+      "**[Khroma](https://khroma.co)** - AI learns which colors you like, generates unlimited personalized palettes",
+      "**[Paletton](https://paletton.com)** - Advanced color wheel with split-complementary, triadic controls"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Colors",
+    "headline": "More palette tools",
+    "body": [
+      "**[Adobe Color Explore](https://color.adobe.com/explore)** - Search user-generated palettes by keyword (try 'vaporwave' or 'nature')",
+      "**[Duo](https://duo.alexpate.uk)** - Harmonious two-color combinations for duotone effects",
+      "**[Design Seeds](https://design-seeds.com)** - Nature-inspired palettes for fresh, organic vibes"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "✍️ Typography & Fonts",
+    "subtitle": "Words that look good"
+  },
+  {
+    "type": "standard",
+    "badge": "Fonts",
+    "headline": "Free fonts that don't look free",
+    "body": [
+      "**[Google Fonts](https://fonts.google.com)** - 1000+ free fonts, easy to embed, great pairings",
+      "**[Fontshare](https://fontshare.com)** - High-quality, 100% free for personal and commercial use",
+      "**[Font Squirrel](https://fontsquirrel.com)** - Handpicked commercial-use fonts + font identifier tool",
+      "**[DaFont](https://dafont.com)** - Massive library from designers worldwide, filter by style",
+      "**[Fontpair](https://fontpair.co)** - Beautiful font pairings to copy"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "📸 Stock Images & Photos",
+    "subtitle": "No more cheesy stock photos"
+  },
+  {
+    "type": "standard",
+    "badge": "Photos",
+    "headline": "High-quality, actually usable images",
+    "body": [
+      "**[Unsplash](https://unsplash.com)** - 2M+ high-res images, free for commercial use",
+      "**[Pexels](https://pexels.com)** - Photos and videos, no attribution required",
+      "**[Pixabay](https://pixabay.com)** - Copyright-free images and videos",
+      "**[PikWizard](https://pikwizard.com)** - 1M+ royalty-free images without attribution",
+      "**[Pinterest](https://pinterest.com)** - Mood boards and visual research goldmine"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🗜️ Compression & Optimization",
+    "subtitle": "Make files tiny without losing quality"
+  },
+  {
+    "type": "standard",
+    "badge": "Compress",
+    "headline": "Essential compression tools",
+    "body": [
+      "**[Squoosh](https://squoosh.app)** - Google's image compressor, incredible results",
+      "**[TinyPNG](https://tinypng.com)** - Smart PNG and JPEG compression",
+      "**[SVGOMG](https://jakearchibald.github.io/svgomg/)** - Best SVG cleaner and compressor, removes junk code",
+      "**[Remove.bg](https://remove.bg)** - Fastest, most accurate background remover (free for standard res)"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🖼️ Image Editing",
+    "subtitle": "Photoshop? Never heard of it"
+  },
+  {
+    "type": "standard",
+    "badge": "Editing",
+    "headline": "Free editors that actually work",
+    "body": [
+      "**[Photopea](https://photopea.com)** - Browser-based Photoshop clone, handles PSDs perfectly",
+      "**[GIMP](https://gimp.org)** - Open-source Photoshop alternative, powerful but has a learning curve",
+      "**[PhotoDemon](https://photodemon.org)** - Hidden gem: portable, handles all color spaces and 16/32-bit",
+      "**[Krita](https://krita.org)** - Focused on painting and drawing, intuitive for artists",
+      "**[Pixlr](https://pixlr.com)** - Browser-based with AI tools for quick edits"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "📱 Mockups & Presentation",
+    "subtitle": "Make your work look professional instantly"
+  },
+  {
+    "type": "standard",
+    "badge": "Mockups",
+    "headline": "Screenshot to portfolio piece in seconds",
+    "body": [
+      "**[Screely](https://screely.com)** - Turns screenshots into beautiful images with backgrounds and frames",
+      "**[Mockuuups Studio](https://mockuuups.studio)** - Real-photo device mockups (free tier available)",
+      "**[FreebiesBug](https://freebiesbug.com)** - Free PSD mockups for products, devices, apparel",
+      "**[GraphicBurger](https://graphicburger.com)** - High-quality mockup templates"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🎯 Icons & Illustrations",
+    "subtitle": "Visual elements that tie it all together"
+  },
+  {
+    "type": "standard",
+    "badge": "Icons",
+    "headline": "Icon libraries",
+    "body": [
+      "**[Iconmonstr](https://iconmonstr.com)** - Simple black/white icons, zero frills, fast SVG downloads",
+      "**[Feather Icons](https://feathericons.com)** - Simple, open-source, customizable",
+      "**[The Noun Project](https://thenounproject.com)** - Massive library for every need",
+      "**[Flaticon](https://flaticon.com)** - 7M+ vector icons in PNG, SVG, EPS, PSD",
+      "**[Ionicons](https://ionic.io/ionicons)** - Extensive free SVG icon set"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Illustrations",
+    "headline": "Illustrations that don't look generic",
+    "body": [
+      "**[Blush](https://blush.design)** - Mix-and-match customizable illustrations from global artists",
+      "**[unDraw](https://undraw.co)** - 500+ free illustrations, customizable colors, PNG and SVG",
+      "**[Open Doodles](https://opendoodles.com)** - Pablo Stanley's sketches, source files included",
+      "**[Drawkit](https://drawkit.com)** - Hand-drawn vector illustrations and icons"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "✏️ Vector Editors",
+    "subtitle": "Logo and icon creation without Adobe"
+  },
+  {
+    "type": "standard",
+    "badge": "Vector",
+    "headline": "Free Illustrator alternatives",
+    "body": [
+      "**[Inkscape](https://inkscape.org)** - Powerful open-source vector editor, Illustrator-level features",
+      "**[Vectr](https://vectr.com)** - Simple, browser-based, great for beginners",
+      "**[Figma](https://figma.com)** - Industry-standard UI/UX tool with generous free tier"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🔨 Utility Tools",
+    "subtitle": "Swiss army knives for designers"
+  },
+  {
+    "type": "standard",
+    "badge": "Utilities",
+    "headline": "Multi-purpose problem solvers",
+    "body": [
+      "**[TinyWow](https://tinywow.com)** - 100+ free tools: PDF, image, video conversion, editing, compression",
+      "**[Canva](https://canva.com)** - Templates and quick graphics (free tier is solid)",
+      "**[Stylify Me](https://stylifyme.com)** - Enter any URL, scrapes colors, typography, style rules instantly"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "💡 Design Cheat Codes",
+    "subtitle": "Shortcuts the pros actually use"
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The 2-Font Rule",
+    "body": [
+      "Use a **maximum of two fonts** in a design.",
+      "One for headings (display or serif), one for body (clean sans-serif).",
+      "If you absolutely must add a third, use it for a single specialty element only.",
+      "This creates instant visual harmony and prevents chaos."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The 8pt Grid System",
+    "body": [
+      "All spacing and sizing should be **multiples of 8 pixels**.",
+      "Margins: 16px, 24px, 32px. Icons: 24×24. Buttons: 48px height.",
+      "Creates consistency and makes designs easily adaptable across screen sizes.",
+      "Professional designers swear by this."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The 60-30-10 Color Rule",
+    "body": [
+      "**60% Dominant color** - Backgrounds, main containers",
+      "**30% Secondary color** - Text, minor elements, sidebars",
+      "**10% Accent color** - Call-to-action buttons, links, highlights",
+      "Stolen from interior design, works perfectly for UI/web."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Contrast Ratio Hack",
+    "body": [
+      "Don't guess if text is readable. **Check the contrast ratio**.",
+      "Use **[WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)**",
+      "Aim for **4.5:1** minimum for normal text, **3:1** for large text.",
+      "This isn't optional—it's accessibility law and common sense."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "White Space is Free Real Estate",
+    "body": [
+      "Give elements room to breathe (negative space).",
+      "Makes designs feel professional, clean, intentional.",
+      "Guides the eye to what matters most.",
+      "When in doubt, **add more space**."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Typography Scale Trick",
+    "body": [
+      "Use a **simple multiplier** for type sizes: 1.25 or 1.333 (perfect fourth).",
+      "Example: 16px × 1.25 = 20px, 20px × 1.25 = 25px",
+      "Creates harmonious, mathematically-pleasing hierarchy.",
+      "No more guessing at font sizes."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Steal the Crop",
+    "body": [
+      "Don't use stock photos as-is. **Crop aggressively**.",
+      "Focus on a single compelling detail.",
+      "Create interesting negative space for text.",
+      "This is how pros make stock photos not look like stock photos."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Duplicate and Simplify",
+    "body": [
+      "Need a new version? **Never work on the only copy**.",
+      "Duplicate your design, then **delete half the elements**.",
+      "Simplifying a copy often leads to a better, more focused result.",
+      "Saves you from 'save as v2 v3 final FINAL' hell."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Build a Swipe File",
+    "body": [
+      "Screenshot or save designs you admire.",
+      "When stuck, browse your file for inspiration.",
+      "**Analyze why they work**, don't just copy them.",
+      "Your future self will thank you."
+    ]
+  },
+  {
+    "type": "section",
+    "title": "💬 Permission to Steal",
+    "subtitle": "Quotes that give you creative freedom"
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Good artists copy, great artists steal",
+    "body": [
+      "**— Pablo Picasso** (or T.S. Eliot, or Steve Jobs)",
+      "",
+      "Steal means: study, credit, remix, mash up, transform.",
+      "It doesn't mean plagiarize or rip off."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Nothing is original",
+    "body": [
+      "**All creative work builds on what came before.**",
+      "",
+      "What a good artist understands is that nothing comes from nowhere.",
+      "**— Austin Kleon, Steal Like an Artist**"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "The secret to creativity is knowing how to hide your sources",
+    "body": [
+      "**— Albert Einstein**",
+      "",
+      "Or maybe just knowing where to look for good sources in the first place."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Have no fear of perfection—you'll never reach it",
+    "body": [
+      "**— Salvador Dalí**",
+      "",
+      "Ship it. Done is better than perfect."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Design is not just what it looks like. Design is how it works.",
+    "body": [
+      "**— Steve Jobs**",
+      "",
+      "A reminder that function matters as much as aesthetics."
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🌟 Design Inspiration",
+    "subtitle": "Places to find good taste"
+  },
+  {
+    "type": "standard",
+    "badge": "Inspiration",
+    "headline": "Sites that actually inspire",
+    "body": [
+      "**[Dribbble](https://dribbble.com)** - UI/UX showcase, good for trends",
+      "**[Awwwards](https://awwwards.com)** - Best web design work, case studies on design systems",
+      "**[It's Nice That](https://itsnicethat.com)** - Creative industries news, graphic design, advertising",
+      "**[Creative Bloom](https://creativeboom.com)** - Illustration, art, design showcases",
+      "**[Mindsparkle Mag](https://mindsparklemag.com)** - Curated graphic/web/video design inspiration"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Inspiration",
+    "headline": "More places to look",
+    "body": [
+      "**[AIGA Eye on Design](https://eyeondesign.aiga.org)** - Cultural news, interviews, fresh work",
+      "**[The Design Blog](https://thedesignblog.org)** - Focus on young and student designers, non-corporate vibes",
+      "**[Art of the Title](https://artofthetitle.com)** - Film title sequences (underrated inspiration source)",
+      "**[FreeMediaHeckYeah](https://fmhy.net)** - Massive wiki of free resources for... 'inspiration'"
+    ]
+  },
+  {
+    "type": "section",
+    "title": "🎓 Learn More",
+    "subtitle": "Deep dives worth your time"
+  },
+  {
+    "type": "standard",
+    "badge": "Resources",
+    "headline": "Books and frameworks",
+    "body": [
+      "**Steal Like an Artist** by Austin Kleon - Permission to be creative",
+      "**Atomic Design** by Brad Frost - Build modular design systems",
+      "**Thinking in Systems** by Donella Meadows - See the big picture",
+      "**Don't Make Me Think** by Steve Krug - Usability fundamentals"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Final Thought",
+    "headline": "You don't need expensive tools to make great work",
+    "body": [
+      "Everything in this deck is free or has a solid free tier.",
+      "The cheat codes work regardless of your budget.",
+      "Ship stuff, steal smartly, and don't overthink it.",
+      "Now go make something cool."
+    ]
+  }
+]
