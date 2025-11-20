@@ -714,7 +714,7 @@ main {
     background 120ms ease;
 }
 
-.deck-card::after {
+.deck-card--builtin::after {
   content: "Open";
   position: absolute;
   top: 50%;
@@ -741,7 +741,7 @@ main {
   background: var(--riso-pink); /* Bright fluorescent pink */
 }
 
-.deck-card:hover::after {
+.deck-card--builtin:hover::after {
   opacity: 1;
 }
 
