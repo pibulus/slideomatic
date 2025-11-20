@@ -43,6 +43,16 @@
     ]
   },
   {
+    "type": "standard",
+    "badge": "Colors",
+    "headline": "Hidden gem color tools",
+    "body": [
+      "**[Huemint](https://huemint.com)** - AI applies palettes to actual mockups so you see how colors perform in context",
+      "**[ColorSpace](https://mycolor.space)** - Generate 16 different palette combinations from a single hex code",
+      "**[Shade Generator](https://10015.io/tools/shade-generator)** - Precise shades/tints that maintain perfect luminosity contrast"
+    ]
+  },
+  {
     "type": "section",
     "title": "✍️ Typography & Fonts",
     "subtitle": "Words that look good"
@@ -57,6 +67,16 @@
       "**[Font Squirrel](https://fontsquirrel.com)** - Handpicked commercial-use fonts + font identifier tool",
       "**[DaFont](https://dafont.com)** - Massive library from designers worldwide, filter by style",
       "**[Fontpair](https://fontpair.co)** - Beautiful font pairings to copy"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Fonts",
+    "headline": "Typography utilities",
+    "body": [
+      "**[Type Scale](https://typescale.com)** - Pick a base size and ratio (e.g., 1.5 for perfect fifth), get instant hierarchy",
+      "**[Font Playground](https://play.typedetail.com)** - Browse unused alternates, ligatures, swashes from any font",
+      "**[Glyphs](https://glyphsapp.com/tools)** - Explore unique symbols and characters without learning codes"
     ]
   },
   {
@@ -180,7 +200,9 @@
     "body": [
       "**[TinyWow](https://tinywow.com)** - 100+ free tools: PDF, image, video conversion, editing, compression",
       "**[Canva](https://canva.com)** - Templates and quick graphics (free tier is solid)",
-      "**[Stylify Me](https://stylifyme.com)** - Enter any URL, scrapes colors, typography, style rules instantly"
+      "**[Stylify Me](https://stylifyme.com)** - Enter any URL, scrapes colors, typography, style rules instantly",
+      "**[Get Waves](https://getwaves.io)** - Generate custom SVG wave shapes for section dividers",
+      "**[Untools](https://untools.co)** - Mental models for better thinking (First Principles, Inversion, etc.)"
     ]
   },
   {
@@ -288,19 +310,189 @@
     ]
   },
   {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The X-Height Unifier Hack",
+    "body": [
+      "When pairing two different fonts, **match their x-heights**.",
+      "The x-height is the height of lowercase 'x'.",
+      "When x-heights align, fonts look harmonious even if they're completely different styles.",
+      "Visual weight and readability improve instantly."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Contrast by Weight, Not Just Size",
+    "body": [
+      "Don't just make headings **bigger**—make them **bolder**.",
+      "Weight contrast (heavy/bold vs regular/light) is more powerful than size alone.",
+      "Creates stronger hierarchy without shouting.",
+      "Easier to read, looks more sophisticated."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The Shadow Layer Trick",
+    "body": [
+      "Never use a single shadow layer. Use **three layers** for depth:",
+      "**Layer 1:** High blur, low opacity (15px blur, 10% opacity)",
+      "**Layer 2:** Medium blur, medium opacity (5px blur, 20% opacity)",
+      "**Layer 3:** Low blur, higher opacity, tight offset (2px blur, 30% opacity, 1px offset)",
+      "Prevents flat, digital-looking shadows. Creates realistic depth."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Optical Alignment (Not Mathematical)",
+    "body": [
+      "When centering icons, numbers, or shapes, **don't trust the bounding box**.",
+      "A triangle or character like '7' will look off-center if mathematically centered.",
+      "Nudge it slightly until it **looks right to your eye**.",
+      "This is how pros make things feel balanced."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "The Invisible Line",
+    "body": [
+      "Avoid centered alignment for text blocks or icon groups.",
+      "Align left (or right) to an **invisible vertical line** instead.",
+      "Creates a stronger, cleaner visual edge that the eye can follow.",
+      "Centered content often looks soft and uncommitted."
+    ]
+  },
+  {
+    "type": "section",
+    "title": "📐 Design Principles",
+    "subtitle": "Laws and patterns that actually matter"
+  },
+  {
+    "type": "standard",
+    "badge": "Principle",
+    "headline": "The Pareto Principle (80/20 Rule)",
+    "body": [
+      "**80% of results come from 20% of effort.**",
+      "Focus on the features/elements that deliver the most impact.",
+      "Perfect is the enemy of shipped.",
+      "Ruthlessly cut the stuff that doesn't move the needle."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Principle",
+    "headline": "You've got to be seen to be heard",
+    "body": [
+      "Visibility creates opportunity.",
+      "If people can't find your work, it doesn't matter how good it is.",
+      "Consistency beats perfection every time.",
+      "Show up, ship often, stay findable."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Principle",
+    "headline": "One thing, done right",
+    "body": [
+      "Tools that do one thing perfectly beat Swiss Army knife apps.",
+      "Reduce friction until the tool disappears.",
+      "Compression is respect for attention.",
+      "Not every good idea needs to scale."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Principle",
+    "headline": "Build the thing that builds the things",
+    "body": [
+      "Meta-systems beat monuments.",
+      "Templates, patterns, and infrastructure enable rapid deployment.",
+      "Design systems save time in the long run.",
+      "Invest in scaffolding, not just output."
+    ]
+  },
+  {
     "type": "section",
     "title": "💬 Permission to Steal",
-    "subtitle": "Quotes that give you creative freedom"
+    "subtitle": "Quotes from freaks, philosophers, and weirdos"
   },
   {
     "type": "standard",
     "badge": "Quote",
-    "headline": "Good artists copy, great artists steal",
+    "headline": "Without deviation from the norm, progress is not possible",
     "body": [
-      "**— Pablo Picasso** (or T.S. Eliot, or Steve Jobs)",
+      "**— Frank Zappa**",
       "",
-      "Steal means: study, credit, remix, mash up, transform.",
-      "It doesn't mean plagiarize or rip off."
+      "Breaking conventions isn't just allowed—it's essential.",
+      "The best work lives where the rules break down."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "The computer can't tell you the emotional story",
+    "body": [
+      "**— Frank Zappa**",
+      "",
+      "It can give you exact mathematical design, but what's missing is the eyebrows.",
+      "Creativity requires human emotion beyond technical precision."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "This is the real secret of life",
+    "body": [
+      "**— Alan Watts**",
+      "",
+      "Be completely engaged with what you're doing in the here and now.",
+      "Instead of calling it work, realize it is play."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Care and Quality are internal and external aspects of the same thing",
+    "body": [
+      "**— Robert Pirsig, Zen and the Art of Motorcycle Maintenance**",
+      "",
+      "A person who sees Quality and feels it as they work is a person who cares.",
+      "Quality tends to fan out like waves."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Art is anything you can do well. Anything you can do with Quality.",
+    "body": [
+      "**— Robert Pirsig**",
+      "",
+      "Quality is a direct experience independent of and prior to intellectual abstractions."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "Genius is courage in talent",
+    "body": [
+      "**— Ludwig Wittgenstein**",
+      "",
+      "Understanding is a public phenomenon. Meaning is use.",
+      "A great deal of creative thinking takes place in and with the materials of art."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Quote",
+    "headline": "The SubGenius must have Slack!",
+    "body": [
+      "**— Church of the SubGenius**",
+      "",
+      "Too much is always better than not enough.",
+      "Bring your weirdest dreams to rampaging LIFE."
     ]
   },
   {
@@ -308,20 +500,10 @@
     "badge": "Quote",
     "headline": "Nothing is original",
     "body": [
-      "**All creative work builds on what came before.**",
+      "**— Austin Kleon, Steal Like an Artist**",
       "",
-      "What a good artist understands is that nothing comes from nowhere.",
-      "**— Austin Kleon, Steal Like an Artist**"
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "Quote",
-    "headline": "The secret to creativity is knowing how to hide your sources",
-    "body": [
-      "**— Albert Einstein**",
-      "",
-      "Or maybe just knowing where to look for good sources in the first place."
+      "All creative work builds on what came before.",
+      "What a good artist understands is that nothing comes from nowhere."
     ]
   },
   {
@@ -332,16 +514,6 @@
       "**— Salvador Dalí**",
       "",
       "Ship it. Done is better than perfect."
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "Quote",
-    "headline": "Design is not just what it looks like. Design is how it works.",
-    "body": [
-      "**— Steve Jobs**",
-      "",
-      "A reminder that function matters as much as aesthetics."
     ]
   },
   {
@@ -369,7 +541,18 @@
       "**[AIGA Eye on Design](https://eyeondesign.aiga.org)** - Cultural news, interviews, fresh work",
       "**[The Design Blog](https://thedesignblog.org)** - Focus on young and student designers, non-corporate vibes",
       "**[Art of the Title](https://artofthetitle.com)** - Film title sequences (underrated inspiration source)",
-      "**[FreeMediaHeckYeah](https://fmhy.net)** - Massive wiki of free resources for... 'inspiration'"
+      "**[SaaS Pages](https://saaspages.xyz)** - Curated gallery of landing pages, headers, pricing that actually work"
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Inspiration",
+    "headline": "Weirdo resources",
+    "body": [
+      "**[FreeMediaHeckYeah](https://fmhy.net)** - Massive wiki of free resources for all your 'inspiration' needs",
+      "**[Craphound](https://craphound.com)** - Cory Doctorow's blog on tech, culture, and resistance",
+      "**[Internet Archive](https://archive.org)** - Deep web of historical design, typography, weird ephemera",
+      "**[UBUWEB](https://ubuweb.com)** - Avant-garde art, film, poetry archives"
     ]
   },
   {
