@@ -615,6 +615,11 @@ main {
   flex-direction: column;
   gap: 20px;
   position: relative;
+  transition: background 120ms ease;
+}
+
+.deck-shelf:hover {
+  background: rgba(255, 72, 176, 0.05); /* Very light pink tint */
 }
 
 /* Small fluorescent circle accent */
