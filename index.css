@@ -702,10 +702,27 @@ main {
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 4px 4px 0 rgba(26, 21, 34, 0.15);
   cursor: pointer;
+  position: relative;
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
     background 120ms ease;
+}
+
+.deck-card::after {
+  content: "Open";
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  font-weight: 800;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
 }
 
 .deck-card--starred {
@@ -714,13 +731,17 @@ main {
 }
 
 .deck-card:hover {
-  transform: translateX(3px);
+  transform: translateX(3px) scale(1.02);
   box-shadow: 6px 6px 0 rgba(26, 21, 34, 0.2);
-  background: rgba(255, 72, 176, 0.2); /* Pink highlight */
+  background: var(--riso-pink); /* Bright fluorescent pink */
+}
+
+.deck-card:hover::after {
+  opacity: 1;
 }
 
 .deck-card--starred:hover {
-  background: rgba(255, 193, 7, 0.5); /* Keep starred decks with golden hover */
+  background: #ffc107; /* Bright golden yellow for starred */
 }
 
 .deck-card__meta {
