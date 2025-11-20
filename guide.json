@@ -16,9 +16,9 @@
     "badge": "Welcome",
     "headline": "Some stuff is jank, but it's gonna get better",
     "body": [
-      "This tool is actively being improved.",
-      "You can unlock superpowers like **graph generation** and **image suggestions** by adding your Gemini API key in Settings (press **S**).",
-      "Gemini API keys are like passwords Google gives you to use their things—they're super easy to get and free!"
+      "Slideomatic is actively being improved.",
+      "Feel free to email me on pibulus@gmail.com.",
+      "I genuinely think its easier and faster than anything else out there! XD"
     ]
   },
   {
@@ -35,8 +35,8 @@
     "badge": "Edit drawer",
     "headline": "Press E to open the edit drawer",
     "body": [
-      "This is where you change text, swap layouts, add images.",
-      "Press **E** to try it on this slide.",
+      "This is where you change text, swap or add slides, add images.",
+      "Press **E** to try it on this slide. It auto saves! (Undo coming soon)",
       "Press **Escape** to close it."
     ]
   },
