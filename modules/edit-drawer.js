@@ -33,7 +33,7 @@ import {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AUTO_SAVE_DELAY_MS = 1000; // Auto-save after 1 second of idle typing
+const AUTO_SAVE_DELAY_MS = 2000; // Auto-save after 2 seconds of idle typing
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE STATE - Event Listener Tracking
@@ -199,7 +199,7 @@ function getLayoutDescription(value) {
 }
 
 function buildLayoutControl(currentType) {
-  const selectTitle = getLayoutDescription(currentType) || 'Choose layout';
+  const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
   const options = LAYOUT_OPTIONS.map(({ value, label }) => {
     const selected = value === currentType ? 'selected' : '';
     const optionTitle = getLayoutDescription(value) || label;
@@ -211,13 +211,16 @@ function buildLayoutControl(currentType) {
       <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
         ${options}
       </select>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Apply the selected layout to this slide">
-        Apply layout
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
+        Update Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
+        Add Slide
       </button>
     </div>
   `;
 
-  return buildSection('Layout', content, { modifier: ' edit-drawer__section--layout' });
+  return buildSection('Slide Type', content, { modifier: ' edit-drawer__section--layout' });
 }
 
 function buildContentFieldsSection(slide, type) {
@@ -314,7 +317,7 @@ function buildActionsSection() {
             Delete
           </button>
         </div>
-        <button type="button" class="edit-drawer__link-button" id="download-deck-btn">
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
           Export
         </button>
       </div>
@@ -452,11 +455,42 @@ function handleLayoutApply(context) {
   const layout = getSelectedLayoutValue();
   const ctx = ensureContext(context);
   if (!layout) {
-    ctx.showHudStatus('Select a layout first', 'warning');
+    ctx.showHudStatus('Select a slide type first', 'warning');
     setTimeout(() => ctx.hideHudStatus(), 1500);
     return;
   }
   applyLayoutToCurrentSlide(ctx, layout);
+}
+
+function handleLayoutAdd(context) {
+  const layout = getSelectedLayoutValue();
+  const ctx = ensureContext(context);
+  if (!layout) {
+    ctx.showHudStatus('Select a slide type first', 'warning');
+    setTimeout(() => ctx.hideHudStatus(), 1500);
+    return;
+  }
+  addNewSlideWithLayout(ctx, layout);
+}
+
+function addNewSlideWithLayout(ctx, layout) {
+  const template = ctx.getSlideTemplate(layout);
+  if (!template) {
+    alert(`No template available for type "${layout}".`);
+    return;
+  }
+
+  const currentIndex = ctx.getCurrentIndex();
+  const newIndex = currentIndex + 1;
+
+  // Create new slide from template
+  const newSlide = JSON.parse(JSON.stringify(template));
+
+  ctx.insertSlideAt(newIndex, newSlide, { activate: true });
+
+  const label = getLayoutMeta(layout)?.label || layout;
+  ctx.showHudStatus(`✨ New ${label} slide added`, 'success');
+  setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
 const PRESERVED_FIELDS = [
@@ -747,6 +781,12 @@ export function renderEditForm(context) {
     document.getElementById('layout-apply-btn'),
     'click',
     () => handleLayoutApply(ctx)
+  );
+
+  addTrackedListener(
+    document.getElementById('layout-add-btn'),
+    'click',
+    () => handleLayoutAdd(ctx)
   );
 
   const layoutSelect = document.getElementById('slide-layout-select');
