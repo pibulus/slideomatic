@@ -1,78 +1,64 @@
 [
   {
     "type": "title",
-    "title": "Welcome to Slide-o-Matic",
-    "subtitle": "Let's get you up to speed in about 30 seconds",
+    "title": "Quick guide",
+    "subtitle": "How this works (still a work in progress)",
     "media": []
   },
   {
     "type": "standard",
     "badge": "Navigation",
-    "headline": "Use arrow keys to move around →",
+    "headline": "Arrow keys move between slides",
     "body": [
-      "That's it. Left and right arrows navigate slides.",
-      "Press **?** anytime to see all keyboard shortcuts.",
-      "Or just keep reading — you'll pick it up as you go."
+      "Left and right arrows navigate.",
+      "Press **?** to see all keyboard shortcuts."
     ]
   },
   {
     "type": "standard",
-    "badge": "Editing",
-    "headline": "Press E to edit this slide right now",
+    "badge": "Edit drawer",
+    "headline": "Press E to open the edit drawer",
     "body": [
-      "Seriously, try it. Press **E** and change this text.",
-      "You can add images, change layouts, whatever you want.",
-      "Press **Escape** when you're done editing."
+      "This is where you change text, swap layouts, add images.",
+      "Press **E** to try it on this slide.",
+      "Press **Escape** to close it."
     ]
   },
   {
     "type": "standard",
     "badge": "Themes",
-    "headline": "Press T to open the theme drawer",
+    "headline": "Press T for themes",
     "body": [
-      "Try randomizing or picking a new vibe.",
-      "Themes change instantly — even mid-presentation.",
-      "Find one you like? It saves automatically."
+      "Switch between presets or hit random.",
+      "Themes update live, even mid-deck."
     ]
   },
   {
     "type": "standard",
-    "badge": "Adding slides",
-    "headline": "Press + to add a new slide",
+    "badge": "What's JSON?",
+    "headline": "Everything exports as JSON",
     "body": [
-      "You'll get options: title, standard, quote, gallery, and more.",
-      "Or hold **V** and describe what you want — it'll draft it for you.",
-      "Either way works. You're in control."
+      "JSON is just a way to list things with basic code.",
+      "Press **D** to export your deck. Press **U** to upload one.",
+      "AI tools (like ChatGPT) can help edit JSON files if you want."
     ]
   },
   {
     "type": "standard",
-    "badge": "Voice assist",
-    "headline": "Hold V when you're stuck on wording",
+    "badge": "Saving",
+    "headline": "Everything saves locally",
     "body": [
-      "Describe what you want to say, let go, and it drafts suggestions.",
-      "You can tweak, reject, or keep what it gives you.",
-      "It's a helper, not the author. You're still driving."
+      "Your deck auto-saves in your browser.",
+      "Nothing leaves your device unless you export it."
     ]
   },
   {
     "type": "standard",
-    "badge": "Sharing",
-    "headline": "Press D to export as JSON",
+    "badge": "That's it",
+    "headline": "Go make something",
     "body": [
-      "Your deck exports to JSON — clean, portable, shareable.",
-      "Press **D** to export, or **U** to upload a deck from your computer.",
-      "Everything stays local in your browser unless you export it."
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "Ready to build?",
-    "headline": "You're all set. Now what?",
-    "body": [
-      "💾 Click **Save as copy** in the HUD to keep this guide as a starting template.",
-      "🏠 Or click **Back** to return home and create a fresh blank deck.",
-      "Press **?** anytime for full keyboard shortcuts. Have fun building! ✨"
+      "Click **Back** to start a new deck.",
+      "Press **?** for keyboard shortcuts."
     ]
   }
 ]
