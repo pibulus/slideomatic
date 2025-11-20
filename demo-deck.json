@@ -824,7 +824,7 @@
   {
     "type": "quote",
     "badge": "Slide 38",
-    "headline": "“Curiosity is your operating system.”",
+    "headline": "Curiosity is your operating system.",
     "body": "Follow your nose. Your taste evolves faster than your tools — let it lead.",
     "font": "grotesk"
   },
@@ -886,9 +886,10 @@
   {
     "type": "quote",
     "badge": "Slide 41",
-    "headline": "“Three colors is harmony. Four colors? Now you’re talking jazz.”",
+    "headline": "\"One chord is fine, two chords are pushing it. Three chords and you're into jazz\"",
     "body": "Keep it simple. A good palette is like a good chord — tension, release, rhythm.",
-    "font": "grotesk"
+    "font": "grotesk",
+    "attribution": "Lou Reed"
   },
   {
     "type": "standard",
