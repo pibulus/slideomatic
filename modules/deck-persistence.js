@@ -33,6 +33,7 @@ let hideHudStatusHook = noop;
 let showSaveStatusHook = noop;
 let updateDeckNameDisplayHook = noop;
 let getSlideTemplateHook = () => ({ type: 'title' });
+let applySharedThemeHook = noop;
 
 export function registerDeckPersistenceHooks(hooks = {}) {
   if (typeof hooks.getParam === 'function') getParamHook = hooks.getParam;
@@ -45,9 +46,38 @@ export function registerDeckPersistenceHooks(hooks = {}) {
   if (typeof hooks.getSlideTemplate === 'function') {
     getSlideTemplateHook = hooks.getSlideTemplate;
   }
+  if (typeof hooks.applySharedTheme === 'function') {
+    applySharedThemeHook = hooks.applySharedTheme;
+  }
 }
 
 export async function loadSlides() {
+  const shareParam = getParamHook('share');
+  if (shareParam) {
+    try {
+      const response = await fetch(`/.netlify/functions/share?id=${encodeURIComponent(shareParam)}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch shared deck (${response.status})`);
+      }
+      const data = await response.json();
+      if (Array.isArray(data?.slides)) {
+        if (data.theme) {
+          applySharedThemeHook(data.theme);
+        }
+        showHudStatusHook('✓ Loaded shared deck', 'success');
+        setTimeout(hideHudStatusHook, 2000);
+        return data.slides;
+      }
+      throw new Error('Malformed shared deck payload');
+    } catch (error) {
+      console.error('Failed to load shared deck', error);
+      showHudStatusHook('⚠️ Failed to load shared deck', 'error');
+      setTimeout(hideHudStatusHook, 3000);
+    }
+  }
+
   const urlParam = getParamHook('url');
   if (urlParam) {
     try {

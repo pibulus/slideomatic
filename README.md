@@ -54,6 +54,15 @@ That's it—no build step, no frameworks.
 
 ---
 
+## Sharing Decks
+
+- Click the new **Share** button in the deck HUD to snapshot the current slides + theme into [Netlify Blobs](https://docs.netlify.com/blobs/). You get a short `?share=` link and QR code that load a read-only copy of the deck.
+- The Netlify Function lives at `/.netlify/functions/share`. It caps payloads at ~400KB to keep things snappy.
+- For local testing, run `netlify dev` instead of the plain static server so the function (and blobs context) are available. On production deploys it just works.
+- Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
+
+---
+
 ## Documenting Your Deck Format
 
 You can add a `_schema` slide at the top of `slides.json` to document your format inline. The renderer will ignore it:

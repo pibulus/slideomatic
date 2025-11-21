@@ -194,6 +194,7 @@ registerDeckPersistenceHooks({
   showSaveStatus,
   updateDeckNameDisplay,
   getSlideTemplate,
+  applySharedTheme: applySharedThemeFromShare,
 });
 
 registerNavigationHooks({
@@ -209,6 +210,17 @@ registerSlideActionHooks({
   createSlide: (slide, index) => createSlide(slide, index, renderers),
   renderEmptyState,
 });
+
+function applySharedThemeFromShare(themeData) {
+  if (!themeData || typeof themeData !== 'object') return;
+  try {
+    setCurrentTheme(themeData, { source: LOCAL_THEME_SOURCE });
+    applyTheme(themeData);
+    syncThemeSelectUI();
+  } catch (error) {
+    console.warn('Failed to apply shared theme payload', error);
+  }
+}
 
 window.addEventListener('resize', handleResize);
 
@@ -3030,9 +3042,9 @@ function initShareModal() {
   }
 
   async function generateShareUrl() {
-    const deckData = {
+    const deckPayload = {
       version: 1,
-      slides: slides,
+      slides,
       theme: getCurrentTheme(),
       meta: {
         title: deriveDeckName(slides),
@@ -3040,71 +3052,44 @@ function initShareModal() {
       },
     };
 
-    const jsonString = JSON.stringify(deckData.slides, null, 2);
-
-    // Try paste service first
+    let response;
     try {
-      const pasteUrl = await uploadToPasteService(jsonString);
-      const baseUrl = window.location.origin + window.location.pathname;
-      return `${baseUrl}?url=${encodeURIComponent(pasteUrl)}`;
-    } catch (error) {
-      debug('Paste service failed, falling back to base64:', error);
-      // Fallback to base64 encoding in URL
-      const encoded = btoa(unescape(encodeURIComponent(jsonString)));
-      const baseUrl = window.location.origin + window.location.pathname;
-      return `${baseUrl}?data=${encoded}`;
-    }
-  }
-
-  async function uploadToPasteService(content) {
-    // Try dpaste.com first
-    try {
-      const response = await fetch('https://dpaste.com/api/', {
+      response = await fetch('/.netlify/functions/share', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          content: content,
-          syntax: 'json',
-          expiry_days: 365,
-        }),
+        body: JSON.stringify(deckPayload),
       });
-
-      if (!response.ok) throw new Error('dpaste.com failed');
-
-      const url = await response.text();
-      // dpaste returns the page URL, we need the raw URL
-      const rawUrl = url.trim() + '.txt';
-      return rawUrl;
-    } catch (error) {
-      debug('dpaste failed:', error);
-
-      // Fallback to paste.ee
-      try {
-        const response = await fetch('https://api.paste.ee/v1/pastes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            description: 'Slide-o-Matic Deck',
-            sections: [{
-              name: 'deck.json',
-              syntax: 'json',
-              contents: content,
-            }],
-          }),
-        });
-
-        if (!response.ok) throw new Error('paste.ee failed');
-
-        const data = await response.json();
-        return `https://api.paste.ee/v1/pastes/${data.id}/raw`;
-      } catch (error2) {
-        throw new Error('Upload services unavailable. Using fallback method.');
-      }
+    } catch (networkError) {
+      throw new Error('Share service unavailable. Use `netlify dev` locally or the deployed site.');
     }
+
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch (_) {
+      // Ignore JSON parse failure; handled below
+    }
+
+    if (!response.ok) {
+      const message = payload?.error || 'Unable to create share link';
+      throw new Error(message);
+    }
+
+    if (!payload?.shareUrl && !payload?.id) {
+      throw new Error('Share link response missing id');
+    }
+
+    return payload.shareUrl || buildShareUrlFromId(payload.id);
+  }
+
+  function buildShareUrlFromId(id) {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('share', id);
+    return url.toString();
   }
 
   function generateQRCode(url) {

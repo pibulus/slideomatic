@@ -1,6 +1,7 @@
 # Netlify configuration for Slideomatic
 [build]
   publish = "."
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
