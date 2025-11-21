@@ -1,0 +1,21 @@
+[
+  {
+    "type": "title",
+    "eyebrow": "Slide-o-Matic",
+    "title": "Welcome",
+    "subtitle": "Voice-powered deck builder",
+    "media": [],
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "About",
+    "headline": "Why Slide-o-Matic?",
+    "body": [
+      "AI-assisted editing",
+      "Theme randomizer",
+      "Shareable decks"
+    ],
+    "font": "sans"
+  }
+]

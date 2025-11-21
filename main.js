@@ -13,6 +13,7 @@ import {
   normalizeThemeTokens,
 } from './modules/theme-manager.js';
 import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone } from './modules/utils.js';
+import { showHudStatus, hideHudStatus } from './modules/hud.js';
 import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './lazy-images.js';
 import { renderEditForm } from './modules/edit-drawer.js';
@@ -29,12 +30,94 @@ import {
 } from './modules/voice-modes.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
 import {
+  openSettingsModal,
+  closeSettingsModal,
+  showApiKeyStatus,
+} from './modules/settings-modal.js';
+import {
   initSlideIndex,
   toggleSlideIndex,
   closeSlideIndex,
   refreshSlideIndex,
   updateSlideIndexHighlight,
 } from './slide-index.js';
+import {
+  loadSlides,
+  persistSlides,
+  generateDeckId,
+  registerDeckPersistenceHooks,
+} from './modules/deck-persistence.js';
+import { slidesRoot, currentCounter, totalCounter, progressBar } from './modules/dom-refs.js';
+import {
+  insertSlideAt,
+  removeSlideAt,
+  replaceSlideAt,
+  downloadDeck,
+  handleDeckUpload,
+  reloadDeck,
+  registerSlideActionHooks,
+} from './modules/slide-actions.js';
+import {
+  initThemeDrawer,
+  toggleThemeDrawer,
+  openThemeDrawer,
+  closeThemeDrawer,
+  syncThemeSelectUI,
+} from './modules/theme-drawer.js';
+import {
+  slides,
+  setSlides,
+  slideElements,
+  setSlideElements,
+  currentIndex,
+  setCurrentIndex,
+  isOverview,
+  setOverview,
+  autoLinkConfigs,
+  setAutoLinkConfigs,
+  overviewRowCount,
+  setOverviewRowCount,
+  overviewColumnCount,
+  setOverviewColumnCount,
+  overviewCursor,
+  setOverviewCursor,
+  lastOverviewHighlight,
+  setLastOverviewHighlight,
+  isThemeDrawerOpen,
+  setThemeDrawerOpen,
+  themeDrawerInstance,
+  setThemeDrawerInstance,
+  slideScrollPositions,
+  DECK_STORAGE_PREFIX,
+  LAST_DECK_KEY,
+  deckStorageKey,
+  setDeckStorageKey,
+  deckPersistFailureNotified,
+  setDeckPersistFailureNotified,
+  activeDeckId,
+  setActiveDeckId,
+  isNewDeckRequest,
+  setNewDeckRequest,
+  isEditDrawerOpen,
+  setEditDrawerOpen,
+  editDrawerInstance,
+  setEditDrawerInstance,
+} from './modules/state.js';
+import {
+  registerNavigationHooks,
+  toggleOverview,
+  enterOverview,
+  exitOverview,
+  updateOverviewButton,
+  updateOverviewLayout,
+  highlightOverviewSlide,
+  moveOverviewCursorBy,
+  handleResize,
+  setActiveSlide,
+  updateTotalCounter,
+  updateHud,
+  handleSlideClick,
+} from './modules/navigation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION & CONSTANTS
@@ -49,15 +132,6 @@ const CONFIG = {
     TARGET_BYTES: 900 * 1024,          // 900KB target for compression
     DIMENSION_STEPS: [1920, 1600, 1440, 1280, 1024, 800],
     QUALITY_STEPS: [0.82, 0.72, 0.62, 0.54, 0.46, 0.38],
-  },
-
-  // Toast notifications
-  TOAST: {
-    MAX_ACTIVE: 3,                     // Maximum simultaneous toasts
-    SUCCESS_DURATION: 1500,            // Auto-hide after 1.5s
-    ERROR_DURATION: 2000,              // Auto-hide after 2s
-    WARNING_DURATION: 2000,            // Auto-hide after 2s
-    INFO_DURATION: 1500,               // Auto-hide after 1.5s
   },
 
   // Auto-save (handled in edit-drawer module)
@@ -81,10 +155,6 @@ const debug = (...args) => CONFIG.DEBUG && console.log('[Slideomatic]', ...args)
 // DOM REFERENCES
 // ═══════════════════════════════════════════════════════════════════════════
 
-const slidesRoot = document.getElementById("slides");
-const currentCounter = document.querySelector("[data-counter-current]");
-const totalCounter = document.querySelector("[data-counter-total]");
-const progressBar = document.querySelector("[data-progress]");
 const urlParams = new URLSearchParams(window.location.search);
 // Also check hash params (for servers that strip query strings)
 const hashParams = new URLSearchParams(window.location.hash.slice(1));
@@ -117,35 +187,40 @@ const renderers = {
   graph: renderGraphSlide,
 };
 
+registerDeckPersistenceHooks({
+  getParam,
+  showHudStatus,
+  hideHudStatus,
+  showSaveStatus,
+  updateDeckNameDisplay,
+  getSlideTemplate,
+});
+
+registerNavigationHooks({
+  closeThemeDrawer,
+  getEditDrawerContext,
+  renderEditForm,
+  toggleSpeakerNotes,
+});
+
+registerSlideActionHooks({
+  showHudStatus,
+  hideHudStatus,
+  createSlide: (slide, index) => createSlide(slide, index, renderers),
+  renderEmptyState,
+});
+
+window.addEventListener('resize', handleResize);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════
 
-let slides = [];
-let slideElements = [];
-let currentIndex = 0;
-let isOverview = false;
-const preloadedImages = new Set();
-let autoLinkConfigs = [];
-let overviewRowCount = 1;
-let overviewColumnCount = 0;
-let overviewCursor = 0;
-let lastOverviewHighlight = 0;
-let isThemeDrawerOpen = false;
-let themeDrawerInstance = null;
-const slideScrollPositions = new Map();
-const DECK_STORAGE_PREFIX = 'slideomatic_deck_overrides:';
-const LAST_DECK_KEY = 'slideomatic:last-deck';
-let deckStorageKey = null;
-let deckPersistFailureNotified = false;
-let activeDeckId = null;
-let isNewDeckRequest = false;
-
 if (requestedDeck) {
   if (requestedDeck === 'new') {
-    isNewDeckRequest = true;
-    activeDeckId = generateDeckId();
-    deckStorageKey = null; // Clear cache so getDeckStorageKey() rebuilds with new ID
+    setNewDeckRequest(true);
+    setActiveDeckId(generateDeckId());
+    setDeckStorageKey(null); // Clear cache so getDeckStorageKey() rebuilds with new ID
     console.log('[Init] New deck request, generated ID:', activeDeckId);
     urlParams.set('deck', activeDeckId);
     const nextSearch = urlParams.toString();
@@ -154,8 +229,8 @@ if (requestedDeck) {
       window.history.replaceState({}, '', nextUrl);
     }
   } else {
-    activeDeckId = requestedDeck;
-    deckStorageKey = null; // Clear cache so getDeckStorageKey() rebuilds with deck ID
+    setActiveDeckId(requestedDeck);
+    setDeckStorageKey(null); // Clear cache so getDeckStorageKey() rebuilds with deck ID
     console.log('[Init] Loading existing deck, ID:', activeDeckId);
   }
 }
@@ -164,106 +239,6 @@ if (requestedDeck) {
 // Theme Library - localStorage persistence
 // ================================================================
 
-
-// ================================================================
-// AI Theme Generation
-// ================================================================
-
-async function generateThemeWithAI(description) {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-  }
-
-  const sanitizedDescription = typeof description === 'string'
-    ? description.replace(/`/g, "'")
-    : '';
-
-  const prompt = `You are a theme designer for a presentation app called Slide-O-Matic.
-
-User description:
-${sanitizedDescription || '(no additional description provided)'}
-
-The theme should use these CSS variables (all are required):
-
-{
-  "color-bg": "<main background color - usually light>",
-  "background-surface": "<gradient or solid for backdrop>",
-  "background-overlay": "<subtle texture overlay>",
-  "background-opacity": "<0-1 for overlay opacity>",
-  "slide-bg": "<slide background with rgba for transparency>",
-  "slide-border-color": "<slide border color>",
-  "slide-border-width": "<border thickness, e.g. '5px'>",
-  "slide-shadow": "<CSS box-shadow>",
-  "color-surface": "<primary accent color>",
-  "color-surface-alt": "<secondary accent color>",
-  "color-accent": "<highlight color for badges>",
-  "badge-bg": "<badge background>",
-  "badge-color": "<badge text color>",
-  "color-ink": "<main text color>",
-  "color-muted": "<muted text color>",
-  "border-width": "<default border width>",
-  "gutter": "<spacing - use clamp()>",
-  "radius": "<border radius>",
-  "font-sans": "<sans-serif font stack>",
-  "font-mono": "<monospace font stack>",
-  "shadow-sm": "<small shadow>",
-  "shadow-md": "<medium shadow>",
-  "shadow-lg": "<large shadow>",
-  "shadow-xl": "<extra large shadow>"
-}
-
-Design Guidelines:
-- Create harmonious color palettes (60-30-10 rule)
-- Ensure good contrast (4.5:1 minimum for text)
-- Use rgba() for transparent backgrounds
-- Shadows should match the theme mood (hard shadows for punk/bold, soft for calm)
-- Choose appropriate fonts that match the vibe
-- Keep gradients subtle and tasteful
-
-Return ONLY valid JSON, no markdown or explanation.`;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.9,
-          maxOutputTokens: 2048,
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Gemini API call failed');
-  }
-
-  const result = await response.json();
-  const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-  if (!generatedText) {
-    throw new Error('No response from Gemini');
-  }
-
-  // Extract JSON from response (might be wrapped in markdown)
-  const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                    generatedText.match(/\{[\s\S]*\}/);
-
-  const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-  const theme = JSON.parse(jsonText);
-
-  return normalizeThemeTokens(theme);
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DECK INITIALIZATION & LOADING
@@ -284,79 +259,6 @@ if (!isInitializing && !isInitialized) {
 
 // Note: Main initialization logic is in initDeckWithTheme() at bottom of file
 // (old initDeck() removed to avoid duplication)
-
-async function loadSlides() {
-  // Priority 1: Check for url= parameter (shareable links) from search or hash
-  const urlParam = getParam("url");
-  if (urlParam) {
-    try {
-      const response = await fetch(urlParam);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch from URL: ${urlParam}`);
-      }
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        showHudStatus('✓ Loaded deck from URL', 'success');
-        setTimeout(hideHudStatus, 2000);
-        return data;
-      }
-    } catch (error) {
-      console.error("Failed to load deck from URL", error);
-      showHudStatus('⚠️ Failed to load deck from URL', 'error');
-      setTimeout(hideHudStatus, 3000);
-    }
-  }
-
-  // Priority 2: Check for data= parameter (base64 encoded deck) from search or hash
-  const dataParam = getParam("data");
-  if (dataParam) {
-    try {
-      const decoded = decodeURIComponent(escape(atob(dataParam)));
-      const data = JSON.parse(decoded);
-      if (Array.isArray(data)) {
-        showHudStatus('✓ Loaded deck from share link', 'success');
-        setTimeout(hideHudStatus, 2000);
-        return data;
-      }
-    } catch (error) {
-      console.error("Failed to load deck from data parameter", error);
-      showHudStatus('⚠️ Failed to load shared deck', 'error');
-      setTimeout(hideHudStatus, 3000);
-    }
-  }
-
-  // Priority 3: Check for localStorage deck
-  if (activeDeckId) {
-    console.log('[loadSlides] Priority 3: Loading deck from localStorage, activeDeckId:', activeDeckId);
-    const stored = loadPersistedDeck();
-    if (Array.isArray(stored)) {
-      console.log('[loadSlides] Successfully loaded deck with', stored.length, 'slides');
-      return stored.slice();
-    }
-    // Bootstrap a blank deck if we were asked to start fresh or if the deck was removed.
-    console.warn('[loadSlides] No stored deck found, creating blank template');
-    slides = [getSlideTemplate('title')];
-    persistSlides({ suppressWarning: true });
-    return slides.slice();
-  }
-
-  // Priority 4: Fetch from file specified by ?slides= parameter or default slides.json
-  const slidesPath = resolveSlidesPath();
-  try {
-    const response = await fetch(slidesPath, { cache: "no-store" });
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        return data;
-      }
-    }
-  } catch (error) {
-    console.warn(`Unable to load slides from ${slidesPath}, starting with blank deck`, error);
-  }
-
-  // Priority 5: No file available - start with a blank deck
-  return [getSlideTemplate('title')];
-}
 
 async function loadAndApplyTheme() {
   const params = new URLSearchParams(window.location.search);
@@ -392,202 +294,6 @@ function resolveThemePath() {
     return `${themeParam}.json`;
   }
   return `themes/${themeParam}.json`;
-}
-
-function resolveSlidesPath() {
-  const slidesParam = getParam("slides");
-  if (!slidesParam) {
-    return "slides.json";
-  }
-  if (slidesParam.endsWith(".json")) {
-    return slidesParam;
-  }
-  return `${slidesParam}.json`;
-}
-
-function getDeckStorageKey() {
-  if (deckStorageKey) {
-    console.log('[getDeckStorageKey] Using cached key:', deckStorageKey);
-    return deckStorageKey;
-  }
-  if (activeDeckId) {
-    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
-    console.log('[getDeckStorageKey] Built key from activeDeckId:', activeDeckId, '→', deckStorageKey);
-    return deckStorageKey;
-  }
-  const path = resolveSlidesPath();
-  try {
-    const url = new URL(path, window.location.href);
-    const keySource = `${url.origin}${url.pathname}${url.search ?? ""}`;
-    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(keySource)}`;
-    console.log('[getDeckStorageKey] Built key from path URL:', keySource, '→', deckStorageKey);
-  } catch (error) {
-    deckStorageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(path)}`;
-    console.log('[getDeckStorageKey] Built key from path:', path, '→', deckStorageKey);
-  }
-  return deckStorageKey;
-}
-
-function loadPersistedDeck() {
-  try {
-    const key = getDeckStorageKey();
-    console.log('[loadPersistedDeck] Looking for deck with key:', key);
-    const stored = localStorage.getItem(key);
-    if (!stored) {
-      console.log('[loadPersistedDeck] No deck found in localStorage for key:', key);
-      return null;
-    }
-    console.log('[loadPersistedDeck] Found deck in localStorage, parsing...');
-    const payload = JSON.parse(stored);
-    if (!payload || typeof payload !== 'object') {
-      console.warn('[loadPersistedDeck] Invalid payload structure');
-      return null;
-    }
-    if (!Array.isArray(payload.slides)) {
-      console.warn('[loadPersistedDeck] payload.slides is not an array');
-      return null;
-    }
-    console.log('[loadPersistedDeck] Successfully loaded', payload.slides.length, 'slides');
-    return payload.slides;
-  } catch (error) {
-    console.warn('Failed to load deck overrides from localStorage:', error);
-    try {
-      localStorage.removeItem(getDeckStorageKey());
-    } catch (_) {
-      // Ignore cleanup failure – nothing else we can do.
-    }
-    return null;
-  }
-}
-
-function persistSlides(options = {}) {
-  const { suppressWarning = false, silent = false } = options;
-  if (!Array.isArray(slides)) return false;
-
-  // Don't persist built-in decks - they should always load fresh
-  const slidesPath = resolveSlidesPath();
-  const isBuiltInDeck = !activeDeckId && (
-    slidesPath === 'guide.json' ||
-    slidesPath === 'design-resources.json' ||
-    slidesPath === 'demo-deck.json'
-  );
-  if (isBuiltInDeck) {
-    return false;
-  }
-
-  console.log('[persistSlides] Saving deck, activeDeckId:', activeDeckId);
-
-  // Show saving indicator
-  if (!silent && activeDeckId) {
-    showSaveStatus('saving');
-  }
-
-  try {
-    const updatedAt = Date.now();
-    const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
-    const storageKey = getDeckStorageKey();
-    console.log('[persistSlides] Using storage key:', storageKey);
-    const payload = {
-      version: 1,
-      updatedAt,
-      source,
-      slides,
-      meta: {
-        name: deriveDeckName(slides),
-        updatedAt,
-        deckId: activeDeckId ?? null,
-      },
-    };
-    localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
-    deckPersistFailureNotified = false;
-    markDeckAsRecent();
-    updateDeckNameDisplay();
-
-    // Show saved indicator
-    if (!silent && activeDeckId) {
-      showSaveStatus('saved');
-    }
-
-    return true;
-  } catch (error) {
-    console.warn('Unable to persist deck edits to localStorage:', error);
-    if (!deckPersistFailureNotified && !suppressWarning) {
-      try {
-        showHudStatus('⚠️ Unable to save edits locally', 'warning');
-        setTimeout(hideHudStatus, 2400);
-      } catch (_) {
-        // HUD not available; ignore.
-      }
-      deckPersistFailureNotified = true;
-    }
-    return false;
-  }
-}
-
-function clearPersistedDeck() {
-  try {
-    localStorage.removeItem(getDeckStorageKey());
-    deckPersistFailureNotified = false;
-  } catch (error) {
-    console.warn('Failed to clear deck overrides from localStorage:', error);
-  }
-}
-
-function generateDeckId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `deck-${crypto.randomUUID()}`;
-  }
-  const randomPart = Math.random().toString(36).slice(2, 8);
-  return `deck-${Date.now().toString(36)}-${randomPart}`;
-}
-
-function saveAsNewDeck() {
-  if (!Array.isArray(slides) || slides.length === 0) {
-    showHudStatus('⚠️ No slides to save', 'warning');
-    setTimeout(hideHudStatus, 2000);
-    return;
-  }
-
-  // Generate new deck ID and save
-  const newDeckId = generateDeckId();
-  const payload = {
-    version: 1,
-    updatedAt: Date.now(),
-    source: `saved:${resolveSlidesPath()}`,
-    slides: slides.slice(), // Copy slides
-    meta: {
-      name: deriveDeckName(slides),
-      updatedAt: Date.now(),
-      deckId: newDeckId,
-    },
-  };
-
-  try {
-    const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(newDeckId)}`;
-    localStorage.setItem(key, JSON.stringify(payload));
-    showHudStatus('✓ Deck saved!', 'success');
-
-    // Navigate to the new deck after a brief delay
-    setTimeout(() => {
-      const target = new URL(window.location.href);
-      target.searchParams.delete('slides');
-      target.searchParams.set('deck', newDeckId);
-      window.location.href = target.toString();
-    }, 800);
-  } catch (error) {
-    console.error('Failed to save deck:', error);
-    showHudStatus('⚠️ Unable to save. Storage may be full.', 'error');
-    setTimeout(hideHudStatus, 3000);
-  }
-}
-
-function markDeckAsRecent() {
-  if (!activeDeckId) return;
-  try {
-    localStorage.setItem(LAST_DECK_KEY, activeDeckId);
-  } catch (error) {
-    console.warn('Unable to record last deck ID:', error);
-  }
 }
 
 function initDeckName() {
@@ -804,247 +510,6 @@ function validateSlides(data) {
   });
 }
 
-
-function handleSlideClick(event) {
-  if (!isOverview) return;
-  const targetSlide = event.target.closest(".slide");
-  if (!targetSlide) return;
-  const targetIndex = Number.parseInt(targetSlide.dataset.index, 10);
-  if (Number.isNaN(targetIndex)) return;
-  exitOverview(targetIndex);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// OVERVIEW MODE
-// ═══════════════════════════════════════════════════════════════════════════
-// Grid view of all slides for quick navigation
-// ═══════════════════════════════════════════════════════════════════════════
-
-function toggleOverview() {
-  if (isOverview) {
-    exitOverview();
-    return;
-  }
-  enterOverview();
-}
-
-function enterOverview() {
-  closeSlideIndex();
-  closeThemeDrawer();
-  document.body.dataset.mode = "overview";
-  updateOverviewLayout();
-  slideElements.forEach((slide) => {
-    slide.style.visibility = "visible";
-    slide.style.pointerEvents = "auto";
-    slide.setAttribute("aria-hidden", "false");
-    slide.tabIndex = 0;
-  });
-  isOverview = true;
-  overviewCursor = clamp(currentIndex, 0, slideElements.length - 1);
-  highlightOverviewSlide(overviewCursor);
-  const focusedSlide = slideElements[overviewCursor];
-  if (focusedSlide) {
-    requestAnimationFrame(() => focusedSlide.focus({ preventScroll: true }));
-  }
-  updateOverviewButton();
-}
-
-function exitOverview(targetIndex = currentIndex) {
-  delete document.body.dataset.mode;
-  isOverview = false;
-  slideElements.forEach((slide, index) => {
-    if (index !== targetIndex) {
-      slide.style.visibility = "hidden";
-      slide.style.pointerEvents = "none";
-      slide.setAttribute("aria-hidden", "true");
-    }
-    slide.classList.remove('is-active');
-    slide.tabIndex = -1;
-  });
-  setActiveSlide(targetIndex);
-  overviewCursor = currentIndex;
-  lastOverviewHighlight = overviewCursor;
-  updateOverviewButton();
-}
-
-function updateOverviewButton() {
-  const overviewBtn = document.getElementById('overview-btn');
-  if (!overviewBtn) return;
-  if (isOverview) {
-    overviewBtn.textContent = "Slides";
-    overviewBtn.setAttribute('aria-label', 'Exit overview');
-    overviewBtn.title = 'Return to active slide';
-  } else {
-    overviewBtn.textContent = "Overview";
-    overviewBtn.setAttribute('aria-label', 'View all slides');
-    overviewBtn.title = 'View all slides';
-  }
-}
-
-function updateOverviewLayout() {
-  const totalSlides = slideElements.length;
-  if (!totalSlides) return;
-  overviewRowCount = 1;
-  overviewColumnCount = totalSlides;
-  slidesRoot.style.setProperty('--overview-row-count', overviewRowCount);
-  slidesRoot.style.setProperty('--overview-column-count', overviewColumnCount);
-  overviewCursor = clamp(overviewCursor, 0, totalSlides - 1);
-  if (isOverview) {
-    highlightOverviewSlide(overviewCursor, { scroll: false });
-  } else {
-    overviewCursor = clamp(currentIndex, 0, totalSlides - 1);
-    lastOverviewHighlight = overviewCursor;
-  }
-}
-
-function highlightOverviewSlide(index, { scroll = true } = {}) {
-  const totalSlides = slideElements.length;
-  if (!totalSlides) return;
-  const clamped = clamp(index, 0, totalSlides - 1);
-  const previous = slideElements[lastOverviewHighlight];
-  if (previous) {
-    previous.classList.remove('is-active');
-    previous.tabIndex = -1;
-  }
-
-  overviewCursor = clamped;
-  const current = slideElements[overviewCursor];
-  if (current) {
-    current.classList.add('is-active');
-    current.tabIndex = 0;
-    if (scroll) {
-      current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    }
-  }
-  lastOverviewHighlight = overviewCursor;
-}
-
-function moveOverviewCursorBy(deltaColumn, deltaRow) {
-  const totalSlides = slideElements.length;
-  if (!totalSlides) return;
-  const delta = deltaColumn !== 0 ? deltaColumn : deltaRow;
-  if (!delta) return;
-  const nextIndex = clamp(overviewCursor + delta, 0, totalSlides - 1);
-  highlightOverviewSlide(nextIndex);
-}
-
-// Debounced resize handler to prevent excessive layout recalculations
-let resizeTimeout = null;
-const handleResize = () => {
-  if (!slideElements.length) return;
-
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    updateOverviewLayout();
-    if (isOverview) {
-      highlightOverviewSlide(overviewCursor, { scroll: false });
-    }
-  }, 150); // Debounce by 150ms
-};
-
-window.addEventListener('resize', handleResize);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// NAVIGATION & SLIDE CONTROL
-// ═══════════════════════════════════════════════════════════════════════════
-// Functions for navigating between slides and managing active state
-// ═══════════════════════════════════════════════════════════════════════════
-
-function setActiveSlide(nextIndex) {
-  const clamped = clamp(nextIndex, 0, slideElements.length - 1);
-  if (!isOverview && clamped === currentIndex && slideElements[currentIndex].classList.contains("is-active")) {
-    updateHud();
-    return;
-  }
-
-  // Save reference to old slide before changing index
-  const oldSlide = slideElements[currentIndex];
-  if (oldSlide) {
-    slideScrollPositions.set(currentIndex, oldSlide.scrollTop);
-  }
-
-  // Remove active from old slide
-  oldSlide.classList.remove("is-active");
-  oldSlide.classList.add("is-leaving");
-  oldSlide.style.pointerEvents = "none";
-  oldSlide.setAttribute("aria-hidden", "true");
-
-  // Clean up old slide after transition
-  setTimeout(() => {
-    oldSlide.classList.remove("is-leaving");
-    if (!oldSlide.classList.contains("is-active")) {
-      oldSlide.style.visibility = "hidden";
-    }
-  }, 400);
-
-  // Update to new index
-  currentIndex = clamped;
-
-  // Show new slide immediately
-  const newSlide = slideElements[currentIndex];
-  newSlide.style.visibility = "visible";
-  newSlide.style.pointerEvents = isOverview ? "none" : "auto";
-  newSlide.setAttribute("aria-hidden", "false");
-  const previousScroll = slideScrollPositions.get(currentIndex) || 0;
-  newSlide.scrollTop = previousScroll;
-  newSlide.querySelectorAll('img[data-src]').forEach(loadLazyImage);
-  slideElements[currentIndex].classList.add("is-active");
-  slideElements[currentIndex].scrollIntoView({ block: "center" });
-  overviewCursor = currentIndex;
-  lastOverviewHighlight = currentIndex;
-  updateOverviewButton();
-
-  updateHud();
-  updateSlideIndexHighlight(currentIndex);
-  if (isEditDrawerOpen) {
-    renderEditForm(getEditDrawerContext());
-  }
-  preloadSlideImages(currentIndex);
-  preloadSlideImages(currentIndex + 1);
-  preloadSlideImages(currentIndex + 2);
-}
-
-/**
- * Safely update the total counter display
- * @param {number} total - Total number of slides
- */
-function updateTotalCounter(total) {
-  if (totalCounter) {
-    totalCounter.textContent = total;
-  }
-}
-
-function updateHud() {
-  // Animate counter change with null check
-  if (currentCounter) {
-    const counterEl = currentCounter.parentElement;
-    if (counterEl) {
-      counterEl.classList.add('updating');
-      setTimeout(() => counterEl.classList.remove('updating'), 300);
-    }
-    currentCounter.textContent = currentIndex + 1;
-  }
-
-  // Update progress bar with null check
-  if (progressBar) {
-    const progress = ((currentIndex + 1) / slideElements.length) * 100;
-    progressBar.style.width = `${progress}%`;
-  }
-
-  // Update speaker notes indicator
-  const notesIndicator = document.getElementById('notes-indicator');
-  if (notesIndicator) {
-    const currentSlide = slides[currentIndex];
-    const hasNotes = currentSlide?.notes || currentSlide?.speaker_notes;
-    if (hasNotes) {
-      notesIndicator.removeAttribute('hidden');
-      notesIndicator.onclick = toggleSpeakerNotes;
-    } else {
-      notesIndicator.setAttribute('hidden', '');
-    }
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // SLIDE CONSTRUCTION & DOM HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1149,27 +614,6 @@ function resolveFontFamily(font) {
     return font;
   }
   return `"${font}", sans-serif`;
-}
-
-function preloadImage(src) {
-  if (!src || preloadedImages.has(src)) return;
-  const img = new Image();
-  img.decoding = "async";
-  img.src = src;
-  preloadedImages.add(src);
-}
-
-function preloadSlideImages(index) {
-  const slide = slideElements[index];
-  if (!slide) return;
-  const images = slide.querySelectorAll("img[data-modal-src]");
-  images.forEach((img) => {
-    if (img.dataset && img.dataset.src) {
-      loadLazyImage(img);
-    }
-    const src = img.dataset.modalSrc || img.currentSrc || img.src;
-    preloadImage(src);
-  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2768,116 +2212,6 @@ function escapeRegExp(string) {
 // DECK IMPORT/EXPORT
 // ===================================================================
 
-function downloadDeck() {
-  const persisted = persistSlides();
-  const json = JSON.stringify(slides, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'slides.json';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  console.log('✓ Deck downloaded as slides.json');
-  return persisted;
-}
-
-function handleDeckUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const parsed = JSON.parse(e.target.result);
-      const newSlides = Array.isArray(parsed)
-        ? parsed
-        : Array.isArray(parsed?.slides)
-        ? parsed.slides
-        : null;
-
-      if (!newSlides) {
-        throw new Error('File must contain a JSON array of slides.');
-      }
-
-      validateSlides(newSlides);
-
-      // Replace current slides
-      slides = newSlides;
-
-      // Reload deck with new slides
-      reloadDeck({ targetIndex: 0 });
-      const persisted = persistSlides();
-
-      if (persisted) {
-        showHudStatus(`📂 Loaded ${newSlides.length} slides`, 'success');
-        setTimeout(hideHudStatus, 1600);
-      }
-      console.log(`✓ Loaded ${slides.length} slides from ${file.name}`);
-    } catch (error) {
-      console.error('Failed to load deck:', error);
-      alert(`Failed to load deck: ${error.message}`);
-    }
-  };
-
-  reader.readAsText(file);
-
-  // Reset input so the same file can be uploaded again
-  event.target.value = '';
-}
-
-function reloadDeck(options = {}) {
-  const { targetIndex = currentIndex, focus = true } = options;
-  // Clear existing slides
-  slidesRoot.innerHTML = '';
-  slideScrollPositions.clear();
-
-  // Filter out schema slides
-  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
-
-  updateTotalCounter(renderableSlides.length);
-
-  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  // Re-render all slides
-  slideElements = renderableSlides.map((slide, index) =>
-    createSlide(slide, index, renderers)
-  );
-
-  const fragment = document.createDocumentFragment();
-  slideElements.forEach((slide) => {
-    slide.style.visibility = "hidden";
-    slide.style.pointerEvents = "none";
-    fragment.appendChild(slide);
-  });
-  slidesRoot.appendChild(fragment);
-  updateOverviewLayout();
-  refreshSlideIndex();
-
-  const clampedIndex = clamp(
-    typeof targetIndex === "number" ? targetIndex : 0,
-    0,
-    renderableSlides.length - 1
-  );
-
-  if (focus) {
-    setActiveSlide(clampedIndex);
-  } else {
-    currentIndex = clampedIndex;
-  }
-}
-
-// ===================================================================
-// EDIT DRAWER
-// ===================================================================
-
-let isEditDrawerOpen = false;
-let editDrawerInstance = null;
 
 
 function toggleEditDrawer() {
@@ -2947,13 +2281,10 @@ function getKeyboardContext() {
     },
   };
 }
-
-
-
-editDrawerInstance = createDrawer({
+const createdEditDrawer = createDrawer({
   id: 'edit-drawer',
   onOpen: () => {
-    isEditDrawerOpen = true;
+    setEditDrawerOpen(true);
     // renderEditForm is now called before opening for smooth animation
     const closeBtn = editDrawerInstance.element.querySelector('.edit-drawer__close');
     if (closeBtn && !closeBtn.dataset.listenerAttached) {
@@ -2962,211 +2293,15 @@ editDrawerInstance = createDrawer({
     }
   },
   onClose: () => {
-    isEditDrawerOpen = false;
+    setEditDrawerOpen(false);
   },
 });
+setEditDrawerInstance(createdEditDrawer);
 
-function shiftScrollPositions(startIndex, delta) {
-  if (!slideScrollPositions.size || delta === 0) return;
-  const updated = new Map();
-  slideScrollPositions.forEach((value, key) => {
-    if (key >= startIndex) {
-      const nextKey = key + delta;
-      if (nextKey >= 0) {
-        updated.set(nextKey, value);
-      }
-    } else {
-      updated.set(key, value);
-    }
-  });
-  slideScrollPositions.clear();
-  updated.forEach((value, key) => slideScrollPositions.set(key, value));
-}
 
-function reindexSlides(startIndex = 0) {
-  for (let index = Math.max(0, startIndex); index < slideElements.length; index += 1) {
-    const slideElement = slideElements[index];
-    if (!slideElement) continue;
-    slideElement.dataset.index = index;
-    const autoBadge = slideElement.querySelector(':scope > .badge[data-badge-auto="true"]');
-    if (autoBadge) {
-      autoBadge.textContent = `+ Slide ${index + 1}`;
-    }
-  }
-}
 
-function insertSlideAt(index, slideData, options = {}) {
-  const { activate = false } = options;
-  if (index < 0) index = 0;
-  if (index > slides.length) index = slides.length;
 
-  slides.splice(index, 0, slideData);
-  shiftScrollPositions(index, 1);
 
-  const newSlideElement = createSlide(slideData, index, renderers);
-  if (isOverview) {
-    newSlideElement.style.visibility = 'visible';
-    newSlideElement.style.pointerEvents = 'auto';
-    newSlideElement.setAttribute('aria-hidden', 'false');
-    newSlideElement.tabIndex = 0;
-  } else {
-    newSlideElement.style.visibility = 'hidden';
-    newSlideElement.style.pointerEvents = 'none';
-    newSlideElement.setAttribute('aria-hidden', 'true');
-    newSlideElement.tabIndex = -1;
-  }
-
-  const existingElement = slideElements[index];
-  if (existingElement && existingElement.parentElement) {
-    existingElement.parentElement.insertBefore(newSlideElement, existingElement);
-  } else {
-    slidesRoot.appendChild(newSlideElement);
-  }
-
-  slideElements.splice(index, 0, newSlideElement);
-  reindexSlides(index);
-
-  updateTotalCounter(slideElements.length);
-  updateOverviewLayout();
-  refreshSlideIndex();
-
-  if (!activate) {
-    if (!isOverview && index <= currentIndex) {
-      currentIndex = clamp(currentIndex + 1, 0, slideElements.length - 1);
-    }
-    if (isOverview && index <= overviewCursor) {
-      overviewCursor = clamp(overviewCursor + 1, 0, slideElements.length - 1);
-    }
-  }
-
-  if (activate) {
-    if (isOverview) {
-      highlightOverviewSlide(index);
-    } else {
-      setActiveSlide(index);
-    }
-  } else if (!isOverview) {
-    updateHud();
-  } else {
-    overviewCursor = clamp(overviewCursor, 0, slideElements.length - 1);
-    highlightOverviewSlide(overviewCursor, { scroll: false });
-  }
-
-  updateSlideIndexHighlight(isOverview ? overviewCursor : currentIndex);
-  persistSlides();
-
-  return newSlideElement;
-}
-
-function removeSlideAt(index, options = {}) {
-  const { focus = true } = options;
-  if (index < 0 || index >= slides.length) return;
-
-  slides.splice(index, 1);
-  persistSlides();
-  slideScrollPositions.delete(index);
-  shiftScrollPositions(index + 1, -1);
-
-  const [removedElement] = slideElements.splice(index, 1);
-  if (removedElement && removedElement.parentElement) {
-    removedElement.parentElement.removeChild(removedElement);
-  }
-
-  if (!slideElements.length) {
-    slidesRoot.innerHTML = '';
-    renderEmptyState();
-    updateTotalCounter(0);
-    currentIndex = 0;
-    updateHud();
-    refreshSlideIndex();
-    updateOverviewLayout();
-    return;
-  }
-
-  reindexSlides(index);
-  updateTotalCounter(slideElements.length);
-  updateOverviewLayout();
-  refreshSlideIndex();
-
-  if (isOverview) {
-    overviewCursor = clamp(overviewCursor, 0, slideElements.length - 1);
-    highlightOverviewSlide(overviewCursor, { scroll: false });
-    updateSlideIndexHighlight(overviewCursor);
-    return;
-  }
-
-  const nextIndex = clamp(currentIndex >= index ? currentIndex - 1 : currentIndex, 0, slideElements.length - 1);
-
-  if (focus) {
-    setActiveSlide(nextIndex);
-  } else {
-    currentIndex = nextIndex;
-    updateHud();
-    updateSlideIndexHighlight(currentIndex);
-  }
-}
-
-function replaceSlideAt(index, options = {}) {
-  const { focus = true } = options;
-  if (index < 0 || index >= slides.length) return;
-
-  const existing = slideElements[index];
-  if (!existing || !existing.parentElement) {
-    reloadDeck({ targetIndex: index, focus });
-    persistSlides();
-    return;
-  }
-
-  const previousScroll = existing.scrollTop;
-  slideScrollPositions.set(index, previousScroll);
-
-  // Clear stale placeholder references before replacing slide
-  const oldPlaceholders = existing.querySelectorAll('.image-placeholder');
-  oldPlaceholders.forEach(placeholder => {
-    delete placeholder._imageRef;
-  });
-
-  const slideData = slides[index];
-  const newSlide = createSlide(slideData, index, renderers);
-  newSlide.style.visibility = existing.style.visibility;
-  newSlide.style.pointerEvents = existing.style.pointerEvents;
-  newSlide.setAttribute('aria-hidden', existing.getAttribute('aria-hidden') ?? 'true');
-  newSlide.tabIndex = existing.tabIndex;
-
-  existing.replaceWith(newSlide);
-  slideElements[index] = newSlide;
-
-  const wasActive = index === currentIndex && !isOverview;
-  if (wasActive) {
-    newSlide.classList.add('is-active');
-    newSlide.style.visibility = 'visible';
-    newSlide.style.pointerEvents = 'auto';
-    newSlide.setAttribute('aria-hidden', 'false');
-    const scrollOffset = slideScrollPositions.get(index) ?? previousScroll ?? 0;
-    requestAnimationFrame(() => {
-      newSlide.scrollTop = scrollOffset;
-      if (focus) {
-        newSlide.focus({ preventScroll: true });
-      }
-    });
-  } else if (isOverview) {
-    newSlide.style.visibility = 'visible';
-    newSlide.style.pointerEvents = 'auto';
-    newSlide.setAttribute('aria-hidden', 'false');
-  } else {
-    newSlide.style.visibility = 'hidden';
-    newSlide.style.pointerEvents = 'none';
-    newSlide.setAttribute('aria-hidden', 'true');
-  }
-
-  updateOverviewLayout();
-  refreshSlideIndex();
-  updateSlideIndexHighlight(currentIndex);
-  if (wasActive && !isOverview) {
-    updateHud();
-  }
-  persistSlides();
-}
 
 function getSlideTemplate(type) {
   const templates = {
@@ -3305,66 +2440,59 @@ function downloadTheme(themeData) {
 // SETTINGS MODAL
 // ===================================================================
 
-function openSettingsModal() {
-  const modal = document.getElementById('settings-modal');
-  const input = document.getElementById('gemini-api-key');
-  if (modal && input) {
-    input.value = getGeminiApiKey();
-    modal.classList.add('is-open');
+// ═══════════════════════════════════════════════════════════════════════════
+// KEYBOARD HELP MODAL
+// ═══════════════════════════════════════════════════════════════════════════
 
-    // Setup event listeners if not already set
-    setupSettingsModalListeners();
+function toggleKeyboardHelp() {
+  const modal = document.getElementById('hints-modal');
+  if (!modal) return;
+
+  const isOpen = modal.getAttribute('aria-hidden') === 'false';
+  if (isOpen) {
+    closeKeyboardHelp();
+  } else {
+    openKeyboardHelp();
   }
 }
 
-function closeSettingsModal() {
-  const modal = document.getElementById('settings-modal');
-  if (modal) {
-    modal.classList.remove('is-open');
-  }
+function openKeyboardHelp() {
+  const modal = document.getElementById('hints-modal');
+  if (!modal) return;
+
+  modal.setAttribute('aria-hidden', 'false');
+
+  // Set up listeners if not already done
+  setupKeyboardHelpListeners();
 }
 
-function setupSettingsModalListeners() {
+function closeKeyboardHelp() {
+  const modal = document.getElementById('hints-modal');
+  if (!modal) return;
+
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function setupKeyboardHelpListeners() {
   // Close button
-  const closeBtn = document.querySelector('.settings-modal__close');
+  const closeBtn = document.getElementById('hints-modal-close');
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
-    closeBtn.addEventListener('click', closeSettingsModal);
+    closeBtn.addEventListener('click', closeKeyboardHelp);
     closeBtn.dataset.listenerAttached = 'true';
   }
 
+  // Got it button
+  const gotItBtn = document.getElementById('hints-modal-got-it');
+  if (gotItBtn && !gotItBtn.dataset.listenerAttached) {
+    gotItBtn.addEventListener('click', closeKeyboardHelp);
+    gotItBtn.dataset.listenerAttached = 'true';
+  }
+
   // Backdrop
-  const backdrop = document.querySelector('.settings-modal__backdrop');
+  const backdrop = document.querySelector('.hints-modal__backdrop');
   if (backdrop && !backdrop.dataset.listenerAttached) {
-    backdrop.addEventListener('click', closeSettingsModal);
+    backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';
-  }
-
-  // Save button
-  const saveBtn = document.getElementById('save-api-key');
-  if (saveBtn && !saveBtn.dataset.listenerAttached) {
-    saveBtn.addEventListener('click', saveApiKey);
-    saveBtn.dataset.listenerAttached = 'true';
-  }
-
-  // Test button
-  const testBtn = document.getElementById('test-api-key');
-  if (testBtn && !testBtn.dataset.listenerAttached) {
-    testBtn.addEventListener('click', testApiKey);
-    testBtn.dataset.listenerAttached = 'true';
-  }
-
-  // Clear button
-  const clearBtn = document.getElementById('clear-api-key');
-  if (clearBtn && !clearBtn.dataset.listenerAttached) {
-    clearBtn.addEventListener('click', clearApiKey);
-    clearBtn.dataset.listenerAttached = 'true';
-  }
-
-  // Toggle visibility button
-  const toggleBtn = document.getElementById('toggle-api-key-visibility');
-  if (toggleBtn && !toggleBtn.dataset.listenerAttached) {
-    toggleBtn.addEventListener('click', toggleApiKeyVisibility);
-    toggleBtn.dataset.listenerAttached = 'true';
   }
 }
 
@@ -3422,222 +2550,6 @@ function setupKeyboardHelpListeners() {
     backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';
   }
-}
-
-function saveApiKey() {
-  const input = document.getElementById('gemini-api-key');
-  const key = input.value.trim();
-
-  if (key) {
-    localStorage.setItem(STORAGE_KEY_API, key);
-    showApiKeyStatus('success', '✓ API key saved successfully!');
-  } else {
-    showApiKeyStatus('error', 'Please enter a valid API key');
-  }
-}
-
-async function testApiKey() {
-  const key = getGeminiApiKey();
-  const testBtn = document.getElementById('test-api-key');
-
-  if (!key) {
-    showApiKeyStatus('error', 'No API key found. Please save one first.');
-    return;
-  }
-
-  // Animate button while testing
-  if (testBtn) {
-    testBtn.disabled = true;
-    testBtn.classList.add('is-loading');
-    testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
-  }
-
-  showApiKeyStatus('info', '⏳ Testing connection...');
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "test" }] }],
-        }),
-      }
-    );
-
-    if (response.ok) {
-      showApiKeyStatus('success', '✅ Connection successful! Your API key is working.');
-      if (testBtn) {
-        testBtn.classList.add('is-success');
-        testBtn.innerHTML = '✅ Connected!';
-        setTimeout(() => {
-          testBtn.classList.remove('is-success', 'is-loading');
-          testBtn.innerHTML = 'Test Connection';
-          testBtn.disabled = false;
-        }, 2000);
-      }
-    } else {
-      const error = await response.json();
-      showApiKeyStatus('error', `❌ Invalid API key or connection failed: ${error.error?.message || 'Unknown error'}`);
-      if (testBtn) {
-        testBtn.classList.remove('is-loading');
-        testBtn.innerHTML = 'Test Connection';
-        testBtn.disabled = false;
-      }
-    }
-  } catch (error) {
-    showApiKeyStatus('error', '❌ Connection test failed. Please check your internet connection.');
-    if (testBtn) {
-      testBtn.classList.remove('is-loading');
-      testBtn.innerHTML = 'Test Connection';
-      testBtn.disabled = false;
-    }
-  }
-}
-
-function clearApiKey() {
-  if (confirm('Are you sure you want to clear your API key?')) {
-    localStorage.removeItem(STORAGE_KEY_API);
-    const input = document.getElementById('gemini-api-key');
-    if (input) input.value = '';
-    showApiKeyStatus('info', 'API key cleared');
-  }
-}
-
-function toggleApiKeyVisibility() {
-  const input = document.getElementById('gemini-api-key');
-  if (input) {
-    input.type = input.type === 'password' ? 'text' : 'password';
-  }
-}
-
-function showApiKeyStatus(type, message) {
-  const status = document.getElementById('api-key-status');
-  if (!status) return;
-
-  status.className = `settings-field__status is-visible is-${type}`;
-  status.textContent = message;
-
-  // Auto-hide success/info messages after 3 seconds (keep errors visible)
-  if (type !== 'error') {
-    setTimeout(() => {
-      status.classList.remove('is-visible');
-    }, 3000);
-  }
-}
-
-// ===================================================================
-// HUD STATUS HELPERS
-// ===================================================================
-
-let lastFailedOperation = null; // Store last failed operation for retry
-let activeToasts = new Map(); // Track active toasts
-
-/**
- * Show a toast notification with auto-dismiss and max limit
- * @param {string} message - The message to display
- * @param {string} type - Toast type (success, error, warning, info, processing)
- * @param {Object} options - Additional options (onRetry, duration)
- * @returns {number} Toast ID
- */
-function showHudStatus(message, type = '', options = {}) {
-  const container = document.getElementById('toast-container');
-  if (!container) return null;
-
-  // Enforce max toast limit - remove oldest if at limit
-  if (activeToasts.size >= CONFIG.TOAST.MAX_ACTIVE) {
-    const oldestId = activeToasts.keys().next().value;
-    hideToast(oldestId);
-  }
-
-  // Create toast element
-  const toast = document.createElement('div');
-  const toastId = Date.now() + Math.random();
-  toast.className = `toast ${type ? `toast--${type}` : ''}`;
-
-  // If this is an error and there's a retry function, add retry button
-  if (type === 'error' && options.onRetry) {
-    lastFailedOperation = options.onRetry;
-    const retryBtn = document.createElement('button');
-    retryBtn.className = 'toast__retry-btn';
-    retryBtn.textContent = '🔄 Retry';
-
-    const retryHandler = () => {
-      hideToast(toastId);
-      if (lastFailedOperation) {
-        lastFailedOperation();
-        lastFailedOperation = null;
-      }
-    };
-    retryBtn.addEventListener('click', retryHandler);
-    toast._retryHandler = retryHandler; // Store for cleanup
-
-    toast.textContent = message + ' ';
-    toast.appendChild(retryBtn);
-  } else {
-    toast.textContent = message;
-    lastFailedOperation = null;
-  }
-
-  container.appendChild(toast);
-  activeToasts.set(toastId, toast);
-
-  // Click to dismiss
-  const dismissHandler = () => hideToast(toastId);
-  toast.addEventListener('click', dismissHandler);
-  toast._dismissHandler = dismissHandler; // Store for cleanup
-
-  // Auto-dismiss after duration (unless it's 'processing' or has retry button)
-  if (type !== 'processing' && !options.onRetry) {
-    const duration = options.duration || CONFIG.TOAST[`${type.toUpperCase()}_DURATION`] || CONFIG.TOAST.INFO_DURATION;
-    setTimeout(() => {
-      if (activeToasts.has(toastId)) {
-        hideToast(toastId);
-      }
-    }, duration);
-  }
-
-  return toastId;
-}
-
-function hideHudStatus() {
-  // Hide the most recent toast
-  if (activeToasts.size > 0) {
-    const lastToastId = Array.from(activeToasts.keys()).pop();
-    hideToast(lastToastId);
-  }
-}
-
-/**
- * Hide and remove a toast notification
- * Properly cleans up event listeners
- * @param {number} toastId - Toast ID to hide
- */
-function hideToast(toastId) {
-  const toast = activeToasts.get(toastId);
-  if (!toast) return;
-
-  // Clean up retry button listener if exists
-  const retryBtn = toast.querySelector('.toast__retry-btn');
-  if (retryBtn && toast._retryHandler) {
-    retryBtn.removeEventListener('click', toast._retryHandler);
-    delete toast._retryHandler;
-  }
-
-  // Clean up dismiss listener
-  if (toast._dismissHandler) {
-    toast.removeEventListener('click', toast._dismissHandler);
-    delete toast._dismissHandler;
-  }
-
-  toast.classList.add('toast--hiding');
-  lastFailedOperation = null;
-
-  setTimeout(() => {
-    toast.remove();
-    activeToasts.delete(toastId);
-  }, 200);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3831,684 +2743,6 @@ The graph should be publication-ready with clear data visualization.`;
 // Theme Generation - Palette Variants
 // ═══════════════════════════════════════════════════════════════════════════
 
-function generateRandomTheme() {
-  const baseTheme = getCurrentTheme();
-  const source = getCurrentThemePath();
-  const activeTheme = normalizeThemeTokens(baseTheme || {});
-  const baseSource = resolveBaseThemePath(source || '');
-  const randomizer = getThemeRandomizer(baseSource);
-  const randomizedTheme = randomizer(activeTheme, { baseSource });
-  return normalizeThemeTokens(randomizedTheme || activeTheme);
-}
-
-function resolveBaseThemePath(source = '') {
-  let value = (source || '').trim();
-  while (value.startsWith('random:')) {
-    value = value.slice(7).trim();
-  }
-  return value;
-}
-
-function getThemeRandomizer(baseSource = '') {
-  const normalized = baseSource.toLowerCase();
-
-  if (
-    normalized.startsWith('saved:') ||
-    normalized === '__ai__' ||
-    normalized === '__custom__' ||
-    normalized === '__local__'
-  ) {
-    return randomizeCustomTheme;
-  }
-
-  if (normalized === '__random__') {
-    return randomizeDefaultTheme;
-  }
-
-  if (normalized.endsWith('themes/gameboy.json')) {
-    return randomizeGameboyTheme;
-  }
-
-  if (normalized.endsWith('themes/vaporwave.json')) {
-    return randomizeVaporwaveTheme;
-  }
-
-  if (normalized.endsWith('themes/slack.json')) {
-    return randomizeSlackTheme;
-  }
-
-  if (normalized.endsWith('theme.json')) {
-    return randomizeDefaultTheme;
-  }
-
-  if (!baseSource) {
-    return randomizeDefaultTheme;
-  }
-
-  return randomizeCustomTheme;
-}
-
-function randomizeDefaultTheme(theme, context = {}) {
-  const baseHue = Math.floor(Math.random() * 360);
-  const strategies = ['analogous', 'triadic', 'complementary', 'split-complementary', 'monochromatic'];
-  const palette = generatePalette(baseHue, sample(strategies));
-
-  const isDefaultBase = !context.baseSource || context.baseSource === 'theme.json';
-  const isDark = isDefaultBase ? false : Math.random() < 0.25;
-
-  const colorBg = isDark
-    ? hslToHex(baseHue, clamp(22 + Math.random() * 12, 0, 100), clamp(14 + Math.random() * 10, 0, 100))
-    : hslToHex(baseHue, clamp(28 + Math.random() * 20, 0, 100), clamp(88 + Math.random() * 6, 0, 100));
-
-  const colorInk = isDefaultBase ? '#1b1b1b' : getAccessibleTextColor(colorBg);
-  const colorMuted =
-    colorInk === '#000000'
-      ? mixHexColors('#000000', '#555555', 0.55)
-      : mixHexColors('#ffffff', '#444444', 0.45);
-  const badgeTextColor = getAccessibleTextColor(palette.accent);
-
-  const borderCandidates = [
-    theme['border-width'],
-    theme['slide-border-width'],
-    '4px',
-    '5px',
-    '6px',
-  ].filter(Boolean);
-  const borderWidth = sample(borderCandidates) || '5px';
-
-  const shadowSets = [
-    {
-      sm: '6px 6px 0 rgba(0, 0, 0, 0.25)',
-      md: '10px 10px 0 rgba(0, 0, 0, 0.3)',
-      lg: '16px 16px 0 rgba(0, 0, 0, 0.35)',
-      xl: '24px 24px 0 rgba(0, 0, 0, 0.4)',
-    },
-    {
-      sm: '4px 4px 0 rgba(0, 0, 0, 0.22)',
-      md: '8px 8px 0 rgba(0, 0, 0, 0.26)',
-      lg: '12px 12px 0 rgba(0, 0, 0, 0.3)',
-      xl: '18px 18px 0 rgba(0, 0, 0, 0.32)',
-    },
-    {
-      sm: '0 4px 12px rgba(0, 0, 0, 0.18)',
-      md: '0 8px 24px rgba(0, 0, 0, 0.22)',
-      lg: '0 12px 36px rgba(0, 0, 0, 0.26)',
-      xl: '0 18px 54px rgba(0, 0, 0, 0.3)',
-    },
-    {
-      sm: theme['shadow-sm'],
-      md: theme['shadow-md'],
-      lg: theme['shadow-lg'],
-      xl: theme['shadow-xl'],
-    },
-  ].filter((set) => set.sm && set.md && set.lg && set.xl);
-  const shadows = sample(shadowSets) || shadowSets[0];
-
-  const surfacePrimary = palette.primary;
-  const surfaceSecondary = palette.secondary;
-  const surfaceAccent = palette.accent;
-
-  const updatedTheme = {
-    ...theme,
-    'color-bg': colorBg,
-    'background-surface': `radial-gradient(circle at 18% 22%, ${applyAlpha(surfacePrimary, 0.55)}, transparent 60%), radial-gradient(circle at 78% 32%, ${applyAlpha(surfaceSecondary, 0.55)}, transparent 60%), radial-gradient(circle at 48% 74%, ${applyAlpha(surfaceAccent, 0.35)}, transparent 62%), ${colorBg}`,
-    'slide-bg': hexToRgbaString(colorBg, isDark ? 0.9 : 0.82),
-    'slide-border-color': colorInk,
-    'slide-border-width': borderWidth,
-    'slide-shadow': shadows.md,
-    'color-surface': surfacePrimary,
-    'color-surface-alt': surfaceSecondary,
-    'color-accent': surfaceAccent,
-    'badge-bg': surfaceAccent,
-    'badge-color': badgeTextColor,
-    'color-ink': colorInk,
-    'color-muted': colorMuted,
-    'border-width': borderWidth,
-    'shadow-sm': shadows.sm,
-    'shadow-md': shadows.md,
-    'shadow-lg': shadows.lg,
-    'shadow-xl': shadows.xl,
-  };
-
-  return updatedTheme;
-}
-
-function randomizeGameboyTheme(theme) {
-  const baseHue = Math.floor(Math.random() * 360);
-  const light = hslToHex(baseHue, clamp(24 + Math.random() * 12, 0, 100), clamp(72 + Math.random() * 12, 0, 100));
-  const medium = hslToHex(baseHue, clamp(30 + Math.random() * 14, 0, 100), clamp(56 + Math.random() * 10, 0, 100));
-  const dark = hslToHex(baseHue, clamp(36 + Math.random() * 16, 0, 100), clamp(36 + Math.random() * 10, 0, 100));
-  const deepest = hslToHex(baseHue, clamp(38 + Math.random() * 12, 0, 100), clamp(22 + Math.random() * 10, 0, 100));
-  const borderWidth = theme['border-width'] || theme['slide-border-width'] || '6px';
-
-  return {
-    ...theme,
-    'color-bg': light,
-    'background-surface': `linear-gradient(135deg, ${medium} 0%, ${dark} 100%)`,
-    'background-overlay': `repeating-linear-gradient(0deg, ${applyAlpha(deepest, 0.75)} 0px, transparent 1px, transparent 2px, ${applyAlpha(deepest, 0.75)} 3px)`,
-    'slide-bg': hexToRgbaString(light, 0.82),
-    'slide-border-color': deepest,
-    'slide-border-width': borderWidth,
-    'slide-shadow': `8px 8px 0 ${applyAlpha(deepest, 0.55)}`,
-    'color-surface': medium,
-    'color-surface-alt': dark,
-    'color-accent': deepest,
-    'badge-bg': medium,
-    'badge-color': getAccessibleTextColor(medium),
-    'color-ink': deepest,
-    'color-muted': dark,
-    'border-width': borderWidth,
-    'shadow-sm': `4px 4px 0 ${applyAlpha(deepest, 0.8)}`,
-    'shadow-md': `8px 8px 0 ${applyAlpha(deepest, 0.8)}`,
-    'shadow-lg': `12px 12px 0 ${applyAlpha(deepest, 0.75)}`,
-    'shadow-xl': `16px 16px 0 ${applyAlpha(deepest, 0.7)}`,
-  };
-}
-
-function randomizeVaporwaveTheme(theme) {
-  const baseHue = Math.floor(Math.random() * 360);
-  const pink = hslToHex((baseHue + 320) % 360, 92, 68);
-  const cyan = hslToHex((baseHue + 180) % 360, 95, 62);
-  const mint = hslToHex((baseHue + 140) % 360, 90, 64);
-  const purple = hslToHex((baseHue + 280) % 360, 80, 58);
-  const neon = hslToHex((baseHue + 80) % 360, 95, 70);
-  const ink = shiftHex(purple, -0.55);
-
-  return {
-    ...theme,
-    'color-bg': pink,
-    'background-surface': `linear-gradient(140deg, ${cyan} 0%, ${mint} 50%, ${purple} 100%)`,
-    'background-overlay': theme['background-overlay'] || 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px)',
-    'slide-bg': hexToRgbaString(pink, 0.82),
-    'slide-border-color': cyan,
-    'slide-shadow': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
-    'color-surface': purple,
-    'color-surface-alt': mint,
-    'color-accent': neon,
-    'badge-bg': neon,
-    'badge-color': getAccessibleTextColor(neon),
-    'color-ink': ink,
-    'color-muted': mixHexColors(ink, '#ffffff', 0.25),
-    'shadow-sm': `8px 8px 0 ${applyAlpha(cyan, 0.42)}`,
-    'shadow-md': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
-    'shadow-lg': `16px 16px 0 ${applyAlpha(cyan, 0.6)}`,
-    'shadow-xl': `24px 24px 0 ${applyAlpha(cyan, 0.7)}`,
-  };
-}
-
-function randomizeSlackTheme(theme) {
-  const baseHue = Math.floor(Math.random() * 360);
-  const backdrop = hslToHex(baseHue, 95, 58);
-  const mid = hslToHex((baseHue + 12) % 360, 90, 46);
-  const deep = hslToHex((baseHue + 200) % 360, 90, 40);
-  const accent = hslToHex((baseHue + 140) % 360, 92, 52);
-  const badgeBg = hslToHex((baseHue + 320) % 360, 92, 40);
-  const ink = '#000000';
-
-  return {
-    ...theme,
-    'color-bg': backdrop,
-    'background-surface': `radial-gradient(circle at 25% 25%, ${backdrop} 0%, ${mid} 35%, ${deep} 100%)`,
-    'slide-bg': hexToRgbaString(backdrop, 0.82),
-    'slide-border-color': ink,
-    'slide-shadow': `12px 12px 0 ${applyAlpha(ink, 0.85)}`,
-    'color-surface': accent,
-    'color-surface-alt': deep,
-    'color-accent': ink,
-    'badge-bg': badgeBg,
-    'badge-color': getAccessibleTextColor(badgeBg),
-    'color-ink': ink,
-    'color-muted': mixHexColors(ink, '#666666', 0.45),
-    'shadow-sm': `6px 6px 0 ${applyAlpha(ink, 0.9)}`,
-    'shadow-md': `12px 12px 0 ${applyAlpha(ink, 0.9)}`,
-    'shadow-lg': `18px 18px 0 ${applyAlpha(ink, 0.9)}`,
-    'shadow-xl': `24px 24px 0 ${applyAlpha(ink, 0.9)}`,
-  };
-}
-
-function randomizeCustomTheme(theme, context = {}) {
-  const variant = randomizeDefaultTheme(theme, context);
-  return {
-    ...variant,
-    'font-sans': theme['font-sans'],
-    'font-mono': theme['font-mono'],
-    'radius': theme['radius'],
-    'background-overlay': theme['background-overlay'],
-    'background-opacity': theme['background-opacity'],
-  };
-}
-
-function generatePalette(baseHue, strategy = 'triadic') {
-  let hues;
-  switch (strategy) {
-    case 'analogous':
-      hues = [baseHue, (baseHue + 32) % 360, (baseHue + 64) % 360];
-      break;
-    case 'complementary':
-      hues = [baseHue, (baseHue + 180) % 360, (baseHue + 30) % 360];
-      break;
-    case 'split-complementary':
-      hues = [baseHue, (baseHue + 150) % 360, (baseHue + 210) % 360];
-      break;
-    case 'monochromatic':
-      hues = [baseHue, baseHue, baseHue];
-      break;
-    default:
-      hues = [baseHue, (baseHue + 120) % 360, (baseHue + 240) % 360];
-  }
-
-  const primary = hslToHex(hues[0], clamp(68 + Math.random() * 22, 0, 100), clamp(54 + Math.random() * 14, 0, 100));
-  const secondary = hslToHex(hues[1], clamp(60 + Math.random() * 24, 0, 100), clamp(58 + Math.random() * 16, 0, 100));
-  const accent = hslToHex(hues[2], clamp(70 + Math.random() * 20, 0, 100), clamp(52 + Math.random() * 18, 0, 100));
-
-  return { primary, secondary, accent };
-}
-
-function hslToHex(h, s, l) {
-  const hue = ((h % 360) + 360) % 360;
-  const saturation = clamp(s, 0, 100) / 100;
-  const lightness = clamp(l, 0, 100) / 100;
-
-  const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
-  const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
-  const m = lightness - c / 2;
-
-  let r = 0;
-  let g = 0;
-  let b = 0;
-
-  if (hue < 60) {
-    r = c; g = x; b = 0;
-  } else if (hue < 120) {
-    r = x; g = c; b = 0;
-  } else if (hue < 180) {
-    r = 0; g = c; b = x;
-  } else if (hue < 240) {
-    r = 0; g = x; b = c;
-  } else if (hue < 300) {
-    r = x; g = 0; b = c;
-  } else {
-    r = c; g = 0; b = x;
-  }
-
-  const toHex = (value) =>
-    Math.round((value + m) * 255)
-      .toString(16)
-      .padStart(2, '0');
-
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function hexToRgb(hex) {
-  const sanitized = typeof hex === 'string' ? hex.replace('#', '') : '';
-  if (sanitized.length !== 6 || Number.isNaN(Number.parseInt(sanitized, 16))) {
-    return [255, 255, 255];
-  }
-  const intVal = Number.parseInt(sanitized, 16);
-  const r = (intVal >> 16) & 255;
-  const g = (intVal >> 8) & 255;
-  const b = intVal & 255;
-  return [r, g, b];
-}
-
-function hexToRgbaString(hex, alpha = 1) {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
-}
-
-function getRelativeLuminance(hex) {
-  const [r, g, b] = hexToRgb(hex).map((channel) => {
-    const norm = channel / 255;
-    return norm <= 0.03928 ? norm / 12.92 : Math.pow((norm + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function getContrastRatio(foregroundHex, backgroundHex) {
-  const l1 = getRelativeLuminance(foregroundHex);
-  const l2 = getRelativeLuminance(backgroundHex);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function getAccessibleTextColor(backgroundHex) {
-  const blackContrast = getContrastRatio('#000000', backgroundHex);
-  const whiteContrast = getContrastRatio('#ffffff', backgroundHex);
-  return blackContrast >= whiteContrast ? '#000000' : '#ffffff';
-}
-
-function mixHexColors(colorA, colorB, ratio = 0.5) {
-  const [r1, g1, b1] = hexToRgb(colorA);
-  const [r2, g2, b2] = hexToRgb(colorB);
-  const blend = (a, b) => Math.round(a * (1 - ratio) + b * ratio);
-  return `#${[blend(r1, r2), blend(g1, g2), blend(b1, b2)]
-    .map((channel) => channel.toString(16).padStart(2, '0'))
-    .join('')}`;
-}
-
-function applyAlpha(hex, alpha) {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${clamp(alpha, 0, 1)})`;
-}
-
-function shiftHex(hex, amount = 0) {
-  const ratio = clamp(Math.abs(amount), 0, 1);
-  const target = amount >= 0 ? '#ffffff' : '#000000';
-  return mixHexColors(hex, target, ratio);
-}
-
-function sample(list) {
-  if (!Array.isArray(list) || list.length === 0) return undefined;
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-function syncThemeSelectUI() {
-  const trigger = document.getElementById('theme-select-trigger');
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!trigger || !dropdown) return;
-
-  const currentPath = getCurrentThemePath() || '';
-  const basePath = resolveBaseThemePath(currentPath);
-  const isRandom = currentPath.startsWith('random:');
-  const valueSpan = trigger.querySelector('.theme-select__value');
-  if (!valueSpan) return;
-
-  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
-  const matchingOption = options.find(opt => {
-    const value = opt.dataset.value;
-    if (!value) return false;
-    return value === currentPath || value === basePath;
-  });
-
-  if (matchingOption) {
-    const optionLabel = matchingOption.textContent.trim();
-    valueSpan.textContent = isRandom ? `🎲 ${optionLabel}` : matchingOption.textContent;
-    options.forEach(opt => {
-      opt.classList.toggle('is-selected', opt.dataset.value === basePath);
-    });
-  } else {
-    valueSpan.textContent = isRandom ? '🎲 Custom Theme' : '🎨 Custom Theme';
-    options.forEach(opt => opt.classList.remove('is-selected'));
-  }
-}
-
-
-themeDrawerInstance = createDrawer({
-  id: 'theme-drawer',
-  onOpen: () => {
-    const themeBtn = document.getElementById('theme-btn');
-    isThemeDrawerOpen = true;
-    themeBtn?.setAttribute('aria-expanded', 'true');
-    themeBtn?.classList.add('is-active');
-    // Theme content is now pre-populated before opening for smooth animation
-    const closeBtn = themeDrawerInstance.element.querySelector('.theme-drawer__close');
-    if (closeBtn && !closeBtn.dataset.listenerAttached) {
-      closeBtn.addEventListener('click', () => closeDrawer(themeDrawerInstance));
-      closeBtn.dataset.listenerAttached = 'true';
-    }
-  },
-  onClose: () => {
-    const themeBtn = document.getElementById('theme-btn');
-    isThemeDrawerOpen = false;
-    themeBtn?.setAttribute('aria-expanded', 'false');
-    themeBtn?.classList.remove('is-active');
-  },
-});
-
-function toggleThemeDrawer() {
-  if (!themeDrawerInstance) return;
-  if (themeDrawerInstance.isOpen) {
-    closeDrawer(themeDrawerInstance);
-  } else {
-    openThemeDrawer();
-  }
-}
-
-function openThemeDrawer() {
-  if (!themeDrawerInstance) return;
-  if (editDrawerInstance?.isOpen) {
-    closeDrawer(editDrawerInstance, { restoreFocus: false });
-  }
-  // Pre-populate theme content BEFORE opening for smooth animation
-  loadThemeIntoEditor();
-  populateThemeDropdown();
-  syncThemeSelectUI();
-  openDrawer(themeDrawerInstance);
-}
-
-function closeThemeDrawer() {
-  if (!themeDrawerInstance) return;
-  closeDrawer(themeDrawerInstance);
-}
-
-
-function initThemeDrawer() {
-  const themeDrawer = themeDrawerInstance?.element;
-  const themeBtn = document.getElementById('theme-btn');
-  const saveBtn = document.getElementById('theme-save-btn');
-  const aiBtn = document.getElementById('theme-ai-btn');
-  const randomBtn = document.getElementById('theme-random-btn');
-
-  if (!themeDrawer) return;
-
-  themeBtn?.setAttribute('aria-expanded', 'false');
-  themeBtn?.classList.remove('is-active');
-
-  if (themeBtn && !themeBtn.dataset.listenerAttached) {
-    themeBtn.addEventListener('click', toggleThemeDrawer);
-    themeBtn.dataset.listenerAttached = 'true';
-  }
-
-  const closeBtn = themeDrawer.querySelector('.theme-drawer__close');
-  if (closeBtn && !closeBtn.dataset.listenerAttached) {
-    closeBtn.addEventListener('click', () => closeDrawer(themeDrawerInstance));
-    closeBtn.dataset.listenerAttached = 'true';
-  }
-
-  // Custom dropdown logic
-  const trigger = document.getElementById('theme-select-trigger');
-  const dropdown = document.getElementById('theme-select-dropdown');
-
-  if (trigger && dropdown && !trigger.dataset.listenerAttached) {
-    const closeDropdown = () => {
-      trigger.classList.remove('is-open');
-      dropdown.classList.remove('is-open');
-    };
-
-    trigger.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const isOpen = trigger.classList.contains('is-open');
-      if (isOpen) {
-        closeDropdown();
-      } else {
-        trigger.classList.add('is-open');
-        dropdown.classList.add('is-open');
-      }
-    });
-    trigger.dataset.listenerAttached = 'true';
-
-    document.addEventListener('click', (e) => {
-      if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
-        closeDropdown();
-      }
-    });
-
-    dropdown.addEventListener('click', async (e) => {
-      const option = e.target.closest('.theme-select__option');
-      if (!option) return;
-
-      const themePath = option.dataset.value;
-      const themeLabel = option.textContent;
-
-      const valueSpan = trigger.querySelector('.theme-select__value');
-      if (valueSpan) valueSpan.textContent = themeLabel;
-
-      closeDropdown();
-
-      dropdown.querySelectorAll('.theme-select__option').forEach(opt => {
-        opt.classList.toggle('is-selected', opt === option);
-      });
-
-      try {
-        if (themePath.startsWith('saved:')) {
-          const savedName = themePath.replace('saved:', '');
-          const library = loadThemeLibrary();
-          const entry = library.find(e => e.name === savedName);
-          if (entry) {
-            const normalizedTheme = applyTheme(entry.theme);
-            setCurrentTheme(normalizedTheme, { source: themePath });
-          }
-        } else {
-          const response = await fetch(themePath, { cache: "no-store" });
-          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-          const theme = await response.json();
-          const normalizedTheme = applyTheme(theme);
-          setCurrentTheme(normalizedTheme, { source: themePath });
-        }
-        showHudStatus('✨ Theme applied', 'success');
-        setTimeout(hideHudStatus, 1600);
-      } catch (error) {
-        console.error('Failed to apply theme:', error);
-        showHudStatus('❌ Theme failed', 'error');
-        setTimeout(hideHudStatus, 2000);
-      }
-    });
-  }
-
-  saveBtn?.addEventListener('click', () => {
-    try {
-      const theme = getCurrentTheme();
-
-      // Get current theme path to suggest a name
-      const currentPath = getCurrentThemePath() || '';
-      const basePath = resolveBaseThemePath(currentPath);
-      let defaultName = '';
-      if (basePath.startsWith('saved:')) {
-        defaultName = basePath.replace('saved:', '');
-      }
-
-      const name = prompt('Name your theme:', defaultName);
-      if (!name || !name.trim()) return;
-
-      saveThemeToLibrary(name.trim(), theme);
-      setCurrentTheme(theme, { source: `saved:${name.trim()}` });
-      populateThemeDropdown();
-      syncThemeSelectUI();
-
-      showHudStatus('💾 Theme saved', 'success');
-      setTimeout(hideHudStatus, 1600);
-    } catch (error) {
-      showHudStatus(`❌ ${error.message}`, 'error');
-      setTimeout(hideHudStatus, 2000);
-    }
-  });
-
-  aiBtn?.addEventListener('click', async () => {
-    const description = prompt('Describe your theme:\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
-    if (!description) return;
-
-    try {
-      showHudStatus('✨ Generating theme...', 'processing');
-      aiBtn.disabled = true;
-
-      const theme = await generateThemeWithAI(description);
-
-      const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme, { source: '__ai__' });
-      loadThemeIntoEditor();
-
-      showHudStatus('✨ Theme generated!', 'success');
-      setTimeout(hideHudStatus, 1600);
-    } catch (error) {
-      showHudStatus(`❌ ${error.message}`, 'error');
-      setTimeout(hideHudStatus, 3000);
-    } finally {
-      aiBtn.disabled = false;
-    }
-  });
-
-  randomBtn?.addEventListener('click', () => {
-    try {
-      const baseSource = resolveBaseThemePath(getCurrentThemePath() || '') || 'theme.json';
-      const theme = generateRandomTheme();
-
-      const normalizedTheme = applyTheme(theme);
-      setCurrentTheme(normalizedTheme, { source: `random:${baseSource}` });
-      loadThemeIntoEditor();
-
-      showHudStatus('✨ Random theme applied!', 'success');
-      setTimeout(hideHudStatus, 1600);
-    } catch (error) {
-      showHudStatus(`❌ ${error.message}`, 'error');
-      setTimeout(hideHudStatus, 2000);
-    }
-  });
-
-  populateThemeDropdown();
-  syncThemeSelectUI();
-}
-
-
-
-function loadThemeIntoEditor() {
-  // Note: Theme fields removed - using Random + AI + Save workflow
-  syncThemeSelectUI();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Obsolete theme field functions removed - using Random + AI + Save workflow
-// ═══════════════════════════════════════════════════════════════════════════
-
-function extractCurrentThemeFromCSS() {
-  const root = document.documentElement;
-  const style = getComputedStyle(root);
-
-  const themeVars = [
-    'color-bg', 'background-surface', 'background-overlay', 'background-opacity',
-    'slide-bg', 'slide-border-color', 'slide-border-width', 'slide-shadow',
-    'color-surface', 'color-surface-alt', 'color-accent', 'badge-bg', 'badge-color',
-    'color-ink', 'color-muted', 'border-width', 'gutter', 'radius',
-    'font-sans', 'font-mono', 'shadow-sm', 'shadow-md', 'shadow-lg', 'shadow-xl'
-  ];
-
-  const theme = {};
-  themeVars.forEach(varName => {
-    const value = style.getPropertyValue(`--${varName}`).trim();
-    if (value) {
-      theme[varName] = value;
-    }
-  });
-
-  return theme;
-}
-
-function populateThemeDropdown() {
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!dropdown) return;
-
-  const library = loadThemeLibrary();
-
-  // Remove old saved theme options (keep built-in themes)
-  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
-  options.forEach(option => {
-    const value = option.dataset.value || '';
-    if (value.startsWith('saved:')) {
-      option.remove();
-    }
-  });
-
-  // Add saved themes to dropdown
-  library.forEach(entry => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'theme-select__option';
-    button.dataset.value = `saved:${entry.name}`;
-    button.textContent = `✨ ${entry.name}`;
-    dropdown.appendChild(button);
-  });
-}
-
 // Initialize theme drawer on deck init
 async function initDeckWithTheme() {
   await loadAndApplyTheme();
@@ -4524,7 +2758,7 @@ async function initDeckWithTheme() {
   }
 
   if (Array.isArray(loadedSlides)) {
-    slides = loadedSlides;
+    setSlides(loadedSlides);
   } else {
     const finalError = loadError || new Error("Unable to load slides");
     console.error("Failed to load slides", finalError);
@@ -4548,9 +2782,10 @@ async function initDeckWithTheme() {
     return;
   }
 
-  slideElements = renderableSlides.map((slide, index) =>
+  const renderedElements = renderableSlides.map((slide, index) =>
     createSlide(slide, index, renderers)
   );
+  setSlideElements(renderedElements);
 
   const fragment = document.createDocumentFragment();
   slideElements.forEach((slide) => {
@@ -4581,7 +2816,7 @@ async function initDeckWithTheme() {
     insertSlideAt,
     replaceSlideAt,
     setActiveSlide,
-    setOverviewCursor: (index) => { overviewCursor = index; },
+    setOverviewCursor,
     updateSlide: (index, slide) => { slides[index] = slide; },
     validateSlides,
     downloadTheme,
@@ -4621,7 +2856,7 @@ async function initDeckWithTheme() {
 
   setActiveSlide(0);
   updateOverviewButton();
-  overviewCursor = currentIndex;
+  setOverviewCursor(currentIndex);
   handleInitialIntent();
 
   // Mark initialization as complete
