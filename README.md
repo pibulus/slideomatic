@@ -57,8 +57,10 @@ That's it—no build step, no frameworks.
 ## Sharing Decks
 
 - Click the new **Share** button in the deck HUD to snapshot the current slides + theme into [Netlify Blobs](https://docs.netlify.com/blobs/). You get a short `?share=` link and QR code that load a read-only copy of the deck.
-- The Netlify Function lives at `/.netlify/functions/share`. It caps payloads at ~400KB to keep things snappy.
-- For local testing, run `netlify dev` instead of the plain static server so the function (and blobs context) are available. On production deploys it just works.
+- Images you drag/drop or paste are auto-compressed to ~250KB (WebP/JPEG), uploaded via `/.netlify/functions/upload-asset`, and referenced by short URLs instead of giant base64 strings. Hard cap: **512KB per asset**.
+- Old assets get cleaned up automatically a few seconds after you replace/delete them, so Netlify Blobs doesn’t fill up with unused files. Manual deletes trigger instantly when available.
+- The Netlify Functions live at `/.netlify/functions/share`, `/.netlify/functions/upload-asset`, `/.netlify/functions/delete-asset`, and `/.netlify/functions/asset`. Share payloads stay under ~400KB since assets live separately.
+- For local testing, run `netlify dev` (not `npm run dev`) so those functions + blob context are available. When deployed to Netlify it all wires up automatically.
 - Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
 
 ---

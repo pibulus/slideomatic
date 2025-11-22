@@ -130,3 +130,12 @@ export function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+/**
+ * Escape characters for use in a regular expression.
+ * @param {string} string
+ * @returns {string}
+ */
+export function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+

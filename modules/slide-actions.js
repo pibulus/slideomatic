@@ -46,6 +46,8 @@ let createSlideHook = () => {
   throw new Error('createSlide hook not registered');
 };
 let renderEmptyStateHook = () => {};
+let cleanupSlideAssetsHook = () => {};
+let cleanupAllSlideAssetsHook = () => {};
 
 export function registerSlideActionHooks(hooks = {}) {
   if (typeof hooks.showHudStatus === 'function') {
@@ -59,6 +61,12 @@ export function registerSlideActionHooks(hooks = {}) {
   }
   if (typeof hooks.renderEmptyState === 'function') {
     renderEmptyStateHook = hooks.renderEmptyState;
+  }
+  if (typeof hooks.cleanupSlideAssets === 'function') {
+    cleanupSlideAssetsHook = hooks.cleanupSlideAssets;
+  }
+  if (typeof hooks.cleanupAllSlideAssets === 'function') {
+    cleanupAllSlideAssetsHook = hooks.cleanupAllSlideAssets;
   }
 }
 
@@ -157,6 +165,8 @@ export function insertSlideAt(index, slideData, options = {}) {
 export function removeSlideAt(index, options = {}) {
   const { focus = true } = options;
   if (index < 0 || index >= slides.length) return;
+
+  cleanupSlideAssetsHook(slides[index]);
 
   slides.splice(index, 1);
   persistSlides();
@@ -298,6 +308,7 @@ export function handleDeckUpload(event) {
 
       validateSlides(newSlides);
 
+      cleanupAllSlideAssetsHook();
       setSlides(newSlides);
       reloadDeck({ targetIndex: 0 });
       const persisted = persistSlides();
