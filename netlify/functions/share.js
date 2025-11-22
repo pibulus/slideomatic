@@ -1,12 +1,13 @@
 import { connectLambda, getStore } from '@netlify/blobs';
-
-const STORE_NAME = 'shared-decks';
-const MAX_DECK_BYTES = 400 * 1024; // 400KB ceiling for payloads
-
-const jsonHeaders = {
-  'Content-Type': 'application/json',
-  'Cache-Control': 'no-store',
-};
+import {
+  STORE_NAMES,
+  LIMITS,
+  BASE_HEADERS,
+  corsHeaders,
+  createAssetId,
+  buildAssetUrl,
+  decodeDataUrl
+} from './utils/common.js';
 
 export async function handler(event) {
   connectLambda(event);
@@ -29,14 +30,14 @@ export async function handler(event) {
 
     return {
       statusCode: 405,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   } catch (error) {
     console.error('Share function failed', error);
     return {
       statusCode: 500,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Internal error creating share link' }),
     };
   }
@@ -46,7 +47,7 @@ async function handlePost(event) {
   if (!event.body) {
     return {
       statusCode: 400,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Missing request body' }),
     };
   }
@@ -57,7 +58,7 @@ async function handlePost(event) {
   } catch (error) {
     return {
       statusCode: 400,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Invalid JSON payload' }),
     };
   }
@@ -65,34 +66,40 @@ async function handlePost(event) {
   if (!Array.isArray(payload.slides)) {
     return {
       statusCode: 400,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Missing slides array' }),
     };
   }
 
+  const slidesClone = JSON.parse(JSON.stringify(payload.slides));
   const shareRecord = {
     version: 1,
-    slides: payload.slides,
-    theme: payload.theme ?? null,
+    slides: slidesClone,
+    theme: payload.theme ? JSON.parse(JSON.stringify(payload.theme)) : null,
     meta: {
       title: payload.meta?.title ?? 'Untitled Deck',
       createdAt: payload.meta?.createdAt ?? Date.now(),
     },
   };
 
+  const assetIds = await externalizeInlineAssets(slidesClone, event);
+  if (assetIds.length) {
+    shareRecord.assets = assetIds;
+  }
+
   const serialized = JSON.stringify(shareRecord);
   const bytes = Buffer.byteLength(serialized, 'utf8');
 
-  if (bytes > MAX_DECK_BYTES) {
+  if (bytes > LIMITS.MAX_DECK_BYTES) {
     return {
       statusCode: 413,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Deck is too large to share (max 400KB)' }),
     };
   }
 
   const shareId = createShareId();
-  const store = getStore(STORE_NAME);
+  const store = getStore(STORE_NAMES.SHARES);
   await store.set(shareId, serialized, {
     metadata: {
       bytes,
@@ -102,7 +109,7 @@ async function handlePost(event) {
 
   return {
     statusCode: 200,
-    headers: jsonHeaders,
+    headers: BASE_HEADERS,
     body: JSON.stringify({
       id: shareId,
       bytes,
@@ -116,25 +123,25 @@ async function handleGet(event) {
   if (!id) {
     return {
       statusCode: 400,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Missing share id' }),
     };
   }
 
-  const store = getStore(STORE_NAME);
+  const store = getStore(STORE_NAMES.SHARES);
   const record = await store.get(id, { type: 'json' });
 
   if (!record) {
     return {
       statusCode: 404,
-      headers: jsonHeaders,
+      headers: BASE_HEADERS,
       body: JSON.stringify({ error: 'Share not found' }),
     };
   }
 
   return {
     statusCode: 200,
-    headers: jsonHeaders,
+    headers: BASE_HEADERS,
     body: JSON.stringify(record),
   };
 }
@@ -154,12 +161,89 @@ function buildShareUrl(event, shareId) {
   return `${protocol}://${host}/deck.html?share=${shareId}`;
 }
 
-function corsHeaders(headers = {}) {
-  const origin = headers.origin || headers.Origin || '*';
-  return {
-    ...jsonHeaders,
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type',
-  };
+async function externalizeInlineAssets(slides, event) {
+  if (!Array.isArray(slides) || slides.length === 0) {
+    return [];
+  }
+
+  const assetStore = getStore(STORE_NAMES.ASSETS);
+  const collected = [];
+  const imageRefs = gatherImageRefs(slides);
+
+  for (const image of imageRefs) {
+    if (!image || typeof image !== 'object') continue;
+
+    if (image.storage === 'netlify-asset' && typeof image.assetId === 'string') {
+      collected.push(image.assetId);
+      continue;
+    }
+
+    if (typeof image.src === 'string' && image.src.startsWith('data:')) {
+      try {
+        const { buffer, mimeType } = decodeDataUrl(image.src);
+        if (buffer.byteLength > LIMITS.MAX_ASSET_BYTES) {
+          throw new Error('One of the images is too large (>512KB) to share. Compress it and try again.');
+        }
+        const assetId = createAssetId(image.originalFilename || 'shared-image');
+        await assetStore.set(assetId, buffer, {
+          metadata: {
+            bytes: buffer.byteLength,
+            mimeType,
+            source: 'share-inline',
+            createdAt: Date.now(),
+          },
+        });
+        image.src = buildAssetUrl(event, assetId);
+        image.assetId = assetId;
+        image.storage = 'netlify-asset';
+        collected.push(assetId);
+      } catch (e) {
+        console.warn('Failed to externalize asset', e);
+        // Keep inline if it fails? Or throw?
+        // For now, we throw to stop the share if an asset is invalid/too large
+        throw e;
+      }
+      continue;
+    }
+  }
+
+  return collected;
+}
+
+function gatherImageRefs(slides) {
+  const refs = [];
+  slides.forEach((slide) => {
+    if (!slide || typeof slide !== 'object') return;
+    if (slide.image && typeof slide.image === 'object') {
+      refs.push(slide.image);
+    }
+    if (Array.isArray(slide.media)) {
+      slide.media.forEach((item) => {
+        if (item?.image && typeof item.image === 'object') {
+          refs.push(item.image);
+        }
+      });
+    }
+    if (Array.isArray(slide.items)) {
+      slide.items.forEach((item) => {
+        if (item?.image && typeof item.image === 'object') {
+          refs.push(item.image);
+        }
+      });
+    }
+    if (slide.left?.image && typeof slide.left.image === 'object') {
+      refs.push(slide.left.image);
+    }
+    if (slide.right?.image && typeof slide.right.image === 'object') {
+      refs.push(slide.right.image);
+    }
+    if (Array.isArray(slide.pillars)) {
+      slide.pillars.forEach((pillar) => {
+        if (pillar?.image && typeof pillar.image === 'object') {
+          refs.push(pillar.image);
+        }
+      });
+    }
+  });
+  return refs;
 }
