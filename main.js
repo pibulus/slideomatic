@@ -134,6 +134,7 @@ import {
   updateHud,
   handleSlideClick,
 } from './modules/navigation.js';
+import { initTouchNav } from './modules/touch-nav.js';
 import { initShareModal } from './modules/share-modal.js';
 import {
   showIntroModalIfFirstVisit,
@@ -623,6 +624,11 @@ async function initDeckWithTheme() {
   updateOverviewLayout();
 
   initKeyboardNav(getKeyboardContext());
+  initTouchNav({
+    setActiveSlide,
+    getCurrentIndex: () => currentIndex,
+    isOverview: () => isOverview,
+  });
   slidesRoot.addEventListener("click", handleSlideClick);
   document.addEventListener("click", handleImageModalTrigger);
   document.addEventListener("paste", handleGlobalPaste);
