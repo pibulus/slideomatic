@@ -27,7 +27,7 @@ import {
   reorderSlideImages,
   addImageToSlide,
   updateImageAltText,
-} from './image-manager.js';
+} from './slide-image-ui.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS

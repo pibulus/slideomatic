@@ -1,0 +1,12 @@
+/* ===================================================================
+   SLIDE-O-MATIC MAIN STYLESHEET
+   ================================================================ */
+
+@import './variables.css';
+@import './base.css';
+@import './layout.css';
+@import './slides.css';
+@import './ui.css';
+@import './drawers.css';
+@import './modals.css';
+@import './animations.css';

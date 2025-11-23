@@ -1,7 +1,7 @@
 import { debug } from './constants.js';
 import { slides, slideElements, isOverview, autoLinkConfigs } from './state.js';
 import { slidesRoot } from './dom-refs.js';
-import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-handling.js';
+import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-io.js';
 import { escapeHtml, deepClone, escapeRegExp } from './utils.js';
 // attachSlideHomeBadge is defined locally to avoid circular dependency
 
@@ -557,10 +557,7 @@ export function renderGraphSlide(section, slide) {
         const regenerateBtn = document.createElement("button");
         regenerateBtn.className = "graph-regenerate-btn";
         regenerateBtn.textContent = "🔄 Regenerate";
-        // regenerateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer)); 
-        // generateGraphImage is not defined in main.js or here. It seems missing or I missed it.
-        // I will comment it out for now or leave it as is if it was global.
-        // Wait, I didn't see generateGraphImage in main.js. Let me check.
+        regenerateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
 
         graphContainer.appendChild(img);
         graphContainer.appendChild(regenerateBtn);

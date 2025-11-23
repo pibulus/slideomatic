@@ -1,0 +1,146 @@
+/* ===================================================================
+   DRAWERS (EDIT & THEME)
+   ================================================================ */
+
+/* --- Edit Drawer --- */
+.edit-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(480px, 90vw);
+  height: 100vh;
+  background: var(--color-bg);
+  border-left: var(--border-width) solid var(--color-ink);
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edit-drawer.is-open {
+  transform: translateX(0);
+}
+
+.edit-drawer__header {
+  padding: 24px;
+  border-bottom: var(--border-width) solid var(--color-ink);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.edit-drawer__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: linear-gradient(180deg, #fffdfa 0%, #fff6ec 100%);
+}
+
+.edit-drawer__section {
+  border: var(--border-width) solid rgba(0, 0, 0, 0.85);
+  border-radius: calc(var(--radius) + 2px);
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #fffefc 0%, #fff5eb 100%);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.16);
+  margin-bottom: 12px;
+}
+
+.edit-drawer__input,
+.edit-drawer__textarea,
+.edit-drawer__select {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: #fffdf7;
+  color: var(--color-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+  width: 100%;
+}
+
+.edit-drawer__button {
+  appearance: none;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-ink);
+  color: var(--color-ink);
+  padding: 12px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--radius);
+  cursor: pointer;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: none;
+}
+
+.edit-drawer__button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* --- Theme Drawer --- */
+.theme-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(480px, 90vw);
+  height: 100vh;
+  background: var(--color-bg);
+  border-left: var(--border-width) solid var(--color-ink);
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.3);
+  z-index: 1100;
+  transform: translateX(100%);
+  transition: transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.theme-drawer.is-open {
+  transform: translateX(0);
+}
+
+.theme-drawer__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px 32px;
+}
+
+.theme-drawer__section {
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-sm);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.theme-select__trigger {
+  width: 100%;
+  padding: 14px 16px;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: white;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

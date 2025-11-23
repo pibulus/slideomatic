@@ -3,7 +3,7 @@ import { showHudStatus, hideHudStatus } from './hud.js';
 import { formatBytes, fileToBase64 } from './utils.js';
 import { slides, slideElements, isOverview, currentIndex } from './state.js';
 import { replaceSlideAt, setActiveSlide } from './slide-actions.js';
-import { registerLazyImage } from '../lazy-images.js';
+import { registerLazyImage } from './lazy-images.js';
 import { STORAGE_KEY_API } from './voice-modes.js';
 import { openSettingsModal } from './settings-modal.js';
 import { getCurrentThemePath } from './theme-manager.js';
