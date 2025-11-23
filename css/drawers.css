@@ -63,6 +63,22 @@
   color: var(--color-ink);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
   width: 100%;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 160ms ease,
+    height 200ms ease,
+    min-height 200ms ease;
+}
+
+.edit-drawer__textarea {
+  min-height: 80px;
+  resize: vertical;
+  overflow-y: hidden; /* Hide scrollbar during auto-expand */
+}
+
+.edit-drawer__textarea.is-expanded {
+  min-height: 160px;
 }
 
 .edit-drawer__button {
