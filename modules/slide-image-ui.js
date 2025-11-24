@@ -159,7 +159,7 @@ function buildImageManager(slide) {
   let html = '';
 
   if (images.length > 0) {
-    html += `<div class="edit-drawer__image-list">`;
+    html += '<div class="edit-drawer__image-list">';
 
     images.forEach((img, index) => {
       const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
@@ -190,7 +190,7 @@ function buildImageManager(slide) {
       `;
     });
 
-    html += `</div>`;
+    html += '</div>';
   } else {
     html += `
       <div class="edit-drawer__image-dropzone" id="image-dropzone">

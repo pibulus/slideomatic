@@ -138,17 +138,17 @@ export function initShareModal() {
       width: 400,
       height: 400,
       margin: 20,
-      type: "canvas",
+      type: 'canvas',
       data: url,
       qrOptions: {
         typeNumber: 0,
-        mode: "Byte",
-        errorCorrectionLevel: "Q" // 25% recovery - perfect for styled codes
+        mode: 'Byte',
+        errorCorrectionLevel: 'Q' // 25% recovery - perfect for styled codes
       },
       dotsOptions: {
-        type: "rounded", // Better for gradients + scans
+        type: 'rounded', // Better for gradients + scans
         gradient: {
-          type: "linear",
+          type: 'linear',
           rotation: 0.785, // 45deg
           colorStops: [
             { offset: 0, color: themeColors[0] },
@@ -161,9 +161,9 @@ export function initShareModal() {
         color: themeColors[3] // Background color
       },
       cornersSquareOptions: {
-        type: "extra-rounded",
+        type: 'extra-rounded',
         gradient: {
-          type: "linear",
+          type: 'linear',
           rotation: 0.785,
           colorStops: [
             { offset: 0, color: themeColors[0] },
@@ -173,9 +173,9 @@ export function initShareModal() {
         }
       },
       cornersDotOptions: {
-        type: "dot",
+        type: 'dot',
         gradient: {
-          type: "linear",
+          type: 'linear',
           rotation: 0.785,
           colorStops: [
             { offset: 0, color: themeColors[0] },

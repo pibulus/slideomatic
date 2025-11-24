@@ -1,14 +1,14 @@
-const editor = document.getElementById("editor");
-const reloadButton = document.getElementById("reload-button");
-const downloadButton = document.getElementById("download-button");
-const messageTemplate = document.getElementById("message-template");
-const authScreen = document.getElementById("auth-screen");
-const authForm = document.getElementById("auth-form");
-const authPasswordInput = document.getElementById("auth-password");
-const authError = document.getElementById("auth-error");
+const editor = document.getElementById('editor');
+const reloadButton = document.getElementById('reload-button');
+const downloadButton = document.getElementById('download-button');
+const messageTemplate = document.getElementById('message-template');
+const authScreen = document.getElementById('auth-screen');
+const authForm = document.getElementById('auth-form');
+const authPasswordInput = document.getElementById('auth-password');
+const authError = document.getElementById('auth-error');
 
-const AUTH_TOKEN_KEY = "deck-admin-token";
-const ADMIN_PASSWORD = "bonesoup"; // change to your secret
+const AUTH_TOKEN_KEY = 'deck-admin-token';
+const ADMIN_PASSWORD = 'bonesoup'; // change to your secret
 const SLIDES_PATH = resolveSlidesPath();
 
 let slides = [];
@@ -19,7 +19,7 @@ init();
 function init() {
   downloadButton.disabled = true;
   reloadButton.disabled = true;
-  authForm.addEventListener("submit", handleAuthSubmit);
+  authForm.addEventListener('submit', handleAuthSubmit);
   document.title = `Slide Deck Editor · ${getFileName(SLIDES_PATH)}`;
 
   if (hasValidToken()) {
@@ -31,19 +31,19 @@ function init() {
 
 function bindControls() {
   if (controlsBound) return;
-  reloadButton.addEventListener("click", () => loadSlides(true));
-  downloadButton.addEventListener("click", downloadSlides);
+  reloadButton.addEventListener('click', () => loadSlides(true));
+  downloadButton.addEventListener('click', downloadSlides);
   controlsBound = true;
 }
 
 async function loadSlides(force = false) {
-  editor.innerHTML = "<p>Loading slides…</p>";
+  editor.innerHTML = '<p>Loading slides…</p>';
   downloadButton.disabled = true;
   reloadButton.disabled = true;
 
   try {
     const url = force ? withTimestamp(SLIDES_PATH) : SLIDES_PATH;
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Failed to load ${SLIDES_PATH} (status ${response.status})`);
     }
@@ -51,7 +51,7 @@ async function loadSlides(force = false) {
     renderSlides();
   } catch (error) {
     console.error(error);
-    showMessage("Unable to load slides", error.message ?? String(error));
+    showMessage('Unable to load slides', error.message ?? String(error));
   } finally {
     downloadButton.disabled = false;
     reloadButton.disabled = false;
@@ -63,12 +63,12 @@ function handleAuthSubmit(event) {
   const input = authPasswordInput.value.trim();
   if (verifyPassword(input)) {
     storeToken(input);
-    authPasswordInput.value = "";
-    authError.textContent = "";
+    authPasswordInput.value = '';
+    authError.textContent = '';
     hideAuthScreen();
     unlockEditor();
   } else {
-    authError.textContent = "Incorrect password.";
+    authError.textContent = 'Incorrect password.';
     authPasswordInput.select();
   }
 }
@@ -80,19 +80,19 @@ function unlockEditor() {
 }
 
 function showAuthScreen() {
-  authError.textContent = "";
+  authError.textContent = '';
   authScreen.hidden = false;
-  authScreen.setAttribute("aria-hidden", "false");
+  authScreen.setAttribute('aria-hidden', 'false');
   setTimeout(() => authPasswordInput.focus(), 0);
 }
 
 function hideAuthScreen() {
   authScreen.hidden = true;
-  authScreen.setAttribute("aria-hidden", "true");
+  authScreen.setAttribute('aria-hidden', 'true');
 }
 
 function generateToken(input) {
-  return btoa(Array.from(input).reverse().join(""));
+  return btoa(Array.from(input).reverse().join(''));
 }
 
 function storeToken(password) {
@@ -110,23 +110,23 @@ function verifyPassword(input) {
 
 function renderSlides() {
   if (!Array.isArray(slides) || slides.length === 0) {
-    showMessage("No slides", `Add slide data to ${SLIDES_PATH} to begin editing.`);
+    showMessage('No slides', `Add slide data to ${SLIDES_PATH} to begin editing.`);
     return;
   }
 
-  editor.innerHTML = "";
+  editor.innerHTML = '';
 
   slides.forEach((slide, index) => {
-    const card = document.createElement("details");
-    card.className = "slide-card";
+    const card = document.createElement('details');
+    card.className = 'slide-card';
     card.open = index === 0;
 
-    const summary = document.createElement("summary");
+    const summary = document.createElement('summary');
     summary.textContent = slideSummary(slide, index);
     card.appendChild(summary);
 
-    const body = document.createElement("div");
-    body.className = "slide-card__body";
+    const body = document.createElement('div');
+    body.className = 'slide-card__body';
     renderObjectFields(slide, [index], body, () => {
       summary.textContent = slideSummary(slides[index], index);
     });
@@ -154,15 +154,15 @@ function renderObjectFields(object, path, container, onChange) {
 }
 
 function createField(key, value, path, onChange) {
-  const fieldWrapper = document.createElement("div");
-  fieldWrapper.className = "field";
+  const fieldWrapper = document.createElement('div');
+  fieldWrapper.className = 'field';
 
   if (Array.isArray(value)) {
-    if (value.every((item) => typeof item === "string")) {
+    if (value.every((item) => typeof item === 'string')) {
       const label = createLabel(key);
-      const textarea = document.createElement("textarea");
-      textarea.value = value.join("\n");
-      textarea.addEventListener("input", (event) => {
+      const textarea = document.createElement('textarea');
+      textarea.value = value.join('\n');
+      textarea.addEventListener('input', (event) => {
         const lines = event.target.value.split(/\r?\n/);
         setValueAtPath(slides, path, lines);
         onChange?.();
@@ -171,32 +171,32 @@ function createField(key, value, path, onChange) {
       return fieldWrapper;
     }
 
-    const listContainer = document.createElement("div");
-    listContainer.className = "field";
+    const listContainer = document.createElement('div');
+    listContainer.className = 'field';
     const label = createLabel(key);
     listContainer.appendChild(label);
 
     value.forEach((item, index) => {
-      const itemWrapper = document.createElement("fieldset");
-      itemWrapper.className = "nested array-item";
-      const legend = document.createElement("legend");
+      const itemWrapper = document.createElement('fieldset');
+      itemWrapper.className = 'nested array-item';
+      const legend = document.createElement('legend');
       legend.textContent = `${key}[${index}]`;
       itemWrapper.appendChild(legend);
 
-      if (item && typeof item === "object") {
+      if (item && typeof item === 'object') {
         renderObjectFields(item, [...path, index], itemWrapper, onChange);
       } else {
-        const textarea = document.createElement("textarea");
+        const textarea = document.createElement('textarea');
         textarea.value = JSON.stringify(item, null, 2);
-        textarea.addEventListener("change", (event) => {
+        textarea.addEventListener('change', (event) => {
           try {
             const nextValue = JSON.parse(event.target.value);
             setValueAtPath(slides, [...path, index], nextValue);
-            textarea.setCustomValidity("");
+            textarea.setCustomValidity('');
             onChange?.();
           } catch (error) {
             console.error(error);
-            textarea.setCustomValidity("Invalid JSON");
+            textarea.setCustomValidity('Invalid JSON');
             textarea.reportValidity();
           }
         });
@@ -209,22 +209,22 @@ function createField(key, value, path, onChange) {
     return listContainer;
   }
 
-  if (value && typeof value === "object") {
-    const fieldset = document.createElement("fieldset");
-    fieldset.className = "nested";
-    const legend = document.createElement("legend");
+  if (value && typeof value === 'object') {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'nested';
+    const legend = document.createElement('legend');
     legend.textContent = key;
     fieldset.appendChild(legend);
     renderObjectFields(value, path, fieldset, onChange);
     return fieldset;
   }
 
-  if (typeof value === "boolean") {
+  if (typeof value === 'boolean') {
     const label = createLabel(key);
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
     checkbox.checked = value;
-    checkbox.addEventListener("change", (event) => {
+    checkbox.addEventListener('change', (event) => {
       setValueAtPath(slides, path, event.target.checked);
       onChange?.();
     });
@@ -233,12 +233,12 @@ function createField(key, value, path, onChange) {
   }
 
   const label = createLabel(key);
-  const input = document.createElement("input");
-  input.type = typeof value === "number" ? "number" : "text";
-  input.value = value ?? "";
-  input.addEventListener("input", (event) => {
+  const input = document.createElement('input');
+  input.type = typeof value === 'number' ? 'number' : 'text';
+  input.value = value ?? '';
+  input.addEventListener('input', (event) => {
     let nextValue = event.target.value;
-    if (typeof value === "number") {
+    if (typeof value === 'number') {
       const parsed = Number(nextValue);
       nextValue = Number.isNaN(parsed) ? 0 : parsed;
     }
@@ -250,7 +250,7 @@ function createField(key, value, path, onChange) {
 }
 
 function createLabel(key) {
-  const label = document.createElement("label");
+  const label = document.createElement('label');
   label.textContent = key;
   return label;
 }
@@ -265,10 +265,10 @@ function setValueAtPath(target, path, newValue) {
 
 function downloadSlides() {
   const blob = new Blob([JSON.stringify(slides, null, 2)], {
-    type: "application/json",
+    type: 'application/json',
   });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
+  const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = getFileName(SLIDES_PATH);
   anchor.click();
@@ -277,18 +277,18 @@ function downloadSlides() {
 
 function showMessage(title, message) {
   const templateContent = messageTemplate.content.cloneNode(true);
-  const section = templateContent.querySelector(".message");
-  section.querySelector("h2").textContent = title;
-  section.querySelector("p").textContent = message;
-  editor.innerHTML = "";
+  const section = templateContent.querySelector('.message');
+  section.querySelector('h2').textContent = title;
+  section.querySelector('p').textContent = message;
+  editor.innerHTML = '';
   editor.appendChild(section);
 }
 
 function resolveSlidesPath() {
   const params = new URLSearchParams(window.location.search);
-  const slidesParam = params.get("slides");
-  if (!slidesParam) return "slides.json";
-  if (slidesParam.endsWith(".json")) return slidesParam;
+  const slidesParam = params.get('slides');
+  if (!slidesParam) return 'slides.json';
+  if (slidesParam.endsWith('.json')) return slidesParam;
   return `${slidesParam}.json`;
 }
 
@@ -296,14 +296,14 @@ function getFileName(path) {
   try {
     const url = new URL(path, window.location.href);
     const pathname = url.pathname;
-    return pathname.substring(pathname.lastIndexOf("/") + 1) || "slides.json";
+    return pathname.substring(pathname.lastIndexOf('/') + 1) || 'slides.json';
   } catch (error) {
-    const segments = path.split("/");
-    return segments.pop() || "slides.json";
+    const segments = path.split('/');
+    return segments.pop() || 'slides.json';
   }
 }
 
 function withTimestamp(path) {
-  const separator = path.includes("?") ? "&" : "?";
+  const separator = path.includes('?') ? '&' : '?';
   return `${path}${separator}ts=${Date.now()}`;
 }

@@ -13,15 +13,16 @@ import {
   normalizeThemeTokens,
   downloadTheme,
 } from './modules/theme-manager.js';
-import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone } from './modules/utils.js';
+import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone, escapeRegExp } from './modules/utils.js';
 import { CONFIG, debug } from './modules/constants.js';
 import {
   createImage,
-  handleGlobalPaste,
   cleanupSlideAssets,
   cleanupAllSlideAssets,
   handleImageModalTrigger,
-} from './modules/image-io.js';
+} from './modules/image-render.js';
+import { handleGlobalPaste } from './modules/image-upload.js';
+import { flushAssetDeletions } from './modules/image-utils.js';
 import {
   renderers,
   createSlide,
@@ -224,9 +225,7 @@ function applySharedThemeFromShare(themeData) {
 window.addEventListener('resize', handleResize);
 document.addEventListener('paste', handleGlobalPaste);
 window.addEventListener('beforeunload', () => {
-  if (assetDeletionQueue.size) {
-    flushAssetDeletions(true);
-  }
+  flushAssetDeletions(true);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -302,12 +301,12 @@ async function loadAndApplyTheme() {
 }
 
 function resolveThemePath() {
-  const themeParam = getParam("theme");
-  if (!themeParam) return "theme.json";
-  if (themeParam.endsWith(".json")) {
+  const themeParam = getParam('theme');
+  if (!themeParam) return 'theme.json';
+  if (themeParam.endsWith('.json')) {
     return themeParam;
   }
-  if (themeParam.includes("/")) {
+  if (themeParam.includes('/')) {
     return `${themeParam}.json`;
   }
   return `themes/${themeParam}.json`;
@@ -421,11 +420,11 @@ function showSaveStatus(state = 'saved') {
 
 async function loadAutoLinks() {
   try {
-    const response = await fetch("autolinks.json", { cache: "no-store" });
+    const response = await fetch('autolinks.json', { cache: 'no-store' });
     if (!response.ok) return;
     const links = await response.json();
     if (!Array.isArray(links)) return;
-    autoLinkConfigs = links
+    const processedLinks = links
       .filter((link) => Boolean(link?.term))
       .map((link) => ({
         term: link.term,
@@ -433,11 +432,12 @@ async function loadAutoLinks() {
         url: link.url,
         urlTemplate: link.urlTemplate,
         openInNewTab: link.openInNewTab !== false,
-        regex: new RegExp(escapeRegExp(link.term), "gi"),
+        regex: new RegExp(escapeRegExp(link.term), 'gi'),
       }));
+    setAutoLinkConfigs(processedLinks);
   } catch (error) {
-    console.warn("Unable to load autolinks.json", error);
-    autoLinkConfigs = [];
+    console.warn('Unable to load autolinks.json', error);
+    setAutoLinkConfigs([]);
   }
 }
 
@@ -577,8 +577,8 @@ async function initDeckWithTheme() {
   if (Array.isArray(loadedSlides)) {
     setSlides(loadedSlides);
   } else {
-    const finalError = loadError || new Error("Unable to load slides");
-    console.error("Failed to load slides", finalError);
+    const finalError = loadError || new Error('Unable to load slides');
+    console.error('Failed to load slides', finalError);
     renderLoadError(finalError);
     return;
   }
@@ -586,12 +586,12 @@ async function initDeckWithTheme() {
   try {
     validateSlides(slides);
   } catch (validationError) {
-    console.error("Failed to validate slides", validationError);
+    console.error('Failed to validate slides', validationError);
     renderLoadError(validationError);
     return;
   }
 
-  const renderableSlides = slides.filter(slide => slide.type !== "_schema");
+  const renderableSlides = slides.filter(slide => slide.type !== '_schema');
   updateTotalCounter(renderableSlides.length);
 
   if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
@@ -606,8 +606,8 @@ async function initDeckWithTheme() {
 
   const fragment = document.createDocumentFragment();
   slideElements.forEach((slide) => {
-    slide.style.visibility = "hidden";
-    slide.style.pointerEvents = "none";
+    slide.style.visibility = 'hidden';
+    slide.style.pointerEvents = 'none';
     fragment.appendChild(slide);
   });
   slidesRoot.appendChild(fragment);
@@ -619,9 +619,9 @@ async function initDeckWithTheme() {
     getCurrentIndex: () => currentIndex,
     isOverview: () => isOverview,
   });
-  slidesRoot.addEventListener("click", handleSlideClick);
-  document.addEventListener("click", handleImageModalTrigger);
-  document.addEventListener("paste", handleGlobalPaste);
+  slidesRoot.addEventListener('click', handleSlideClick);
+  document.addEventListener('click', handleImageModalTrigger);
+  document.addEventListener('paste', handleGlobalPaste);
 
   const uploadInput = document.getElementById('deck-upload');
   if (uploadInput) {

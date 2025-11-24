@@ -136,6 +136,6 @@ export function deepClone(obj) {
  * @returns {string}
  */
 export function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 

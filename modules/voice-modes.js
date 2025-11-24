@@ -91,7 +91,6 @@ export function initVoiceButtons(partialContext = {}) {
   if (editBtn) {
     voiceButtons.edit = editBtn;
     ensureButtonInitialized(editBtn, () => toggleVoiceRecording('edit'));
-    updateVoiceUI('edit', 'idle');
   }
 
   const themeVoiceBtn = document.getElementById('theme-voice-btn');
@@ -290,9 +289,9 @@ export async function processVoiceToSlide(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -301,7 +300,7 @@ export async function processVoiceToSlide(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -372,9 +371,9 @@ async function processVoiceEditSlide(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -383,7 +382,7 @@ async function processVoiceEditSlide(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -449,9 +448,9 @@ export async function processVoiceToTheme(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -460,7 +459,7 @@ export async function processVoiceToTheme(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -678,8 +677,8 @@ THEME SCHEMA - ALL fields required:
   "border-width": "5px",
   "gutter": "clamp(32px, 5vw, 72px)",
   "radius": "12px",
-  "font-sans": "\"Inter\", sans-serif",
-  "font-mono": "\"Space Mono\", monospace",
+  "font-sans": '"Inter", sans-serif',
+  "font-mono": '"Space Mono", monospace',
   "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
   "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
   "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",

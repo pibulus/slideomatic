@@ -180,7 +180,7 @@ export function removeSlideAt(index, options = {}) {
 
   if (!slideElements.length) {
     slidesRoot.innerHTML = '';
-    renderEmptyState();
+    renderEmptyStateHook();
     updateTotalCounter(0);
     setCurrentIndex(0);
     updateHud();

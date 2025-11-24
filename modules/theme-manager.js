@@ -35,7 +35,7 @@ const REQUIRED_THEME_TOKENS = {
   'color-ink': '#000000',
   'color-muted': '#2b2b2b',
   'border-width': '5px',
-  'gutter': "clamp(32px, 5vw, 72px)",
+  'gutter': 'clamp(32px, 5vw, 72px)',
   'radius': '12px',
   'font-sans': '"Inter", "Helvetica Neue", Arial, sans-serif',
   'font-mono': '"Space Mono", "IBM Plex Mono", monospace',

@@ -1,7 +1,7 @@
 import { debug } from './constants.js';
 import { slides, slideElements, isOverview, autoLinkConfigs } from './state.js';
 import { slidesRoot } from './dom-refs.js';
-import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-io.js';
+import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-render.js';
 import { escapeHtml, deepClone, escapeRegExp } from './utils.js';
 import { navigateToDeckHome } from './navigation.js';
 
@@ -17,15 +17,15 @@ function handleHomeBadgeClick(event) {
 }
 
 function handleHomeBadgeKeydown(event) {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         navigateToDeckHome();
     }
 }
 
 export function attachSlideHomeBadge(badge) {
-    if (badge.dataset.navHomeBound === "true") return;
-    badge.dataset.navHomeBound = "true";
+    if (badge.dataset.navHomeBound === 'true') return;
+    badge.dataset.navHomeBound = 'true';
     badge.setAttribute('role', 'link');
     badge.tabIndex = 0;
     badge.addEventListener('click', handleHomeBadgeClick);
@@ -33,19 +33,19 @@ export function attachSlideHomeBadge(badge) {
 }
 
 export function renderLoadError(error) {
-    const message = document.createElement("section");
-    message.className = "slide slide--error is-active";
+    const message = document.createElement('section');
+    message.className = 'slide slide--error is-active';
     message.innerHTML = `
     <h2>Unable to load slides</h2>
     <p>Please refresh the page or contact the deck owner.</p>
-    ${error ? `<pre>${error.message}</pre>` : ""}
+    ${error ? `<pre>${error.message}</pre>` : ''}
   `;
     slidesRoot.appendChild(message);
 }
 
 export function renderEmptyState() {
-    const message = document.createElement("section");
-    message.className = "slide slide--empty is-active";
+    const message = document.createElement('section');
+    message.className = 'slide slide--empty is-active';
     message.innerHTML = `
     <h2>No slides available</h2>
     <p>Add slide data to <code>slides.json</code> to render this deck.</p>
@@ -73,11 +73,11 @@ export const renderers = {
 };
 
 export function createSlide(slide, index, rendererMap = renderers) {
-    const type = slide.type ?? "standard";
-    const section = document.createElement("section");
+    const type = slide.type ?? 'standard';
+    const section = document.createElement('section');
     section.className = `slide slide--${type}`;
     section.dataset.index = index;
-    section.setAttribute("aria-hidden", "true");
+    section.setAttribute('aria-hidden', 'true');
 
     if (slide.image) {
         debug('createSlide - Slide has image:', {
@@ -100,16 +100,16 @@ export function createSlide(slide, index, rendererMap = renderers) {
     renderer(section, slide);
 
     const directBadge = Array.from(section.children).some((child) =>
-        child.classList?.contains("badge")
+        child.classList?.contains('badge')
     );
     const badgeDisabled =
         slide.badge === false || slide.autoBadge === false;
     const manualBadgeValue =
-        typeof slide.badge === "string"
+        typeof slide.badge === 'string'
             ? slide.badge.trim()
-            : typeof slide.badge === "number"
+            : typeof slide.badge === 'number'
                 ? String(slide.badge)
-                : "";
+                : '';
 
     if (!directBadge && !badgeDisabled) {
         if (manualBadgeValue) {
@@ -119,7 +119,7 @@ export function createSlide(slide, index, rendererMap = renderers) {
             );
         } else if (slide.autoBadge !== false) {
             const autoBadge = createBadge(`+ Slide ${index + 1}`);
-            autoBadge.dataset.badgeAuto = "true";
+            autoBadge.dataset.badgeAuto = 'true';
             section.insertBefore(autoBadge, section.firstChild ?? null);
         }
     }
@@ -182,14 +182,14 @@ export function renderTitleSlide(section, slide) {
     }
 
     if (slide.title) {
-        const title = document.createElement("h1");
+        const title = document.createElement('h1');
         title.textContent = slide.title;
         section.appendChild(title);
     }
 
     if (slide.subtitle) {
-        const subtitle = document.createElement("p");
-        subtitle.className = "title__subtitle";
+        const subtitle = document.createElement('p');
+        subtitle.className = 'title__subtitle';
         setRichContent(subtitle, slide.subtitle);
         section.appendChild(subtitle);
     }
@@ -205,7 +205,7 @@ export function renderTitleSlide(section, slide) {
 
 export function renderStandardSlide(section, slide) {
     if (slide.headline) {
-        const headline = document.createElement("h2");
+        const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
         section.appendChild(headline);
     }
@@ -222,27 +222,27 @@ export function renderStandardSlide(section, slide) {
 }
 
 export function renderImageSlide(section, slide) {
-    section.classList.add("slide--image");
+    section.classList.add('slide--image');
 
     if (!slide.image || !slide.image.src) {
-        const warning = document.createElement("p");
-        warning.className = "slide__error";
-        warning.textContent = "Image slide requires an image with a src.";
+        const warning = document.createElement('p');
+        warning.className = 'slide__error';
+        warning.textContent = 'Image slide requires an image with a src.';
         section.appendChild(warning);
         return;
     }
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "slide__image-wrapper";
+    const wrapper = document.createElement('div');
+    wrapper.className = 'slide__image-wrapper';
 
-    const imageElement = createImage(slide.image, "slide__image slide__image--full", {
+    const imageElement = createImage(slide.image, 'slide__image slide__image--full', {
         orientationTarget: section,
     });
     wrapper.appendChild(imageElement);
 
     if (slide.caption) {
-        const caption = document.createElement("div");
-        caption.className = "slide__image-caption";
+        const caption = document.createElement('div');
+        caption.className = 'slide__image-caption';
         setRichContent(caption, slide.caption);
         wrapper.appendChild(caption);
     }
@@ -251,23 +251,23 @@ export function renderImageSlide(section, slide) {
 }
 
 export function renderQuoteSlide(section, slide) {
-    section.classList.add("slide--quote");
+    section.classList.add('slide--quote');
 
-    const quoteText = slide.quote ?? slide.headline ?? "";
-    const quote = document.createElement("blockquote");
+    const quoteText = slide.quote ?? slide.headline ?? '';
+    const quote = document.createElement('blockquote');
     setRichContent(quote, quoteText);
     section.appendChild(quote);
 
     const attributionText = slide.attribution ?? slide.body;
     if (attributionText) {
-        const cite = document.createElement("cite");
+        const cite = document.createElement('cite');
         setRichContent(cite, attributionText);
         section.appendChild(cite);
     }
 }
 
 export function renderSplitSlide(section, slide) {
-    section.classList.add("slide--split");
+    section.classList.add('slide--split');
     const variants = Array.isArray(slide.variant)
         ? slide.variant
         : slide.variant
@@ -278,10 +278,10 @@ export function renderSplitSlide(section, slide) {
         section.classList.add(`slide--split--${variant}`);
     });
 
-    const leftColumn = document.createElement("div");
-    leftColumn.className = "slide__column slide__column--left";
-    const rightColumn = document.createElement("div");
-    rightColumn.className = "slide__column slide__column--right";
+    const leftColumn = document.createElement('div');
+    leftColumn.className = 'slide__column slide__column--left';
+    const rightColumn = document.createElement('div');
+    rightColumn.className = 'slide__column slide__column--right';
 
     renderColumn(leftColumn, slide.left);
     renderColumn(rightColumn, slide.right);
@@ -290,10 +290,10 @@ export function renderSplitSlide(section, slide) {
 }
 
 export function renderGridSlide(section, slide) {
-    section.classList.add("slide--grid");
+    section.classList.add('slide--grid');
 
     if (slide.headline) {
-        const headline = document.createElement("h2");
+        const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
         section.appendChild(headline);
     }
@@ -301,11 +301,11 @@ export function renderGridSlide(section, slide) {
     appendBody(section, slide.body);
 
     if (Array.isArray(slide.items)) {
-        const grid = document.createElement("div");
-        grid.className = "grid";
+        const grid = document.createElement('div');
+        grid.className = 'grid';
 
         slide.items.forEach((item) => {
-            const figure = document.createElement("figure");
+            const figure = document.createElement('figure');
             if (item.image) {
                 figure.appendChild(createImage(item.image));
             } else if (item.color) {
@@ -313,7 +313,7 @@ export function renderGridSlide(section, slide) {
                 figure.appendChild(swatch);
             }
             if (item.label) {
-                const caption = document.createElement("figcaption");
+                const caption = document.createElement('figcaption');
                 setRichContent(caption, item.label);
                 figure.appendChild(caption);
             }
@@ -329,10 +329,10 @@ export function renderGridSlide(section, slide) {
 }
 
 export function renderPillarsSlide(section, slide) {
-    section.classList.add("slide--pillars");
+    section.classList.add('slide--pillars');
 
     if (slide.headline) {
-        const headline = document.createElement("h2");
+        const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
         section.appendChild(headline);
     }
@@ -344,24 +344,24 @@ export function renderPillarsSlide(section, slide) {
     }
 
     if (Array.isArray(slide.pillars)) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "pillars";
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pillars';
 
         slide.pillars.forEach((pillar) => {
-            const card = document.createElement("article");
-            card.className = "pillar";
+            const card = document.createElement('article');
+            card.className = 'pillar';
 
             if (pillar.image) {
                 const imageData =
-                    typeof pillar.image === "string"
-                        ? { src: pillar.image, alt: pillar.title || "" }
+                    typeof pillar.image === 'string'
+                        ? { src: pillar.image, alt: pillar.title || '' }
                         : pillar.image;
-                const img = createImage(imageData, "pillar__image");
+                const img = createImage(imageData, 'pillar__image');
                 card.appendChild(img);
             }
 
             if (pillar.title) {
-                const heading = document.createElement("h3");
+                const heading = document.createElement('h3');
                 setRichContent(heading, pillar.title);
                 card.appendChild(heading);
             }
@@ -377,7 +377,7 @@ export function renderPillarsSlide(section, slide) {
                 const copyLines = Array.isArray(pillarCopy) ? pillarCopy : [pillarCopy];
                 copyLines.forEach((line) => {
                     if (!line) return;
-                    const text = document.createElement("p");
+                    const text = document.createElement('p');
                     setRichContent(text, line);
                     card.appendChild(text);
                 });
@@ -395,10 +395,10 @@ export function renderPillarsSlide(section, slide) {
 }
 
 export function renderGallerySlide(section, slide) {
-    section.classList.add("slide--gallery");
+    section.classList.add('slide--gallery');
 
     if (slide.headline) {
-        const headline = document.createElement("h2");
+        const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
         section.appendChild(headline);
     }
@@ -406,22 +406,22 @@ export function renderGallerySlide(section, slide) {
     appendBody(section, slide.body);
 
     if (Array.isArray(slide.items)) {
-        const gallery = document.createElement("div");
-        gallery.className = "gallery";
+        const gallery = document.createElement('div');
+        gallery.className = 'gallery';
 
         slide.items.forEach((item) => {
-            const card = document.createElement("article");
-            card.className = "gallery__item";
+            const card = document.createElement('article');
+            card.className = 'gallery__item';
 
             if (item.image) {
-                card.appendChild(createImage(item.image, "gallery__image"));
+                card.appendChild(createImage(item.image, 'gallery__image'));
             } else if (item.color) {
-                card.appendChild(createColorBlock(item, "gallery__color"));
+                card.appendChild(createColorBlock(item, 'gallery__color'));
             }
 
             if (item.label) {
-                const label = document.createElement("span");
-                label.className = "gallery__label";
+                const label = document.createElement('span');
+                label.className = 'gallery__label';
                 setRichContent(label, item.label);
                 card.appendChild(label);
             }
@@ -430,8 +430,8 @@ export function renderGallerySlide(section, slide) {
                 const copyLines = Array.isArray(item.copy) ? item.copy : [item.copy];
                 copyLines.forEach((line) => {
                     if (!line) return;
-                    const text = document.createElement("p");
-                    text.className = "gallery__copy";
+                    const text = document.createElement('p');
+                    text.className = 'gallery__copy';
                     setRichContent(text, line);
                     card.appendChild(text);
                 });
@@ -449,55 +449,55 @@ export function renderGallerySlide(section, slide) {
 }
 
 export function renderGraphSlide(section, slide) {
-    const content = document.createElement("div");
-    content.className = "slide__content";
+    const content = document.createElement('div');
+    content.className = 'slide__content';
 
     if (slide.title) {
-        const title = document.createElement("h2");
+        const title = document.createElement('h2');
         title.textContent = slide.title;
         content.appendChild(title);
     }
 
     if (slide.description && !slide.imageData) {
-        const description = document.createElement("p");
-        description.className = "graph-description";
+        const description = document.createElement('p');
+        description.className = 'graph-description';
         description.textContent = slide.description;
         content.appendChild(description);
     }
 
-    const graphContainer = document.createElement("div");
-    graphContainer.className = "graph-container";
+    const graphContainer = document.createElement('div');
+    graphContainer.className = 'graph-container';
 
     if (slide.imageData) {
-        const img = document.createElement("img");
-        img.className = "graph-image";
+        const img = document.createElement('img');
+        img.className = 'graph-image';
         img.src = slide.imageData;
-        img.alt = slide.description || "Generated graph";
+        img.alt = slide.description || 'Generated graph';
         img.dataset.orientation = normalizeOrientation(slide.orientation);
 
-        const regenerateBtn = document.createElement("button");
-        regenerateBtn.className = "graph-regenerate-btn";
-        regenerateBtn.textContent = "🔄 Regenerate";
-        regenerateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
+        const regenerateBtn = document.createElement('button');
+        regenerateBtn.className = 'graph-regenerate-btn';
+        regenerateBtn.textContent = '🔄 Regenerate';
+        regenerateBtn.addEventListener('click', () => generateGraphImage(slide, graphContainer));
 
         graphContainer.appendChild(img);
         graphContainer.appendChild(regenerateBtn);
     } else {
-        const placeholder = document.createElement("div");
-        placeholder.className = "graph-placeholder";
+        const placeholder = document.createElement('div');
+        placeholder.className = 'graph-placeholder';
 
-        const icon = document.createElement("div");
-        icon.className = "graph-placeholder__icon";
-        icon.textContent = "📊";
+        const icon = document.createElement('div');
+        icon.className = 'graph-placeholder__icon';
+        icon.textContent = '📊';
 
-        const text = document.createElement("div");
-        text.className = "graph-placeholder__text";
-        text.textContent = slide.description || "Generate a graph";
+        const text = document.createElement('div');
+        text.className = 'graph-placeholder__text';
+        text.textContent = slide.description || 'Generate a graph';
 
-        const generateBtn = document.createElement("button");
-        generateBtn.className = "graph-generate-btn";
-        generateBtn.textContent = "Generate Graph";
-        generateBtn.addEventListener("click", () => generateGraphImage(slide, graphContainer));
+        const generateBtn = document.createElement('button');
+        generateBtn.className = 'graph-generate-btn';
+        generateBtn.textContent = 'Generate Graph';
+        generateBtn.addEventListener('click', () => generateGraphImage(slide, graphContainer));
 
         placeholder.append(icon, text, generateBtn);
         graphContainer.appendChild(placeholder);
@@ -509,10 +509,10 @@ export function renderGraphSlide(section, slide) {
 }
 
 export function renderTypefaceSlide(section, slide) {
-    section.classList.add("slide--typeface");
+    section.classList.add('slide--typeface');
 
     if (slide.headline) {
-        const headline = document.createElement("h2");
+        const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
         section.appendChild(headline);
     }
@@ -523,33 +523,33 @@ export function renderTypefaceSlide(section, slide) {
 
     const fontArray = slide.fonts || slide.samples;
     if (Array.isArray(fontArray)) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "typeface-grid";
+        const wrapper = document.createElement('div');
+        wrapper.className = 'typeface-grid';
 
         fontArray.forEach((font) => {
-            const card = document.createElement("article");
-            card.className = "typeface-card";
+            const card = document.createElement('article');
+            card.className = 'typeface-card';
 
             const fontFamily = font.font;
-            const displayText = font.text || font.sample || slide.sample || "The quick brown fox jumps over the lazy dog";
+            const displayText = font.text || font.sample || slide.sample || 'The quick brown fox jumps over the lazy dog';
 
             if (font.name) {
-                const label = document.createElement("span");
-                label.className = "typeface-card__label";
+                const label = document.createElement('span');
+                label.className = 'typeface-card__label';
                 label.textContent = font.name;
                 card.appendChild(label);
             }
 
-            const sample = document.createElement("p");
-            sample.className = "typeface-card__sample";
+            const sample = document.createElement('p');
+            sample.className = 'typeface-card__sample';
             sample.style.fontFamily = fontFamily;
             if (font.weight) sample.style.fontWeight = font.weight;
             sample.textContent = displayText;
             card.appendChild(sample);
 
             if (font.note) {
-                const note = document.createElement("span");
-                note.className = "typeface-card__note";
+                const note = document.createElement('span');
+                note.className = 'typeface-card__note';
                 note.textContent = font.note;
                 card.appendChild(note);
             }
@@ -574,13 +574,13 @@ export function renderTypefaceSlide(section, slide) {
 export function renderColumn(column, data = {}) {
     if (!data) return;
     const imageNode = data.image ? createImage(data.image) : null;
-    const imageFirst = Boolean(data.imageFirst || data.imagePosition === "top");
+    const imageFirst = Boolean(data.imageFirst || data.imagePosition === 'top');
 
     if (data.badge) {
         column.appendChild(createBadge(data.badge));
     }
     if (data.headline) {
-        const headline = document.createElement("h3");
+        const headline = document.createElement('h3');
         setRichContent(headline, data.headline);
         column.appendChild(headline);
     }
@@ -610,43 +610,43 @@ export function appendBody(container, body) {
             container.appendChild(quoteElement);
             return;
         }
-        const paragraph = document.createElement("p");
+        const paragraph = document.createElement('p');
         setRichContent(paragraph, text);
         container.appendChild(paragraph);
     });
 }
 
 export function createBadge(label) {
-    const badge = document.createElement("span");
-    badge.className = "badge";
+    const badge = document.createElement('span');
+    badge.className = 'badge';
     setRichContent(badge, label);
     return badge;
 }
 
 export function createFootnote(text) {
-    const footnote = document.createElement("p");
-    footnote.className = "slide__footnote";
+    const footnote = document.createElement('p');
+    footnote.className = 'slide__footnote';
     setRichContent(footnote, text);
     return footnote;
 }
 
 export function createMediaStrip(media) {
-    const container = document.createElement("div");
-    container.className = "media-strip";
+    const container = document.createElement('div');
+    container.className = 'media-strip';
 
     media.forEach((item) => {
         if (item.image) {
-            container.appendChild(createImage(item.image, "media-strip__image"));
+            container.appendChild(createImage(item.image, 'media-strip__image'));
         } else if (item.color) {
-            container.appendChild(createColorBlock(item, "media-strip__color"));
+            container.appendChild(createColorBlock(item, 'media-strip__color'));
         }
     });
 
     return container;
 }
 
-export function createColorBlock(item, className = "gallery__color") {
-    const block = document.createElement("div");
+export function createColorBlock(item, className = 'gallery__color') {
+    const block = document.createElement('div');
     block.className = className;
     block.style.background = item.color;
     if (item.label) {
@@ -706,7 +706,7 @@ function sanitizeUrl(url) {
 }
 
 function maybeCreateQuoteElement(raw) {
-    if (typeof raw !== "string") return null;
+    if (typeof raw !== 'string') return null;
     const trimmed = raw.trim();
     if (!trimmed) return null;
 
@@ -716,15 +716,15 @@ function maybeCreateQuoteElement(raw) {
     }
 
     const [, , quoteBody, , attribution] = quoteMatch;
-    const block = document.createElement("blockquote");
-    block.className = "quote-block";
+    const block = document.createElement('blockquote');
+    block.className = 'quote-block';
 
-    const quoteSpan = document.createElement("span");
+    const quoteSpan = document.createElement('span');
     setRichContent(quoteSpan, quoteBody.trim());
     block.append(...quoteSpan.childNodes);
 
     if (attribution) {
-        const cite = document.createElement("cite");
+        const cite = document.createElement('cite');
         setRichContent(cite, attribution.trim());
         block.appendChild(cite);
     }
@@ -739,7 +739,7 @@ function applyAutoLinksToElement(element) {
             if (!node || !node.nodeValue || !node.nodeValue.trim()) {
                 return NodeFilter.FILTER_REJECT;
             }
-            if (node.parentElement && node.parentElement.closest("a")) {
+            if (node.parentElement && node.parentElement.closest('a')) {
                 return NodeFilter.FILTER_REJECT;
             }
             return NodeFilter.FILTER_ACCEPT;
@@ -803,14 +803,14 @@ function applyAutoLinksToElement(element) {
 }
 
 function createAutoLink(text, config) {
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
     anchor.textContent = text;
     anchor.href = buildAutoLinkHref(text, config);
     if (config.openInNewTab) {
-        anchor.target = "_blank";
-        anchor.rel = "noopener noreferrer";
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
     }
-    anchor.className = "auto-link";
+    anchor.className = 'auto-link';
     return anchor;
 }
 
