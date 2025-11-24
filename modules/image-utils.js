@@ -1,6 +1,7 @@
 import { CONFIG, debug } from './constants.js';
 import { slides, slideElements, isOverview, currentIndex } from './state.js';
-import { replaceSlideAt, setActiveSlide } from './slide-actions.js';
+import { replaceSlideAt } from './slide-actions.js';
+import { setActiveSlide } from './navigation.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 
 // ═══════════════════════════════════════════════════════════════════════════

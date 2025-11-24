@@ -28,9 +28,9 @@ import {
   createSlide,
   renderLoadError,
   renderEmptyState,
-  validateSlides,
   attachSlideHomeBadge,
 } from './modules/slide-rendering.js';
+import { validateSlides } from './modules/validation.js';
 import { showHudStatus, hideHudStatus } from './modules/hud.js';
 import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
 import { registerLazyImage, loadLazyImage } from './modules/lazy-images.js';
@@ -65,7 +65,7 @@ import {
   generateDeckId,
   registerDeckPersistenceHooks,
 } from './modules/deck-persistence.js';
-import { slidesRoot, currentCounter, totalCounter, progressBar } from './modules/dom-refs.js';
+import { slidesRoot, currentCounter, totalCounter, progressBar, initDomRefs } from './modules/dom-refs.js';
 import {
   insertSlideAt,
   removeSlideAt,
@@ -562,6 +562,9 @@ setEditDrawerInstance(createdEditDrawer);
 
 // Initialize theme drawer on deck init
 async function initDeckWithTheme() {
+  // Initialize DOM references first
+  initDomRefs();
+  
   await loadAndApplyTheme();
   await loadAutoLinks();
   syncThemeSelectUI();

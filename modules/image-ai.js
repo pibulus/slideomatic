@@ -4,7 +4,8 @@ import { STORAGE_KEY_API } from './voice-modes.js';
 import { openSettingsModal } from './settings-modal.js';
 import { getCurrentThemePath } from './theme-manager.js';
 import { slides, slideElements, isOverview } from './state.js';
-import { replaceSlideAt, setActiveSlide } from './slide-actions.js';
+import { replaceSlideAt } from './slide-actions.js';
+import { setActiveSlide } from './navigation.js';
 import {
     extractSlideContext,
     buildImageSearchUrl,
