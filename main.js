@@ -11,6 +11,7 @@ import {
   checkContrast,
   LOCAL_THEME_SOURCE,
   normalizeThemeTokens,
+  downloadTheme,
 } from './modules/theme-manager.js';
 import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone } from './modules/utils.js';
 import { CONFIG, debug } from './modules/constants.js';
@@ -133,6 +134,7 @@ import {
   updateTotalCounter,
   updateHud,
   handleSlideClick,
+  navigateToDeckHome,
 } from './modules/navigation.js';
 import { initTouchNav } from './modules/touch-nav.js';
 import { initShareModal } from './modules/share-modal.js';
@@ -539,19 +541,7 @@ setEditDrawerInstance(createdEditDrawer);
 
 
 
-function downloadTheme(themeData) {
-  const json = JSON.stringify(themeData, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'theme.json';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  console.log('✓ Theme downloaded as theme.json');
-}
+
 
 // ===================================================================
 // SETTINGS MODAL
@@ -657,7 +647,7 @@ async function initDeckWithTheme() {
   const homeBtn = document.getElementById('home-btn');
   if (homeBtn) {
     homeBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
+      navigateToDeckHome();
     });
   }
 

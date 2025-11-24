@@ -37,7 +37,7 @@ import {
 import {
   refreshSlideIndex,
   updateSlideIndexHighlight,
-} from '../slide-index.js';
+} from './slide-index.js';
 import { slidesRoot } from './dom-refs.js';
 
 let showHudStatusHook = () => {};

@@ -280,6 +280,20 @@ function checkContrast(fg, bg) {
   return Number.isFinite(ratio) ? Number(ratio.toFixed(2)) : null;
 }
 
+export function downloadTheme(themeData) {
+  const json = JSON.stringify(themeData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'theme.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log('✓ Theme downloaded as theme.json');
+}
+
 export {
   loadTheme,
   applyTheme,

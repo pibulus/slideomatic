@@ -33,8 +33,8 @@ import {
 } from './state.js';
 import { clamp } from './utils.js';
 import { slidesRoot, currentCounter, totalCounter, progressBar } from './dom-refs.js';
-import { loadLazyImage } from '../lazy-images.js';
-import { closeSlideIndex, updateSlideIndexHighlight } from '../slide-index.js';
+import { loadLazyImage } from './lazy-images.js';
+import { closeSlideIndex, updateSlideIndexHighlight } from './slide-index.js';
 
 let closeThemeDrawerHook = () => {};
 let getEditDrawerContextHook = () => ({
@@ -290,4 +290,7 @@ function preloadSlideImages(index) {
     preloadImage(src);
   });
 }
-*** End ***
+
+export function navigateToDeckHome() {
+  window.location.href = 'index.html';
+}

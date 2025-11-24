@@ -3,27 +3,11 @@ import { slides, slideElements, isOverview, autoLinkConfigs } from './state.js';
 import { slidesRoot } from './dom-refs.js';
 import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-io.js';
 import { escapeHtml, deepClone, escapeRegExp } from './utils.js';
-// attachSlideHomeBadge is defined locally to avoid circular dependency
+import { navigateToDeckHome } from './navigation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Slide Rendering Module
 // ═══════════════════════════════════════════════════════════════════════════
-
-// We need to handle attachSlideHomeBadge. It's in main.js.
-// It depends on navigateToDeckHome which is in main.js.
-// Let's assume we will move attachSlideHomeBadge here or pass it as a callback/hook?
-// For now, I'll duplicate the logic to avoid circular dependency if it's simple,
-// or better, export it from main.js (but main.js imports this module).
-// Circular dependency: main.js -> slide-rendering.js -> main.js
-// Solution: Move attachSlideHomeBadge and navigateToDeckHome to a new module 'navigation-utils.js' or keep in 'navigation.js'.
-// 'navigation.js' already exists. Let's check if we can use it.
-// 'navigation.js' has handleResize, etc.
-// I'll assume attachSlideHomeBadge is moved to navigation.js or I'll implement a local version that dispatches an event.
-
-// Actually, let's just implement it here and use window.location.href = "index.html" directly.
-function navigateToDeckHome() {
-    window.location.href = "index.html";
-}
 
 function handleHomeBadgeClick(event) {
     if (event.defaultPrevented) return;
@@ -69,70 +53,7 @@ export function renderEmptyState() {
     slidesRoot.appendChild(message);
 }
 
-export function validateSlides(data) {
-    if (!Array.isArray(data)) {
-        throw new Error("Slides data must be an array.");
-    }
-
-    const allowedTypes = new Set([
-        "title",
-        "standard",
-        "quote",
-        "split",
-        "grid",
-        "pillars",
-        "gallery",
-        "graph",
-        "typeface",
-        "image",
-        "_schema"
-    ]);
-
-    data.forEach((slide, index) => {
-        if (!slide || typeof slide !== "object") {
-            throw new Error(`Slide ${index} is not an object.`);
-        }
-
-        const originalType = slide.type;
-        const normalizedType =
-            typeof originalType === "string" && originalType.trim()
-                ? originalType.trim()
-                : "standard";
-
-        if (!allowedTypes.has(normalizedType)) {
-            console.warn(
-                `Slide ${index} has unsupported type "${normalizedType}". Falling back to "standard".`
-            );
-            slide.type = "standard";
-        } else {
-            slide.type = normalizedType;
-        }
-
-        if (slide.type === "split") {
-            if (!slide.left || !slide.right) {
-                throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Split slide"}) is missing left/right content.`);
-            }
-        }
-
-        if (slide.type === "pillars") {
-            if (!Array.isArray(slide.pillars) || slide.pillars.length === 0) {
-                throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Pillars slide"}) requires a non-empty pillars array.`);
-            }
-        }
-
-        if (slide.type === "gallery") {
-            if (!Array.isArray(slide.items) || slide.items.length === 0) {
-                throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Gallery slide"}) requires a non-empty items array.`);
-            }
-        }
-
-        if (slide.type === "image") {
-            if (!slide.image || typeof slide.image !== "object" || !slide.image.src) {
-                throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? "Image slide"}) requires an image.src value.`);
-            }
-        }
-    });
-}
+import { validateSlides } from './validation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Slide Construction

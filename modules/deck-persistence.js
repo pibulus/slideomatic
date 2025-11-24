@@ -334,4 +334,4 @@ function markDeckAsRecent() {
     console.warn('Unable to record last deck ID:', error);
   }
 }
-*** End ***
+
