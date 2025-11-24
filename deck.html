@@ -50,7 +50,7 @@
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container"></div>
-    <div class="app" id="app">
+    <div class="app app-container" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
       <!-- Theme Editor Drawer (Right Side) -->
       <aside class="theme-drawer" id="theme-drawer">
@@ -105,9 +105,9 @@
       </aside>
 
       <!-- Speaker Notes Modal -->
-      <div class="notes-modal" id="notes-modal">
-        <div class="notes-modal__backdrop"></div>
-        <div class="notes-modal__content">
+      <div class="notes-modal modal-base" id="notes-modal">
+        <div class="notes-modal__backdrop modal-backdrop"></div>
+        <div class="notes-modal__content modal-content">
           <div class="notes-modal__header">
             <h2>📝 Speaker Notes</h2>
             <button class="notes-modal__close" aria-label="Close notes">×</button>
@@ -122,9 +122,9 @@
       </div>
 
       <!-- Settings Modal -->
-      <div class="settings-modal" id="settings-modal">
-        <div class="settings-modal__backdrop"></div>
-        <div class="settings-modal__content">
+      <div class="settings-modal modal-base" id="settings-modal">
+        <div class="settings-modal__backdrop modal-backdrop"></div>
+        <div class="settings-modal__content modal-content">
           <div class="settings-modal__header">
             <h2>⚙️ Settings</h2>
             <button class="settings-modal__close" aria-label="Close settings">×</button>
@@ -173,9 +173,9 @@
       </div>
 
       <!-- Keyboard Help Modal -->
-      <div class="keyboard-help-modal" id="keyboard-help-modal" aria-hidden="true">
-        <div class="keyboard-help-modal__backdrop"></div>
-        <div class="keyboard-help-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="keyboard-help-title">
+      <div class="keyboard-help-modal modal-base" id="keyboard-help-modal" aria-hidden="true">
+        <div class="keyboard-help-modal__backdrop modal-backdrop"></div>
+        <div class="keyboard-help-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="keyboard-help-title">
           <div class="keyboard-help-modal__header">
             <h2 id="keyboard-help-title">⌨️ Keyboard Shortcuts</h2>
             <button class="keyboard-help-modal__close" aria-label="Close" id="keyboard-help-close">×</button>
@@ -227,9 +227,9 @@
       </div>
 
       <!-- Keyboard Hints Modal (First Visit) -->
-      <div class="hints-modal" id="hints-modal" aria-hidden="true">
-        <div class="hints-modal__backdrop"></div>
-        <div class="hints-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
+      <div class="hints-modal modal-base" id="hints-modal" aria-hidden="true">
+        <div class="hints-modal__backdrop modal-backdrop"></div>
+        <div class="hints-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
           <button class="hints-modal__close" aria-label="Close hints" id="hints-modal-close">×</button>
           <div class="hints-modal__header">
             <h2 id="hints-modal-title">⌨️ Quick Guide</h2>
@@ -271,9 +271,9 @@
       </div>
 
       <!-- Share Modal -->
-      <div class="share-modal" id="share-modal" aria-hidden="true">
-        <div class="share-modal__backdrop"></div>
-        <div class="share-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+      <div class="share-modal modal-base" id="share-modal" aria-hidden="true">
+        <div class="share-modal__backdrop modal-backdrop"></div>
+        <div class="share-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
           <div class="share-modal__header">
             <h2 id="share-modal-title">Share this deck</h2>
             <button class="share-modal__close" aria-label="Close" id="share-modal-close">×</button>

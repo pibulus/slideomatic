@@ -711,5 +711,3 @@ function handleInitialIntent() {
 
 
 
-
-

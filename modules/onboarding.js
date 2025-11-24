@@ -47,14 +47,18 @@ export function showKeyboardHintsIfFirstVisit() {
 
   if (!hasSeenHints) {
     // Show hints modal with slight delay for effect
-    setTimeout(() => {
+    const openHints = () => {
       hintsModal.setAttribute('aria-hidden', 'false');
-    }, 1000);
+      hintsModal.classList.add('is-open');
+    };
 
     const closeHints = () => {
       hintsModal.setAttribute('aria-hidden', 'true');
+      hintsModal.classList.remove('is-open');
       localStorage.setItem(HINTS_SEEN_KEY, 'true');
     };
+
+    setTimeout(openHints, 1000);
 
     // Close button handler
     closeBtn?.addEventListener('click', closeHints);
@@ -83,7 +87,9 @@ export function toggleKeyboardHelp() {
   const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
-  const isOpen = modal.getAttribute('aria-hidden') === 'false';
+  const isOpen =
+    modal.getAttribute('aria-hidden') === 'false' ||
+    modal.classList.contains('is-open');
   if (isOpen) {
     closeKeyboardHelp();
   } else {
@@ -96,6 +102,7 @@ export function openKeyboardHelp() {
   if (!modal) return;
 
   modal.setAttribute('aria-hidden', 'false');
+  modal.classList.add('is-open');
 
   // Set up listeners if not already done
   setupKeyboardHelpListeners();
@@ -106,6 +113,7 @@ export function closeKeyboardHelp() {
   if (!modal) return;
 
   modal.setAttribute('aria-hidden', 'true');
+  modal.classList.remove('is-open');
 }
 
 function setupKeyboardHelpListeners() {
