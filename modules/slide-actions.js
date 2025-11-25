@@ -273,13 +273,34 @@ export function replaceSlideAt(index, options = {}) {
   persistSlides();
 }
 
-export function downloadDeck(filename = 'slides.json') {
-  const payload = JSON.stringify(slides, null, 2);
-  const blob = new Blob([payload], { type: 'application/json' });
+export function downloadDeck(filename) {
+  const currentTheme = getCurrentThemeHook();
+  const deckName = deriveDeckNameHook(slides);
+  
+  const payload = {
+    version: 1,
+    meta: {
+      name: deckName,
+      exportedAt: Date.now(),
+    },
+    theme: currentTheme,
+    slides: slides,
+  };
+
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  
+  // Use provided filename or derive from deck name
+  let finalFilename = filename;
+  if (!finalFilename) {
+    const safeName = deckName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    finalFilename = `${safeName || 'slides'}.json`;
+  }
+  
+  link.download = finalFilename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -296,11 +317,15 @@ export function handleDeckUpload(event) {
   reader.onload = (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      const newSlides = Array.isArray(parsed)
-        ? parsed
-        : Array.isArray(parsed?.slides)
-        ? parsed.slides
-        : null;
+      let newSlides = null;
+      let theme = null;
+
+      if (Array.isArray(parsed)) {
+        newSlides = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        newSlides = Array.isArray(parsed.slides) ? parsed.slides : null;
+        theme = parsed.theme;
+      }
 
       if (!newSlides) {
         throw new Error('File must contain a JSON array of slides.');
@@ -310,6 +335,12 @@ export function handleDeckUpload(event) {
 
       cleanupAllSlideAssetsHook();
       setSlides(newSlides);
+      
+      if (theme) {
+        applyThemeHook(theme);
+        setCurrentThemeHook(theme, { source: '__upload__' });
+      }
+
       reloadDeck({ targetIndex: 0 });
       const persisted = persistSlides();
 

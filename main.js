@@ -157,6 +157,10 @@ registerSlideActionHooks({
   renderEmptyState,
   cleanupSlideAssets,
   cleanupAllSlideAssets,
+  getCurrentTheme,
+  applyTheme,
+  setCurrentTheme,
+  deriveDeckName,
 });
 
 function applySharedThemeFromShare(themeData) {
