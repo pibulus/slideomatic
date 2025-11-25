@@ -7,8 +7,8 @@ export const CONFIG = {
 
     // Image handling
     IMAGE: {
-        MAX_BYTES: 512 * 1024,             // Hard ceiling per optimized asset (~512KB)
-        TARGET_BYTES: 256 * 1024,          // Ideal compressed size (~256KB)
+        MAX_BYTES: 2 * 1024 * 1024,        // Hard ceiling per optimized asset (2MB)
+        TARGET_BYTES: 400 * 1024,          // Ideal compressed size (400KB)
         DIMENSION_STEPS: [1600, 1400, 1200, 1024, 900, 720],
         QUALITY_STEPS: [0.72, 0.62, 0.55, 0.48, 0.42],
         SETTLE_WINDOW_MS: 10_000,

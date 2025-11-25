@@ -9,8 +9,8 @@ export const STORE_NAMES = {
 };
 
 export const LIMITS = {
-  MAX_DECK_BYTES: 400 * 1024,    // 400KB ceiling for payloads
-  MAX_ASSET_BYTES: 512 * 1024,   // 512KB hard stop per asset
+  MAX_DECK_BYTES: 1024 * 1024,   // 1MB ceiling for payloads
+  MAX_ASSET_BYTES: 2 * 1024 * 1024, // 2MB hard stop per asset
 };
 
 export const CACHE_HEADERS = {
