@@ -181,11 +181,27 @@ async function externalizeInlineAssets(slides, event) {
     if (typeof image.src === 'string' && image.src.startsWith('data:')) {
       try {
         const { buffer, mimeType } = decodeDataUrl(image.src);
+        
+        // Check size limit
         if (buffer.byteLength > LIMITS.MAX_ASSET_BYTES) {
-          throw new Error('One of the images is too large (>512KB) to share. Compress it and try again.');
+          console.warn(`Image ${image.originalFilename} too large (${buffer.byteLength} bytes) for asset store. Skipping externalization.`);
+          // If we leave it inline, it will likely blow up the deck JSON size.
+          // So we must strip it or replace with a placeholder.
+          image.src = ''; 
+          image.alt = `(Image too large to share) ${image.alt || ''}`;
+          // We don't throw here, just continue to next image
+          continue;
         }
+
         const assetId = createAssetId(image.originalFilename || 'shared-image');
-        await assetStore.set(assetId, buffer, {
+        
+        // Convert Node Buffer to ArrayBuffer for @netlify/blobs type compatibility
+        const arrayBuffer = buffer.buffer.slice(
+          buffer.byteOffset, 
+          buffer.byteOffset + buffer.byteLength
+        );
+
+        await assetStore.set(assetId, arrayBuffer, {
           metadata: {
             bytes: buffer.byteLength,
             mimeType,
@@ -199,9 +215,10 @@ async function externalizeInlineAssets(slides, event) {
         collected.push(assetId);
       } catch (e) {
         console.warn('Failed to externalize asset', e);
-        // Keep inline if it fails? Or throw?
-        // For now, we throw to stop the share if an asset is invalid/too large
-        throw e;
+        // Best effort: if it failed (e.g. upload error), we also strip it to be safe
+        // because keeping it inline is risky for JSON size.
+        image.src = '';
+        image.alt = `(Image failed to share) ${image.alt || ''}`;
       }
       continue;
     }

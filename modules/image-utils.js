@@ -1,8 +1,5 @@
-import { CONFIG, debug } from './constants.js';
-import { slides, slideElements, isOverview, currentIndex } from './state.js';
-import { replaceSlideAt } from './slide-actions.js';
-import { setActiveSlide } from './navigation.js';
-import { showHudStatus, hideHudStatus } from './hud.js';
+import { debug } from './constants.js';
+import { slides, slideElements } from './state.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Image Utilities Module
@@ -150,7 +147,7 @@ function scheduleFlush() {
     }, 10000);
 }
 
-export async function flushAssetDeletions(force = false) {
+export async function flushAssetDeletions() {
     if (assetDeletionQueue.size === 0) return;
 
     const assetsToDelete = Array.from(assetDeletionQueue.keys());

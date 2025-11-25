@@ -135,7 +135,13 @@ export function createImagePlaceholder(image = {}, className = 'slide__image') {
         ? `Search "${trimmedQuery}" or drag & drop`
         : 'Drag & drop or paste image';
 
-    placeholder.append(icon, text);
+    const progressBar = document.createElement('div');
+    progressBar.className = 'image-placeholder__progress';
+    const progressFill = document.createElement('div');
+    progressFill.className = 'image-placeholder__progress-fill';
+    progressBar.appendChild(progressFill);
+
+    placeholder.append(icon, text, progressBar);
 
     // Track event listeners for cleanup
     const listeners = [];

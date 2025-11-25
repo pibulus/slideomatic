@@ -173,7 +173,7 @@ function applySharedThemeFromShare(themeData) {
 window.addEventListener('resize', handleResize);
 document.addEventListener('paste', handleGlobalPaste);
 window.addEventListener('beforeunload', () => {
-  flushAssetDeletions(true);
+  flushAssetDeletions();
 });
 
 

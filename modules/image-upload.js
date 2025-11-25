@@ -1,7 +1,7 @@
 import { CONFIG, debug } from './constants.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { formatBytes, fileToBase64 } from './utils.js';
-import { slides, slideElements, isOverview, currentIndex } from './state.js';
+import { slideElements, isOverview, currentIndex } from './state.js';
 import { replaceSlideAt } from './slide-actions.js';
 import { setActiveSlide } from './navigation.js';
 import {
@@ -25,6 +25,9 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
 
     const text = placeholderElement.querySelector('.image-placeholder__text');
     const icon = placeholderElement.querySelector('.image-placeholder__icon');
+    const progressBar = placeholderElement.querySelector('.image-placeholder__progress');
+    const progressFill = placeholderElement.querySelector('.image-placeholder__progress-fill');
+
     const originalText = text.textContent;
     const originalIcon = icon.textContent;
 
@@ -32,10 +35,15 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
     icon.textContent = '⏳';
     placeholderElement.disabled = true;
 
+    if (progressBar) progressBar.classList.add('is-visible');
+    if (progressFill) progressFill.style.width = '10%';
+
     let hadError = false;
 
     try {
+        if (progressFill) progressFill.style.width = '30%';
         const { file: compressedFile, format: outputFormat, hitSoftLimit } = await compressImage(file);
+        if (progressFill) progressFill.style.width = '60%';
         const resolvedFormat = compressedFile.type || outputFormat || file.type || 'image/webp';
         const sizeInBytes = compressedFile.size;
         const sizeLabel = formatBytes(sizeInBytes);
@@ -50,6 +58,7 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
 
         try {
             text.textContent = 'Uploading...';
+            if (progressFill) progressFill.style.width = '80%';
             uploadResult = await uploadOptimizedImage({
                 dataUrl,
                 mimeType: resolvedFormat,
@@ -62,6 +71,8 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
             showHudStatus('Using local image only — run `netlify dev` to enable sharing', 'warning');
             setTimeout(hideHudStatus, 2800);
         }
+        
+        if (progressFill) progressFill.style.width = '100%';
 
         const slideIndex = findSlideIndexForPlaceholder(placeholderElement);
         if (slideIndex !== -1) {
@@ -106,13 +117,18 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
             icon.textContent = originalIcon;
             delete text.dataset.originalText;
         }
+        setTimeout(() => {
+            if (progressBar) progressBar.classList.remove('is-visible');
+            if (progressFill) progressFill.style.width = '0%';
+        }, 500);
     }
 }
 
 export async function compressImage(file) {
     if (typeof imageCompression === 'undefined') {
+        console.warn('Image compression library missing. Using original file.');
         if (file.size > MAX_IMAGE_BYTES) {
-            throw new Error('Compression library unavailable — use a smaller image (<512KB).');
+            throw new Error('Compression library unavailable and image is too large (>512KB).');
         }
         return { file, format: file.type || 'image/png', hitSoftLimit: file.size > TARGET_IMAGE_BYTES };
     }
@@ -191,7 +207,7 @@ async function uploadOptimizedImage({ dataUrl, mimeType, filename, size }) {
         let payload = null;
         try {
             payload = await response.json();
-        } catch (_) {
+        } catch {
             // Ignore JSON parse error
         }
 
