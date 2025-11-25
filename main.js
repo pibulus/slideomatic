@@ -1,22 +1,15 @@
 import {
   loadTheme,
   applyTheme,
-  validateTheme,
-  saveThemeToLibrary,
-  loadThemeLibrary,
-  deleteThemeFromLibrary,
   getCurrentTheme,
   setCurrentTheme,
   getCurrentThemePath,
-  checkContrast,
   LOCAL_THEME_SOURCE,
-  normalizeThemeTokens,
   downloadTheme,
 } from './modules/theme-manager.js';
-import { formatBytes, clamp, fileToBase64, escapeHtml, safeParse, deriveDeckName, deepClone, escapeRegExp } from './modules/utils.js';
-import { CONFIG, debug } from './modules/constants.js';
+import { deriveDeckName, escapeRegExp } from './modules/utils.js';
+
 import {
-  createImage,
   cleanupSlideAssets,
   cleanupAllSlideAssets,
   handleImageModalTrigger,
@@ -28,12 +21,11 @@ import {
   createSlide,
   renderLoadError,
   renderEmptyState,
-  attachSlideHomeBadge,
 } from './modules/slide-rendering.js';
 import { validateSlides } from './modules/validation.js';
 import { showHudStatus, hideHudStatus } from './modules/hud.js';
-import { prepareSlideForEditing, restoreBase64FromTokens } from './modules/base64-tokens.js';
-import { registerLazyImage, loadLazyImage } from './modules/lazy-images.js';
+
+
 import { renderEditForm } from './modules/edit-drawer.js';
 import {
   createDrawer,
@@ -43,8 +35,6 @@ import {
 import {
   initVoiceButtons,
   toggleVoiceRecording,
-  getGeminiApiKey,
-  STORAGE_KEY_API,
 } from './modules/voice-modes.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
 import {
@@ -53,26 +43,19 @@ import {
   showApiKeyStatus,
 } from './modules/settings-modal.js';
 import {
-  initSlideIndex,
   toggleSlideIndex,
-  closeSlideIndex,
-  refreshSlideIndex,
-  updateSlideIndexHighlight,
 } from './modules/slide-index.js';
 import {
   loadSlides,
-  persistSlides,
   generateDeckId,
   registerDeckPersistenceHooks,
 } from './modules/deck-persistence.js';
-import { slidesRoot, currentCounter, totalCounter, progressBar, initDomRefs } from './modules/dom-refs.js';
+import { slidesRoot, initDomRefs } from './modules/dom-refs.js';
 import {
   insertSlideAt,
-  removeSlideAt,
   replaceSlideAt,
   downloadDeck,
   handleDeckUpload,
-  reloadDeck,
   registerSlideActionHooks,
 } from './modules/slide-actions.js';
 import {
@@ -88,35 +71,16 @@ import {
   slideElements,
   setSlideElements,
   currentIndex,
-  setCurrentIndex,
   isOverview,
-  setOverview,
-  autoLinkConfigs,
   setAutoLinkConfigs,
-  overviewRowCount,
-  setOverviewRowCount,
-  overviewColumnCount,
-  setOverviewColumnCount,
   overviewCursor,
   setOverviewCursor,
-  lastOverviewHighlight,
-  setLastOverviewHighlight,
-  isThemeDrawerOpen,
-  setThemeDrawerOpen,
   themeDrawerInstance,
-  setThemeDrawerInstance,
-  slideScrollPositions,
   DECK_STORAGE_PREFIX,
-  LAST_DECK_KEY,
-  deckStorageKey,
   setDeckStorageKey,
-  deckPersistFailureNotified,
-  setDeckPersistFailureNotified,
   activeDeckId,
   setActiveDeckId,
-  isNewDeckRequest,
   setNewDeckRequest,
-  isEditDrawerOpen,
   setEditDrawerOpen,
   editDrawerInstance,
   setEditDrawerInstance,
@@ -124,16 +88,13 @@ import {
 import {
   registerNavigationHooks,
   toggleOverview,
-  enterOverview,
   exitOverview,
   updateOverviewButton,
   updateOverviewLayout,
-  highlightOverviewSlide,
   moveOverviewCursorBy,
   handleResize,
   setActiveSlide,
   updateTotalCounter,
-  updateHud,
   handleSlideClick,
   navigateToDeckHome,
 } from './modules/navigation.js';
@@ -144,7 +105,6 @@ import {
   showKeyboardHintsIfFirstVisit,
   toggleKeyboardHelp,
   openKeyboardHelp,
-  closeKeyboardHelp
 } from './modules/onboarding.js';
 import { toggleSpeakerNotes, initSpeakerNotes } from './modules/speaker-notes.js';
 import { getSlideTemplate } from './modules/slide-templates.js';
@@ -323,7 +283,7 @@ function updateDeckNameDisplay() {
       const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`;
       const payload = JSON.parse(localStorage.getItem(key) || '{}');
       name = payload.meta?.name || deriveDeckName(slides);
-    } catch (error) {
+    } catch {
       name = deriveDeckName(slides);
     }
   } else {
@@ -374,9 +334,7 @@ function renameDeck() {
 
 let saveStatusTimeout = null;
 
-function initSaveStatus() {
-  // Save status is updated by showSaveStatus() function
-}
+
 
 function showSaveStatus(state = 'saved') {
   const saveStatus = document.getElementById('save-status');
@@ -449,10 +407,7 @@ function openEditDrawer() {
   openDrawer(editDrawerInstance);
 }
 
-function closeEditDrawer() {
-  if (!editDrawerInstance) return;
-  closeDrawer(editDrawerInstance);
-}
+
 
 
 function getEditDrawerContext() {
