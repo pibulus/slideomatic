@@ -149,20 +149,8 @@ import {
 import { toggleSpeakerNotes, initSpeakerNotes } from './modules/speaker-notes.js';
 import { getSlideTemplate } from './modules/slide-templates.js';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIGURATION & CONSTANTS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIGURATION & CONSTANTS
-// ═══════════════════════════════════════════════════════════════════════════
 
 
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DOM REFERENCES
-// ═══════════════════════════════════════════════════════════════════════════
 
 const urlParams = new URLSearchParams(window.location.search);
 // Also check hash params (for servers that strip query strings)
@@ -228,9 +216,7 @@ window.addEventListener('beforeunload', () => {
   flushAssetDeletions(true);
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STATE MANAGEMENT
-// ═══════════════════════════════════════════════════════════════════════════
+
 
 if (requestedDeck) {
   if (requestedDeck === 'new') {
@@ -443,11 +429,6 @@ async function loadAutoLinks() {
 
 
 
-// ===================================================================
-// DECK IMPORT/EXPORT
-// ===================================================================
-
-
 
 function toggleEditDrawer() {
   if (!editDrawerInstance) return;
@@ -537,28 +518,6 @@ setEditDrawerInstance(createdEditDrawer);
 
 
 
-
-
-
-
-
-
-// ===================================================================
-// SETTINGS MODAL
-// ===================================================================
-
-
-
-
-
-
-// ================================================================
-// Theme Drawer UI & Management
-// ================================================================
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Theme Generation - Palette Variants
-// ═══════════════════════════════════════════════════════════════════════════
 
 // Initialize theme drawer on deck init
 async function initDeckWithTheme() {

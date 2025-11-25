@@ -3,34 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function showIntroModalIfFirstVisit() {
-  const INTRO_SEEN_KEY = 'slideomatic_intro_seen';
-  const introModal = document.getElementById('intro-modal');
-  const closeBtn = document.getElementById('intro-modal-close');
-
-  if (!introModal) return;
-
-  // Check if user has seen intro before
-  const hasSeenIntro = localStorage.getItem(INTRO_SEEN_KEY);
-
-  if (!hasSeenIntro) {
-    // Show intro modal with slight delay for effect
-    setTimeout(() => {
-      introModal.classList.add('is-open');
-    }, 800);
-
-    // Close button handler
-    closeBtn?.addEventListener('click', () => {
-      introModal.classList.remove('is-open');
-      localStorage.setItem(INTRO_SEEN_KEY, 'true');
-    });
-
-    // Close on backdrop click
-    const backdrop = introModal.querySelector('.intro-modal__backdrop');
-    backdrop?.addEventListener('click', () => {
-      introModal.classList.remove('is-open');
-      localStorage.setItem(INTRO_SEEN_KEY, 'true');
-    });
-  }
+  // Redirect to hints modal logic, as we are consolidating to a single "Quick Guide"
+  showKeyboardHintsIfFirstVisit();
 }
 
 export function showKeyboardHintsIfFirstVisit() {
@@ -47,40 +21,23 @@ export function showKeyboardHintsIfFirstVisit() {
 
   if (!hasSeenHints) {
     // Show hints modal with slight delay for effect
-    const openHints = () => {
-      hintsModal.setAttribute('aria-hidden', 'false');
-      hintsModal.classList.add('is-open');
-    };
+    setTimeout(() => {
+      openKeyboardHelp();
+    }, 1000);
 
-    const closeHints = () => {
-      hintsModal.setAttribute('aria-hidden', 'true');
-      hintsModal.classList.remove('is-open');
+    // Mark as seen when closed
+    const markSeen = () => {
       localStorage.setItem(HINTS_SEEN_KEY, 'true');
     };
-
-    setTimeout(openHints, 1000);
-
-    // Close button handler
-    closeBtn?.addEventListener('click', closeHints);
-
-    // "Got it" button handler
-    gotItBtn?.addEventListener('click', closeHints);
-
-    // Backdrop click to close
-    backdrop?.addEventListener('click', closeHints);
-
-    // ESC key to close
-    document.addEventListener('keydown', function handleHintsEsc(event) {
-      if (event.key === 'Escape' && hintsModal.getAttribute('aria-hidden') === 'false') {
-        closeHints();
-        document.removeEventListener('keydown', handleHintsEsc);
-      }
-    });
+    
+    closeBtn?.addEventListener('click', markSeen);
+    gotItBtn?.addEventListener('click', markSeen);
+    backdrop?.addEventListener('click', markSeen);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// KEYBOARD HELP MODAL
+// KEYBOARD HELP MODAL (Now uses Quick Guide / hints-modal)
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function toggleKeyboardHelp() {
@@ -119,13 +76,13 @@ export function closeKeyboardHelp() {
 function setupKeyboardHelpListeners() {
   // Close button
   const closeBtn = document.getElementById('hints-modal-close');
+  const gotItBtn = document.getElementById('hints-modal-got-it');
+  
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
     closeBtn.addEventListener('click', closeKeyboardHelp);
     closeBtn.dataset.listenerAttached = 'true';
   }
 
-  // Got it button
-  const gotItBtn = document.getElementById('hints-modal-got-it');
   if (gotItBtn && !gotItBtn.dataset.listenerAttached) {
     gotItBtn.addEventListener('click', closeKeyboardHelp);
     gotItBtn.dataset.listenerAttached = 'true';
@@ -137,4 +94,12 @@ function setupKeyboardHelpListeners() {
     backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';
   }
+  
+  // ESC key
+  document.addEventListener('keydown', function handleHintsEsc(event) {
+    const modal = document.getElementById('hints-modal');
+    if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
+      closeKeyboardHelp();
+    }
+  });
 }

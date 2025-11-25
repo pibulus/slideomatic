@@ -242,21 +242,18 @@ export function createImagePlaceholder(image = {}, className = 'slide__image') {
 }
 
 export function handleImageModalTrigger(event) {
-    // console.log('Click detected in handleImageModalTrigger', event.target);
-    if (isOverview) {
-        // console.log('Aborting: isOverview is true');
-        return;
-    }
+    if (isOverview) return;
 
     const target = event.target;
     if (target.closest('.edit-drawer')) return; // Don't trigger in edit drawer
 
-    const trigger = target.closest('[data-modal-src]');
-    // console.log('Trigger found:', trigger);
-    
+    const trigger = target.closest('[data-modal-src]') || (target.tagName === 'IMG' && target.closest('.slide'));
     if (!trigger) return;
 
-    const src = trigger.dataset.modalSrc;
+    // If it's a placeholder, don't open modal
+    if (trigger.closest('.image-placeholder-wrapper')) return;
+
+    const src = trigger.dataset.modalSrc || trigger.src;
     const alt = trigger.dataset.modalAlt || trigger.alt;
 
     if (!src) return;
@@ -264,7 +261,7 @@ export function handleImageModalTrigger(event) {
     event.preventDefault();
     event.stopPropagation();
 
-    // Simple modal implementation
+    // Create modal
     const modal = document.createElement('div');
     modal.className = 'image-modal';
     modal.innerHTML = `
@@ -274,7 +271,75 @@ export function handleImageModalTrigger(event) {
         </div>
     `;
 
+    document.body.appendChild(modal);
+
+    const modalImg = modal.querySelector('.image-modal__image');
+    const closeBtn = modal.querySelector('.image-modal__close');
+    
+    requestAnimationFrame(() => {
+        modal.classList.add('is-active');
+        
+        // Tactile "Pop" Animation (Expand)
+        modalImg.animate([
+            { transform: 'scale(0.8)', opacity: 0 },
+            { transform: 'scale(1)', opacity: 1 }
+        ], {
+            duration: 400,
+            easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Springy pop
+            fill: 'both'
+        });
+
+        // Backdrop fade
+        modal.animate([
+            { backgroundColor: 'rgba(0, 0, 0, 0)' },
+            { backgroundColor: 'rgba(0, 0, 0, 0.9)' }
+        ], {
+            duration: 300,
+            easing: 'ease-out',
+            fill: 'both'
+        });
+        
+        // Close button fade
+        closeBtn.animate([
+            { opacity: 0, transform: 'scale(0.8)' },
+            { opacity: 1, transform: 'scale(1)' }
+        ], {
+            duration: 300,
+            delay: 100,
+            fill: 'both'
+        });
+    });
+
     let isClosing = false;
+
+    const handleClose = () => {
+        if (isClosing) return;
+        isClosing = true;
+
+        // Contract animation
+        const animation = modalImg.animate([
+            { transform: 'scale(1)', opacity: 1 },
+            { transform: 'scale(0.8)', opacity: 0 }
+        ], {
+            duration: 250,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // Smooth retract
+            fill: 'both'
+        });
+
+        modal.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+        ], {
+            duration: 250,
+            fill: 'both'
+        });
+
+        animation.onfinish = () => {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        };
+    };
+
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             handleClose();
@@ -282,35 +347,10 @@ export function handleImageModalTrigger(event) {
     };
     document.addEventListener('keydown', escHandler);
 
-    const handleClose = () => {
-        if (isClosing) return;
-        isClosing = true;
-        document.removeEventListener('keydown', escHandler);
-        modal.classList.remove('is-active');
-        const cleanup = () => {
-            modal.removeEventListener('transitionend', cleanup);
-            modal.remove();
-        };
-        modal.addEventListener('transitionend', cleanup, { once: true });
-        // Fallback in case transitionend doesn't fire
-        setTimeout(() => {
-            modal.remove();
-        }, 350);
-    };
-
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.closest('.image-modal__close') || e.target.tagName === 'IMG') {
             handleClose();
         }
-    });
-
-
-
-    document.body.appendChild(modal);
-
-    // Trigger fade-in after insertion
-    requestAnimationFrame(() => {
-        modal.classList.add('is-active');
     });
 }
 
