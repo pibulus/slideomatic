@@ -260,13 +260,44 @@ export function handleImageModalTrigger(event) {
         </div>
     `;
 
+    let isClosing = false;
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            handleClose();
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    const handleClose = () => {
+        if (isClosing) return;
+        isClosing = true;
+        document.removeEventListener('keydown', escHandler);
+        modal.classList.remove('is-active');
+        const cleanup = () => {
+            modal.removeEventListener('transitionend', cleanup);
+            modal.remove();
+        };
+        modal.addEventListener('transitionend', cleanup, { once: true });
+        // Fallback in case transitionend doesn't fire
+        setTimeout(() => {
+            modal.remove();
+        }, 350);
+    };
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal || e.target.closest('.image-modal__close')) {
-            modal.remove();
+            handleClose();
         }
     });
 
+    };
+
     document.body.appendChild(modal);
+
+    // Trigger fade-in after insertion
+    requestAnimationFrame(() => {
+        modal.classList.add('is-active');
+    });
 }
 
 export function generateGraphImage(slide, container) {
