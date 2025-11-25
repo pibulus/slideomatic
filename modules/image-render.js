@@ -1,4 +1,5 @@
 import { debug } from './constants.js';
+import { isOverview } from './state.js';
 import { registerLazyImage } from './lazy-images.js';
 import { askAIForImage } from './image-ai.js';
 import { handleImageUpload } from './image-upload.js';
@@ -241,14 +242,27 @@ export function createImagePlaceholder(image = {}, className = 'slide__image') {
 }
 
 export function handleImageModalTrigger(event) {
+    // console.log('Click detected in handleImageModalTrigger', event.target);
+    if (isOverview) {
+        // console.log('Aborting: isOverview is true');
+        return;
+    }
+
     const target = event.target;
-    if (target.tagName !== 'IMG' || !target.classList.contains('slide__image')) return;
     if (target.closest('.edit-drawer')) return; // Don't trigger in edit drawer
 
-    const src = target.dataset.modalSrc || target.src;
-    const alt = target.dataset.modalAlt || target.alt;
+    const trigger = target.closest('[data-modal-src]');
+    // console.log('Trigger found:', trigger);
+    
+    if (!trigger) return;
+
+    const src = trigger.dataset.modalSrc;
+    const alt = trigger.dataset.modalAlt || trigger.alt;
 
     if (!src) return;
+
+    event.preventDefault();
+    event.stopPropagation();
 
     // Simple modal implementation
     const modal = document.createElement('div');
@@ -285,12 +299,12 @@ export function handleImageModalTrigger(event) {
     };
 
     modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.closest('.image-modal__close')) {
+        if (e.target === modal || e.target.closest('.image-modal__close') || e.target.tagName === 'IMG') {
             handleClose();
         }
     });
 
-    };
+
 
     document.body.appendChild(modal);
 
