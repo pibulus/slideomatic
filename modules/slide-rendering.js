@@ -1,8 +1,8 @@
 import { debug } from './constants.js';
-import { slides, slideElements, isOverview, autoLinkConfigs } from './state.js';
+import { autoLinkConfigs } from './state.js';
 import { slidesRoot } from './dom-refs.js';
-import { createImage, normalizeOrientation, deriveOrientationFromDimensions, handleImageModalTrigger, generateGraphImage } from './image-render.js';
-import { escapeHtml, deepClone, escapeRegExp } from './utils.js';
+import { createImage, normalizeOrientation, generateGraphImage } from './image-render.js';
+import { escapeHtml } from './utils.js';
 import { navigateToDeckHome } from './navigation.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -38,7 +38,7 @@ export function renderLoadError(error) {
     message.innerHTML = `
     <h2>Unable to load slides</h2>
     <p>Please refresh the page or contact the deck owner.</p>
-    ${error ? `<pre>${error.message}</pre>` : ''}
+    ${error ? `<pre>${escapeHtml(error.message)}</pre>` : ''}
   `;
     slidesRoot.appendChild(message);
 }
@@ -53,7 +53,7 @@ export function renderEmptyState() {
     slidesRoot.appendChild(message);
 }
 
-import { validateSlides } from './validation.js';
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Slide Construction

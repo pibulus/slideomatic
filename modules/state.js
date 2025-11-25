@@ -15,7 +15,25 @@ export let slides = [];
 export let slideElements = [];
 export let currentIndex = 0;
 export let isOverview = false;
-export const preloadedImages = new Set();
+const preloadedImages = new Set();
+const MAX_PRELOADED_IMAGES = 50;
+
+export function addPreloadedImage(src) {
+  if (preloadedImages.has(src)) return;
+  if (preloadedImages.size >= MAX_PRELOADED_IMAGES) {
+    const first = preloadedImages.values().next().value;
+    preloadedImages.delete(first);
+  }
+  preloadedImages.add(src);
+}
+
+export function hasPreloadedImage(src) {
+  return preloadedImages.has(src);
+}
+
+export function clearPreloadedImages() {
+  preloadedImages.clear();
+}
 export let autoLinkConfigs = [];
 export let overviewRowCount = 1;
 export let overviewColumnCount = 0;

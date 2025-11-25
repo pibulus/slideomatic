@@ -29,7 +29,8 @@ import {
   setOverviewColumnCount,
   slideScrollPositions,
   isEditDrawerOpen,
-  preloadedImages,
+  addPreloadedImage,
+  hasPreloadedImage,
 } from './state.js';
 import { clamp } from './utils.js';
 import { slidesRoot, currentCounter, totalCounter, progressBar } from './dom-refs.js';
@@ -271,11 +272,11 @@ export function handleSlideClick(event) {
 }
 
 function preloadImage(src) {
-  if (!src || preloadedImages.has(src)) return;
+  if (!src || hasPreloadedImage(src)) return;
   const img = new Image();
   img.decoding = 'async';
   img.src = src;
-  preloadedImages.add(src);
+  addPreloadedImage(src);
 }
 
 function preloadSlideImages(index) {
