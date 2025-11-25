@@ -7,7 +7,7 @@
   background: var(--color-bg);
   border-left: var(--border-width) solid var(--color-ink);
   box-shadow: -16px 0 48px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: var(--z-drawer);
   transform: translateX(100%);
   transition: transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
@@ -301,6 +301,25 @@
   gap: 10px;
 }
 
+.edit-drawer__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--color-ink);
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.edit-drawer__checkbox-label input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .edit-drawer__actions-row {
   display: flex;
   flex-direction: column;
@@ -553,7 +572,7 @@
   background: var(--color-bg);
   border-left: var(--border-width) solid var(--color-ink);
   box-shadow: -16px 0 48px rgba(0, 0, 0, 0.3);
-  z-index: 1100;
+  z-index: calc(var(--z-drawer) + 100);
   transform: translateX(100%);
   transition: transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
@@ -1872,7 +1891,7 @@
 .keyboard-help-modal {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1889,3 +1908,6 @@
 .keyboard-help-modal__backdrop {
   position: absolute;
   inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}

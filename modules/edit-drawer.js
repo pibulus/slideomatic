@@ -12,7 +12,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { escapeHtml, formatBytes, fileToBase64 } from './utils.js';
+import { escapeHtml, fileToBase64 } from './utils.js';
 import {
   prepareSlideForEditing,
   restoreBase64FromTokens,
@@ -187,43 +187,13 @@ function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
     buildLayoutControl(type),
-    buildContentFieldsSection(slide, type),
-    buildBodySection(slide, type),
+    buildCombinedContentSection(slide, type),
     buildImagesSection(slide),
   ].filter(Boolean);
   return sections.join('');
 }
 
-function getLayoutDescription(value) {
-  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
-}
-
-function buildLayoutControl(currentType) {
-  const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
-  const options = LAYOUT_OPTIONS.map(({ value, label }) => {
-    const selected = value === currentType ? 'selected' : '';
-    const optionTitle = getLayoutDescription(value) || label;
-    return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
-  }).join('');
-
-  const content = `
-    <div class="edit-drawer__layout-controls">
-      <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
-        ${options}
-      </select>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
-        Update Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
-        Add Slide
-      </button>
-    </div>
-  `;
-
-  return buildSection('Slide Type', content, { modifier: ' edit-drawer__section--layout' });
-}
-
-function buildContentFieldsSection(slide, type) {
+function buildCombinedContentSection(slide, type) {
   const fields = [];
 
   // Label/Eyebrow
@@ -273,6 +243,16 @@ function buildContentFieldsSection(slide, type) {
     fields.push(buildInputField(subtitleData.field, subtitleData.value, subtitlePlaceholder));
   }
 
+  // Body
+  const shouldShowBody =
+    Object.prototype.hasOwnProperty.call(slide, 'body') ||
+    ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
+  
+  if (shouldShowBody) {
+    const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
+    fields.push(buildTextareaField('body', bodyValue, 'Body copy'));
+  }
+
   if (fields.length === 0) return '';
 
   const content = `
@@ -284,28 +264,18 @@ function buildContentFieldsSection(slide, type) {
   return buildSection('Content', content);
 }
 
-function buildBodySection(slide, type) {
-  const shouldShow =
-    Object.prototype.hasOwnProperty.call(slide, 'body') ||
-    ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
-  if (!shouldShow) return '';
-  const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
-  return buildSection('Body', buildTextareaField('body', bodyValue, 'Body copy'));
-}
-
-function buildImagesSection(slide) {
-  return buildSection(
-    'Images',
-    `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
-    { modifier: ' edit-drawer__section--images' }
-  );
-}
-
 function buildActionsSection() {
+  const isAutoSave = localStorage.getItem('slideomatic_autosave') !== 'false';
+  const checked = isAutoSave ? 'checked' : '';
+
   return buildSection(
     'Actions',
     `
       <div class="edit-drawer__actions-grid">
+        <label class="edit-drawer__checkbox-label">
+          <input type="checkbox" id="autosave-toggle" ${checked}>
+          <span>Auto-save changes</span>
+        </label>
         <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
           Save
         </button>
@@ -323,6 +293,43 @@ function buildActionsSection() {
       </div>
     `,
     { modifier: ' edit-drawer__section--actions' }
+  );
+}
+
+function getLayoutDescription(value) {
+  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
+}
+
+function buildLayoutControl(currentType) {
+  const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
+  const options = LAYOUT_OPTIONS.map(({ value, label }) => {
+    const selected = value === currentType ? 'selected' : '';
+    const optionTitle = getLayoutDescription(value) || label;
+    return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
+  }).join('');
+
+  const content = `
+    <div class="edit-drawer__layout-controls">
+      <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
+        ${options}
+      </select>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
+        Update Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
+        Add Slide
+      </button>
+    </div>
+  `;
+
+  return buildSection('Slide Type', content, { modifier: ' edit-drawer__section--layout' });
+}
+
+function buildImagesSection(slide) {
+  return buildSection(
+    'Images',
+    `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
+    { modifier: ' edit-drawer__section--images' }
   );
 }
 
@@ -361,14 +368,28 @@ function setupQuickEditSync(context) {
 
     syncQuickEditToJSON();
 
-    // Auto-save after idle typing
-    clearTimeout(autoSaveTimeout);
-    autoSaveTimeout = setTimeout(() => {
-      autoSaveSlide(context);
-    }, AUTO_SAVE_DELAY_MS);
+    // Check if auto-save is enabled
+    const autoSaveToggle = document.getElementById('autosave-toggle');
+    const isAutoSaveEnabled = autoSaveToggle ? autoSaveToggle.checked : true;
+
+    if (isAutoSaveEnabled) {
+      // Auto-save after idle typing
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveSlide(context);
+      }, AUTO_SAVE_DELAY_MS);
+    }
   };
 
   addTrackedListener(content, 'input', handleInput);
+  
+  // Also track the toggle change to save preference
+  const autoSaveToggle = document.getElementById('autosave-toggle');
+  if (autoSaveToggle) {
+    addTrackedListener(autoSaveToggle, 'change', (e) => {
+      localStorage.setItem('slideomatic_autosave', e.target.checked);
+    });
+  }
 }
 
 function syncQuickEditToJSON() {
@@ -726,6 +747,30 @@ function handleJsonToggle() {
   }
 }
 
+function setupTextareaExpansion() {
+  const textareas = document.querySelectorAll('.edit-drawer__textarea');
+  textareas.forEach(textarea => {
+    const adjustHeight = () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    };
+
+    // Initial adjustment if it has content and is visible
+    if (textarea.value && textarea.offsetParent !== null) {
+      // We might need a slight delay for layout to settle if it was just inserted
+      requestAnimationFrame(adjustHeight);
+    }
+
+    addTrackedListener(textarea, 'input', adjustHeight);
+    addTrackedListener(textarea, 'focus', adjustHeight);
+    
+    // Contract on blur
+    addTrackedListener(textarea, 'blur', () => {
+       textarea.style.height = ''; 
+    });
+  });
+}
+
 export function renderEditForm(context) {
   const ctx = ensureContext(context);
   const content = document.getElementById('edit-drawer-content');
@@ -751,6 +796,9 @@ export function renderEditForm(context) {
       ${advancedSection}
     </form>
   `;
+
+  // Setup auto-expanding textareas
+  setupTextareaExpansion();
 
   // Register all button click handlers with cleanup tracking
   addTrackedListener(

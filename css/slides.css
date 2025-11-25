@@ -163,7 +163,7 @@
 .slide.is-active {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
-  z-index: 2;
+  z-index: var(--z-slide-active);
 }
 
 .slide.is-leaving {
@@ -1100,16 +1100,7 @@
   transform: translateY(-1px);
 }
 
-@keyframes toast-slide-in {
-  from {
-    transform: translateX(120%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
+
 
 @keyframes toast-slide-out {
   from {

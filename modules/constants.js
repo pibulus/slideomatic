@@ -15,7 +15,7 @@ export const CONFIG = {
     },
 
     // Auto-save (handled in edit-drawer module)
-    AUTO_SAVE_DELAY_MS: 1000,
+    AUTO_SAVE_DELAY_MS: 3000,
 
     // Overview mode
     OVERVIEW: {

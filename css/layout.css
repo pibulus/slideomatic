@@ -24,7 +24,7 @@
   mix-blend-mode: multiply;
   opacity: var(--background-opacity, 0.6);
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-grain);
   animation: grain-shift 8s ease-in-out infinite;
 }
 
