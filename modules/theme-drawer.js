@@ -27,6 +27,12 @@ import {
   getCurrentTheme,
   getCurrentThemePath,
   normalizeThemeTokens,
+  hslToHex,
+  hexToRgbaString,
+  mixHexColors,
+  applyAlpha,
+  shiftHex,
+  getAccessibleTextColor,
 } from './theme-manager.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { clamp } from './utils.js';
@@ -635,15 +641,6 @@ function generatePalette(baseHue, strategy = 'triadic') {
 
   return { primary, secondary, accent };
 }
-
-function hslToHex(h, s, l) {
-  const hue = ((h % 360) + 360) % 360;
-  const saturation = clamp(s, 0, 100) / 100;
-  const lightness = clamp(l, 0, 100) / 100;
-
-  const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
-  const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
-  const m = lightness - c / 2;
 
   let r = 0;
   let g = 0;
