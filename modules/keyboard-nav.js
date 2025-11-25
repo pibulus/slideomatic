@@ -14,17 +14,17 @@
 
 const defaultContext = {
   isOverview: () => false,
-  moveOverviewCursorBy: () => {},
-  exitOverview: () => {},
+  moveOverviewCursorBy: (_x, _y) => {},
+  exitOverview: (_targetIndex) => {},
   getOverviewCursor: () => 0,
   toggleOverview: () => {},
   downloadDeck: () => {},
   toggleSpeakerNotes: () => {},
-  setActiveSlide: () => {},
+  setActiveSlide: (_index) => {},
   getCurrentIndex: () => 0,
   getSlideCount: () => 0,
   toggleEditDrawer: () => {},
-  toggleVoiceRecording: () => {},
+  toggleVoiceRecording: (_mode) => {},
   toggleThemeDrawer: () => {},
   openSettingsModal: () => {},
   closeSettingsModal: () => {},
@@ -205,18 +205,25 @@ export function initKeyboardNav(partialContext = {}) {
   };
 }
 
+let feedbackEl = null;
+let feedbackTimeout = null;
+
 function flashKeyFeedback(key) {
-  const feedback = document.createElement('div');
-  feedback.className = 'key-feedback';
-  feedback.textContent = key;
-  document.body.appendChild(feedback);
+  if (!feedbackEl) {
+    feedbackEl = document.createElement('div');
+    feedbackEl.className = 'key-feedback';
+    document.body.appendChild(feedbackEl);
+  }
 
-  requestAnimationFrame(() => {
-    feedback.classList.add('active');
-  });
+  feedbackEl.textContent = key;
+  
+  // Reset animation
+  feedbackEl.classList.remove('active');
+  void feedbackEl.offsetWidth; // Force reflow
+  feedbackEl.classList.add('active');
 
-  setTimeout(() => {
-    feedback.classList.remove('active');
-    setTimeout(() => feedback.remove(), 300);
+  clearTimeout(feedbackTimeout);
+  feedbackTimeout = setTimeout(() => {
+    feedbackEl.classList.remove('active');
   }, 400);
 }
