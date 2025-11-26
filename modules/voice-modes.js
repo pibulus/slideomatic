@@ -12,24 +12,23 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { applyTheme, setCurrentTheme } from './theme-manager.js';
+import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
 
 const defaultContext = {
   getCurrentIndex: () => 0,
   getSlides: () => [],
-  insertSlideAt: () => {},
-  replaceSlideAt: () => {},
-  setActiveSlide: () => {},
-  setOverviewCursor: () => {},
-  updateSlide: () => {},
-  validateSlides: () => {},
-  showHudStatus: () => {},
+  insertSlideAt: (_index, _slide, _options) => {},
+  replaceSlideAt: (_index, _options) => {},
+  setActiveSlide: (_index) => {},
+  setOverviewCursor: (_index) => {},
+  updateSlide: (_index, _slide) => {},
+  validateSlides: (_slides) => {},
+  showHudStatus: (_message, _type) => {},
   hideHudStatus: () => {},
-  showApiKeyStatus: () => {},
+  showApiKeyStatus: (_type, _message) => {},
   openSettingsModal: () => {},
-  downloadTheme: () => {},
 };
 
 let voiceContext = { ...defaultContext };
@@ -104,7 +103,7 @@ function disableVoiceButtons() {
 
   buttons.forEach(btnId => {
     const btn = document.getElementById(btnId);
-    if (btn) {
+    if (btn instanceof HTMLButtonElement) {
       btn.disabled = true;
       btn.style.opacity = '0.5';
       btn.style.cursor = 'not-allowed';
@@ -494,7 +493,7 @@ export async function processVoiceToTheme(audioBlob) {
 
     const normalizedTheme = applyTheme(themeData);
 
-    context.downloadTheme(normalizedTheme);
+    downloadTheme(normalizedTheme);
     setCurrentTheme(normalizedTheme, { source: '__ai__' });
 
     await ensureMinimumDelay(uiStart, 1500);
@@ -503,8 +502,8 @@ export async function processVoiceToTheme(audioBlob) {
     console.log('✅ Theme applied and downloaded!');
   } catch (error) {
     console.error('❌ Error processing theme:', error);
-    alert(`Failed to create theme: ${error.message}`);
-    context.hideHudStatus();
+    context.showHudStatus(`❌ Failed to create theme: ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 4000);
   }
 }
 

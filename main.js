@@ -5,7 +5,6 @@ import {
   setCurrentTheme,
   getCurrentThemePath,
   LOCAL_THEME_SOURCE,
-  downloadTheme,
 } from './modules/theme-manager.js';
 import { deriveDeckName, escapeRegExp } from './modules/utils.js';
 
@@ -563,7 +562,6 @@ async function initDeckWithTheme() {
     setOverviewCursor,
     updateSlide: (index, slide) => { slides[index] = slide; },
     validateSlides,
-    downloadTheme,
   });
 
   const homeBtn = document.getElementById('home-btn');
