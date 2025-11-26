@@ -139,3 +139,56 @@ export function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const FOCUSABLE_SELECTORS = [
+  'a[href]',
+  'area[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
+export function getFocusableElements(container) {
+  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS)).filter((el) =>
+    !el.hasAttribute('disabled') &&
+    el.getAttribute('tabindex') !== '-1' &&
+    typeof el.focus === 'function' &&
+    (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0)
+  );
+}
+
+export function trapFocus(event, container) {
+  if (event.key !== 'Tab') return;
+  const focusable = getFocusableElements(container);
+  if (focusable.length === 0) {
+    event.preventDefault();
+    container.setAttribute('tabindex', '-1');
+    container.focus({ preventScroll: true });
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  const isShift = event.shiftKey;
+
+  if (!isShift && active === last) {
+    event.preventDefault();
+    first.focus();
+  } else if (isShift && active === first) {
+    event.preventDefault();
+    last.focus();
+  }
+}
+
+export function focusFirstElement(container) {
+  const focusable = getFocusableElements(container);
+  if (focusable.length > 0) {
+    focusable[0].focus();
+  } else {
+    container.setAttribute('tabindex', '-1');
+    container.focus({ preventScroll: true });
+  }
+}
+

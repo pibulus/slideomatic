@@ -53,6 +53,12 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
+    // Disable global shortcuts if any modal or drawer is open
+    // This prevents background navigation and z-index conflicts
+    if (document.querySelector('.is-open')) {
+      return;
+    }
+
     const context = keyboardContext;
     const { key } = event;
     const lowerKey = key.toLowerCase();

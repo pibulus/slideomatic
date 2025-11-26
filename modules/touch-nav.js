@@ -21,10 +21,10 @@ let touchContext = {
   isOverview: () => false,
 };
 
-export function initTouchNav(partialContext = {}) {
+export function initTouchNav(partialContext = {}, targetElement = document.body) {
   touchContext = { ...touchContext, ...partialContext };
   
-  const target = document.body; // Listen on body to catch all swipes
+  const target = targetElement;
 
   target.addEventListener('touchstart', handleTouchStart, { passive: true });
   target.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -68,6 +68,16 @@ function handleSwipeGesture(startX, startY, endX, endY) {
       } else {
         // Swipe Left -> Next Slide
         touchContext.setActiveSlide(touchContext.getCurrentIndex() + 1);
+      }
+    }
+  } else {
+    // Vertical swipe
+    if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
+      if (deltaY < 0) {
+        // Swipe Up -> Toggle Overview
+        if (typeof touchContext.toggleOverview === 'function') {
+          touchContext.toggleOverview();
+        }
       }
     }
   }

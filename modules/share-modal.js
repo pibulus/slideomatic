@@ -1,6 +1,6 @@
 import { slides } from './state.js';
 import { getCurrentTheme } from './theme-manager.js';
-import { deriveDeckName } from './utils.js';
+import { deriveDeckName, trapFocus, focusFirstElement } from './utils.js';
 
 export function initShareModal() {
   const shareBtn = document.getElementById('share-deck-btn');
@@ -43,7 +43,13 @@ export function initShareModal() {
     statusDiv.className = 'share-modal__status';
   }
 
+import { trapFocus, focusFirstElement } from './utils.js';
+
+let previousFocus = null;
+let keydownHandler = null;
+
   async function openShareModal() {
+    previousFocus = document.activeElement;
     shareModal.classList.add('is-open');
     shareModal.setAttribute('aria-hidden', 'false');
 
@@ -51,6 +57,19 @@ export function initShareModal() {
     if (urlInput) urlInput.value = '';
     if (qrContainer) qrContainer.innerHTML = '';
     showShareStatus('🔗 Generating share link...', 'loading');
+
+    // Focus management
+    focusFirstElement(shareModal);
+
+    if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
+    keydownHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeShareModal();
+      } else if (e.key === 'Tab') {
+        trapFocus(e, shareModal);
+      }
+    };
+    document.addEventListener('keydown', keydownHandler);
 
     try {
       const shareUrl = await generateShareUrl();
@@ -68,6 +87,16 @@ export function initShareModal() {
     shareModal.classList.remove('is-open');
     shareModal.setAttribute('aria-hidden', 'true');
     hideShareStatus();
+
+    if (keydownHandler) {
+      document.removeEventListener('keydown', keydownHandler);
+      keydownHandler = null;
+    }
+
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      previousFocus.focus();
+      previousFocus = null;
+    }
   }
 
   async function generateShareUrl() {

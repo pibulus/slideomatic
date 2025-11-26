@@ -1,6 +1,7 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// Onboarding & Help Modules
-// ═══════════════════════════════════════════════════════════════════════════
+import { trapFocus, focusFirstElement } from './utils.js';
+
+let previousFocus = null;
+let keydownHandler = null;
 
 export function showIntroModalIfFirstVisit() {
   // Redirect to hints modal logic, as we are consolidating to a single "Quick Guide"
@@ -58,8 +59,22 @@ export function openKeyboardHelp() {
   const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
+  previousFocus = document.activeElement;
   modal.setAttribute('aria-hidden', 'false');
   modal.classList.add('is-open');
+
+  // Focus management
+  focusFirstElement(modal);
+
+  if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
+  keydownHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeKeyboardHelp();
+    } else if (e.key === 'Tab') {
+      trapFocus(e, modal);
+    }
+  };
+  document.addEventListener('keydown', keydownHandler);
 
   // Set up listeners if not already done
   setupKeyboardHelpListeners();
@@ -71,6 +86,16 @@ export function closeKeyboardHelp() {
 
   modal.setAttribute('aria-hidden', 'true');
   modal.classList.remove('is-open');
+
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler);
+    keydownHandler = null;
+  }
+
+  if (previousFocus && typeof previousFocus.focus === 'function') {
+    previousFocus.focus();
+    previousFocus = null;
+  }
 }
 
 function setupKeyboardHelpListeners() {
@@ -94,12 +119,4 @@ function setupKeyboardHelpListeners() {
     backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';
   }
-  
-  // ESC key
-  document.addEventListener('keydown', function handleHintsEsc(event) {
-    const modal = document.getElementById('hints-modal');
-    if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
-      closeKeyboardHelp();
-    }
-  });
 }

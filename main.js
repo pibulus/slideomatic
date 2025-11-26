@@ -539,7 +539,8 @@ async function initDeckWithTheme() {
     setActiveSlide,
     getCurrentIndex: () => currentIndex,
     isOverview: () => isOverview,
-  });
+    toggleOverview,
+  }, slidesRoot);
   slidesRoot.addEventListener('click', handleSlideClick);
   document.addEventListener('click', handleImageModalTrigger);
   document.addEventListener('paste', handleGlobalPaste);

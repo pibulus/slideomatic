@@ -9,13 +9,33 @@
 
 import { STORAGE_KEY_API, getGeminiApiKey } from './voice-modes.js';
 
+import { trapFocus, focusFirstElement } from './utils.js';
+
+let previousFocus = null;
+let keydownHandler = null;
+
 export function openSettingsModal() {
   const modal = document.getElementById('settings-modal');
   const input = document.getElementById('gemini-api-key');
   if (modal && input) {
+    previousFocus = document.activeElement;
     input.value = getGeminiApiKey();
     modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
     setupSettingsModalListeners();
+    
+    // Focus management
+    focusFirstElement(modal);
+    
+    if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
+    keydownHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeSettingsModal();
+      } else if (e.key === 'Tab') {
+        trapFocus(e, modal);
+      }
+    };
+    document.addEventListener('keydown', keydownHandler);
   }
 }
 
@@ -23,6 +43,17 @@ export function closeSettingsModal() {
   const modal = document.getElementById('settings-modal');
   if (modal) {
     modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    
+    if (keydownHandler) {
+      document.removeEventListener('keydown', keydownHandler);
+      keydownHandler = null;
+    }
+    
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      previousFocus.focus();
+      previousFocus = null;
+    }
   }
 }
 

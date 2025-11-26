@@ -1,0 +1,87 @@
+@media print {
+  /* Hide UI elements */
+  .hud,
+  .edit-drawer,
+  .theme-drawer,
+  .settings-modal,
+  .share-modal,
+  .hints-modal,
+  .intro-modal,
+  .toast-container,
+  .image-placeholder__magic-btn,
+  .slide__image-caption,
+  #deck-upload,
+  #home-btn,
+  #help-btn,
+  #overview-btn,
+  #share-deck-btn,
+  #deck-name {
+    display: none !important;
+  }
+
+  /* Reset body/html for printing */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure slides print one per page */
+  .slides {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    transform: none !important;
+    padding: 0 !important;
+  }
+
+  .slide {
+    position: relative !important;
+    display: flex !important; /* Keep flex layout for centering */
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 100vh !important; /* Force full page height */
+    page-break-after: always !important;
+    break-after: page !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    background: white !important; /* Save ink */
+    color: black !important;
+  }
+
+  /* Adjust typography for print */
+  .slide h1, .slide h2, .slide h3, .slide p, .slide li {
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure images print well */
+  .slide__image {
+    max-width: 100% !important;
+    max-height: 80vh !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+  
+  /* Handle specific slide types */
+  .slide--split {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+    align-items: center !important;
+  }
+
+  .slide--quote blockquote {
+    border-left-color: black !important;
+    background: none !important;
+    color: black !important;
+  }
+}
