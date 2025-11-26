@@ -53,9 +53,9 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
-    // Disable global shortcuts if any modal or drawer is open
-    // This prevents background navigation and z-index conflicts
-    if (document.querySelector('.is-open')) {
+    // Disable global shortcuts if a modal is open
+    // We allow drawers to stay open while navigating or toggling other drawers
+    if (document.querySelector('.modal-base.is-open')) {
       return;
     }
 
