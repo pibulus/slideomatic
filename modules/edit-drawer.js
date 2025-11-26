@@ -945,7 +945,7 @@ export function renderEditForm(context) {
     addTrackedListener,
   });
 
-  const dropzone = document.getElementById('image-dropzone');
+  const dropzone = document.getElementById('image-manager-dropzone');
   if (dropzone) {
     let imagePicker = null;
     const getImagePicker = () => {
@@ -965,10 +965,25 @@ export function renderEditForm(context) {
       return imagePicker;
     };
 
-    addTrackedListener(dropzone, 'click', (event) => {
-      event.preventDefault();
-      getImagePicker().click();
-    });
+    // Only trigger file picker if clicking the empty state dropzone or the add button
+    // We don't want to trigger it when clicking the list itself (unless on empty space?)
+    // Actually, let's keep the click listener specific to the empty state dropzone if it exists
+    const emptyDropzone = dropzone.querySelector('.edit-drawer__image-dropzone');
+    if (emptyDropzone) {
+        addTrackedListener(emptyDropzone, 'click', (event) => {
+            event.preventDefault();
+            getImagePicker().click();
+        });
+    }
+
+    // Also attach to the add button if it exists
+    const addBtn = document.getElementById('add-image-btn');
+    if (addBtn) {
+        addTrackedListener(addBtn, 'click', (event) => {
+            event.preventDefault();
+            getImagePicker().click();
+        });
+    }
 
     addTrackedListener(dropzone, 'dragover', (event) => {
       event.preventDefault();

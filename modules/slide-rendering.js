@@ -133,7 +133,7 @@ export function createSlide(slide, index, rendererMap = renderers) {
     }
 
     nodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('badge')) {
+        if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).classList.contains('badge')) {
             section.appendChild(node);
         } else {
             content.appendChild(node);
@@ -224,18 +224,15 @@ export function renderStandardSlide(section, slide) {
 export function renderImageSlide(section, slide) {
     section.classList.add('slide--image');
 
-    if (!slide.image || !slide.image.src) {
-        const warning = document.createElement('p');
-        warning.className = 'slide__error';
-        warning.textContent = 'Image slide requires an image with a src.';
-        section.appendChild(warning);
-        return;
-    }
-
+    // If no image object, create an empty one to trigger placeholder
+    const imageObj = slide.image || {};
+    
+    // Create wrapper first
     const wrapper = document.createElement('div');
     wrapper.className = 'slide__image-wrapper';
 
-    const imageElement = createImage(slide.image, 'slide__image slide__image--full', {
+    // createImage will handle placeholder generation if src is missing
+    const imageElement = createImage(imageObj, 'slide__image slide__image--full', {
         orientationTarget: section,
     });
     wrapper.appendChild(imageElement);

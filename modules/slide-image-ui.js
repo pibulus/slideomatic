@@ -98,9 +98,31 @@ function reorderSlideImages(fromIndex, toIndex, slide) {
   return updatedSlide;
 }
 
+function canAddMoreImages(slide) {
+  if (!slide) return true;
+  const type = slide.type || 'standard';
+
+  if (type === 'standard' || type === 'intro' || type === 'big-number' || type === 'quote') {
+    // Single image types
+    return !slide.image || !slide.image.src;
+  } else if (type === 'split') {
+    // Two images max
+    const hasLeft = slide.left?.image?.src;
+    const hasRight = slide.right?.image?.src;
+    return !(hasLeft && hasRight);
+  }
+  
+  // Arrays (gallery, grid, pillars, title) are effectively unlimited
+  return true;
+}
+
 function buildImageManager(slide) {
   const images = collectSlideImages(slide);
+  const canAdd = canAddMoreImages(slide);
   let html = '';
+
+  // Always wrap in a container that can serve as a drop target
+  html += '<div class="edit-drawer__image-manager" id="image-manager-dropzone">';
 
   if (images.length > 0) {
     html += '<div class="edit-drawer__image-list">';
@@ -137,19 +159,30 @@ function buildImageManager(slide) {
 
     html += '</div>';
   } else {
+    // Empty state dropzone
     html += `
-      <div class="edit-drawer__image-dropzone" id="image-dropzone">
+      <div class="edit-drawer__image-dropzone">
         <span class="edit-drawer__image-dropzone-icon">✶</span>
         <p>Add or drop images</p>
       </div>
     `;
   }
 
-  html += `
-    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
-      Add image
-    </button>
-  `;
+  if (canAdd) {
+    html += `
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
+        Add image
+      </button>
+    `;
+  } else {
+    html += `
+      <div class="edit-drawer__empty-note" style="text-align: center; padding: 8px;">
+        Slide full. Remove an image to add another.
+      </div>
+    `;
+  }
+
+  html += '</div>'; // Close manager container
 
   return html;
 }

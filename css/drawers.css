@@ -387,6 +387,24 @@
 }
 
 /* Image Manager */
+.edit-drawer__image-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 160ms ease;
+}
+
+.edit-drawer__image-manager.is-drag-over {
+  transform: scale(1.02);
+}
+
+.edit-drawer__image-manager.is-drag-over .edit-drawer__image-list,
+.edit-drawer__image-manager.is-drag-over .edit-drawer__image-dropzone {
+  border-color: var(--color-accent);
+  background: rgba(255, 159, 243, 0.1);
+  box-shadow: 0 0 0 4px rgba(255, 159, 243, 0.2);
+}
+
 .edit-drawer__image-list {
   display: flex;
   flex-direction: column;
@@ -396,6 +414,7 @@
   border-radius: var(--radius);
   border: var(--border-width) solid var(--color-ink);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .edit-drawer__image-dropzone {
