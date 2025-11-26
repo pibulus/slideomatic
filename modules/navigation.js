@@ -42,7 +42,7 @@ let getEditDrawerContextHook = () => ({
   getSlides: () => slides,
   getCurrentIndex: () => currentIndex,
 });
-let renderEditFormHook = () => {};
+let renderEditFormHook = (_context) => {};
 let toggleSpeakerNotesHook = () => {};
 
 export function registerNavigationHooks(hooks = {}) {
@@ -195,6 +195,7 @@ export function setActiveSlide(nextIndex) {
     oldSlide.classList.add('is-leaving');
     oldSlide.style.pointerEvents = 'none';
     oldSlide.setAttribute('aria-hidden', 'true');
+    oldSlide.removeAttribute('aria-current');
     setTimeout(() => {
       oldSlide.classList.remove('is-leaving');
       if (!oldSlide.classList.contains('is-active')) {
@@ -209,6 +210,7 @@ export function setActiveSlide(nextIndex) {
   newSlide.style.visibility = 'visible';
   newSlide.style.pointerEvents = isOverview ? 'none' : 'auto';
   newSlide.setAttribute('aria-hidden', 'false');
+  newSlide.setAttribute('aria-current', 'step');
   const previousScroll = slideScrollPositions.get(currentIndex) || 0;
   newSlide.scrollTop = previousScroll;
   newSlide.querySelectorAll('img[data-src]').forEach(loadLazyImage);

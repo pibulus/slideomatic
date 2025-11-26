@@ -19,6 +19,8 @@ const TOAST_DURATION = {
 let lastFailedOperation = null;
 const activeToasts = new Map();
 
+const toastHandlers = new WeakMap();
+
 export function showHudStatus(message, type = '', options = {}) {
   const container = document.getElementById('toast-container');
   if (!container) return null;
@@ -31,6 +33,9 @@ export function showHudStatus(message, type = '', options = {}) {
   const toast = document.createElement('div');
   const toastId = Date.now() + Math.random();
   toast.className = `toast ${type ? `toast--${type}` : ''}`;
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+  const handlers = {};
 
   if (type === 'error' && options.onRetry) {
     lastFailedOperation = options.onRetry;
@@ -46,7 +51,7 @@ export function showHudStatus(message, type = '', options = {}) {
       }
     };
     retryBtn.addEventListener('click', retryHandler);
-    toast._retryHandler = retryHandler;
+    handlers.retry = retryHandler;
 
     toast.textContent = `${message} `;
     toast.appendChild(retryBtn);
@@ -60,7 +65,9 @@ export function showHudStatus(message, type = '', options = {}) {
 
   const dismissHandler = () => hideToast(toastId);
   toast.addEventListener('click', dismissHandler);
-  toast._dismissHandler = dismissHandler;
+  handlers.dismiss = dismissHandler;
+  
+  toastHandlers.set(toast, handlers);
 
   if (type !== 'processing' && !options.onRetry) {
     const duration = options.duration || TOAST_DURATION[type.toUpperCase()] || TOAST_DURATION.INFO;
@@ -85,16 +92,20 @@ function hideToast(toastId) {
   const toast = activeToasts.get(toastId);
   if (!toast) return;
 
-  const retryBtn = toast.querySelector('.toast__retry-btn');
-  if (retryBtn && toast._retryHandler) {
-    retryBtn.removeEventListener('click', toast._retryHandler);
-    delete toast._retryHandler;
+  const handlers = toastHandlers.get(toast);
+  
+  if (handlers?.retry) {
+    const retryBtn = toast.querySelector('.toast__retry-btn');
+    if (retryBtn) {
+      retryBtn.removeEventListener('click', handlers.retry);
+    }
   }
 
-  if (toast._dismissHandler) {
-    toast.removeEventListener('click', toast._dismissHandler);
-    delete toast._dismissHandler;
+  if (handlers?.dismiss) {
+    toast.removeEventListener('click', handlers.dismiss);
   }
+  
+  toastHandlers.delete(toast);
 
   toast.classList.add('toast--hiding');
   lastFailedOperation = null;
