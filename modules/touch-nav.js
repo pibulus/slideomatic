@@ -11,6 +11,8 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { vibrate } from './haptics.js';
+
 const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
 
 let touchStartX = 0;
@@ -62,6 +64,7 @@ function handleSwipeGesture(startX, startY, endX, endY) {
   if (Math.abs(deltaX) > Math.abs(deltaY)) {
     // Horizontal swipe
     if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      vibrate('medium');
       if (deltaX > 0) {
         // Swipe Right -> Previous Slide
         touchContext.setActiveSlide(touchContext.getCurrentIndex() - 1);
@@ -76,6 +79,7 @@ function handleSwipeGesture(startX, startY, endX, endY) {
       if (deltaY < 0) {
         // Swipe Up -> Toggle Overview
         if (typeof touchContext.toggleOverview === 'function') {
+          vibrate('medium');
           touchContext.toggleOverview();
         }
       }
