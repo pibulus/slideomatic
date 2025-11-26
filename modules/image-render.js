@@ -103,7 +103,7 @@ export function createImage(image, className = 'slide__image', options = {}) {
     return img;
 }
 
-export function createImagePlaceholder(image = {}, className = 'slide__image') {
+export function createImagePlaceholder(image = {}, className = 'slide__image', context = 'image') {
     const baseClasses = String(className)
         .split(/\s+/)
         .filter(Boolean);
@@ -127,13 +127,20 @@ export function createImagePlaceholder(image = {}, className = 'slide__image') {
 
     const icon = document.createElement('span');
     icon.className = 'image-placeholder__icon';
-    icon.textContent = '🔍';
+    icon.textContent = context === 'graph' ? '📊' : '🔍';
 
     const text = document.createElement('span');
     text.className = 'image-placeholder__text';
-    text.textContent = trimmedQuery
-        ? `Search "${trimmedQuery}" or drag & drop`
-        : 'Drag & drop or paste image';
+    
+    if (context === 'graph') {
+        text.textContent = trimmedQuery
+            ? `Generate graph for "${trimmedQuery}"`
+            : 'Describe and generate graph';
+    } else {
+        text.textContent = trimmedQuery
+            ? `Search "${trimmedQuery}" or drag & drop`
+            : 'Drag & drop or paste image';
+    }
 
     const progressBar = document.createElement('div');
     progressBar.className = 'image-placeholder__progress';

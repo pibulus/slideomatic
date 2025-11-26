@@ -1,7 +1,7 @@
 import { debug } from './constants.js';
 import { autoLinkConfigs } from './state.js';
 import { slidesRoot } from './dom-refs.js';
-import { createImage, normalizeOrientation, generateGraphImage } from './image-render.js';
+import { createImage, createImagePlaceholder, normalizeOrientation, generateGraphImage } from './image-render.js';
 import { escapeHtml } from './utils.js';
 import { navigateToDeckHome } from './navigation.js';
 
@@ -204,16 +204,39 @@ export function renderTitleSlide(section, slide) {
 }
 
 export function renderStandardSlide(section, slide) {
+    // Apply layout class if specified
+    if (slide.layout) {
+        section.classList.add(`slide--layout-${slide.layout}`);
+    } else {
+        // Default layout (usually image-right or auto)
+        section.classList.add('slide--layout-default');
+    }
+
+    const content = document.createElement('div');
+    content.className = 'slide__content';
+
     if (slide.headline) {
         const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
-        section.appendChild(headline);
+        content.appendChild(headline);
     }
 
-    appendBody(section, slide.body);
+    appendBody(content, slide.body);
+
+    // For standard slides, we wrap content to separate it from the image in grid layouts
+    section.appendChild(content);
 
     if (slide.image) {
-        section.appendChild(createImage(slide.image));
+        // Create image wrapper for better control
+        const wrapper = document.createElement('div');
+        wrapper.className = 'slide__image-wrapper';
+        
+        // Use full image style but contained in wrapper
+        const imageElement = createImage(slide.image, 'slide__image', {
+            orientationTarget: section,
+        });
+        wrapper.appendChild(imageElement);
+        section.appendChild(wrapper);
     }
 
     if (slide.footnote) {
@@ -249,6 +272,9 @@ export function renderImageSlide(section, slide) {
 
 export function renderQuoteSlide(section, slide) {
     section.classList.add('slide--quote');
+    if (slide.variant) {
+        section.classList.add(`slide--quote--${slide.variant}`);
+    }
 
     const quoteText = slide.quote ?? slide.headline ?? '';
     const quote = document.createElement('blockquote');
@@ -480,23 +506,11 @@ export function renderGraphSlide(section, slide) {
         graphContainer.appendChild(img);
         graphContainer.appendChild(regenerateBtn);
     } else {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'graph-placeholder';
-
-        const icon = document.createElement('div');
-        icon.className = 'graph-placeholder__icon';
-        icon.textContent = '📊';
-
-        const text = document.createElement('div');
-        text.className = 'graph-placeholder__text';
-        text.textContent = slide.description || 'Generate a graph';
-
-        const generateBtn = document.createElement('button');
-        generateBtn.className = 'graph-generate-btn';
-        generateBtn.textContent = 'Generate Graph';
-        generateBtn.addEventListener('click', () => generateGraphImage(slide, graphContainer));
-
-        placeholder.append(icon, text, generateBtn);
+        const placeholder = createImagePlaceholder(
+            { alt: slide.description || 'Describe and generate graph' },
+            'graph-placeholder',
+            'graph'
+        );
         graphContainer.appendChild(placeholder);
     }
 

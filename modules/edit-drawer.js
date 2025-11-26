@@ -185,14 +185,96 @@ function resolveField(slide, candidates) {
   return null;
 }
 
+const STANDARD_LAYOUT_OPTIONS = [
+  { value: 'default', label: 'Default (Image Right)' },
+  { value: 'image-left', label: 'Image Left' },
+  { value: 'image-top', label: 'Image Top' },
+  { value: 'image-bottom', label: 'Image Bottom' },
+];
+
+const SPLIT_LAYOUT_OPTIONS = [
+  { value: 'default', label: '50/50 Split' },
+  { value: 'feature', label: 'Feature Card' },
+];
+
+// ... (existing code) ...
+
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
-    buildLayoutControl(type),
-    buildCombinedContentSection(slide, type),
+    buildLayoutControl(type, slide.layout),
+    type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildImagesSection(slide),
   ].filter(Boolean);
   return sections.join('');
+}
+
+// ... (existing code) ...
+
+function getSelectedLayoutVariant() {
+  const standardSelect = document.getElementById('standard-layout-select');
+  if (standardSelect instanceof HTMLSelectElement) {
+    return standardSelect.value;
+  }
+  const splitSelect = document.getElementById('split-layout-select');
+  if (splitSelect instanceof HTMLSelectElement) {
+    return splitSelect.value;
+  }
+  const quoteSelect = document.getElementById('quote-layout-select');
+  if (quoteSelect instanceof HTMLSelectElement) {
+    return quoteSelect.value;
+  }
+  return null;
+}
+
+function handleLayoutApply(context) {
+  const layout = getSelectedLayoutValue();
+  const variant = getSelectedLayoutVariant();
+  const ctx = ensureContext(context);
+  if (!layout) {
+    ctx.showHudStatus('Select a slide type first', 'warning');
+    setTimeout(() => ctx.hideHudStatus(), 1500);
+    return;
+  }
+  applyLayoutToCurrentSlide(ctx, layout, variant);
+}
+
+// ... (existing code) ...
+
+function applyLayoutToCurrentSlide(ctx, layout, variant) {
+  const template = ctx.getSlideTemplate(layout);
+  if (!template) {
+    alert(`No template available for type "${layout}".`);
+    return;
+  }
+
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
+  
+  // Apply variant if present and type matches
+  if (layout === 'standard' && variant) {
+    mergedSlide.layout = variant;
+    delete mergedSlide.variant; // Clean up potential split/quote variant
+  } else if ((layout === 'split' || layout === 'quote') && variant) {
+    mergedSlide.variant = variant;
+    delete mergedSlide.layout; // Clean up potential standard layout
+  } else {
+    delete mergedSlide.layout;
+    // Only clear variant if switching to a type that doesn't use it
+    if (layout !== 'split' && layout !== 'quote') delete mergedSlide.variant;
+  }
+
+  ctx.updateSlide(currentIndex, mergedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  renderEditForm(ctx);
+
+  const label = getLayoutMeta(layout)?.label || layout;
+  ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
+  setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
 function buildCombinedContentSection(slide, type) {
@@ -302,7 +384,13 @@ function getLayoutDescription(value) {
   return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
 }
 
-function buildLayoutControl(currentType) {
+const QUOTE_LAYOUT_OPTIONS = [
+  { value: 'simple', label: 'Simple (Default)' },
+  { value: 'card', label: 'Card Style' },
+  { value: 'image-bg', label: 'Image Background' },
+];
+
+function buildLayoutControl(currentType, currentLayout) {
   const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
   const options = LAYOUT_OPTIONS.map(({ value, label }) => {
     const selected = value === currentType ? 'selected' : '';
@@ -310,17 +398,71 @@ function buildLayoutControl(currentType) {
     return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
   }).join('');
 
+  let layoutSelector = '';
+  if (currentType === 'standard') {
+    const layoutOptions = STANDARD_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const selected = (currentLayout || 'default') === value ? 'selected' : '';
+      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+    }).join('');
+    
+    layoutSelector = `
+      <div class="edit-drawer__field">
+        <label class="edit-drawer__label" for="standard-layout-select">Layout Variant</label>
+        <select class="edit-drawer__select" id="standard-layout-select">
+          ${layoutOptions}
+        </select>
+      </div>
+    `;
+  } else if (currentType === 'split') {
+    // For split slides, the 'variant' property is used instead of 'layout'
+    const currentVariant = Array.isArray(currentLayout) ? currentLayout[0] : currentLayout;
+    
+    const layoutOptions = SPLIT_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const selected = (currentVariant || 'default') === value ? 'selected' : '';
+      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+    }).join('');
+    
+    layoutSelector = `
+      <div class="edit-drawer__field">
+        <label class="edit-drawer__label" for="split-layout-select">Split Style</label>
+        <select class="edit-drawer__select" id="split-layout-select">
+          ${layoutOptions}
+        </select>
+      </div>
+    `;
+  } else if (currentType === 'quote') {
+    // Quote slides also use 'variant'
+    const currentVariant = currentLayout; // Assuming string for quote variant
+    
+    const layoutOptions = QUOTE_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const selected = (currentVariant || 'simple') === value ? 'selected' : '';
+      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+    }).join('');
+    
+    layoutSelector = `
+      <div class="edit-drawer__field">
+        <label class="edit-drawer__label" for="quote-layout-select">Quote Style</label>
+        <select class="edit-drawer__select" id="quote-layout-select">
+          ${layoutOptions}
+        </select>
+      </div>
+    `;
+  }
+
   const content = `
-    <div class="edit-drawer__layout-controls">
-      <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
-        ${options}
-      </select>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
-        Update Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
-        Add Slide
-      </button>
+    <div class="edit-drawer__stack">
+      <div class="edit-drawer__layout-controls">
+        <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
+          ${options}
+        </select>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
+          Update Slide
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
+          Add Slide
+        </button>
+      </div>
+      ${layoutSelector}
     </div>
   `;
 
@@ -333,6 +475,34 @@ function buildImagesSection(slide) {
     `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
     { modifier: ' edit-drawer__section--images' }
   );
+}
+
+function buildSplitContentSection(slide) {
+  const left = slide.left || {};
+  const right = slide.right || {};
+
+  const leftContent = `
+    <div class="edit-drawer__group">
+      <p class="edit-drawer__group-title">Left Column</p>
+      ${buildInputField('left.headline', left.headline || '', 'Headline')}
+      ${buildTextareaField('left.body', Array.isArray(left.body) ? left.body.join('\n') : (left.body || ''), 'Body copy')}
+    </div>
+  `;
+
+  const rightContent = `
+    <div class="edit-drawer__group">
+      <p class="edit-drawer__group-title">Right Column</p>
+      ${buildInputField('right.headline', right.headline || '', 'Headline')}
+      ${buildTextareaField('right.body', Array.isArray(right.body) ? right.body.join('\n') : (right.body || ''), 'Body copy')}
+    </div>
+  `;
+
+  return buildSection('Split Content', `
+    <div class="edit-drawer__stack">
+      ${leftContent}
+      ${rightContent}
+    </div>
+  `);
 }
 
 function buildAdvancedSection(slide) {
@@ -413,20 +583,35 @@ function syncQuickEditToJSON() {
       let rawValue = input.value;
       let finalValue = rawValue;
 
-      if (field === 'body' && rawValue.includes('\n')) {
-        const lines = rawValue
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean);
-        // @ts-ignore - Reassigning to array is intentional here
-        finalValue = lines.length ? lines : '';
+      if (field.endsWith('.body') || field === 'body') {
+        if (rawValue.includes('\n')) {
+          const lines = rawValue
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+          // @ts-ignore - Reassigning to array is intentional here
+          finalValue = lines.length ? lines : '';
+        }
       }
 
-      if (finalValue === '' || finalValue == null) {
-        delete slide[field];
+      // Handle nested fields (e.g., 'left.headline')
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        if (!slide[parent]) slide[parent] = {};
+        
+        if (finalValue === '' || finalValue == null) {
+          delete slide[parent][child];
+        } else {
+          slide[parent][child] = finalValue;
+        }
       } else {
-        // @ts-ignore - Body can be an array
-        slide[field] = finalValue;
+        // Handle top-level fields
+        if (finalValue === '' || finalValue == null) {
+          delete slide[field];
+        } else {
+          // @ts-ignore - Body can be an array
+          slide[field] = finalValue;
+        }
       }
     });
 
@@ -495,20 +680,6 @@ function updateLayoutSelectTooltip(select) {
 /**
  * @param {object} context
  */
-function handleLayoutApply(context) {
-  const layout = getSelectedLayoutValue();
-  const ctx = ensureContext(context);
-  if (!layout) {
-    ctx.showHudStatus('Select a slide type first', 'warning');
-    setTimeout(() => ctx.hideHudStatus(), 1500);
-    return;
-  }
-  applyLayoutToCurrentSlide(ctx, layout);
-}
-
-/**
- * @param {object} context
- */
 function handleLayoutAdd(context) {
   const layout = getSelectedLayoutValue();
   const ctx = ensureContext(context);
@@ -558,32 +729,6 @@ const PRESERVED_FIELDS = [
   'cta',
   'description',
 ];
-
-/**
- * @param {object} ctx
- * @param {string} layout
- */
-function applyLayoutToCurrentSlide(ctx, layout) {
-  const template = ctx.getSlideTemplate(layout);
-  if (!template) {
-    alert(`No template available for type "${layout}".`);
-    return;
-  }
-
-  const slides = ctx.getSlides();
-  const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
-  ctx.updateSlide(currentIndex, mergedSlide);
-  ctx.replaceSlideAt(currentIndex);
-  renderEditForm(ctx);
-
-  const label = getLayoutMeta(layout)?.label || layout;
-  ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
-  setTimeout(() => ctx.hideHudStatus(), 1600);
-}
 
 /**
  * @param {object} template

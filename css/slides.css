@@ -109,6 +109,134 @@
   gap: clamp(24px, 4vw, 36px);
 }
 
+.slide--standard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 4vw, 48px);
+  align-items: center;
+}
+
+.slide--standard .slide__content {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vh, 32px);
+}
+
+.slide--standard .slide__image-wrapper {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide--standard .slide__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Layout Variants */
+.slide--layout-default,
+.slide--layout-image-right {
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-areas: "content image";
+}
+
+.slide--layout-default .slide__content,
+.slide--layout-image-right .slide__content {
+  grid-area: content;
+}
+
+.slide--layout-default .slide__image-wrapper,
+.slide--layout-image-right .slide__image-wrapper {
+  grid-area: image;
+}
+
+.slide--layout-image-left {
+  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-areas: "image content";
+}
+
+.slide--layout-image-left .slide__content {
+  grid-area: content;
+}
+
+.slide--layout-image-left .slide__image-wrapper {
+  grid-area: image;
+}
+
+.slide--layout-image-top {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: 
+    "image"
+    "content";
+  align-content: start;
+  gap: clamp(24px, 4vh, 40px);
+}
+
+.slide--layout-image-top .slide__image-wrapper {
+  grid-area: image;
+  max-height: 40vh;
+}
+
+.slide--layout-image-top .slide__content {
+  grid-area: content;
+  max-width: 80ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.slide--layout-image-bottom {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas: 
+    "content"
+    "image";
+  align-content: end;
+  gap: clamp(24px, 4vh, 40px);
+}
+
+.slide--layout-image-bottom .slide__image-wrapper {
+  grid-area: image;
+  max-height: 40vh;
+}
+
+.slide--layout-image-bottom .slide__content {
+  grid-area: content;
+  max-width: 80ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .slide--standard,
+  .slide--layout-default,
+  .slide--layout-image-right,
+  .slide--layout-image-left {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "image"
+      "content";
+    gap: 24px;
+    align-content: start;
+  }
+
+  .slide--layout-image-bottom {
+    grid-template-areas: 
+      "content"
+      "image";
+  }
+
+  .slide--standard .slide__image-wrapper {
+    max-height: 40vh;
+  }
+}
+
 .slide__content {
   width: min(100%, clamp(1040px, 96vw, 2280px));
   margin-block-start: calc(var(--slide-space-block) + clamp(24px, 6vh, 72px));
@@ -674,6 +802,44 @@
   font-style: italic;
 }
 
+/* Card Variant */
+.slide--quote--card {
+  align-items: center;
+  background-color: var(--color-surface-2);
+}
+
+.slide--quote--card blockquote {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: clamp(12px, 2vw, 24px) solid var(--color-accent);
+  max-width: 800px;
+}
+
+/* Image Background Variant */
+.slide--quote--image-bg {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.slide--quote--image-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7));
+  z-index: -1;
+}
+
+.slide--quote--image-bg blockquote {
+  background: transparent;
+  border-left-color: white;
+  color: white;
+  box-shadow: none;
+}
+
+.slide--quote--image-bg cite {
+  color: rgba(255,255,255,0.9);
+}
+
 .slide--quote blockquote::before {
   content: '"';
   position: absolute;
@@ -787,13 +953,14 @@
 
 .pillars {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: clamp(16px, 3vw, 24px);
+  justify-content: center;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 768px) {
   .pillars {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
