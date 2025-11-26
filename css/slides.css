@@ -791,6 +791,10 @@
 
 .slide__image-wrapper .slide__image {
   flex: 1;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .slide__image-caption {
