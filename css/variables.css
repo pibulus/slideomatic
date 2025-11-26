@@ -3,18 +3,33 @@
    ================================================================ */
 
 :root {
-  /* Core Palette - Pastel Punk */
-  --color-bg: #fffdfa;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f7f5f3;
-  --color-ink: #1a1a1a;
-  --color-muted: #71717a;
-  --color-accent: #ff9ff3; /* Pink */
-  --color-accent-secondary: #54a0ff; /* Blue */
-  --color-accent-tertiary: #feca57; /* Yellow */
+  /* Risograph Fluorescent Palette */
+  --riso-pink: #FF48B0;
+  --riso-blue: #0078BF;
+  --riso-yellow: #FFE800;
+  --riso-green: #00A95C;
+  --riso-red: #FF665E;
+  --riso-federal: #3D5588;
+
+  /* Base */
+  --cream: #FFF8DC;
+  --cream-dark: #FFEFD5;
+  --ink: #1A1522;
+  --ink-soft: #5C5670;
+  --paper: rgba(255, 248, 220, 0.95);
+
+  /* Core Palette - Mapped to Risograph */
+  --color-bg: var(--cream);
+  --color-surface: var(--paper);
+  --color-surface-alt: var(--cream-dark);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-accent: var(--riso-pink);
+  --color-accent-secondary: var(--riso-blue);
+  --color-accent-tertiary: var(--riso-yellow);
 
   /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: "Inter", "SF Pro", -apple-system, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Roboto Mono", monospace;
   --font-serif: "Merriweather", "Georgia", serif;
 
@@ -26,20 +41,21 @@
   --slide-padding: 64px;
 
   /* UI Tokens */
-  --radius: 12px;
-  --radius-sm: 6px;
-  --radius-lg: 24px;
-  --border-width: 3px;
+  --radius: 24px; /* --radius-soft */
+  --radius-sm: 12px;
+  --radius-lg: 32px;
+  --radius-round: 999px;
+  --border-width: 4px; /* Thicker borders */
   
-  /* Shadows */
-  --shadow-sm: 4px 4px 0 rgba(0,0,0,0.1);
-  --shadow-md: 8px 8px 0 rgba(0,0,0,0.1);
-  --shadow-lg: 12px 12px 0 rgba(0,0,0,0.1);
-  --shadow-xl: 20px 20px 0 rgba(0,0,0,0.15);
+  /* Shadows - HARD / BRUTAL */
+  --shadow-sm: 4px 4px 0 rgba(26, 21, 34, 0.15);
+  --shadow-md: 6px 6px 0 rgba(26, 21, 34, 0.2); /* --shadow-card */
+  --shadow-lg: 10px 10px 0 rgba(26, 21, 34, 0.25); /* --shadow-brutal */
+  --shadow-xl: 16px 16px 0 rgba(26, 21, 34, 0.3);
 
   /* Transitions */
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-smooth: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Z-Index Scale */
   --z-grain: 0;

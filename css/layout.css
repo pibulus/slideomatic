@@ -17,20 +17,32 @@
   background: transparent;
 }
 
-.grain-overlay {
+/* Grain texture overlay - RISOGRAPH FEEL */
+.grain-overlay,
+body::before {
+  content: "";
   position: fixed;
   inset: 0;
-  background: var(--background-overlay, transparent);
-  mix-blend-mode: multiply;
-  opacity: var(--background-opacity, 0.6);
   pointer-events: none;
-  z-index: var(--z-grain);
-  animation: grain-shift 8s ease-in-out infinite;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  z-index: var(--z-grain, 0);
+  animation: grain-shift 2s steps(8) infinite;
 }
 
 @keyframes grain-shift {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.5; }
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2%, -2%); }
+  20% { transform: translate(2%, 0); }
+  30% { transform: translate(-1%, 2%); }
+  40% { transform: translate(1%, -1%); }
+  50% { transform: translate(-2%, 1%); }
+  60% { transform: translate(2%, 2%); }
+  70% { transform: translate(-1%, -2%); }
+  80% { transform: translate(1%, 1%); }
+  90% { transform: translate(0, -1%); }
 }
 
 /* ===================================================================
