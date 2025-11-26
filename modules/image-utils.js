@@ -116,6 +116,88 @@ function handleImageReplacement(existingImage, nextImageData) {
     }
 }
 
+export function collectImagePaths(slide) {
+    if (!slide || typeof slide !== 'object') return [];
+
+    const entries = [];
+    const push = (path, image) => {
+        if (image?.src !== undefined) { // Check for existence, src might be empty string
+            entries.push({ path, image });
+        } else if (image && typeof image === 'object' && !image.src) {
+             // Handle empty image objects (placeholders)
+             entries.push({ path, image });
+        }
+    };
+
+    // Helper to safely access and push
+    const checkAndPush = (obj, key, pathPrefix) => {
+        if (obj?.[key]) {
+             push([...pathPrefix, key], obj[key]);
+        }
+    };
+
+    // Top-level image
+    checkAndPush(slide, 'image', []);
+
+    // Arrays
+    if (Array.isArray(slide.media)) {
+        slide.media.forEach((item, index) => {
+            checkAndPush(item, 'image', ['media', index]);
+        });
+    }
+
+    if (Array.isArray(slide.items)) {
+        slide.items.forEach((item, index) => {
+            checkAndPush(item, 'image', ['items', index]);
+        });
+    }
+
+    if (Array.isArray(slide.pillars)) {
+        slide.pillars.forEach((pillar, index) => {
+            checkAndPush(pillar, 'image', ['pillars', index]);
+        });
+    }
+
+    // Left/Right
+    if (slide.left) checkAndPush(slide.left, 'image', ['left']);
+    if (slide.right) checkAndPush(slide.right, 'image', ['right']);
+
+    return entries;
+}
+
+export function collectSlideImages(slide) {
+    return collectImagePaths(slide).map((entry) => entry.image);
+}
+
+export function getContainerAtPath(slide, path) {
+    if (!Array.isArray(path) || path.length === 0) return null;
+    let current = slide;
+    for (let index = 0; index < path.length - 1; index += 1) {
+        const key = path[index];
+        if (current == null) return null;
+        current = current[key];
+    }
+    const key = path[path.length - 1];
+    return { container: current, key };
+}
+
+export function updateSlideImageByIndex(slideIndex, imageIndex, imageData) {
+    if (slideIndex < 0 || slideIndex >= slides.length) return false;
+    const slide = slides[slideIndex];
+    
+    const imagePaths = collectImagePaths(slide);
+    const target = imagePaths[imageIndex];
+    
+    if (!target || !target.image) {
+        console.warn('Image index out of bounds');
+        return false;
+    }
+
+    handleImageReplacement(target.image, imageData);
+    Object.assign(target.image, imageData);
+    return true;
+}
+
 export function showImageError(placeholderElement, message) {
     const text = placeholderElement.querySelector('.image-placeholder__text');
     if (!text) return;

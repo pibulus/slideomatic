@@ -14,66 +14,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { formatBytes, escapeHtml, deepClone } from './utils.js';
-
-function collectImagePaths(slide) {
-  if (!slide || typeof slide !== 'object') return [];
-
-  const entries = [];
-  const push = (path, image) => {
-    if (image?.src) {
-      entries.push({ path, image });
-    }
-  };
-
-  push(['image'], slide.image);
-
-  if (Array.isArray(slide.media)) {
-    slide.media.forEach((item, index) => {
-      push(['media', index, 'image'], item?.image);
-    });
-  }
-
-  if (Array.isArray(slide.items)) {
-    slide.items.forEach((item, index) => {
-      push(['items', index, 'image'], item?.image);
-    });
-  }
-
-  if (slide.left?.image) {
-    push(['left', 'image'], slide.left.image);
-  }
-
-  if (slide.right?.image) {
-    push(['right', 'image'], slide.right.image);
-  }
-
-  if (Array.isArray(slide.pillars)) {
-    slide.pillars.forEach((pillar, index) => {
-      push(['pillars', index, 'image'], pillar?.image);
-    });
-  }
-
-  return entries;
-}
-
-function collectSlideImages(slide) {
-  return collectImagePaths(slide).map((entry) => entry.image);
-}
+import { collectImagePaths, collectSlideImages, getContainerAtPath } from './image-utils.js';
 
 function cloneSlide(slide) {
   return deepClone(slide);
-}
-
-function getContainerAtPath(slide, path) {
-  if (!Array.isArray(path) || path.length === 0) return null;
-  let current = slide;
-  for (let index = 0; index < path.length - 1; index += 1) {
-    const key = path[index];
-    if (current == null) return null;
-    current = current[key];
-  }
-  const key = path[path.length - 1];
-  return { container: current, key };
 }
 
 function removeImageByIndex(imageIndex, slide) {
@@ -184,6 +128,7 @@ function buildImageManager(slide) {
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
+          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="AI Assist: Search or Generate">✨</button>` : ''}
           ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image">↻</button>` : ''}
           <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot">×</button>
         </div>
@@ -255,6 +200,29 @@ function setupImageReplaceButtons({ root, onReplace, addTrackedListener }) {
   };
 
   addTrackedListener(root, 'click', handleReplace);
+}
+
+/**
+ * Setup AI buttons using event delegation
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onAI - Callback function
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageAIButtons({ root, onAI, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  const handleAI = (event) => {
+    const button = event.target.closest('.edit-drawer__image-ai');
+    if (!button) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    if (Number.isNaN(index)) return;
+    onAI?.(index);
+  };
+
+  addTrackedListener(root, 'click', handleAI);
 }
 
 function getDragAfterElement(container, y) {
@@ -404,5 +372,6 @@ export {
   buildImageManager,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
+  setupImageAIButtons,
   setupImageDragReorder,
 };

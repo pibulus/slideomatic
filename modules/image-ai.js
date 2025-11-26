@@ -1,15 +1,15 @@
-import { CONFIG, debug } from './constants.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { STORAGE_KEY_API } from './voice-modes.js';
 import { openSettingsModal } from './settings-modal.js';
 import { getCurrentThemePath } from './theme-manager.js';
-import { slides, slideElements, isOverview } from './state.js';
+import { isOverview } from './state.js';
 import { replaceSlideAt } from './slide-actions.js';
 import { setActiveSlide } from './navigation.js';
 import {
     extractSlideContext,
     buildImageSearchUrl,
-    updateSlideImage
+    updateSlideImage,
+    updateSlideImageByIndex
 } from './image-utils.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -33,7 +33,16 @@ export async function askAIForImage(placeholderElement, imageConfig = {}) {
     const apiKey = requireGeminiApiKey();
     if (!apiKey) return;
 
-    const context = extractSlideContext(placeholderElement);
+    let context;
+    if (imageConfig.context) {
+        context = imageConfig.context;
+    } else if (placeholderElement) {
+        context = extractSlideContext(placeholderElement);
+    } else {
+        console.warn('No context provided for AI image generation');
+        return;
+    }
+
     const { headline, body, slideType } = context;
 
     showHudStatus('🤔 Deciding...', 'info');
@@ -113,8 +122,19 @@ export async function generateAIImage(placeholderElement, imageConfig = {}) {
     const apiKey = requireGeminiApiKey();
     if (!apiKey) return;
 
-    const context = extractSlideContext(placeholderElement);
+    let context;
+    if (imageConfig.context) {
+        context = imageConfig.context;
+    } else if (placeholderElement) {
+        context = extractSlideContext(placeholderElement);
+    } else {
+        return;
+    }
+
     const { slideIndex, headline, body } = context;
+    // Use slideIndex from config if available (for edit drawer context)
+    const targetSlideIndex = imageConfig.slideIndex !== undefined ? imageConfig.slideIndex : slideIndex;
+    
     const imageContext = imageConfig.alt || imageConfig.label || imageConfig.search || '';
 
     const rootStyles = getComputedStyle(document.documentElement);
@@ -185,17 +205,30 @@ The image should be visually striking and support the slide content.`;
         const mimeType = imagePart.inlineData.mimeType || 'image/png';
         const base64Data = `data:${mimeType};base64,${imagePart.inlineData.data}`;
 
-        if (slideIndex >= 0) {
-            updateSlideImage(slideIndex, {
-                src: base64Data,
-                alt: imageContext || headline || 'AI generated image',
-                originalFilename: 'ai-generated.png',
-                generatedAt: Date.now()
-            }, placeholderElement);
+        const imageData = {
+            src: base64Data,
+            alt: imageContext || headline || 'AI generated image',
+            originalFilename: 'ai-generated.png',
+            generatedAt: Date.now()
+        };
 
-            replaceSlideAt(slideIndex, { focus: false });
+        if (targetSlideIndex >= 0) {
+            if (imageConfig.imageIndex !== undefined) {
+                // Update by index (Edit Drawer flow)
+                updateSlideImageByIndex(targetSlideIndex, imageConfig.imageIndex, imageData);
+            } else {
+                // Update by placeholder (Main View flow)
+                updateSlideImage(targetSlideIndex, imageData, placeholderElement);
+            }
+
+            replaceSlideAt(targetSlideIndex, { focus: false });
             if (!isOverview) {
-                setActiveSlide(slideIndex);
+                setActiveSlide(targetSlideIndex);
+            }
+            
+            // If provided, call success callback (e.g. to refresh edit drawer)
+            if (imageConfig.onSuccess) {
+                imageConfig.onSuccess();
             }
         }
 

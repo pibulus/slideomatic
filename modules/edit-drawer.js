@@ -21,6 +21,7 @@ import {
   buildImageManager,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
+  setupImageAIButtons,
   setupImageDragReorder,
   removeImageByIndex,
   replaceImageByIndex,
@@ -28,6 +29,7 @@ import {
   addImageToSlide,
   updateImageAltText,
 } from './slide-image-ui.js';
+import { askAIForImage } from './image-ai.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -996,6 +998,29 @@ export function renderEditForm(context) {
       addTrackedListener,
     });
   }
+
+  setupImageAIButtons({
+    root: content,
+    onAI: (imageIndex) => {
+      const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
+      if (!currentSlide) return;
+      
+      const context = {
+        slideIndex: ctx.getCurrentIndex(),
+        headline: currentSlide.headline || currentSlide.title || '',
+        body: Array.isArray(currentSlide.body) ? currentSlide.body.join(' ') : (currentSlide.body || ''),
+        slideType: currentSlide.type || 'standard'
+      };
+
+      askAIForImage(null, {
+        context,
+        slideIndex: ctx.getCurrentIndex(),
+        imageIndex,
+        onSuccess: () => renderEditForm(ctx)
+      });
+    },
+    addTrackedListener
+  });
 
   // Setup alt text input event listeners using event delegation
   addTrackedListener(content, 'input', (event) => {
