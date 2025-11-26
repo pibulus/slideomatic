@@ -460,6 +460,9 @@ function autoSaveSlide(context) {
   }
 }
 
+/**
+ * @param {object} context
+ */
 function showAutoSaveStatus(context) {
   const ctx = ensureContext(context);
   ctx.showHudStatus('✓ Saved', 'success');
@@ -474,6 +477,9 @@ function getSelectedLayoutValue() {
   return '';
 }
 
+/**
+ * @param {HTMLSelectElement} select
+ */
 function updateLayoutSelectTooltip(select) {
   if (!select) return;
   const desc = getLayoutDescription(select.value);
@@ -484,6 +490,9 @@ function updateLayoutSelectTooltip(select) {
   }
 }
 
+/**
+ * @param {object} context
+ */
 function handleLayoutApply(context) {
   const layout = getSelectedLayoutValue();
   const ctx = ensureContext(context);
@@ -495,6 +504,9 @@ function handleLayoutApply(context) {
   applyLayoutToCurrentSlide(ctx, layout);
 }
 
+/**
+ * @param {object} context
+ */
 function handleLayoutAdd(context) {
   const layout = getSelectedLayoutValue();
   const ctx = ensureContext(context);
@@ -506,6 +518,10 @@ function handleLayoutAdd(context) {
   addNewSlideWithLayout(ctx, layout);
 }
 
+/**
+ * @param {object} ctx
+ * @param {string} layout
+ */
 function addNewSlideWithLayout(ctx, layout) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
@@ -541,6 +557,10 @@ const PRESERVED_FIELDS = [
   'description',
 ];
 
+/**
+ * @param {object} ctx
+ * @param {string} layout
+ */
 function applyLayoutToCurrentSlide(ctx, layout) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
@@ -563,6 +583,10 @@ function applyLayoutToCurrentSlide(ctx, layout) {
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
+/**
+ * @param {object} template
+ * @param {object} currentSlide
+ */
 function mergeSlideWithTemplate(template, currentSlide) {
   const merged = JSON.parse(JSON.stringify(template));
   PRESERVED_FIELDS.forEach((key) => {
@@ -583,6 +607,9 @@ function mergeSlideWithTemplate(template, currentSlide) {
   return merged;
 }
 
+/**
+ * @param {object} context
+ */
 function handleDownloadDeck(context) {
   const ctx = ensureContext(context);
   const persisted = ctx.downloadDeck();
@@ -592,6 +619,10 @@ function handleDownloadDeck(context) {
   }
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ */
 function handleImageRemove(context, imageIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -608,6 +639,10 @@ function handleImageRemove(context, imageIndex) {
   console.log('✓ Image removed from slide');
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ */
 function handleImageReplace(context, imageIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -624,6 +659,11 @@ function handleImageReplace(context, imageIndex) {
   console.log('✓ Image replaced - src cleared, title preserved');
 }
 
+/**
+ * @param {object} context
+ * @param {number} fromIndex
+ * @param {number} toIndex
+ */
 function handleImageReorder(context, fromIndex, toIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -638,6 +678,11 @@ function handleImageReorder(context, fromIndex, toIndex) {
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ * @param {string} altText
+ */
 function handleImageAltUpdate(context, imageIndex, altText) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -652,6 +697,9 @@ function handleImageAltUpdate(context, imageIndex, altText) {
   // Just update the slide in the background
 }
 
+/**
+ * @param {object} context
+ */
 function handleImageAdd(context) {
   const ctx = ensureContext(context);
 
@@ -671,6 +719,10 @@ function handleImageAdd(context) {
   setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
+/**
+ * @param {object} context
+ * @param {File} file
+ */
 async function handleImageFile(context, file) {
   if (!file || !file.type.startsWith('image/')) return;
   const ctx = ensureContext(context);
@@ -790,6 +842,9 @@ function setupTextareaExpansion() {
   });
 }
 
+/**
+ * @param {object} context
+ */
 export function renderEditForm(context) {
   const ctx = ensureContext(context);
   const content = document.getElementById('edit-drawer-content');
@@ -857,7 +912,7 @@ export function renderEditForm(context) {
   );
 
   const layoutSelect = document.getElementById('slide-layout-select');
-  if (layoutSelect) {
+  if (layoutSelect instanceof HTMLSelectElement) {
     updateLayoutSelectTooltip(layoutSelect);
     addTrackedListener(layoutSelect, 'change', () => updateLayoutSelectTooltip(layoutSelect));
   }
@@ -995,6 +1050,9 @@ export function saveCurrentSlide(context) {
   }
 }
 
+/**
+ * @param {object} context
+ */
 export function duplicateCurrentSlide(context) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -1011,6 +1069,9 @@ export function duplicateCurrentSlide(context) {
   console.log('✓ Slide duplicated');
 }
 
+/**
+ * @param {object} context
+ */
 export function deleteCurrentSlide(context) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
