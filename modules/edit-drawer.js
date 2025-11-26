@@ -364,13 +364,13 @@ function setupQuickEditSync(context) {
   // Use event delegation on the container instead of individual inputs
   const handleInput = (event) => {
     const input = event.target;
-    if (!input.matches('[data-field]')) return;
+    if (!(input instanceof Element) || !input.matches('[data-field]')) return;
 
     syncQuickEditToJSON();
 
     // Check if auto-save is enabled
     const autoSaveToggle = document.getElementById('autosave-toggle');
-    const isAutoSaveEnabled = autoSaveToggle ? autoSaveToggle.checked : true;
+    const isAutoSaveEnabled = (autoSaveToggle instanceof HTMLInputElement) ? autoSaveToggle.checked : true;
 
     if (isAutoSaveEnabled) {
       // Auto-save after idle typing
@@ -387,40 +387,49 @@ function setupQuickEditSync(context) {
   const autoSaveToggle = document.getElementById('autosave-toggle');
   if (autoSaveToggle) {
     addTrackedListener(autoSaveToggle, 'change', (e) => {
-      localStorage.setItem('slideomatic_autosave', e.target.checked);
+      if (e.target instanceof HTMLInputElement) {
+        localStorage.setItem('slideomatic_autosave', String(e.target.checked));
+      }
     });
   }
 }
 
 function syncQuickEditToJSON() {
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const slide = JSON.parse(textarea.value);
     const inputs = document.querySelectorAll('[data-field]');
 
     inputs.forEach((input) => {
+      if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLTextAreaElement)) return;
+      
       const field = input.dataset.field;
-      let value = input.value;
+      if (!field) return;
 
-      if (field === 'body' && value.includes('\n')) {
-        const lines = value
+      let rawValue = input.value;
+      let finalValue = rawValue;
+
+      if (field === 'body' && rawValue.includes('\n')) {
+        const lines = rawValue
           .split('\n')
           .map((line) => line.trim())
           .filter(Boolean);
-        value = lines.length ? lines : '';
+        // @ts-ignore - Reassigning to array is intentional here
+        finalValue = lines.length ? lines : '';
       }
 
-      if (value === '' || value == null) {
+      if (finalValue === '' || finalValue == null) {
         delete slide[field];
       } else {
-        slide[field] = value;
+        // @ts-ignore - Body can be an array
+        slide[field] = finalValue;
       }
     });
 
     textarea.value = JSON.stringify(slide, null, 2);
-  } catch (error) {
+  } catch {
     console.warn('Cannot sync quick-edit: invalid JSON');
   }
 }
@@ -430,7 +439,7 @@ function autoSaveSlide(context) {
   syncQuickEditToJSON();
 
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const editedSlide = JSON.parse(textarea.value);
@@ -459,7 +468,10 @@ function showAutoSaveStatus(context) {
 
 function getSelectedLayoutValue() {
   const select = document.getElementById('slide-layout-select');
-  return select?.value || '';
+  if (select instanceof HTMLSelectElement) {
+    return select.value;
+  }
+  return '';
 }
 
 function updateLayoutSelectTooltip(select) {
@@ -695,10 +707,14 @@ async function handleImageFile(context, file) {
 }
 
 // Helper functions for image compression (simplified versions)
+/**
+ * @param {File} file
+ */
 async function compressImageForEdit(file) {
   const MAX_SIZE = 2 * 1024 * 1024; // 2MB
   const TARGET_SIZE = 500 * 1024; // 500KB
 
+  // @ts-ignore - Global from script tag
   if (typeof imageCompression === 'undefined') {
     if (file.size > MAX_SIZE) {
       throw new Error('Image too large. Please use a smaller image (<2MB).');
@@ -711,6 +727,7 @@ async function compressImageForEdit(file) {
   }
 
   try {
+    // @ts-ignore - Global from script tag
     const compressed = await imageCompression(file, {
       maxWidthOrHeight: 1920,
       maxSizeMB: TARGET_SIZE / (1024 * 1024),
@@ -750,6 +767,8 @@ function handleJsonToggle() {
 function setupTextareaExpansion() {
   const textareas = document.querySelectorAll('.edit-drawer__textarea');
   textareas.forEach(textarea => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
     const adjustHeight = () => {
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
@@ -915,30 +934,35 @@ export function renderEditForm(context) {
   }
 
   const imageList = content.querySelector('.edit-drawer__image-list');
-  setupImageDragReorder({
-    container: imageList,
-    onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
-    addTrackedListener,
-  });
+  if (imageList instanceof HTMLElement) {
+    setupImageDragReorder({
+      container: imageList,
+      onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
+      addTrackedListener,
+    });
+  }
 
   // Setup alt text input event listeners using event delegation
   addTrackedListener(content, 'input', (event) => {
     const input = event.target;
-    if (!input.matches('.edit-drawer__image-alt-input')) return;
+    if (!(input instanceof HTMLInputElement) || !input.matches('.edit-drawer__image-alt-input')) return;
 
-    const imageIndex = Number.parseInt(input.dataset.imageIndex, 10);
+    const imageIndex = Number.parseInt(input.dataset.imageIndex || '', 10);
     if (Number.isNaN(imageIndex)) return;
     const altText = input.value;
     handleImageAltUpdate(ctx, imageIndex, altText);
   });
 }
 
+/**
+ * @param {object} context
+ */
 export function saveCurrentSlide(context) {
   const ctx = ensureContext(context);
   syncQuickEditToJSON();
 
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const editedSlide = JSON.parse(textarea.value);
