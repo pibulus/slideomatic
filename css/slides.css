@@ -457,14 +457,13 @@
   display: inline-block;
 }
 
-/* Desktop: h2 can shrink to fit content in grid layouts */
-@media (min-width: 1025px) {
-  .slide--standard h2,
-  .slide--layout-default h2,
-  .slide--layout-image-right h2,
-  .slide--layout-image-left h2 {
-    width: fit-content;
-  }
+/* Standard slides: h2 always takes full column width to prevent awkward wrapping */
+.slide--standard h2,
+.slide--layout-default h2,
+.slide--layout-image-right h2,
+.slide--layout-image-left h2 {
+  width: 100%;
+  display: block;
 }
 
 .slide h3 {
