@@ -27,12 +27,19 @@ import { deriveDeckName } from './utils.js';
 
 const noop = () => {};
 
+/** @type {(param: string) => string | null} */
 let getParamHook = () => null;
+/** @type {(message: string, type?: string) => void} */
 let showHudStatusHook = noop;
+/** @type {() => void} */
 let hideHudStatusHook = noop;
+/** @type {(status: string) => void} */
 let showSaveStatusHook = noop;
+/** @type {() => void} */
 let updateDeckNameDisplayHook = noop;
+/** @type {(type: string) => any} */
 let getSlideTemplateHook = () => ({ type: 'title' });
+/** @type {(theme: any) => void} */
 let applySharedThemeHook = noop;
 
 export function registerDeckPersistenceHooks(hooks = {}) {
@@ -171,7 +178,7 @@ function getDeckStorageKey() {
     const keySource = `${url.origin}${url.pathname}${url.search ?? ''}`;
     setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(keySource)}`);
     console.log('[getDeckStorageKey] Built key from path URL:', keySource, '→', deckStorageKey);
-  } catch (error) {
+    } catch {
     setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(path)}`);
     console.log('[getDeckStorageKey] Built key from path:', path, '→', deckStorageKey);
   }
@@ -203,7 +210,7 @@ function loadPersistedDeck() {
     console.warn('Failed to load deck overrides from localStorage:', error);
     try {
       localStorage.removeItem(getDeckStorageKey());
-    } catch (_) {
+    } catch {
       // Ignore cleanup failure – nothing else we can do.
     }
     return null;
@@ -262,7 +269,7 @@ export function persistSlides(options = {}) {
       try {
         showHudStatusHook('⚠️ Unable to save edits locally', 'warning');
         setTimeout(hideHudStatusHook, 2400);
-      } catch (_) {
+      } catch {
         // HUD not available; ignore.
       }
       setDeckPersistFailureNotified(true);

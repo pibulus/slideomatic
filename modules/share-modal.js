@@ -2,13 +2,19 @@ import { slides } from './state.js';
 import { getCurrentTheme } from './theme-manager.js';
 import { deriveDeckName, trapFocus, focusFirstElement } from './utils.js';
 
+/** @type {any} */
+var QRCodeStyling;
+
+let previousFocus = null;
+let keydownHandler = null;
+
 export function initShareModal() {
   const shareBtn = document.getElementById('share-deck-btn');
   const shareModal = document.getElementById('share-modal');
   const closeBtn = document.getElementById('share-modal-close');
   const backdrop = shareModal?.querySelector('.share-modal__backdrop');
   const copyBtn = document.getElementById('share-copy-btn');
-  const urlInput = document.getElementById('share-url-input');
+  const urlInput = /** @type {HTMLInputElement} */ (document.getElementById('share-url-input'));
   const qrContainer = document.getElementById('share-qr-code');
   const statusDiv = document.getElementById('share-status');
 
@@ -43,10 +49,7 @@ export function initShareModal() {
     statusDiv.className = 'share-modal__status';
   }
 
-import { trapFocus, focusFirstElement } from './utils.js';
 
-let previousFocus = null;
-let keydownHandler = null;
 
   async function openShareModal() {
     previousFocus = document.activeElement;
@@ -84,6 +87,12 @@ let keydownHandler = null;
   }
 
   function closeShareModal() {
+    // Restore focus BEFORE hiding the modal
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      previousFocus.focus();
+      previousFocus = null;
+    }
+
     shareModal.classList.remove('is-open');
     shareModal.setAttribute('aria-hidden', 'true');
     hideShareStatus();
@@ -91,11 +100,6 @@ let keydownHandler = null;
     if (keydownHandler) {
       document.removeEventListener('keydown', keydownHandler);
       keydownHandler = null;
-    }
-
-    if (previousFocus && typeof previousFocus.focus === 'function') {
-      previousFocus.focus();
-      previousFocus = null;
     }
   }
 
@@ -119,14 +123,14 @@ let keydownHandler = null;
         },
         body: JSON.stringify(deckPayload),
       });
-    } catch (networkError) {
+    } catch {
       throw new Error('Share service unavailable. Use `netlify dev` locally or the deployed site.');
     }
 
     let payload = null;
     try {
       payload = await response.json();
-    } catch (_) {
+    } catch {
       // Ignore JSON parse failure; handled below
     }
 

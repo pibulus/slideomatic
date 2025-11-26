@@ -20,7 +20,7 @@
   height: 100vh;
   height: 100dvh;
   --slide-space-block: clamp(24px, 5vh, 64px);
-  --slide-space-inline: clamp(24px, 4vw, 72px);
+  --slide-space-inline: clamp(32px, 5vw, 96px);
   padding: var(--slide-space-block) var(--slide-space-inline);
   display: flex;
   flex-direction: column;
@@ -119,6 +119,7 @@
 .slide--standard .slide__content {
   width: 100%;
   margin: 0;
+  margin-block-start: clamp(48px, 8vh, 96px);
   display: flex;
   flex-direction: column;
   gap: clamp(16px, 2vh, 32px);
@@ -127,7 +128,7 @@
 .slide--standard .slide__image-wrapper {
   width: 100%;
   height: auto;
-  max-height: 80vh;
+  max-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -239,7 +240,7 @@
 
 .slide__content {
   width: min(100%, clamp(1040px, 96vw, 2280px));
-  margin-block-start: calc(var(--slide-space-block) + clamp(24px, 6vh, 72px));
+  margin-block-start: calc(var(--slide-space-block) + clamp(48px, 8vh, 96px));
   margin-block-end: clamp(24px, 7vh, 80px);
   margin-inline: clamp(20px, 2.5vw, 64px);
   display: grid;
@@ -512,8 +513,8 @@
 }
 
 .slide__image {
-  width: min(680px, 70vw);
-  max-height: 58vh;
+  width: min(600px, 60vw);
+  max-height: 50vh;
   object-fit: contain;
   border: solid var(--color-ink);
   border-width: max(2px, calc(var(--border-width) * 0.7));

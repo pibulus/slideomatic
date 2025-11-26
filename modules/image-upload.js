@@ -14,6 +14,9 @@ import {
 // Image Upload Module
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** @type {any} */
+var imageCompression;
+
 const MAX_IMAGE_BYTES = CONFIG.IMAGE.MAX_BYTES;
 const TARGET_IMAGE_BYTES = CONFIG.IMAGE.TARGET_BYTES;
 

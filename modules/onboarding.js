@@ -84,6 +84,12 @@ export function closeKeyboardHelp() {
   const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
+  // Restore focus BEFORE hiding the modal to avoid "aria-hidden" blocks
+  if (previousFocus && typeof previousFocus.focus === 'function') {
+    previousFocus.focus();
+    previousFocus = null;
+  }
+
   modal.setAttribute('aria-hidden', 'true');
   modal.classList.remove('is-open');
 
@@ -91,17 +97,12 @@ export function closeKeyboardHelp() {
     document.removeEventListener('keydown', keydownHandler);
     keydownHandler = null;
   }
-
-  if (previousFocus && typeof previousFocus.focus === 'function') {
-    previousFocus.focus();
-    previousFocus = null;
-  }
 }
 
 function setupKeyboardHelpListeners() {
   // Close button
-  const closeBtn = document.getElementById('hints-modal-close');
-  const gotItBtn = document.getElementById('hints-modal-got-it');
+  const closeBtn = /** @type {HTMLElement} */ (document.getElementById('hints-modal-close'));
+  const gotItBtn = /** @type {HTMLElement} */ (document.getElementById('hints-modal-got-it'));
   
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
     closeBtn.addEventListener('click', closeKeyboardHelp);
@@ -114,7 +115,7 @@ function setupKeyboardHelpListeners() {
   }
 
   // Backdrop
-  const backdrop = document.querySelector('.hints-modal__backdrop');
+  const backdrop = /** @type {HTMLElement} */ (document.querySelector('.hints-modal__backdrop'));
   if (backdrop && !backdrop.dataset.listenerAttached) {
     backdrop.addEventListener('click', closeKeyboardHelp);
     backdrop.dataset.listenerAttached = 'true';

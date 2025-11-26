@@ -216,7 +216,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     listeners.push({ element: placeholder, event: 'drop', handler: dropHandler });
 
     // Store reference to the original image object
-    placeholder._imageRef = image;
+    /** @type {any} */ (placeholder)._imageRef = image;
 
     wrapper.appendChild(placeholder);
 
@@ -241,10 +241,10 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     }
 
     // Store reference on wrapper
-    wrapper._imageRef = image;
+    /** @type {any} */ (wrapper)._imageRef = image;
 
     // Add cleanup function to remove all event listeners
-    wrapper.cleanup = () => {
+    /** @type {any} */ (wrapper).cleanup = () => {
         listeners.forEach(({ element, event, handler }) => {
             element?.removeEventListener(event, handler);
         });
@@ -257,17 +257,17 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
 export function handleImageModalTrigger(event) {
     if (isOverview) return;
 
-    const target = event.target;
+    const target = /** @type {HTMLElement} */ (event.target);
     if (target.closest('.edit-drawer')) return; // Don't trigger in edit drawer
 
-    const trigger = target.closest('[data-modal-src]') || (target.tagName === 'IMG' && target.closest('.slide'));
+    const trigger = /** @type {HTMLElement} */ (target.closest('[data-modal-src]') || (target.tagName === 'IMG' && target.closest('.slide')));
     if (!trigger) return;
 
     // If it's a placeholder, don't open modal
     if (trigger.closest('.image-placeholder-wrapper')) return;
 
-    const src = trigger.dataset.modalSrc || trigger.src;
-    const alt = trigger.dataset.modalAlt || trigger.alt;
+    const src = trigger.dataset.modalSrc || /** @type {HTMLImageElement} */ (trigger).src;
+    const alt = trigger.dataset.modalAlt || /** @type {HTMLImageElement} */ (trigger).alt;
 
     if (!src) return;
 
@@ -361,7 +361,8 @@ export function handleImageModalTrigger(event) {
     document.addEventListener('keydown', escHandler);
 
     modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.closest('.image-modal__close') || e.target.tagName === 'IMG') {
+        const target = /** @type {HTMLElement} */ (e.target);
+        if (target === modal || target.closest('.image-modal__close') || target.tagName === 'IMG') {
             handleClose();
         }
     });

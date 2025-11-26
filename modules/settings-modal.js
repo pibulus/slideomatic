@@ -16,7 +16,7 @@ let keydownHandler = null;
 
 export function openSettingsModal() {
   const modal = document.getElementById('settings-modal');
-  const input = document.getElementById('gemini-api-key');
+  const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
   if (modal && input) {
     previousFocus = document.activeElement;
     input.value = getGeminiApiKey();
@@ -42,6 +42,12 @@ export function openSettingsModal() {
 export function closeSettingsModal() {
   const modal = document.getElementById('settings-modal');
   if (modal) {
+    // Restore focus BEFORE hiding the modal
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      previousFocus.focus();
+      previousFocus = null;
+    }
+
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
     
@@ -49,46 +55,41 @@ export function closeSettingsModal() {
       document.removeEventListener('keydown', keydownHandler);
       keydownHandler = null;
     }
-    
-    if (previousFocus && typeof previousFocus.focus === 'function') {
-      previousFocus.focus();
-      previousFocus = null;
-    }
   }
 }
 
 export function setupSettingsModalListeners() {
-  const closeBtn = document.querySelector('.settings-modal__close');
+  const closeBtn = /** @type {HTMLElement} */ (document.querySelector('.settings-modal__close'));
   if (closeBtn && !closeBtn.dataset.listenerAttached) {
     closeBtn.addEventListener('click', closeSettingsModal);
     closeBtn.dataset.listenerAttached = 'true';
   }
 
-  const backdrop = document.querySelector('.settings-modal__backdrop');
+  const backdrop = /** @type {HTMLElement} */ (document.querySelector('.settings-modal__backdrop'));
   if (backdrop && !backdrop.dataset.listenerAttached) {
     backdrop.addEventListener('click', closeSettingsModal);
     backdrop.dataset.listenerAttached = 'true';
   }
 
-  const saveBtn = document.getElementById('save-api-key');
+  const saveBtn = /** @type {HTMLButtonElement} */ (document.getElementById('save-api-key'));
   if (saveBtn && !saveBtn.dataset.listenerAttached) {
     saveBtn.addEventListener('click', saveApiKey);
     saveBtn.dataset.listenerAttached = 'true';
   }
 
-  const testBtn = document.getElementById('test-api-key');
+  const testBtn = /** @type {HTMLButtonElement} */ (document.getElementById('test-api-key'));
   if (testBtn && !testBtn.dataset.listenerAttached) {
     testBtn.addEventListener('click', testApiKey);
     testBtn.dataset.listenerAttached = 'true';
   }
 
-  const clearBtn = document.getElementById('clear-api-key');
+  const clearBtn = /** @type {HTMLButtonElement} */ (document.getElementById('clear-api-key'));
   if (clearBtn && !clearBtn.dataset.listenerAttached) {
     clearBtn.addEventListener('click', clearApiKey);
     clearBtn.dataset.listenerAttached = 'true';
   }
 
-  const toggleBtn = document.getElementById('toggle-api-key-visibility');
+  const toggleBtn = /** @type {HTMLButtonElement} */ (document.getElementById('toggle-api-key-visibility'));
   if (toggleBtn && !toggleBtn.dataset.listenerAttached) {
     toggleBtn.addEventListener('click', toggleApiKeyVisibility);
     toggleBtn.dataset.listenerAttached = 'true';
@@ -96,7 +97,7 @@ export function setupSettingsModalListeners() {
 }
 
 function saveApiKey() {
-  const input = document.getElementById('gemini-api-key');
+  const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
   const key = input.value.trim();
 
   if (key) {
@@ -109,7 +110,7 @@ function saveApiKey() {
 
 async function testApiKey() {
   const key = getGeminiApiKey();
-  const testBtn = document.getElementById('test-api-key');
+  const testBtn = /** @type {HTMLButtonElement} */ (document.getElementById('test-api-key'));
 
   if (!key) {
     showApiKeyStatus('error', 'No API key found. Please save one first.');
@@ -154,7 +155,7 @@ async function testApiKey() {
         testBtn.disabled = false;
       }
     }
-  } catch (error) {
+  } catch {
     showApiKeyStatus('error', '❌ Connection test failed. Please check your internet connection.');
     if (testBtn) {
       testBtn.classList.remove('is-loading');
@@ -167,14 +168,14 @@ async function testApiKey() {
 function clearApiKey() {
   if (confirm('Are you sure you want to clear your API key?')) {
     localStorage.removeItem(STORAGE_KEY_API);
-    const input = document.getElementById('gemini-api-key');
+    const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
     if (input) input.value = '';
     showApiKeyStatus('info', 'API key cleared');
   }
 }
 
 function toggleApiKeyVisibility() {
-  const input = document.getElementById('gemini-api-key');
+  const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
   if (input) {
     input.type = input.type === 'password' ? 'text' : 'password';
   }
