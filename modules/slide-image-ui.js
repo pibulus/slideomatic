@@ -297,20 +297,30 @@ function setupImageDragReorder({ container, onReorder, addTrackedListener }) {
     event.dataTransfer.setData('text/html', target.innerHTML);
   };
 
+  let isDragOverScheduled = false;
+  let lastClientY = 0;
+
   const handleDragOver = (event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
+    lastClientY = event.clientY;
 
-    const afterElement = getDragAfterElement(container, event.clientY);
-    const draggable = container.querySelector('.dragging');
+    if (isDragOverScheduled) return;
+    isDragOverScheduled = true;
 
-    if (!draggable) return;
+    requestAnimationFrame(() => {
+      const afterElement = getDragAfterElement(container, lastClientY);
+      const draggable = container.querySelector('.dragging');
 
-    if (afterElement == null) {
-      container.appendChild(draggable);
-    } else {
-      container.insertBefore(draggable, afterElement);
-    }
+      if (draggable) {
+        if (afterElement == null) {
+          container.appendChild(draggable);
+        } else {
+          container.insertBefore(draggable, afterElement);
+        }
+      }
+      isDragOverScheduled = false;
+    });
   };
 
   const handleDragEnd = () => {
