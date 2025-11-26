@@ -75,7 +75,13 @@ export function escapeHtml(value) {
 export async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read file as base64 string'));
+      }
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });

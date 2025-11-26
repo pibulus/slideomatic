@@ -18,7 +18,7 @@ const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
 let touchStartX = 0;
 let touchStartY = 0;
 let touchContext = {
-  setActiveSlide: () => {},
+  setActiveSlide: (_) => {},
   getCurrentIndex: () => 0,
   isOverview: () => false,
 };
