@@ -62,7 +62,7 @@
   }
 
   /* Maximize image size on mobile */
-  .slide__image {
+  .slide__image:not(.slide__image-wrapper .slide__image) {
     width: 100%;
     max-width: 100%;
     padding: 4px; /* Minimal padding */
@@ -72,6 +72,13 @@
     padding: 8px; /* Reduce wrapper padding */
     width: 100%;
     max-width: 100%;
+  }
+
+  /* Images inside wrappers should have no padding/borders */
+  .slide__image-wrapper .slide__image {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
 
   .slide--split {
