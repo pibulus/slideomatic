@@ -34,18 +34,18 @@
 /* --- HUD --- */
 .hud {
   position: fixed;
-  bottom: clamp(16px, 4vh, 32px);
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(740px, calc(100vw - 48px));
+  width: min(760px, calc(100vw - 32px));
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: auto auto 1fr;
   align-items: center;
-  gap: clamp(12px, 2vw, 20px);
-  padding: clamp(12px, 1.6vw, 18px) clamp(16px, 2vw, 24px);
+  gap: 16px;
+  padding: 14px 20px;
   border: var(--border-width) solid var(--color-ink);
-  border-radius: clamp(16px, 2vw, 28px);
-  background: rgba(var(--color-surface-rgb, 255, 239, 213), 0.95);
+  border-radius: var(--radius);
+  background: var(--paper);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-hud);
@@ -62,29 +62,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 0.8rem;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.08em;
-}
-
-.hud__controls > * {
-  flex-shrink: 0;
-}
-
-.hud__controls .hud__action {
-  flex: 1;
-  text-align: center;
-}
-
-.hud__controls .hud__notes-indicator {
-  margin-left: auto;
-}
-
-.hud__controls .hud__nav-btn {
-  flex: 0 0 auto;
 }
 
 .hud__action {
@@ -274,6 +256,23 @@
     gap: 10px;
   }
 
+  .hud__controls > * {
+    flex-shrink: 0;
+  }
+
+  .hud__controls .hud__action {
+    flex: 1;
+    text-align: center;
+  }
+
+  .hud__controls .hud__notes-indicator {
+    margin-left: auto;
+  }
+
+  .hud__controls .hud__nav-btn {
+    flex: 0 0 auto;
+  }
+
   .hud__action {
     min-width: 36px;
     min-height: 34px;
@@ -291,6 +290,8 @@
 
   .hud__progress {
     width: 100%;
+    flex: 1;
+    min-width: 0;
     border-width: 2px;
     height: 10px;
   }

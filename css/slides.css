@@ -135,7 +135,7 @@
   margin-block-start: calc(var(--slide-space-block) + clamp(24px, 4vh, 56px));
   display: flex;
   flex-direction: column;
-  gap: clamp(24px, 4vh, 48px);
+  gap: clamp(20px, 4vh, 40px);
 }
 
 .slide__standard-text {
@@ -269,7 +269,7 @@
     margin-block-start: clamp(24px, 4vh, 48px);
     display: flex !important;
     flex-direction: column;
-    gap: 16px;
+    gap: clamp(20px, 4vh, 40px);
     align-content: flex-start;
   }
 
@@ -355,17 +355,21 @@
   margin-block-start: calc(var(--slide-space-block) + clamp(28px, 5vh, 64px));
   align-items: flex-start;
   text-align: left;
-  gap: clamp(24px, 4vh, 44px);
+  gap: clamp(20px, 4vh, 40px);
 }
 
 .slide--quote .slide__content {
   width: min(100%, clamp(1120px, 98vw, 2400px));
-  gap: clamp(24px, 5vh, 44px);
+  gap: clamp(20px, 4vh, 40px);
+  margin: 0;
+  margin-block-start: calc(var(--slide-space-block) + clamp(32px, 5vh, 64px));
 }
 
 .slide--split .slide__content,
 .slide--gallery .slide__content {
   width: min(100%, clamp(1120px, 96vw, 2320px));
+  margin: 0;
+  margin-block-start: calc(var(--slide-space-block) + clamp(32px, 5vh, 64px));
 }
 
 .slide--title {
@@ -1154,7 +1158,8 @@
   .gallery {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     justify-items: center;
-    margin-inline: auto;
+    margin-inline: 0;
+    max-width: 100%;
   }
 }
 
@@ -1180,17 +1185,19 @@
   .slide--quote blockquote {
     font-size: clamp(1.6rem, 6.5vw, 2.2rem);
     padding: clamp(24px, 7vw, 36px);
-    padding-left: clamp(32px, 9vw, 44px);
     margin: 0 auto;
-    max-width: min(92%, 420px);
+    max-width: min(92%, 380px);
+    text-align: center;
   }
 
   .slide--quote blockquote::before {
-    font-size: clamp(4rem, 18vw, 8rem);
-    left: clamp(12px, 5vw, 24px);
+    font-size: clamp(3.5rem, 18vw, 7rem);
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .slide--quote cite {
+    padding-left: 0;
     font-size: clamp(1rem, 3.8vw, 1.2rem);
     line-height: 1.5;
     margin-top: clamp(18px, 4vh, 28px);
@@ -1202,10 +1209,12 @@
     gap: clamp(16px, 4vw, 32px);
     justify-items: center;
     width: 100%;
+    margin-inline: 0;
   }
 
   .gallery__item {
-    width: min(90%, 360px);
+    width: 100%;
+    max-width: 360px;
     margin-inline: auto;
   }
 
