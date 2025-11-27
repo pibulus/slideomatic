@@ -204,27 +204,25 @@ export function renderTitleSlide(section, slide) {
 }
 
 export function renderStandardSlide(section, slide) {
-    // Apply layout class if specified
+    // Apply layout class if specified. Default behavior is stacked.
     if (slide.layout) {
         section.classList.add(`slide--layout-${slide.layout}`);
-    } else {
-        // Default layout (usually image-right or auto)
-        section.classList.add('slide--layout-default');
     }
 
-    const content = document.createElement('div');
-    content.className = 'slide__content';
+    const textGroup = document.createElement('div');
+    textGroup.className = 'slide__standard-text';
 
     if (slide.headline) {
         const headline = document.createElement('h2');
         setRichContent(headline, slide.headline);
-        content.appendChild(headline);
+        textGroup.appendChild(headline);
     }
 
-    appendBody(content, slide.body);
+    appendBody(textGroup, slide.body);
 
-    // For standard slides, we wrap content to separate it from the image in grid layouts
-    section.appendChild(content);
+    if (textGroup.childNodes.length > 0) {
+        section.appendChild(textGroup);
+    }
 
     if (slide.image) {
         // Create image wrapper for better control
@@ -473,7 +471,7 @@ export function renderGallerySlide(section, slide) {
 
 export function renderGraphSlide(section, slide) {
     const content = document.createElement('div');
-    content.className = 'slide__content';
+    content.className = 'slide__graph';
 
     if (slide.title) {
         const title = document.createElement('h2');
@@ -837,5 +835,4 @@ function buildAutoLinkHref(text, config) {
         query
     )}`;
 }
-
 

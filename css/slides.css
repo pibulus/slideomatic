@@ -126,10 +126,7 @@
 }
 
 .slide--standard {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(24px, 4vw, 48px);
-  align-items: center;
+  display: block;
 }
 
 .slide--standard .slide__content {
@@ -138,11 +135,18 @@
   margin-block-start: clamp(32px, 5vh, 64px);
   display: flex;
   flex-direction: column;
+  gap: clamp(24px, 4vh, 48px);
+}
+
+.slide__standard-text {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   gap: clamp(16px, 2vh, 32px);
 }
 
 .slide--standard .slide__image-wrapper {
-  width: 100%;
+  width: min(100%, clamp(320px, 55vw, 640px));
   height: auto;
   max-height: 70vh;
   display: flex;
@@ -152,49 +156,61 @@
   padding: clamp(8px, 1vw, 16px);
   box-shadow: var(--shadow-sm);
   background: var(--color-accent);
+  align-self: flex-start;
 }
 
 .slide--standard .slide__image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border: none;
-  padding: 0;
+  border: none !important;
+  padding: 0 !important;
   box-shadow: none;
   background: transparent;
 }
 
 /* Layout Variants */
-.slide--layout-default,
-.slide--layout-image-right {
-  grid-template-columns: 1.2fr 0.8fr;
-  grid-template-areas: "content image";
-}
-
 .slide--layout-default .slide__content,
 .slide--layout-image-right .slide__content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-areas: "content image";
+  gap: clamp(24px, 4vw, 48px);
+  align-items: center;
+}
+
+.slide--layout-default .slide__standard-text,
+.slide--layout-image-right .slide__standard-text {
   grid-area: content;
 }
 
 .slide--layout-default .slide__image-wrapper,
 .slide--layout-image-right .slide__image-wrapper {
   grid-area: image;
-}
-
-.slide--layout-image-left {
-  grid-template-columns: 0.8fr 1.2fr;
-  grid-template-areas: "image content";
+  width: 100%;
+  align-self: stretch;
 }
 
 .slide--layout-image-left .slide__content {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-areas: "image content";
+  gap: clamp(24px, 4vw, 48px);
+  align-items: center;
+}
+
+.slide--layout-image-left .slide__standard-text {
   grid-area: content;
 }
 
 .slide--layout-image-left .slide__image-wrapper {
   grid-area: image;
+  width: 100%;
+  align-self: stretch;
 }
 
-.slide--layout-image-top {
+.slide--layout-image-top .slide__content {
+  display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas: 
@@ -207,16 +223,19 @@
 .slide--layout-image-top .slide__image-wrapper {
   grid-area: image;
   max-height: 40vh;
+  width: min(100%, clamp(320px, 60vw, 720px));
+  justify-self: center;
 }
 
-.slide--layout-image-top .slide__content {
+.slide--layout-image-top .slide__standard-text {
   grid-area: content;
   max-width: 100%;
   margin-inline: auto;
   text-align: center;
 }
 
-.slide--layout-image-bottom {
+.slide--layout-image-bottom .slide__content {
+  display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
   grid-template-areas: 
@@ -229,9 +248,11 @@
 .slide--layout-image-bottom .slide__image-wrapper {
   grid-area: image;
   max-height: 40vh;
+  width: min(100%, clamp(320px, 60vw, 720px));
+  justify-self: center;
 }
 
-.slide--layout-image-bottom .slide__content {
+.slide--layout-image-bottom .slide__standard-text {
   grid-area: content;
   max-width: 100%;
   margin-inline: auto;
@@ -239,26 +260,23 @@
 }
 
 @media (max-width: 1024px) {
-  .slide--standard,
-  .slide--layout-default,
-  .slide--layout-image-right,
-  .slide--layout-image-left {
-    display: flex !important;
-    flex-direction: column;
-    gap: 16px;
-    align-content: start;
-  }
-
-  .slide--layout-image-bottom {
-    flex-direction: column-reverse;
-  }
-
   .slide--standard .slide__content {
     width: 100%;
     max-width: 100%;
     margin: 0;
     margin-block-start: clamp(24px, 4vh, 48px);
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    align-content: flex-start;
+  }
+
+  .slide--standard .slide__standard-text {
     flex-shrink: 0;
+  }
+
+  .slide--layout-image-bottom .slide__content {
+    flex-direction: column-reverse;
   }
 
   .slide--standard h2,
