@@ -1153,6 +1153,8 @@
 
   .gallery {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    justify-items: center;
+    margin-inline: auto;
   }
 }
 
@@ -1178,9 +1180,9 @@
   .slide--quote blockquote {
     font-size: clamp(1.6rem, 6.5vw, 2.2rem);
     padding: clamp(24px, 7vw, 36px);
-    padding-left: clamp(28px, 9vw, 44px);
+    padding-left: clamp(32px, 9vw, 44px);
     margin: 0 auto;
-    max-width: 90%;
+    max-width: min(92%, 420px);
   }
 
   .slide--quote blockquote::before {
@@ -1198,10 +1200,12 @@
   .gallery {
     grid-template-columns: 1fr;
     gap: clamp(16px, 4vw, 32px);
+    justify-items: center;
+    width: 100%;
   }
 
   .gallery__item {
-    max-width: 90%;
+    width: min(90%, 360px);
     margin-inline: auto;
   }
 
