@@ -7,8 +7,8 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        imageCompression: "readonly",
-        QRCodeStyling: "readonly"
+        imageCompression: 'readonly',
+        QRCodeStyling: 'readonly'
       },
       ecmaVersion: 2022,
       sourceType: 'module'
@@ -20,7 +20,11 @@ export default [
   pluginJs.configs.recommended,
   {
     rules: {
-      'no-unused-vars': ['warn', { 'argsIgnorePattern': '^_' }],
+      'no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_'
+      }],
       'no-undef': 'error',
       'semi': ['error', 'always'],
       'quotes': ['warn', 'single', { 'avoidEscape': true }]

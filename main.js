@@ -581,6 +581,8 @@ async function initDeckWithTheme() {
     overviewBtn.addEventListener('click', toggleOverview);
   }
 
+  initHudControls();
+
   // Initialize deck name display and rename functionality
   initDeckName();
 
@@ -625,6 +627,80 @@ function handleInitialIntent() {
   });
 }
 
+function initHudControls() {
+  const hud = document.querySelector('.hud');
+  if (!hud) return;
 
+  const autoHideQuery = window.matchMedia('(max-width: 1024px)');
+  const shouldAutoHide = autoHideQuery.matches;
+  const HIDE_DELAY = 2800;
+  let hideTimeout = null;
+  let lastInteraction = 0;
 
+  const hideHud = () => {
+    if (!shouldAutoHide) return;
+    hud.dataset.hidden = 'true';
+  };
+
+  const scheduleHide = () => {
+    if (!shouldAutoHide) return;
+    clearTimeout(hideTimeout);
+    hideTimeout = setTimeout(hideHud, HIDE_DELAY);
+  };
+
+  const revealHud = () => {
+    hud.dataset.hidden = 'false';
+    if (!shouldAutoHide) return;
+    clearTimeout(hideTimeout);
+    hideTimeout = setTimeout(hideHud, HIDE_DELAY);
+  };
+
+  const prevBtn = document.getElementById('hud-prev-btn');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      setActiveSlide(currentIndex - 1);
+      revealHud();
+    });
+  }
+
+  const nextBtn = document.getElementById('hud-next-btn');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      setActiveSlide(currentIndex + 1);
+      revealHud();
+    });
+  }
+
+  if (shouldAutoHide) {
+    const handleInteraction = () => {
+      const now = Date.now();
+      if (now - lastInteraction < 150) return;
+      lastInteraction = now;
+      revealHud();
+    };
+
+    window.addEventListener('wheel', handleInteraction, { passive: true });
+
+    const attachScrollListener = (target) => {
+      if (!target || typeof target.addEventListener !== 'function') return;
+      target.addEventListener('scroll', handleInteraction, { passive: true });
+    };
+
+    attachScrollListener(window);
+    attachScrollListener(document);
+    attachScrollListener(slidesRoot);
+    window.addEventListener('keydown', handleInteraction);
+
+    hud.addEventListener('mouseenter', () => {
+      hud.dataset.hidden = 'false';
+      clearTimeout(hideTimeout);
+    });
+
+    hud.addEventListener('mouseleave', scheduleHide);
+
+    revealHud();
+  } else {
+    hud.dataset.hidden = 'false';
+  }
+}
 

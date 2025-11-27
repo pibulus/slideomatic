@@ -48,6 +48,10 @@ let createSlideHook = () => {
 let renderEmptyStateHook = () => {};
 let cleanupSlideAssetsHook = () => {};
 let cleanupAllSlideAssetsHook = () => {};
+let getCurrentThemeHook = () => null;
+let deriveDeckNameHook = () => 'Untitled Deck';
+let applyThemeHook = () => {};
+let setCurrentThemeHook = () => {};
 
 export function registerSlideActionHooks(hooks = {}) {
   if (typeof hooks.showHudStatus === 'function') {
@@ -67,6 +71,18 @@ export function registerSlideActionHooks(hooks = {}) {
   }
   if (typeof hooks.cleanupAllSlideAssets === 'function') {
     cleanupAllSlideAssetsHook = hooks.cleanupAllSlideAssets;
+  }
+  if (typeof hooks.getCurrentTheme === 'function') {
+    getCurrentThemeHook = hooks.getCurrentTheme;
+  }
+  if (typeof hooks.deriveDeckName === 'function') {
+    deriveDeckNameHook = hooks.deriveDeckName;
+  }
+  if (typeof hooks.applyTheme === 'function') {
+    applyThemeHook = hooks.applyTheme;
+  }
+  if (typeof hooks.setCurrentTheme === 'function') {
+    setCurrentThemeHook = hooks.setCurrentTheme;
   }
 }
 

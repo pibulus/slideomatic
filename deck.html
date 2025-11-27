@@ -262,8 +262,9 @@
       </div>
 
       <main class="slides" id="slides" aria-live="polite"></main>
-      <footer class="hud">
+      <footer class="hud" data-hidden="false">
         <div class="hud__controls">
+          <button class="hud__nav-btn hud__nav-btn--prev" id="hud-prev-btn" aria-label="Previous slide" title="Previous slide">←</button>
           <button class="hud__action hud__back" id="home-btn" aria-label="Back to deck library" title="Back to deck library">
             Back
           </button>
@@ -279,6 +280,7 @@
           <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
             <span class="hud__notes-icon">📝</span>
           </div>
+          <button class="hud__nav-btn hud__nav-btn--next" id="hud-next-btn" aria-label="Next slide" title="Next slide">→</button>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>

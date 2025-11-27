@@ -706,7 +706,7 @@ function sanitizeUrl(url) {
             return parsed.href;
         }
         return null;
-    } catch (e) {
+  } catch (_error) {
         if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
             return trimmed;
         }
@@ -835,4 +835,3 @@ function buildAutoLinkHref(text, config) {
         query
     )}`;
 }
-

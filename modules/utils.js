@@ -97,7 +97,7 @@ export function safeParse(value) {
   if (typeof value !== 'string') return null;
   try {
     return JSON.parse(value);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -197,4 +197,3 @@ export function focusFirstElement(container) {
     container.focus({ preventScroll: true });
   }
 }
-

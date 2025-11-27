@@ -197,7 +197,7 @@ function getCurrentTheme() {
     console.warn('Failed to load current theme:', error);
     try {
       localStorage.removeItem(CURRENT_THEME_KEY);
-    } catch (_) {
+    } catch (_cleanupError) {
       // Ignore cleanup failure
     }
     return null;

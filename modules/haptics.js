@@ -23,7 +23,7 @@ export function vibrate(type = 'light') {
   const pattern = PATTERNS[type] || PATTERNS.light;
   try {
     navigator.vibrate(pattern);
-  } catch (e) {
+  } catch (_error) {
     // Ignore errors (e.g. if user hasn't interacted with document yet)
   }
 }
