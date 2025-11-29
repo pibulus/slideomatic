@@ -30,6 +30,12 @@ import {
   updateImageAltText,
 } from './slide-image-ui.js';
 import { askAIForImage } from './image-ai.js';
+import { setupAccordion } from './accordion.js';
+import { setupCustomSelect, getCustomSelectValue } from './custom-select.js';
+import {
+  loadThemeLibrary,
+  getCurrentThemePath,
+} from './theme-manager.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -132,16 +138,41 @@ function getLayoutMeta(value) {
   return LAYOUT_OPTIONS.find((option) => option.value === value);
 }
 
-function buildSection(title, content, options = {}) {
+/**
+ * Build an accordion section with whimsical animations
+ * @param {string} title - Section title
+ * @param {string} content - HTML content for the accordion body
+ * @param {Object} options - Configuration options
+ * @param {string} options.icon - Optional icon emoji/text
+ * @param {string} options.modifier - Optional CSS modifier class
+ * @param {boolean} options.startOpen - Whether to start expanded (default: false)
+ * @returns {string} HTML for accordion
+ */
+function buildAccordion(title, content, options = {}) {
   if (!content) return '';
-  const modifier = options.modifier ? ` ${options.modifier}` : '';
+
+  const {
+    icon = '',
+    modifier = '',
+    startOpen = false,
+  } = options;
+
+  const openClass = startOpen ? ' is-open' : '';
+  const iconHTML = icon ? `<span class="accordion__icon">${icon}</span>` : '';
+
   return `
-    <section class="edit-drawer__section${modifier}">
-      <div class="edit-drawer__section-header">
-        <p class="edit-drawer__section-title">${escapeHtml(title)}</p>
-      </div>
-      <div class="edit-drawer__section-body">
-        ${content}
+    <section class="accordion${modifier}${openClass}">
+      <button type="button" class="accordion__header">
+        <h3 class="accordion__title">
+          ${iconHTML}
+          ${escapeHtml(title)}
+        </h3>
+        <span class="accordion__chevron">▼</span>
+      </button>
+      <div class="accordion__body">
+        <div class="accordion__content accordion__stack">
+          ${content}
+        </div>
       </div>
     </section>
   `;
@@ -202,6 +233,7 @@ const SPLIT_LAYOUT_OPTIONS = [
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
+    buildThemeSection(),
     buildLayoutControl(type, slide.layout),
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildImagesSection(slide),
@@ -212,17 +244,17 @@ function buildMainSections(slide) {
 // ... (existing code) ...
 
 function getSelectedLayoutVariant() {
-  const standardSelect = document.getElementById('standard-layout-select');
-  if (standardSelect instanceof HTMLSelectElement) {
-    return standardSelect.value;
+  const standardSelect = document.getElementById('standard-layout-select-wrapper');
+  if (standardSelect) {
+    return standardSelect.dataset.value || null;
   }
-  const splitSelect = document.getElementById('split-layout-select');
-  if (splitSelect instanceof HTMLSelectElement) {
-    return splitSelect.value;
+  const splitSelect = document.getElementById('split-layout-select-wrapper');
+  if (splitSelect) {
+    return splitSelect.dataset.value || null;
   }
-  const quoteSelect = document.getElementById('quote-layout-select');
-  if (quoteSelect instanceof HTMLSelectElement) {
-    return quoteSelect.value;
+  const quoteSelect = document.getElementById('quote-layout-select-wrapper');
+  if (quoteSelect) {
+    return quoteSelect.dataset.value || null;
   }
   return null;
 }
@@ -339,45 +371,39 @@ function buildCombinedContentSection(slide, type) {
 
   if (fields.length === 0) return '';
 
-  const content = `
-    <div class="edit-drawer__stack">
-      ${fields.join('')}
-    </div>
-  `;
-
-  return buildSection('Content', content);
+  return buildAccordion('Content', fields.join(''), { icon: '✏️', startOpen: true });
 }
 
 function buildActionsSection() {
   const isAutoSave = localStorage.getItem('slideomatic_autosave') !== 'false';
   const checked = isAutoSave ? 'checked' : '';
+  const statusIcon = isAutoSave ? '✓' : '○';
 
-  return buildSection(
-    'Actions',
-    `
-      <div class="edit-drawer__actions-grid">
-        <label class="edit-drawer__checkbox-label">
-          <input type="checkbox" id="autosave-toggle" ${checked}>
-          <span>Auto-save changes</span>
-        </label>
-        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-          Save
-        </button>
-        <div class="edit-drawer__actions-row">
-          <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-            Duplicate
-          </button>
-          <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn">
-            Delete
-          </button>
-        </div>
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-          Export
-        </button>
-      </div>
-    `,
-    { modifier: ' edit-drawer__section--actions' }
-  );
+  const content = `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(255, 159, 243, 0.08); border-radius: var(--radius); border: 2px solid var(--color-surface); margin-bottom: 8px;">
+      <label class="edit-drawer__checkbox-label" style="margin: 0; cursor: pointer; user-select: none;">
+        <input type="checkbox" id="autosave-toggle" ${checked} style="accent-color: var(--color-surface); width: 18px; height: 18px;">
+        <span style="font-weight: 600; color: var(--color-ink);">Auto-save changes</span>
+      </label>
+      <span style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-surface);">${statusIcon}</span>
+    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+      💾 Save
+    </button>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
+        ✨ Duplicate
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn" style="flex: 1;">
+        🗑️ Delete
+      </button>
+    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
+      📦 Export
+    </button>
+  `;
+
+  return buildAccordion('Actions', content, { icon: '⚡', modifier: ' accordion--actions' });
 }
 
 function getLayoutDescription(value) {
@@ -391,89 +417,140 @@ const QUOTE_LAYOUT_OPTIONS = [
 ];
 
 function buildLayoutControl(currentType, currentLayout) {
-  const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
-  const options = LAYOUT_OPTIONS.map(({ value, label }) => {
-    const selected = value === currentType ? 'selected' : '';
-    const optionTitle = getLayoutDescription(value) || label;
-    return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
+  const currentOption = LAYOUT_OPTIONS.find(opt => opt.value === currentType);
+  const currentLabel = currentOption?.label || 'Select type';
+
+  // Build custom select options
+  const selectOptions = LAYOUT_OPTIONS.map(({ value, label, description }) => {
+    const isSelected = value === currentType ? 'is-selected' : '';
+    return `
+      <button
+        type="button"
+        class="custom-select__option ${isSelected}"
+        data-value="${value}"
+        title="${escapeHtml(description)}"
+      >
+        <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        <span class="custom-select__option-desc">${escapeHtml(description)}</span>
+      </button>
+    `;
   }).join('');
 
   let layoutSelector = '';
   if (currentType === 'standard') {
     const layoutOptions = STANDARD_LAYOUT_OPTIONS.map(({ value, label }) => {
-      const selected = (currentLayout || 'default') === value ? 'selected' : '';
-      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+      const isSelected = (currentLayout || 'default') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        </button>
+      `;
     }).join('');
-    
+
+    const currentStandardLabel = STANDARD_LAYOUT_OPTIONS.find(opt => opt.value === (currentLayout || 'default'))?.label || 'Default (Image Right)';
+
     layoutSelector = `
-      <div class="edit-drawer__field">
-        <label class="edit-drawer__label" for="standard-layout-select">Layout Variant</label>
-        <select class="edit-drawer__select" id="standard-layout-select">
-          ${layoutOptions}
-        </select>
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Layout Variant</label>
+        <div class="custom-select" id="standard-layout-select-wrapper" data-value="${currentLayout || 'default'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentStandardLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
+        </div>
       </div>
     `;
   } else if (currentType === 'split') {
-    // For split slides, the 'variant' property is used instead of 'layout'
     const currentVariant = Array.isArray(currentLayout) ? currentLayout[0] : currentLayout;
-    
     const layoutOptions = SPLIT_LAYOUT_OPTIONS.map(({ value, label }) => {
-      const selected = (currentVariant || 'default') === value ? 'selected' : '';
-      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+      const isSelected = (currentVariant || 'default') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        </button>
+      `;
     }).join('');
-    
+
+    const currentSplitLabel = SPLIT_LAYOUT_OPTIONS.find(opt => opt.value === (currentVariant || 'default'))?.label || '50/50 Split';
+
     layoutSelector = `
-      <div class="edit-drawer__field">
-        <label class="edit-drawer__label" for="split-layout-select">Split Style</label>
-        <select class="edit-drawer__select" id="split-layout-select">
-          ${layoutOptions}
-        </select>
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Split Style</label>
+        <div class="custom-select" id="split-layout-select-wrapper" data-value="${currentVariant || 'default'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentSplitLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
+        </div>
       </div>
     `;
   } else if (currentType === 'quote') {
-    // Quote slides also use 'variant'
-    const currentVariant = currentLayout; // Assuming string for quote variant
-    
+    const currentVariant = currentLayout;
     const layoutOptions = QUOTE_LAYOUT_OPTIONS.map(({ value, label }) => {
-      const selected = (currentVariant || 'simple') === value ? 'selected' : '';
-      return `<option value="${value}" ${selected}>${escapeHtml(label)}</option>`;
+      const isSelected = (currentVariant || 'simple') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        </button>
+      `;
     }).join('');
-    
+
+    const currentQuoteLabel = QUOTE_LAYOUT_OPTIONS.find(opt => opt.value === (currentVariant || 'simple'))?.label || 'Simple (Default)';
+
     layoutSelector = `
-      <div class="edit-drawer__field">
-        <label class="edit-drawer__label" for="quote-layout-select">Quote Style</label>
-        <select class="edit-drawer__select" id="quote-layout-select">
-          ${layoutOptions}
-        </select>
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Quote Style</label>
+        <div class="custom-select" id="quote-layout-select-wrapper" data-value="${currentVariant || 'simple'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentQuoteLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
+        </div>
       </div>
     `;
   }
 
   const content = `
-    <div class="edit-drawer__stack">
-      <div class="edit-drawer__layout-controls">
-        <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
-          ${options}
-        </select>
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
-          Update Slide
+    <div class="accordion__group">
+      <label class="edit-drawer__label">Slide Type</label>
+      <div class="custom-select" id="slide-layout-select-wrapper" data-value="${currentType}">
+        <button type="button" class="custom-select__trigger">
+          <span class="custom-select__value">${escapeHtml(currentLabel)}</span>
+          <span class="custom-select__arrow">▼</span>
         </button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
-          Add Slide
-        </button>
+        <div class="custom-select__dropdown">
+          ${selectOptions}
+        </div>
       </div>
-      ${layoutSelector}
+    </div>
+    ${layoutSelector}
+    <div class="accordion__group" style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type" style="flex: 1;">
+        Update Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type" style="flex: 1;">
+        Add Slide
+      </button>
     </div>
   `;
 
-  return buildSection('Slide Type', content, { modifier: ' edit-drawer__section--layout' });
+  return buildAccordion('Slide Type', content, { icon: '🎬', modifier: '' });
 }
 
 function buildImagesSection(slide) {
-  return buildSection(
+  return buildAccordion(
     'Images',
-    `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
-    { modifier: ' edit-drawer__section--images' }
+    buildImageManager(slide),
+    { icon: '📷', modifier: ' accordion--images' }
   );
 }
 
@@ -481,48 +558,91 @@ function buildSplitContentSection(slide) {
   const left = slide.left || {};
   const right = slide.right || {};
 
-  const leftContent = `
-    <div class="edit-drawer__group">
-      <p class="edit-drawer__group-title">Left Column</p>
+  const content = `
+    <div class="accordion__group">
+      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Left Column</p>
       ${buildInputField('left.headline', left.headline || '', 'Headline')}
       ${buildTextareaField('left.body', Array.isArray(left.body) ? left.body.join('\n') : (left.body || ''), 'Body copy')}
     </div>
-  `;
-
-  const rightContent = `
-    <div class="edit-drawer__group">
-      <p class="edit-drawer__group-title">Right Column</p>
+    <div class="accordion__group">
+      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Right Column</p>
       ${buildInputField('right.headline', right.headline || '', 'Headline')}
       ${buildTextareaField('right.body', Array.isArray(right.body) ? right.body.join('\n') : (right.body || ''), 'Body copy')}
     </div>
   `;
 
-  return buildSection('Split Content', `
-    <div class="edit-drawer__stack">
-      ${leftContent}
-      ${rightContent}
+  return buildAccordion('Split Content', content, { icon: '↔️', startOpen: true });
+}
+
+function buildThemeSection() {
+  // Build theme select options from library + defaults
+  const library = loadThemeLibrary();
+  const currentPath = getCurrentThemePath() || 'theme.json';
+
+  const defaultThemes = [
+    { value: 'theme.json', label: 'Default' },
+    { value: 'themes/gameboy.json', label: 'Gameboy' },
+    { value: 'themes/vaporwave.json', label: 'Vaporwave' },
+    { value: 'themes/slack.json', label: 'Slack' },
+  ];
+
+  const savedThemes = library.map((entry) => ({
+    value: `saved:${entry.name}`,
+    label: `✨ ${entry.name}`,
+  }));
+
+  const allThemes = [...defaultThemes, ...savedThemes];
+  const currentTheme = allThemes.find(t => currentPath.includes(t.value.replace('saved:', ''))) || defaultThemes[0];
+
+  const themeOptions = allThemes.map(({ value, label }) => {
+    const isSelected = currentTheme.value === value ? 'is-selected' : '';
+    return `
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+        <span class="custom-select__option-label">${escapeHtml(label)}</span>
+      </button>
+    `;
+  }).join('');
+
+  const content = `
+    <div class="accordion__group">
+      <label class="edit-drawer__label">Current Theme</label>
+      <div class="custom-select" id="theme-select-wrapper" data-value="${currentTheme.value}">
+        <button type="button" class="custom-select__trigger">
+          <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
+          <span class="custom-select__arrow">▼</span>
+        </button>
+        <div class="custom-select__dropdown">
+          ${themeOptions}
+        </div>
+      </div>
     </div>
-  `);
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme">
+        💾 Save
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
+        🎲 Random
+      </button>
+    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI">
+      ✨ AI Theme
+    </button>
+  `;
+
+  return buildAccordion('Theme', content, { icon: '🎨', modifier: ' accordion--theme' });
 }
 
 function buildAdvancedSection(slide) {
   const jsonString = JSON.stringify(slide, null, 2);
-  return `
-    <section class="edit-drawer__section edit-drawer__section--advanced">
-      <button type="button" class="edit-drawer__json-toggle" id="json-toggle" aria-expanded="false">
-        <span class="edit-drawer__json-toggle-icon">▶</span>
-        <span class="edit-drawer__json-toggle-text">Advanced JSON</span>
-      </button>
-      <div class="edit-drawer__json-container" id="json-container" hidden>
-        <textarea
-          class="edit-drawer__textarea"
-          id="slide-json-editor"
-          rows="20"
-          style="font-family: var(--font-mono); font-size: 0.9rem;"
-        >${jsonString}</textarea>
-      </div>
-    </section>
+  const content = `
+    <textarea
+      class="edit-drawer__textarea"
+      id="slide-json-editor"
+      rows="20"
+      style="font-family: var(--font-mono); font-size: 0.9rem;"
+    >${jsonString}</textarea>
   `;
+  return buildAccordion('Advanced JSON', content, { icon: '{ }', modifier: ' accordion--advanced' });
 }
 
 /**
@@ -657,25 +777,14 @@ function showAutoSaveStatus(context) {
 }
 
 function getSelectedLayoutValue() {
-  const select = document.getElementById('slide-layout-select');
-  if (select instanceof HTMLSelectElement) {
-    return select.value;
+  const select = document.getElementById('slide-layout-select-wrapper');
+  if (select) {
+    return select.dataset.value || '';
   }
   return '';
 }
 
-/**
- * @param {HTMLSelectElement} select
- */
-function updateLayoutSelectTooltip(select) {
-  if (!select) return;
-  const desc = getLayoutDescription(select.value);
-  if (desc) {
-    select.title = desc;
-  } else {
-    select.removeAttribute('title');
-  }
-}
+// updateLayoutSelectTooltip removed - now handled by custom select component
 
 /**
  * @param {object} context
@@ -944,24 +1053,7 @@ async function compressImageForEdit(file) {
   }
 }
 
-function handleJsonToggle() {
-  const container = document.getElementById('json-container');
-  const jsonToggle = document.getElementById('json-toggle');
-  if (!container || !jsonToggle) return;
-
-  const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
-  const isHidden = container.hasAttribute('hidden');
-
-  if (isHidden) {
-    container.removeAttribute('hidden');
-    jsonToggle.setAttribute('aria-expanded', 'true');
-    if (icon) icon.textContent = '▼';
-  } else {
-    container.setAttribute('hidden', '');
-    jsonToggle.setAttribute('aria-expanded', 'false');
-    if (icon) icon.textContent = '▶';
-  }
-}
+// handleJsonToggle removed - now handled by accordion component
 
 function setupTextareaExpansion() {
   const textareas = document.querySelectorAll('.edit-drawer__textarea');
@@ -1021,6 +1113,84 @@ export function renderEditForm(context) {
   // Setup auto-expanding textareas
   setupTextareaExpansion();
 
+  // Setup accordions with whimsical animations
+  setupAccordion(content, { allowMultiple: true, addTrackedListener });
+
+  // Setup custom selects
+  setupCustomSelect(content, { addTrackedListener });
+
+  // Setup theme button handlers (inline in edit drawer)
+  const handleThemeChange = async (themePath) => {
+    // Import theme functions dynamically
+    const { applyTheme, setCurrentTheme } = await import('./theme-manager.js');
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+
+    try {
+      if (themePath.startsWith('saved:')) {
+        const savedName = themePath.replace('saved:', '');
+        const library = loadThemeLibrary();
+        const entry = library.find((entry) => entry.name === savedName);
+        if (entry) {
+          const normalizedTheme = applyTheme(entry.theme);
+          setCurrentTheme(normalizedTheme, { source: themePath });
+        }
+      } else {
+        const response = await fetch(themePath, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+        const theme = await response.json();
+        const normalizedTheme = applyTheme(theme);
+        setCurrentTheme(normalizedTheme, { source: themePath });
+      }
+      showHudStatus('✨ Theme applied', 'success');
+      setTimeout(hideHudStatus, 1600);
+      // Re-render to update theme UI
+      renderEditForm(ctx);
+    } catch (error) {
+      console.error('Failed to apply theme:', error);
+    }
+  };
+
+  const themeSelect = document.getElementById('theme-select-wrapper');
+  if (themeSelect) {
+    themeSelect.addEventListener('customSelectChange', (e) => {
+      handleThemeChange(e.detail.value);
+    });
+  }
+
+  const handleSaveThemeInline = async () => {
+    const { getCurrentTheme, saveThemeToLibrary, setCurrentTheme } = await import('./theme-manager.js');
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+
+    try {
+      const theme = getCurrentTheme();
+      const currentPath = getCurrentThemePath() || '';
+      const name = prompt('Name your theme:', '');
+      if (!name || !name.trim()) return;
+
+      saveThemeToLibrary(name.trim(), theme);
+      setCurrentTheme(theme, { source: `saved:${name.trim()}` });
+      showHudStatus('💾 Theme saved', 'success');
+      setTimeout(hideHudStatus, 1600);
+      renderEditForm(ctx);
+    } catch (error) {
+      console.error('Failed to save theme:', error);
+    }
+  };
+
+  const handleRandomThemeInline = async () => {
+    const themeModule = await import('./theme-drawer.js');
+    renderEditForm(ctx);
+  };
+
+  const handleAIThemeInline = async () => {
+    const themeModule = await import('./theme-drawer.js');
+    renderEditForm(ctx);
+  };
+
+  addTrackedListener(document.getElementById('theme-save-btn-inline'), 'click', handleSaveThemeInline);
+  addTrackedListener(document.getElementById('theme-random-btn-inline'), 'click', handleRandomThemeInline);
+  addTrackedListener(document.getElementById('theme-ai-btn-inline'), 'click', handleAIThemeInline);
+
   // Register all button click handlers with cleanup tracking
   addTrackedListener(
     document.getElementById('save-slide-btn'),
@@ -1056,18 +1226,6 @@ export function renderEditForm(context) {
     document.getElementById('layout-add-btn'),
     'click',
     () => handleLayoutAdd(ctx)
-  );
-
-  const layoutSelect = document.getElementById('slide-layout-select');
-  if (layoutSelect instanceof HTMLSelectElement) {
-    updateLayoutSelectTooltip(layoutSelect);
-    addTrackedListener(layoutSelect, 'change', () => updateLayoutSelectTooltip(layoutSelect));
-  }
-
-  addTrackedListener(
-    document.getElementById('json-toggle'),
-    'click',
-    handleJsonToggle
   );
 
   addTrackedListener(
