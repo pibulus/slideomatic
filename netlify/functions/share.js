@@ -6,7 +6,9 @@ import {
   corsHeaders,
   createAssetId,
   buildAssetUrl,
-  decodeDataUrl
+  decodeDataUrl,
+  hashImageContent,
+  recompressForShare
 } from './utils/common.js';
 
 export async function handler(event) {
@@ -94,7 +96,7 @@ async function handlePost(event) {
     return {
       statusCode: 413,
       headers: BASE_HEADERS,
-      body: JSON.stringify({ error: 'Deck is too large to share (max 400KB)' }),
+      body: JSON.stringify({ error: `Deck is too large to share (max ${Math.round(LIMITS.MAX_DECK_BYTES / 1024)}KB)` }),
     };
   }
 
@@ -169,59 +171,97 @@ async function externalizeInlineAssets(slides, event) {
   const assetStore = getStore(STORE_NAMES.ASSETS);
   const collected = [];
   const imageRefs = gatherImageRefs(slides);
+  const dedupeMap = new Map(); // hash -> assetId
+  let totalSavings = 0;
+  let recompressCount = 0;
 
   for (const image of imageRefs) {
     if (!image || typeof image !== 'object') continue;
 
+    // Already externalized - just track it
     if (image.storage === 'netlify-asset' && typeof image.assetId === 'string') {
       collected.push(image.assetId);
       continue;
     }
 
+    // Process inline data URLs
     if (typeof image.src === 'string' && image.src.startsWith('data:')) {
       try {
         const { buffer, mimeType } = decodeDataUrl(image.src);
-        
-        // Check size limit
-        if (buffer.byteLength > LIMITS.MAX_ASSET_BYTES) {
-          console.warn(`Image ${image.originalFilename} too large (${buffer.byteLength} bytes) for asset store. Skipping externalization.`);
-          // If we leave it inline, it will likely blow up the deck JSON size.
-          // So we must strip it or replace with a placeholder.
-          image.src = ''; 
-          image.alt = `(Image too large to share) ${image.alt || ''}`;
-          // We don't throw here, just continue to next image
+
+        // Check deduplication first
+        const hash = hashImageContent(buffer);
+        if (dedupeMap.has(hash)) {
+          const existingAssetId = dedupeMap.get(hash);
+          image.src = buildAssetUrl(event, existingAssetId);
+          image.assetId = existingAssetId;
+          image.storage = 'netlify-asset';
+          console.log(`Deduplicated image (hash: ${hash})`);
+          continue; // Skip upload, reuse existing
+        }
+
+        // Re-compress for sharing (more aggressive)
+        const {
+          buffer: finalBuffer,
+          mimeType: finalMimeType,
+          recompressed,
+          originalSize,
+          newSize,
+          savings
+        } = await recompressForShare(buffer, mimeType);
+
+        if (recompressed) {
+          console.log(`Re-compressed ${image.originalFilename}: ${originalSize}B → ${newSize}B (${savings}% savings)`);
+          totalSavings += (originalSize - newSize);
+          recompressCount++;
+        }
+
+        // Final size check
+        if (finalBuffer.byteLength > LIMITS.MAX_ASSET_BYTES) {
+          console.warn(`Image ${image.originalFilename} still too large (${Math.round(finalBuffer.byteLength / 1024)}KB) after compression`);
+          image.src = '';
+          image.alt = `(Image too large to share: ${Math.round(finalBuffer.byteLength / 1024)}KB) ${image.alt || ''}`;
           continue;
         }
 
         const assetId = createAssetId(image.originalFilename || 'shared-image');
-        
-        // Convert Node Buffer to ArrayBuffer for @netlify/blobs type compatibility
-        const arrayBuffer = buffer.buffer.slice(
-          buffer.byteOffset, 
-          buffer.byteOffset + buffer.byteLength
+
+        // Convert Node Buffer to ArrayBuffer for @netlify/blobs
+        const arrayBuffer = finalBuffer.buffer.slice(
+          finalBuffer.byteOffset,
+          finalBuffer.byteOffset + finalBuffer.byteLength
         );
 
         await assetStore.set(assetId, arrayBuffer, {
           metadata: {
-            bytes: buffer.byteLength,
-            mimeType,
+            bytes: finalBuffer.byteLength,
+            mimeType: finalMimeType,
             source: 'share-inline',
+            recompressed,
+            originalBytes: recompressed ? originalSize : finalBuffer.byteLength,
+            hash,
             createdAt: Date.now(),
+            expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
           },
         });
+
         image.src = buildAssetUrl(event, assetId);
         image.assetId = assetId;
         image.storage = 'netlify-asset';
         collected.push(assetId);
+        dedupeMap.set(hash, assetId);
+
       } catch (e) {
         console.warn('Failed to externalize asset', e);
-        // Best effort: if it failed (e.g. upload error), we also strip it to be safe
-        // because keeping it inline is risky for JSON size.
         image.src = '';
         image.alt = `(Image failed to share) ${image.alt || ''}`;
       }
       continue;
     }
+  }
+
+  if (recompressCount > 0) {
+    console.log(`Share optimization: ${recompressCount} images re-compressed, saved ${Math.round(totalSavings / 1024)}KB total`);
   }
 
   return collected;
