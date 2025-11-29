@@ -17,6 +17,11 @@ export function initShareModal() {
   const urlInput = /** @type {HTMLInputElement} */ (document.getElementById('share-url-input'));
   const qrContainer = document.getElementById('share-qr-code');
   const statusDiv = document.getElementById('share-status');
+  const statsSection = document.getElementById('share-stats');
+  const sizeDisplay = document.getElementById('share-size-display');
+  const savingsDisplay = document.getElementById('share-savings-display');
+  const savingsStat = document.getElementById('share-savings-stat');
+  const statsDetail = document.getElementById('share-stats-detail');
 
   if (!shareBtn || !shareModal) return;
 
@@ -59,6 +64,7 @@ export function initShareModal() {
     // Reset state
     if (urlInput) urlInput.value = '';
     if (qrContainer) qrContainer.innerHTML = '';
+    if (statsSection) statsSection.style.display = 'none';
     showShareStatus('🔗 Generating share link...', 'loading');
 
     // Focus management
@@ -75,9 +81,10 @@ export function initShareModal() {
     document.addEventListener('keydown', keydownHandler);
 
     try {
-      const shareUrl = await generateShareUrl();
+      const { shareUrl, bytes, optimization } = await generateShareUrl();
       if (urlInput) urlInput.value = shareUrl;
       generateQRCode(shareUrl);
+      displayShareStats(bytes, optimization);
       showShareStatus('✓ Ready to share!', 'success');
       setTimeout(() => hideShareStatus(), 3000);
     } catch (error) {
@@ -143,7 +150,11 @@ export function initShareModal() {
       throw new Error('Share link response missing id');
     }
 
-    return payload.shareUrl || buildShareUrlFromId(payload.id);
+    return {
+      shareUrl: payload.shareUrl || buildShareUrlFromId(payload.id),
+      bytes: payload.bytes || 0,
+      optimization: payload.optimization || null
+    };
   }
 
   function buildShareUrlFromId(id) {
@@ -271,5 +282,73 @@ export function initShareModal() {
     const g = Math.min(255, ((num >> 8) & 0xFF) + Math.floor(255 * amount));
     const b = Math.min(255, (num & 0xFF) + Math.floor(255 * amount));
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+
+  function displayShareStats(bytes, optimization) {
+    if (!statsSection || !sizeDisplay) return;
+
+    // Format bytes to KB/MB
+    const formatSize = (b) => {
+      if (b < 1024) return `${b}B`;
+      if (b < 1024 * 1024) return `${Math.round(b / 1024)}KB`;
+      return `${(b / (1024 * 1024)).toFixed(1)}MB`;
+    };
+
+    // Always show size
+    sizeDisplay.textContent = formatSize(bytes);
+    statsSection.style.display = 'block';
+
+    // Show optimization stats if available
+    if (optimization && (optimization.savingsPercent > 0 || optimization.deduplicatedCount > 0)) {
+      const savingsKB = Math.round(optimization.totalSavingsBytes / 1024);
+      const savingsPercent = optimization.savingsPercent;
+
+      if (savingsDisplay && savingsStat) {
+        savingsDisplay.textContent = `${savingsKB}KB saved (${savingsPercent}%)`;
+        savingsStat.style.display = 'block';
+      }
+
+      // Build detail message
+      const details = [];
+      if (optimization.recompressedCount > 0) {
+        details.push(`${optimization.recompressedCount} image${optimization.recompressedCount > 1 ? 's' : ''} re-compressed`);
+      }
+      if (optimization.deduplicatedCount > 0) {
+        details.push(`${optimization.deduplicatedCount} duplicate${optimization.deduplicatedCount > 1 ? 's' : ''} removed`);
+      }
+
+      if (statsDetail && details.length > 0) {
+        statsDetail.textContent = details.join(', ');
+      }
+
+      // Show toast notification for significant savings
+      if (savingsKB > 100) {
+        showOptimizationToast(savingsKB, savingsPercent, optimization);
+      }
+    }
+  }
+
+  function showOptimizationToast(savingsKB, savingsPercent, optimization) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'toast toast--success toast--visible';
+
+    let message = `🎉 Optimized! Saved ${savingsKB}KB (${savingsPercent}%)`;
+    if (optimization.deduplicatedCount > 0 && optimization.recompressedCount > 0) {
+      message += ` via compression & deduplication`;
+    } else if (optimization.deduplicatedCount > 0) {
+      message += ` via deduplication`;
+    } else if (optimization.recompressedCount > 0) {
+      message += ` via re-compression`;
+    }
+
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      toast.classList.remove('toast--visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
   }
 }

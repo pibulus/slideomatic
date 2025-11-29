@@ -84,7 +84,7 @@ async function handlePost(event) {
     },
   };
 
-  const assetIds = await externalizeInlineAssets(slidesClone, event);
+  const { assetIds, stats } = await externalizeInlineAssets(slidesClone, event);
   if (assetIds.length) {
     shareRecord.assets = assetIds;
   }
@@ -116,6 +116,7 @@ async function handlePost(event) {
       id: shareId,
       bytes,
       shareUrl: buildShareUrl(event, shareId),
+      optimization: stats,
     }),
   };
 }
@@ -165,7 +166,7 @@ function buildShareUrl(event, shareId) {
 
 async function externalizeInlineAssets(slides, event) {
   if (!Array.isArray(slides) || slides.length === 0) {
-    return [];
+    return { assetIds: [], stats: null };
   }
 
   const assetStore = getStore(STORE_NAMES.ASSETS);
@@ -174,6 +175,9 @@ async function externalizeInlineAssets(slides, event) {
   const dedupeMap = new Map(); // hash -> assetId
   let totalSavings = 0;
   let recompressCount = 0;
+  let dedupeCount = 0;
+  let totalOriginalBytes = 0;
+  let totalFinalBytes = 0;
 
   for (const image of imageRefs) {
     if (!image || typeof image !== 'object') continue;
@@ -197,8 +201,12 @@ async function externalizeInlineAssets(slides, event) {
           image.assetId = existingAssetId;
           image.storage = 'netlify-asset';
           console.log(`Deduplicated image (hash: ${hash})`);
+          dedupeCount++;
+          totalSavings += buffer.byteLength; // Saved entire duplicate
           continue; // Skip upload, reuse existing
         }
+
+        totalOriginalBytes += buffer.byteLength;
 
         // Re-compress for sharing (more aggressive)
         const {
@@ -215,6 +223,8 @@ async function externalizeInlineAssets(slides, event) {
           totalSavings += (originalSize - newSize);
           recompressCount++;
         }
+
+        totalFinalBytes += finalBuffer.byteLength;
 
         // Final size check
         if (finalBuffer.byteLength > LIMITS.MAX_ASSET_BYTES) {
@@ -260,11 +270,21 @@ async function externalizeInlineAssets(slides, event) {
     }
   }
 
-  if (recompressCount > 0) {
-    console.log(`Share optimization: ${recompressCount} images re-compressed, saved ${Math.round(totalSavings / 1024)}KB total`);
+  const stats = {
+    imageCount: imageRefs.length,
+    deduplicatedCount: dedupeCount,
+    recompressedCount: recompressCount,
+    totalSavingsBytes: totalSavings,
+    originalBytes: totalOriginalBytes,
+    finalBytes: totalFinalBytes,
+    savingsPercent: totalOriginalBytes > 0 ? Math.round((totalSavings / totalOriginalBytes) * 100) : 0
+  };
+
+  if (recompressCount > 0 || dedupeCount > 0) {
+    console.log(`Share optimization: ${recompressCount} re-compressed, ${dedupeCount} deduplicated, saved ${Math.round(totalSavings / 1024)}KB (${stats.savingsPercent}%)`);
   }
 
-  return collected;
+  return { assetIds: collected, stats };
 }
 
 function gatherImageRefs(slides) {

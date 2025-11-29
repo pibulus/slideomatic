@@ -256,6 +256,22 @@
               <p class="share-modal__qr-hint">Scan to open on mobile</p>
             </div>
 
+            <!-- Optimization stats -->
+            <div class="share-modal__section share-modal__stats" id="share-stats" style="display: none;">
+              <p class="share-modal__label">Share Details</p>
+              <div class="share-modal__stats-grid">
+                <div class="share-modal__stat">
+                  <span class="share-modal__stat-label">Share size</span>
+                  <span class="share-modal__stat-value" id="share-size-display">—</span>
+                </div>
+                <div class="share-modal__stat" id="share-savings-stat" style="display: none;">
+                  <span class="share-modal__stat-label">Optimized</span>
+                  <span class="share-modal__stat-value share-modal__stat-value--success" id="share-savings-display">—</span>
+                </div>
+              </div>
+              <p class="share-modal__stats-detail" id="share-stats-detail"></p>
+            </div>
+
             <div class="share-modal__status" id="share-status"></div>
           </div>
         </div>

@@ -841,6 +841,51 @@
   text-align: center;
 }
 
+.share-modal__stats {
+  background: var(--color-bg-alt, #fafafa);
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid var(--color-border, #e5e5e5);
+}
+
+.share-modal__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.share-modal__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.share-modal__stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #666);
+  font-weight: 600;
+}
+
+.share-modal__stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text, #000);
+}
+
+.share-modal__stat-value--success {
+  color: var(--color-success, #10b981);
+}
+
+.share-modal__stats-detail {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #666);
+  text-align: center;
+}
+
 .share-modal__label {
   margin: 0;
   font-weight: 700;
