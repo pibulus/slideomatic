@@ -314,7 +314,16 @@ export function initShareModal() {
         details.push(`${optimization.recompressedCount} image${optimization.recompressedCount > 1 ? 's' : ''} re-compressed`);
       }
       if (optimization.deduplicatedCount > 0) {
-        details.push(`${optimization.deduplicatedCount} duplicate${optimization.deduplicatedCount > 1 ? 's' : ''} removed`);
+        const localDedup = optimization.deduplicatedCount - (optimization.globalDeduplicatedCount || 0);
+        const globalDedup = optimization.globalDeduplicatedCount || 0;
+
+        if (globalDedup > 0 && localDedup > 0) {
+          details.push(`${optimization.deduplicatedCount} duplicate${optimization.deduplicatedCount > 1 ? 's' : ''} (${globalDedup} shared globally)`);
+        } else if (globalDedup > 0) {
+          details.push(`${globalDedup} image${globalDedup > 1 ? 's' : ''} shared globally`);
+        } else {
+          details.push(`${optimization.deduplicatedCount} duplicate${optimization.deduplicatedCount > 1 ? 's' : ''} removed`);
+        }
       }
 
       if (statsDetail && details.length > 0) {

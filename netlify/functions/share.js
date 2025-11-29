@@ -172,10 +172,12 @@ async function externalizeInlineAssets(slides, event) {
   const assetStore = getStore(STORE_NAMES.ASSETS);
   const collected = [];
   const imageRefs = gatherImageRefs(slides);
-  const dedupeMap = new Map(); // hash -> assetId
+  const dedupeMap = new Map(); // hash -> assetId (local to this share)
+  const globalAssetMap = await buildGlobalAssetHashMap(assetStore);
   let totalSavings = 0;
   let recompressCount = 0;
   let dedupeCount = 0;
+  let globalDedupeCount = 0;
   let totalOriginalBytes = 0;
   let totalFinalBytes = 0;
 
@@ -193,17 +195,45 @@ async function externalizeInlineAssets(slides, event) {
       try {
         const { buffer, mimeType } = decodeDataUrl(image.src);
 
-        // Check deduplication first
+        // Check deduplication: local first (this share)
         const hash = hashImageContent(buffer);
         if (dedupeMap.has(hash)) {
           const existingAssetId = dedupeMap.get(hash);
-          image.src = buildAssetUrl(event, existingAssetId);
+          image.src = buildAssetUrl(event, existingAssetId, {
+            optimize: true,
+            width: 1600,
+            quality: 75,
+            format: 'webp'
+          });
           image.assetId = existingAssetId;
           image.storage = 'netlify-asset';
-          console.log(`Deduplicated image (hash: ${hash})`);
+          console.log(`Local dedup: ${hash}`);
           dedupeCount++;
-          totalSavings += buffer.byteLength; // Saved entire duplicate
-          continue; // Skip upload, reuse existing
+          totalSavings += buffer.byteLength;
+          continue;
+        }
+
+        // Check global deduplication (across all shares)
+        if (globalAssetMap.has(hash)) {
+          const existingAsset = globalAssetMap.get(hash);
+          image.src = buildAssetUrl(event, existingAsset.assetId, {
+            optimize: true,
+            width: 1600,
+            quality: 75,
+            format: 'webp'
+          });
+          image.assetId = existingAsset.assetId;
+          image.storage = 'netlify-asset';
+
+          // Extend expiry to keep popular assets alive longer
+          await extendAssetExpiry(assetStore, existingAsset.assetId);
+
+          console.log(`Global dedup: reused ${existingAsset.assetId} (hash: ${hash}, saved ${Math.round(buffer.byteLength / 1024)}KB)`);
+          globalDedupeCount++;
+          dedupeCount++; // Also count in total dedup
+          totalSavings += buffer.byteLength;
+          dedupeMap.set(hash, existingAsset.assetId); // Cache for this share
+          continue;
         }
 
         totalOriginalBytes += buffer.byteLength;
@@ -279,6 +309,7 @@ async function externalizeInlineAssets(slides, event) {
   const stats = {
     imageCount: imageRefs.length,
     deduplicatedCount: dedupeCount,
+    globalDeduplicatedCount: globalDedupeCount,
     recompressedCount: recompressCount,
     totalSavingsBytes: totalSavings,
     originalBytes: totalOriginalBytes,
@@ -287,10 +318,73 @@ async function externalizeInlineAssets(slides, event) {
   };
 
   if (recompressCount > 0 || dedupeCount > 0) {
-    console.log(`Share optimization: ${recompressCount} re-compressed, ${dedupeCount} deduplicated, saved ${Math.round(totalSavings / 1024)}KB (${stats.savingsPercent}%)`);
+    console.log(
+      `Share optimization: ${recompressCount} re-compressed, ` +
+      `${dedupeCount} deduplicated (${globalDedupeCount} global), ` +
+      `saved ${Math.round(totalSavings / 1024)}KB (${stats.savingsPercent}%)`
+    );
   }
 
   return { assetIds: collected, stats };
+}
+
+/**
+ * Build a hash map of existing assets for global deduplication
+ * Returns Map<hash, {assetId, bytes}>
+ */
+async function buildGlobalAssetHashMap(assetStore) {
+  const map = new Map();
+
+  try {
+    const assets = await assetStore.list();
+
+    for (const asset of (assets.blobs || [])) {
+      const hash = asset.metadata?.hash;
+      if (hash && !map.has(hash)) {
+        map.set(hash, {
+          assetId: asset.key,
+          bytes: asset.metadata?.bytes || 0,
+          createdAt: asset.metadata?.createdAt || 0
+        });
+      }
+    }
+
+    console.log(`Built global asset map: ${map.size} unique hashes`);
+  } catch (error) {
+    console.warn('Failed to build global asset map, continuing without global dedup:', error);
+  }
+
+  return map;
+}
+
+/**
+ * Extend expiry of reused asset to keep it alive longer
+ * Popular assets (reused frequently) stay alive indefinitely
+ */
+async function extendAssetExpiry(assetStore, assetId) {
+  try {
+    const asset = await assetStore.get(assetId, { type: 'arrayBuffer' });
+    if (!asset) return;
+
+    const metadata = await assetStore.getMetadata(assetId);
+    if (!metadata) return;
+
+    // Extend expiry by 30 days from now
+    const newExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+
+    await assetStore.set(assetId, asset, {
+      metadata: {
+        ...metadata,
+        expiresAt: newExpiry,
+        lastReused: Date.now(),
+        reuseCount: (metadata.reuseCount || 0) + 1
+      }
+    });
+
+    console.log(`Extended expiry for ${assetId} (reuse count: ${metadata.reuseCount || 0})`);
+  } catch (error) {
+    console.warn(`Failed to extend expiry for ${assetId}:`, error);
+  }
 }
 
 function gatherImageRefs(slides) {
