@@ -4,13 +4,11 @@
   publish = "."
   command = "echo 'No build step required - static files'"
 
-# Function timeouts
+# Function configuration
 [functions]
-  timeout = 30
-
-# Increase timeout for cleanup (may process many blobs)
-[functions."cleanup-shares"]
-  timeout = 120
+  directory = "netlify/functions"
+  # Individual function timeouts are set in-code or via UI
+  # Local dev will use defaults
 
 # Headers for security and caching
 [[headers]]
