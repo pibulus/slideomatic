@@ -910,13 +910,13 @@ async function handleImageFile(context, file) {
  * @param {File} file
  */
 async function compressImageForEdit(file) {
-  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-  const TARGET_SIZE = 500 * 1024; // 500KB
+  const MAX_SIZE = 500 * 1024; // 500KB hard cap
+  const TARGET_SIZE = 400 * 1024; // 400KB ideal
 
   // @ts-ignore - Global from script tag
   if (typeof imageCompression === 'undefined') {
     if (file.size > MAX_SIZE) {
-      throw new Error('Image too large. Please use a smaller image (<2MB).');
+      throw new Error('Image too large. Please use a smaller image (<500KB).');
     }
     return { file, format: file.type || 'image/png' };
   }
@@ -935,7 +935,7 @@ async function compressImageForEdit(file) {
     });
 
     if (compressed.size > MAX_SIZE) {
-      throw new Error('Could not compress image below 2MB. Try a smaller source.');
+      throw new Error('Could not compress image below 500KB. Try a smaller source.');
     }
 
     return { file: compressed, format: 'image/webp' };

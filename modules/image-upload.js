@@ -131,7 +131,7 @@ export async function compressImage(file) {
     if (typeof imageCompression === 'undefined') {
         console.warn('Image compression library missing. Using original file.');
         if (file.size > MAX_IMAGE_BYTES) {
-            throw new Error('Compression library unavailable and image is too large (>512KB).');
+            throw new Error('Compression library unavailable and image is too large (>500KB).');
         }
         return { file, format: file.type || 'image/png', hitSoftLimit: file.size > TARGET_IMAGE_BYTES };
     }
@@ -194,7 +194,7 @@ export async function compressImage(file) {
         return bestCandidate;
     }
 
-    throw new Error('Could not shrink image under 512KB. Try exporting a smaller source.');
+    throw new Error('Could not shrink image under 500KB. Try exporting a smaller source.');
 }
 
 async function uploadOptimizedImage({ dataUrl, mimeType, filename, size }) {
