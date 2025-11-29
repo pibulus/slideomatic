@@ -255,7 +255,13 @@ async function externalizeInlineAssets(slides, event) {
           },
         });
 
-        image.src = buildAssetUrl(event, assetId);
+        // Use Netlify Image CDN for automatic optimization on delivery
+        image.src = buildAssetUrl(event, assetId, {
+          optimize: true,
+          width: 1600,
+          quality: 75,
+          format: 'webp'
+        });
         image.assetId = assetId;
         image.storage = 'netlify-asset';
         collected.push(assetId);

@@ -48,11 +48,30 @@ export function createAssetId(filename = 'asset') {
   return `${safeName}-${stamp}-${random}`;
 }
 
-export function buildAssetUrl(event, assetId) {
+export function buildAssetUrl(event, assetId, options = {}) {
   const host = event.headers?.['x-forwarded-host'] || event.headers?.host;
   const protocol = event.headers?.['x-forwarded-proto'] || 'https';
-  if (!host) return `/.netlify/functions/asset?id=${encodeURIComponent(assetId)}`;
-  return `${protocol}://${host}/.netlify/functions/asset?id=${encodeURIComponent(assetId)}`;
+
+  let baseUrl;
+  if (!host) {
+    baseUrl = `/.netlify/functions/asset?id=${encodeURIComponent(assetId)}`;
+  } else {
+    baseUrl = `${protocol}://${host}/.netlify/functions/asset?id=${encodeURIComponent(assetId)}`;
+  }
+
+  // Enable Netlify Image CDN optimization
+  // https://docs.netlify.com/image-cdn/overview/
+  if (options.optimize && host) {
+    const params = new URLSearchParams();
+    if (options.width) params.set('w', options.width);
+    if (options.quality) params.set('q', options.quality);
+    if (options.format) params.set('fm', options.format);
+
+    const queryString = params.toString();
+    return `${protocol}://${host}/.netlify/images?url=${encodeURIComponent(baseUrl)}${queryString ? '&' + queryString : ''}`;
+  }
+
+  return baseUrl;
 }
 
 export function decodeDataUrl(dataUrl, overrideMime) {
