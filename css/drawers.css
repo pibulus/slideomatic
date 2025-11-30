@@ -139,6 +139,7 @@
 .edit-drawer__content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrollbar from dropdowns */
   padding: 24px;
   background: linear-gradient(180deg, #fffdfa 0%, #fff6ec 100%);
 }

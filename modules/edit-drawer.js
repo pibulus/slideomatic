@@ -618,7 +618,6 @@ function buildThemeSection() {
       </p>
     </div>
     <div class="accordion__group">
-      <label class="edit-drawer__label" style="margin-bottom: 8px;">Theme Actions</label>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme to library">
           Save Theme
