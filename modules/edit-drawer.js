@@ -606,7 +606,7 @@ function buildThemeSection() {
   const content = `
     <div class="accordion__group">
       <label class="edit-drawer__label">Select Theme</label>
-      <div class="custom-select" id="theme-select-wrapper" data-value="${currentTheme.value}">
+      <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
           <span class="custom-select__arrow">▼</span>
@@ -1156,7 +1156,7 @@ export function renderEditForm(context) {
     }
   };
 
-  const themeSelect = document.getElementById('theme-select-wrapper');
+  const themeSelect = document.getElementById('edit-theme-select');
   if (themeSelect) {
     themeSelect.addEventListener('customSelectChange', (e) => {
       handleThemeChange(e.detail.value);

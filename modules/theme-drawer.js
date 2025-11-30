@@ -124,73 +124,47 @@ export function closeThemeDrawer() {
   closeDrawer(drawer);
 }
 
+import { setupCustomSelect } from './custom-select.js';
+
 function setupThemeSelectDropdown() {
-  const trigger = document.getElementById('theme-select-trigger');
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!trigger || !dropdown || trigger.dataset.listenerAttached) return;
+  const container = document.querySelector('.theme-drawer__content');
+  if (!container) return;
 
-  const closeDropdown = () => {
-    trigger.classList.remove('is-open');
-    dropdown.classList.remove('is-open');
-  };
+  // Initialize custom select logic
+  setupCustomSelect(container);
 
-  trigger.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const isOpen = trigger.classList.contains('is-open');
-    if (isOpen) {
-      closeDropdown();
-    } else {
-      trigger.classList.add('is-open');
-      dropdown.classList.add('is-open');
-    }
-  });
-  trigger.dataset.listenerAttached = 'true';
-
-  document.addEventListener('click', (event) => {
-    if (!trigger.contains(event.target) && !dropdown.contains(event.target)) {
-      closeDropdown();
-    }
-  });
-
-  dropdown.addEventListener('click', async (event) => {
-    const option = event.target.closest('.theme-select__option');
-    if (!option) return;
-
-    const themePath = option.dataset.value;
-    const themeLabel = option.textContent;
-    const valueSpan = trigger.querySelector('.theme-select__value');
-    if (valueSpan) valueSpan.textContent = themeLabel;
-
-    closeDropdown();
-
-    dropdown.querySelectorAll('.theme-select__option').forEach((opt) => {
-      opt.classList.toggle('is-selected', opt === option);
-    });
-
-    try {
-      if (themePath.startsWith('saved:')) {
-        const savedName = themePath.replace('saved:', '');
-        const library = loadThemeLibrary();
-        const entry = library.find((entry) => entry.name === savedName);
-        if (entry) {
-          const normalizedTheme = applyTheme(entry.theme);
+  // Listen for changes
+  const themeSelect = document.getElementById('theme-select-wrapper');
+  if (themeSelect && !themeSelect.dataset.listenerAttached) {
+    themeSelect.addEventListener('customSelectChange', async (event) => {
+      const themePath = event.detail.value;
+      
+      try {
+        if (themePath.startsWith('saved:')) {
+          const savedName = themePath.replace('saved:', '');
+          const library = loadThemeLibrary();
+          const entry = library.find((entry) => entry.name === savedName);
+          if (entry) {
+            const normalizedTheme = applyTheme(entry.theme);
+            setCurrentTheme(normalizedTheme, { source: themePath });
+          }
+        } else {
+          const response = await fetch(themePath, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+          const theme = await response.json();
+          const normalizedTheme = applyTheme(theme);
           setCurrentTheme(normalizedTheme, { source: themePath });
         }
-      } else {
-        const response = await fetch(themePath, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-        const theme = await response.json();
-        const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme, { source: themePath });
+        showHudStatus('✨ Theme applied', 'success');
+        setTimeout(hideHudStatus, 1600);
+      } catch (error) {
+        console.error('Failed to apply theme:', error);
+        showHudStatus('❌ Theme failed', 'error');
+        setTimeout(hideHudStatus, 2000);
       }
-      showHudStatus('✨ Theme applied', 'success');
-      setTimeout(hideHudStatus, 1600);
-    } catch (error) {
-      console.error('Failed to apply theme:', error);
-      showHudStatus('❌ Theme failed', 'error');
-      setTimeout(hideHudStatus, 2000);
-    }
-  });
+    });
+    themeSelect.dataset.listenerAttached = 'true';
+  }
 }
 
 function handleSaveTheme() {

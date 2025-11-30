@@ -41,9 +41,22 @@ export function setupCustomSelect(container, options = {}) {
     alignDropdownPosition(trigger, dropdown);
 
     const supportsPopover = typeof dropdown.showPopover === 'function' && typeof dropdown.hidePopover === 'function';
+    let isOpen = false;
+
+    const setOpenState = (nextState) => {
+      if (isOpen === nextState) return;
+      isOpen = nextState;
+      if (nextState) {
+        alignDropdownPosition(trigger, dropdown);
+      }
+      trigger.classList.toggle('is-open', nextState);
+      select.classList.toggle('is-dropdown-open', nextState);
+      dropdown.classList.toggle('is-open', nextState);
+      trigger.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+    };
 
     const repositionWhileOpen = () => {
-      if (isDropdownOpen()) {
+      if (isOpen) {
         alignDropdownPosition(trigger, dropdown);
       }
     };
@@ -51,59 +64,41 @@ export function setupCustomSelect(container, options = {}) {
     window.addEventListener('resize', repositionWhileOpen);
     window.addEventListener('scroll', repositionWhileOpen, true);
 
-    const isDropdownOpen = () => (supportsPopover ? dropdown.matches(':popover-open') : dropdown.classList.contains('is-open'));
-
     const closeDropdown = () => {
-      if (supportsPopover) {
-        if (dropdown.matches(':popover-open')) {
-          dropdown.hidePopover();
-        }
-      } else if (dropdown.classList.contains('is-open')) {
+      if (!isOpen) return;
+      if (supportsPopover && typeof dropdown.hidePopover === 'function') {
+        dropdown.hidePopover();
+      } else {
         dropdown.classList.remove('is-open');
-        select.classList.remove('is-dropdown-open');
-        trigger.classList.remove('is-open');
-        trigger.setAttribute('aria-expanded', 'false');
-        syncTriggerState();
       }
+      setOpenState(false);
+    };
+
+    const closeOtherDropdowns = () => {
+      document.querySelectorAll('.custom-select.is-dropdown-open').forEach((openSelect) => {
+        if (openSelect === select) return;
+        openSelect.dispatchEvent(new CustomEvent('customSelectForceClose', { bubbles: false }));
+      });
     };
 
     const openDropdown = () => {
-      if (supportsPopover) {
-        document.querySelectorAll('.custom-select__dropdown:popover-open').forEach((panel) => {
-          if (panel !== dropdown) {
-            panel.hidePopover();
-          }
-        });
+      if (isOpen) return;
+      closeOtherDropdowns();
+      alignDropdownPosition(trigger, dropdown);
+      if (supportsPopover && typeof dropdown.showPopover === 'function') {
+        dropdown.showPopover();
       } else {
-        document.querySelectorAll('.custom-select.is-dropdown-open').forEach((selectEl) => {
-          if (selectEl !== select) {
-            selectEl.classList.remove('is-dropdown-open');
-            selectEl.querySelector('.custom-select__trigger')?.classList.remove('is-open');
-            selectEl.querySelector('.custom-select__dropdown')?.classList.remove('is-open');
-          }
-        });
+        dropdown.classList.add('is-open');
       }
-
-      if (!isDropdownOpen()) {
-        alignDropdownPosition(trigger, dropdown);
-        if (supportsPopover) {
-          dropdown.showPopover();
-        } else {
-          dropdown.classList.add('is-open');
-          select.classList.add('is-dropdown-open');
-          trigger.classList.add('is-open');
-          trigger.setAttribute('aria-expanded', 'true');
-        }
-        syncTriggerState();
-        queueMicrotask(() => focusSelectedOption(dropdown));
-      }
+      setOpenState(true);
+      queueMicrotask(() => focusSelectedOption(dropdown));
     };
 
     const toggleDropdown = (event) => {
       event.preventDefault();
       event.stopPropagation();
 
-      if (isDropdownOpen()) {
+      if (isOpen) {
         closeDropdown();
       } else {
         openDropdown();
@@ -151,13 +146,13 @@ export function setupCustomSelect(container, options = {}) {
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         toggleDropdown(event);
       } else if (event.key === 'ArrowDown') {
-        if (!isDropdownOpen()) {
+        if (!isOpen) {
           openDropdown();
         }
         queueMicrotask(() => focusSelectedOption(dropdown, 'next'));
         event.preventDefault();
       } else if (event.key === 'ArrowUp') {
-        if (!isDropdownOpen()) {
+        if (!isOpen) {
           openDropdown();
         }
         queueMicrotask(() => focusSelectedOption(dropdown, 'prev'));
@@ -168,26 +163,17 @@ export function setupCustomSelect(container, options = {}) {
       }
     };
 
-    const syncTriggerState = () => {
-      const isOpen = isDropdownOpen();
-      if (isOpen) {
-        alignDropdownPosition(trigger, dropdown);
-      }
-      trigger.classList.toggle('is-open', isOpen);
-      select.classList.toggle('is-dropdown-open', isOpen);
-      dropdown.classList.toggle('is-open', isOpen);
-      trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    };
-
     addEventListener(trigger, 'click', toggleDropdown);
     addEventListener(trigger, 'keydown', handleTriggerKeydown);
     addEventListener(dropdown, 'click', handleOptionClick);
+    select.addEventListener('customSelectForceClose', closeDropdown);
 
     if (supportsPopover) {
-      dropdown.addEventListener('toggle', () => {
+      dropdown.addEventListener('toggle', (event) => {
         const wasWithinDropdown = dropdown.contains(document.activeElement);
-        syncTriggerState();
-        if (!isDropdownOpen() && wasWithinDropdown) {
+        const nextState = event.newState === 'open';
+        setOpenState(nextState);
+        if (!nextState && wasWithinDropdown) {
           trigger.focus();
         }
       });
@@ -199,7 +185,7 @@ export function setupCustomSelect(container, options = {}) {
       };
 
       const handleEscape = (event) => {
-        if (event.key === 'Escape' && isDropdownOpen()) {
+        if (event.key === 'Escape' && isOpen) {
           closeDropdown();
           trigger.focus();
         }
@@ -208,8 +194,7 @@ export function setupCustomSelect(container, options = {}) {
       addEventListener(document, 'click', handleOutsideClick);
       addEventListener(document, 'keydown', handleEscape);
     }
-
-    syncTriggerState();
+    setOpenState(false);
   });
 }
 

@@ -456,6 +456,26 @@ function getKeyboardContext() {
     },
   };
 }
+const editDrawerSpringProfile = {
+  open: {
+    keyframes: [
+      { transform: 'translateX(104%)' },
+      { transform: 'translateX(-60px)', offset: 0.55, easing: 'cubic-bezier(0.15, 1.8, 0.3, 1)' },
+      { transform: 'translateX(8px)', offset: 0.72, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
+      { transform: 'translateX(0)', offset: 1, easing: 'cubic-bezier(0.2, 1, 0.3, 1)' },
+    ],
+    options: { duration: 720, fill: 'forwards' },
+  },
+  close: {
+    keyframes: [
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(8px)', offset: 0.3, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
+      { transform: 'translateX(104%)', offset: 1, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+    ],
+    options: { duration: 360, fill: 'forwards' },
+  },
+};
+
 const createdEditDrawer = createDrawer({
   id: 'edit-drawer',
   onOpen: () => {
@@ -470,6 +490,7 @@ const createdEditDrawer = createDrawer({
   onClose: () => {
     setEditDrawerOpen(false);
   },
+  motionProfile: editDrawerSpringProfile,
 });
 setEditDrawerInstance(createdEditDrawer);
 
@@ -706,4 +727,3 @@ function initHudControls() {
     hud.dataset.hidden = 'false';
   }
 }
-
