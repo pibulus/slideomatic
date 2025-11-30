@@ -259,6 +259,13 @@ function handleRandomTheme() {
   }
 }
 
+/**
+ * Export randomize theme function for keyboard shortcut
+ */
+export function randomizeTheme() {
+  handleRandomTheme();
+}
+
 export function loadThemeIntoEditor() {
   syncThemeSelectUI();
 }

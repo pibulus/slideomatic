@@ -250,8 +250,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `Esc` – Exit overview
 - `?` – Show keyboard shortcuts help
 - `V` – **Voice-to-slide** (record audio, AI generates slide)
-- `T` – **Open theme drawer** (select themes, randomize, or use voice-to-theme)
-- `E` – Edit current slide
+- `T` – **Randomize theme** (instantly generates a new random theme variation)
+- `E` – Edit current slide (includes all theme controls)
 - `D` – Export deck as JSON
 - `U` – Upload deck from JSON
 - `S` – Settings (configure Gemini API key)
@@ -261,8 +261,12 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 ### 🎙️ Voice-to-Slide (NEW!)
 Press `V` or click the voice button in the HUD to generate slides using AI! Just describe what you want and Gemini will create the perfect slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
 
-### 🎨 Voice-to-Theme (NEW!)
-Press `T` to open the theme drawer, then click the voice button to generate a complete theme using AI! Just describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and save it to your library.
+### 🎨 Theme Controls (Unified in Edit Drawer!)
+Press `E` to open the edit drawer where you'll find all theme controls in one place:
+- **Select themes** from presets (Default, Gameboy, Vaporwave, Slack) or your saved library
+- **Randomize** themes with one click (or press `T` for instant randomization!)
+- **AI Theme Generation** – Describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and save it to your library
+- **Save themes** to your personal library for quick access later
 
 ---
 

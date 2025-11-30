@@ -63,6 +63,7 @@ import {
   openThemeDrawer,
   closeThemeDrawer,
   syncThemeSelectUI,
+  randomizeTheme,
 } from './modules/theme-drawer.js';
 import {
   slides,
@@ -444,7 +445,7 @@ function getKeyboardContext() {
     getSlideCount: () => slideElements.length,
     toggleEditDrawer,
     toggleVoiceRecording,
-    toggleThemeDrawer,
+    randomizeTheme,
     openSettingsModal,
     closeSettingsModal,
     toggleKeyboardHelp,

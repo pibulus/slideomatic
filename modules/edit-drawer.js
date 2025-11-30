@@ -403,7 +403,7 @@ function buildActionsSection() {
     </button>
   `;
 
-  return buildAccordion('Actions', content, { icon: '⚡', modifier: ' accordion--actions' });
+  return buildAccordion('Actions', content, { icon: '⚡', modifier: ' accordion--actions', startOpen: false });
 }
 
 function getLayoutDescription(value) {
@@ -543,14 +543,14 @@ function buildLayoutControl(currentType, currentLayout) {
     </div>
   `;
 
-  return buildAccordion('Slide Type', content, { icon: '🎬', modifier: '' });
+  return buildAccordion('Slide Type', content, { icon: '🎬', modifier: '', startOpen: false });
 }
 
 function buildImagesSection(slide) {
   return buildAccordion(
     'Images',
     buildImageManager(slide),
-    { icon: '📷', modifier: ' accordion--images' }
+    { icon: '📷', modifier: ' accordion--images', startOpen: false }
   );
 }
 
@@ -605,7 +605,7 @@ function buildThemeSection() {
 
   const content = `
     <div class="accordion__group">
-      <label class="edit-drawer__label">Current Theme</label>
+      <label class="edit-drawer__label">Select Theme</label>
       <div class="custom-select" id="theme-select-wrapper" data-value="${currentTheme.value}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
@@ -615,21 +615,27 @@ function buildThemeSection() {
           ${themeOptions}
         </div>
       </div>
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px; font-style: italic;">
+        💡 Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize instantly
+      </p>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme">
-        💾 Save
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
-        🎲 Random
+    <div class="accordion__group">
+      <label class="edit-drawer__label" style="margin-bottom: 8px;">Theme Actions</label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme to library">
+          💾 Save
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
+          🎲 Random
+        </button>
+      </div>
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI" style="width: 100%;">
+        ✨ AI Theme
       </button>
     </div>
-    <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI">
-      ✨ AI Theme
-    </button>
   `;
 
-  return buildAccordion('Theme', content, { icon: '🎨', modifier: ' accordion--theme' });
+  return buildAccordion('Theme', content, { icon: '🎨', modifier: ' accordion--theme', startOpen: true });
 }
 
 function buildAdvancedSection(slide) {
@@ -642,7 +648,7 @@ function buildAdvancedSection(slide) {
       style="font-family: var(--font-mono); font-size: 0.9rem;"
     >${jsonString}</textarea>
   `;
-  return buildAccordion('Advanced JSON', content, { icon: '{ }', modifier: ' accordion--advanced' });
+  return buildAccordion('Advanced JSON', content, { icon: '{ }', modifier: ' accordion--advanced', startOpen: false });
 }
 
 /**
@@ -1178,13 +1184,98 @@ export function renderEditForm(context) {
   };
 
   const handleRandomThemeInline = async () => {
-    const themeModule = await import('./theme-drawer.js');
-    renderEditForm(ctx);
+    const { randomizeTheme } = await import('./theme-drawer.js');
+    randomizeTheme();
+    // Re-render to show updated theme in the selector
+    setTimeout(() => renderEditForm(ctx), 100);
   };
 
   const handleAIThemeInline = async () => {
-    const themeModule = await import('./theme-drawer.js');
-    renderEditForm(ctx);
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+    const { getGeminiApiKey } = await import('./voice-modes.js');
+    const { getCurrentTheme, applyTheme, setCurrentTheme, getCurrentThemePath } = await import('./theme-manager.js');
+
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      showHudStatus('⚠️ Set your Gemini API key in Settings (S) first', 'warning');
+      setTimeout(hideHudStatus, 3000);
+      return;
+    }
+
+    const prompt = window.prompt('Describe the theme vibe you want:', 'pastel punk with neon accents');
+    if (!prompt || !prompt.trim()) return;
+
+    const aiBtn = document.getElementById('theme-ai-btn-inline');
+    if (aiBtn instanceof HTMLButtonElement) {
+      aiBtn.disabled = true;
+      aiBtn.textContent = '✨ Generating...';
+    }
+
+    try {
+      showHudStatus('🤖 Asking Gemini for a theme...', 'info');
+
+      const currentTheme = getCurrentTheme();
+      const themePrompt = `You are a theme generator. Create a beautiful color theme based on this description: "${prompt}".
+
+Return ONLY a JSON object with these exact fields (no markdown, no explanation):
+{
+  "primary": "#hex",
+  "secondary": "#hex",
+  "accent": "#hex",
+  "background": "#hex",
+  "surface": "#hex",
+  "text": "#hex"
+}
+
+Make the colors harmonious and ensure good contrast for readability.`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: themePrompt }] }],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!textContent) {
+        throw new Error('No theme generated');
+      }
+
+      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid theme format');
+      }
+
+      const aiTheme = JSON.parse(jsonMatch[0]);
+      const mergedTheme = { ...currentTheme, ...aiTheme };
+      const normalizedTheme = applyTheme(mergedTheme);
+
+      setCurrentTheme(normalizedTheme, { source: `ai:${prompt.slice(0, 30)}` });
+
+      showHudStatus('✨ AI theme applied!', 'success');
+      setTimeout(hideHudStatus, 1600);
+      renderEditForm(ctx);
+
+    } catch (error) {
+      console.error('AI theme generation failed:', error);
+      showHudStatus('❌ Failed to generate theme', 'error');
+      setTimeout(hideHudStatus, 2000);
+    } finally {
+      if (aiBtn instanceof HTMLButtonElement) {
+        aiBtn.disabled = false;
+        aiBtn.textContent = '✨ AI Theme';
+      }
+    }
   };
 
   addTrackedListener(document.getElementById('theme-save-btn-inline'), 'click', handleSaveThemeInline);

@@ -25,7 +25,7 @@ const defaultContext = {
   getSlideCount: () => 0,
   toggleEditDrawer: () => {},
   toggleVoiceRecording: (_mode) => {},
-  toggleThemeDrawer: () => {},
+  randomizeTheme: () => {},
   openSettingsModal: () => {},
   closeSettingsModal: () => {},
   triggerDeckUpload: () => {},
@@ -170,8 +170,8 @@ export function initKeyboardNav(partialContext = {}) {
 
     if (lowerKey === 't') {
       event.preventDefault();
-      flashKeyFeedback('T');
-      context.toggleThemeDrawer();
+      flashKeyFeedback('🎲');
+      context.randomizeTheme();
       return;
     }
 
