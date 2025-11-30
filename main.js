@@ -457,15 +457,7 @@ function getKeyboardContext() {
   };
 }
 const editDrawerSpringProfile = {
-  open: {
-    keyframes: [
-      { transform: 'translateX(104%)' },
-      { transform: 'translateX(-60px)', offset: 0.55, easing: 'cubic-bezier(0.15, 1.8, 0.3, 1)' },
-      { transform: 'translateX(8px)', offset: 0.72, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
-      { transform: 'translateX(0)', offset: 1, easing: 'cubic-bezier(0.2, 1, 0.3, 1)' },
-    ],
-    options: { duration: 720, fill: 'forwards' },
-  },
+  open: 'is-springing', // Use CSS class for open animation
   close: {
     keyframes: [
       { transform: 'translateX(0)' },

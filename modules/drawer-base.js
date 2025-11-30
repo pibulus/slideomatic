@@ -174,6 +174,44 @@ function closeDrawer(drawer, options = {}) {
 function playDrawerAnimation(drawer, phase) {
   const { element } = drawer;
   const reduced = prefersReducedMotion();
+  
+  // Check if we should use CSS class-based animation
+  const profile = drawer.motionProfile || DEFAULT_MOTION_PROFILE;
+  const motionSegment = profile[phase];
+  
+  // If the profile specifies a CSS class for this phase (e.g. 'is-springing'), use that
+  if (motionSegment && typeof motionSegment === 'string') {
+    if (phase === 'open') {
+      element.classList.add(motionSegment);
+      
+      // Wait for animation end
+      return new Promise((resolve) => {
+        const handler = (e) => {
+          if (e.target === element) {
+            element.removeEventListener('animationend', handler);
+            resolve();
+          }
+        };
+        element.addEventListener('animationend', handler);
+        
+        // Fallback safety
+        setTimeout(() => {
+          element.removeEventListener('animationend', handler);
+          resolve();
+        }, 1000);
+      });
+    } else {
+      // For closing, we just remove the class and let the standard close logic happen
+      // or if there's a specific close class, we could add it. 
+      // But typically we just remove the open class.
+      // If a specific close class was needed, we'd handle it here.
+      // For now, if it's a string profile, we assume it's an "open" class that persists.
+      // The standard close logic in closeDrawer adds 'is-closing' which has its own CSS.
+      element.classList.remove(motionSegment);
+      return Promise.resolve();
+    }
+  }
+
   const canAnimate = typeof element.animate === 'function' && !reduced;
 
   if (!canAnimate) {
@@ -186,10 +224,15 @@ function playDrawerAnimation(drawer, phase) {
     drawer.animation = null;
   }
 
-  const profile = drawer.motionProfile || DEFAULT_MOTION_PROFILE;
-  const motionSegment = profile[phase] || DEFAULT_MOTION_PROFILE[phase];
-  const keyframes = cloneKeyframes(motionSegment.keyframes);
-  const timing = { fill: 'forwards', ...(motionSegment.options || {}) };
+  // Fallback to WAAPI if not using CSS class
+  const segment = profile[phase] || DEFAULT_MOTION_PROFILE[phase];
+  // If segment is missing or invalid (e.g. we passed a string for open but nothing for close), fallback
+  if (!segment || typeof segment !== 'object') {
+     return Promise.resolve();
+  }
+
+  const keyframes = cloneKeyframes(segment.keyframes);
+  const timing = { fill: 'forwards', ...(segment.options || {}) };
   const animation = element.animate(keyframes, timing);
   drawer.animation = animation;
 

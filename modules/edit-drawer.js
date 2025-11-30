@@ -521,7 +521,6 @@ function buildLayoutControl(currentType, currentLayout) {
 
   const content = `
     <div class="accordion__group">
-      <label class="edit-drawer__label">Slide Type</label>
       <div class="custom-select" id="slide-layout-select-wrapper" data-value="${currentType}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentLabel)}</span>
@@ -605,7 +604,6 @@ function buildThemeSection() {
 
   const content = `
     <div class="accordion__group">
-      <label class="edit-drawer__label">Select Theme</label>
       <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
