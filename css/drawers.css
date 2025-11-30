@@ -21,19 +21,22 @@
 }
 
 .edit-drawer.is-open.is-springing {
-  animation: edit-drawer-spring 540ms cubic-bezier(0.15, 0.9, 0.3, 1.1);
+  animation: edit-drawer-spring 720ms cubic-bezier(0.15, 1.8, 0.3, 1);
 }
 
 .edit-drawer.is-open.is-springing .edit-drawer__content {
-  animation: fade-slide-in 380ms ease-out both 80ms;
+  animation: fade-slide-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both 100ms;
 }
 
 @keyframes edit-drawer-spring {
   0% {
     transform: translateX(104%);
   }
-  58% {
-    transform: translateX(-20px);
+  55% {
+    transform: translateX(-60px);
+  }
+  72% {
+    transform: translateX(8px);
   }
   100% {
     transform: translateX(0);
@@ -91,6 +94,17 @@
 .edit-drawer__close:hover {
   transform: translate(-2px, -2px);
   box-shadow: var(--shadow-md);
+}
+
+.edit-drawer__close:active {
+  animation: closeBounce 280ms cubic-bezier(0.68, -0.8, 0.265, 1.8);
+}
+
+@keyframes closeBounce {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  40% { transform: translate(0, 0) scale(0.9) rotate(-8deg); }
+  70% { transform: translate(0, 0) scale(1.05) rotate(4deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
 
 .edit-drawer__content {
@@ -262,8 +276,14 @@
 }
 
 .edit-drawer__button:active {
-  transform: translate(0, 0);
-  box-shadow: var(--shadow-sm);
+  animation: buttonBounce 280ms cubic-bezier(0.68, -0.8, 0.265, 1.8);
+}
+
+@keyframes buttonBounce {
+  0% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(0, 0) scale(0.94); }
+  70% { transform: translate(0, 0) scale(1.02); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 .edit-drawer__button:focus-visible {
