@@ -136,22 +136,29 @@
 }
 
 .accordion__content {
-  padding: 0 20px 20px;
+  padding: 0 20px 0; /* Start with 0 bottom padding */
   opacity: 0;
   transform: translateY(-12px) scale(0.98);
   min-height: 0;
   overflow: hidden;
+  visibility: hidden; /* Hide content when closed to prevent clicks */
   transition:
+    padding-bottom 200ms var(--accordion-collapse-ease),
     opacity 200ms var(--accordion-collapse-ease),
-    transform 260ms var(--accordion-collapse-ease);
+    transform 260ms var(--accordion-collapse-ease),
+    visibility 200ms step-end;
 }
 
 .accordion.is-open .accordion__content {
+  padding-bottom: 20px; /* Restore padding when open */
   opacity: 1;
+  visibility: visible;
   transform: translateY(0) scale(1);
   transition:
+    padding-bottom 320ms var(--accordion-spring-ease),
     opacity 320ms var(--accordion-spring-ease) 80ms,
-    transform 420ms var(--accordion-spring-ease) 80ms;
+    transform 420ms var(--accordion-spring-ease) 80ms,
+    visibility 0ms step-start;
 }
 
 @media (prefers-reduced-motion: reduce) {

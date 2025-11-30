@@ -182,6 +182,14 @@ function playDrawerAnimation(drawer, phase) {
   // If the profile specifies a CSS class for this phase (e.g. 'is-springing'), use that
   if (motionSegment && typeof motionSegment === 'string') {
     if (phase === 'open') {
+      // Force reflow to ensure the browser sees the starting state (transform: 0 from is-open class)
+      // vs the animation starting state.
+      // Actually, we want the animation to start from off-screen.
+      // The is-open class sets transform: 0.
+      // The animation keyframes start at transform: 104%.
+      // We need to make sure the animation class is applied effectively.
+      
+      void element.offsetWidth; 
       element.classList.add(motionSegment);
       
       // Wait for animation end
