@@ -111,7 +111,7 @@
   top: var(--custom-select-top, 0px);
   left: var(--custom-select-left, 0px);
   width: min(var(--custom-select-width, 320px), calc(100vw - 24px));
-  max-height: min(360px, calc(100vh - var(--custom-select-top, 0px) - 24px));
+  max-height: min(360px, var(--custom-select-max-height, calc(100vh - var(--custom-select-top, 0px) - 24px)));
   background: white;
   opacity: 0;
   border: var(--border-width) solid var(--color-ink);

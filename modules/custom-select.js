@@ -318,10 +318,24 @@ function focusSelectedOption(dropdown, direction = 'current') {
 }
 
 function alignDropdownPosition(trigger, dropdown) {
+  if (typeof window === 'undefined' || !trigger || !dropdown) return;
   const rect = trigger.getBoundingClientRect();
   const scrollX = window.scrollX || 0;
   const scrollY = window.scrollY || 0;
-  dropdown.style.setProperty('--custom-select-left', `${rect.left + scrollX}px`);
-  dropdown.style.setProperty('--custom-select-top', `${rect.bottom + scrollY + 6}px`);
+  const left = rect.left + scrollX;
+  const top = rect.bottom + scrollY + 6;
+  const maxWidth = Math.min(rect.width, window.innerWidth - 24);
+  const maxHeight = Math.max(180, window.innerHeight - top - 24);
+
+  dropdown.style.setProperty('--custom-select-left', `${left}px`);
+  dropdown.style.setProperty('--custom-select-top', `${top}px`);
   dropdown.style.setProperty('--custom-select-width', `${rect.width}px`);
+  dropdown.style.setProperty('--custom-select-max-height', `${maxHeight}px`);
+
+  dropdown.style.left = `${left}px`;
+  dropdown.style.top = `${top}px`;
+  dropdown.style.width = `${maxWidth}px`;
+  dropdown.style.maxHeight = `${Math.min(360, maxHeight)}px`;
+  dropdown.style.bottom = 'auto';
+  dropdown.style.right = 'auto';
 }

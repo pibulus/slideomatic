@@ -128,6 +128,13 @@
     opacity 280ms var(--accordion-spring-ease) 60ms;
 }
 
+.accordion:not(.is-ready) .accordion__body,
+.accordion:not(.is-ready) .accordion.is-open .accordion__body,
+.accordion:not(.is-ready) .accordion__content,
+.accordion:not(.is-ready) .accordion.is-open .accordion__content {
+  transition: none !important;
+}
+
 .accordion__content {
   padding: 0 20px 20px;
   opacity: 0;

@@ -64,6 +64,10 @@ export function setupAccordion(container, options = {}) {
     } else {
       header.addEventListener('click', toggleAccordion);
     }
+
+    requestAnimationFrame(() => {
+      accordion.classList.add('is-ready');
+    });
   });
 }
 
