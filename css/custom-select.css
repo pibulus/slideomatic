@@ -134,6 +134,7 @@
   z-index: 9999;
   box-shadow: 0 0 0 transparent;
   background-color: white !important; /* Force opaque background */
+  opacity: 1 !important; /* Force opacity */
   isolation: isolate; /* Create new stacking context */
 }
 

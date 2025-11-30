@@ -14,10 +14,10 @@
 /**
  * Setup accordion behavior for all .accordion elements within a container
  * @param {HTMLElement} container - Parent element containing accordions
- * @param {Object} options - Configuration options
- * @param {boolean} options.openFirst - Open the first accordion by default
- * @param {boolean} options.allowMultiple - Allow multiple accordions open simultaneously
- * @param {Function} options.addTrackedListener - Optional listener tracking function
+ * @param {Object} [options] - Configuration options
+ * @param {boolean} [options.openFirst] - Open the first accordion by default
+ * @param {boolean} [options.allowMultiple] - Allow multiple accordions open simultaneously
+ * @param {Function} [options.addTrackedListener] - Optional listener tracking function
  */
 export function setupAccordion(container, options = {}) {
   const {
@@ -70,7 +70,7 @@ export function setupAccordion(container, options = {}) {
 
 /**
  * Open an accordion with spring animation
- * @param {HTMLElement} accordion - The accordion element to open
+ * @param {Element} accordion - The accordion element to open
  */
 export function openAccordion(accordion) {
   if (!accordion || accordion.classList.contains('is-open')) return;
@@ -86,7 +86,7 @@ export function openAccordion(accordion) {
 
 /**
  * Close an accordion with bounce animation
- * @param {HTMLElement} accordion - The accordion element to close
+ * @param {Element} accordion - The accordion element to close
  */
 export function closeAccordion(accordion) {
   if (!accordion || !accordion.classList.contains('is-open')) return;
@@ -97,12 +97,12 @@ export function closeAccordion(accordion) {
   setTimeout(() => {
     accordion.classList.remove('is-open');
     accordion.classList.remove('is-closing');
-  }, 320);
+  }, 380);
 }
 
 /**
  * Toggle a specific accordion
- * @param {HTMLElement} accordion - The accordion element to toggle
+ * @param {Element} accordion - The accordion element to toggle
  */
 export function toggleAccordion(accordion) {
   if (!accordion) return;
