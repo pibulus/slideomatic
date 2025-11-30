@@ -9,8 +9,32 @@
 //
 import { trapFocus, focusFirstElement, getFocusableElements } from './utils.js';
 
-// FOCUSABLE_SELECTORS and local helper functions removed in favor of utils.js imports
+const hasWindow = typeof window !== 'undefined';
+const reduceMotionQuery = hasWindow && typeof window.matchMedia === 'function'
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : null;
 
+const DRAWER_OPEN_FRAMES = [
+  { transform: 'translateX(105%)', opacity: 0.9 },
+  { transform: 'translateX(-8%)', opacity: 1, offset: 0.7, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1.25)' },
+  { transform: 'translateX(2%)', offset: 0.88, easing: 'cubic-bezier(0.15, 1.2, 0.35, 1)' },
+  { transform: 'translateX(0)', offset: 1, easing: 'cubic-bezier(0.2, 1, 0.2, 1)' },
+];
+
+const DRAWER_CLOSE_FRAMES = [
+  { transform: 'translateX(0)', opacity: 1 },
+  { transform: 'translateX(4%)', offset: 0.35, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
+  { transform: 'translateX(105%)', opacity: 0.85, offset: 1, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+];
+
+const DRAWER_TIMINGS = {
+  open: { duration: 620, fill: 'forwards' },
+  close: { duration: 420, fill: 'forwards' },
+};
+
+function prefersReducedMotion() {
+  return reduceMotionQuery?.matches ?? false;
+}
 
 function createDrawer(config) {
   const {
@@ -39,24 +63,27 @@ function createDrawer(config) {
     onClose,
     trapFocus: shouldTrapFocus,
     isOpen: element.classList.contains('is-open'),
+    state: element.classList.contains('is-open') ? 'open' : 'closed',
     previousFocus: null,
     keydownHandler: null,
     clickOutsideHandler: null,
+    animation: null,
   };
 }
 
 function openDrawer(drawer) {
-  if (!drawer || drawer.isOpen) return;
+  if (!drawer || drawer.isOpen) {
+    return Promise.resolve();
+  }
   const { element, trapFocus: shouldTrapFocus } = drawer;
 
   drawer.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   drawer.isOpen = true;
+  drawer.state = 'opening';
 
-  // Force reflow to ensure transition/animation triggers
-  void element.offsetWidth;
-  element.classList.add('is-open', 'is-springing');
+  element.classList.add('is-open');
+  element.classList.remove('is-closing');
   element.setAttribute('aria-hidden', 'false');
-  element.addEventListener('animationend', () => element.classList.remove('is-springing'), { once: true });
 
   if (shouldTrapFocus) {
     drawer.keydownHandler = (event) => {
@@ -78,23 +105,30 @@ function openDrawer(drawer) {
       closeDrawer(drawer, { restoreFocus: true });
     }
   };
-  // Use a slight delay to prevent the opening click from immediately closing the drawer
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     document.addEventListener('click', drawer.clickOutsideHandler, true);
-  }, 100);
+  });
 
   focusFirstElement(element);
   drawer.onOpen?.(drawer);
+
+  return playDrawerAnimation(drawer, 'open').finally(() => {
+    if (drawer.isOpen) {
+      drawer.state = 'open';
+    }
+  });
 }
 
 function closeDrawer(drawer, options = {}) {
-  if (!drawer || !drawer.isOpen) return;
+  if (!drawer || !drawer.isOpen) {
+    return Promise.resolve();
+  }
   const { element } = drawer;
   const { restoreFocus = true } = options;
 
   drawer.isOpen = false;
-  element.classList.remove('is-open');
-  element.classList.remove('is-springing');
+  drawer.state = 'closing';
+  element.classList.add('is-closing');
   element.setAttribute('aria-hidden', 'true');
 
   if (drawer.keydownHandler) {
@@ -110,12 +144,52 @@ function closeDrawer(drawer, options = {}) {
   const target = restoreFocus && drawer.previousFocus && typeof drawer.previousFocus.focus === 'function'
     ? drawer.previousFocus
     : null;
-  if (target) {
-    requestAnimationFrame(() => target.focus());
-  }
-  drawer.previousFocus = null;
 
-  drawer.onClose?.(drawer);
+  const animationPromise = playDrawerAnimation(drawer, 'close');
+
+  return animationPromise.finally(() => {
+    if (drawer.state !== 'closing') {
+      return;
+    }
+
+    drawer.state = 'closed';
+    element.classList.remove('is-open');
+    element.classList.remove('is-closing');
+    drawer.previousFocus = null;
+    if (target) {
+      requestAnimationFrame(() => target.focus());
+    }
+    drawer.onClose?.(drawer);
+  });
+}
+
+function playDrawerAnimation(drawer, phase) {
+  const { element } = drawer;
+  const reduced = prefersReducedMotion();
+  const canAnimate = typeof element.animate === 'function' && !reduced;
+
+  if (!canAnimate) {
+    element.style.transform = phase === 'open' ? 'translateX(0)' : 'translateX(105%)';
+    return Promise.resolve();
+  }
+
+  if (drawer.animation) {
+    drawer.animation.cancel();
+    drawer.animation = null;
+  }
+
+  const keyframes = phase === 'open' ? DRAWER_OPEN_FRAMES : DRAWER_CLOSE_FRAMES;
+  const timing = DRAWER_TIMINGS[phase];
+  const animation = element.animate(keyframes, timing);
+  drawer.animation = animation;
+
+  return animation.finished
+    .catch(() => {})
+    .finally(() => {
+      if (drawer.animation === animation) {
+        drawer.animation = null;
+      }
+    });
 }
 
 export {
@@ -126,4 +200,3 @@ export {
   getFocusableElements,
   focusFirstElement,
 };
-

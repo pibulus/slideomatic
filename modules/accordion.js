@@ -19,6 +19,8 @@
  * @param {boolean} [options.allowMultiple] - Allow multiple accordions open simultaneously
  * @param {Function} [options.addTrackedListener] - Optional listener tracking function
  */
+let accordionIdCounter = 0;
+
 export function setupAccordion(container, options = {}) {
   const {
     openFirst = false,
@@ -35,10 +37,7 @@ export function setupAccordion(container, options = {}) {
 
     if (!header || !body) return;
 
-    // Open first accordion if requested
-    if (openFirst && index === 0) {
-      accordion.classList.add('is-open');
-    }
+    hydrateAccordionA11y(accordion, header, body, { startOpen: openFirst && index === 0 });
 
     const toggleAccordion = () => {
       const isOpen = accordion.classList.contains('is-open');
@@ -69,19 +68,14 @@ export function setupAccordion(container, options = {}) {
 }
 
 /**
- * Open an accordion with spring animation
+ * Open an accordion, syncing ARIA state and relying on CSS grid animations
  * @param {Element} accordion - The accordion element to open
  */
 export function openAccordion(accordion) {
   if (!accordion || accordion.classList.contains('is-open')) return;
 
-  accordion.classList.add('is-opening');
   accordion.classList.add('is-open');
-
-  // Remove opening class after animation
-  setTimeout(() => {
-    accordion.classList.remove('is-opening');
-  }, 500);
+  updateAccordionAria(accordion, true);
 }
 
 /**
@@ -91,13 +85,8 @@ export function openAccordion(accordion) {
 export function closeAccordion(accordion) {
   if (!accordion || !accordion.classList.contains('is-open')) return;
 
-  accordion.classList.add('is-closing');
-
-  // Remove open class after bounce animation
-  setTimeout(() => {
-    accordion.classList.remove('is-open');
-    accordion.classList.remove('is-closing');
-  }, 380);
+  accordion.classList.remove('is-open');
+  updateAccordionAria(accordion, false);
 }
 
 /**
@@ -130,4 +119,40 @@ export function openAllAccordions(container) {
 export function closeAllAccordions(container) {
   const accordions = container.querySelectorAll('.accordion');
   accordions.forEach((accordion) => closeAccordion(accordion));
+}
+
+function hydrateAccordionA11y(accordion, header, body, { startOpen }) {
+  const initiallyOpen = startOpen ?? accordion.classList.contains('is-open');
+  const instanceId = accordion.dataset.accordionId || `accordion-${++accordionIdCounter}`;
+  accordion.dataset.accordionId = instanceId;
+
+  if (!header.id) {
+    header.id = `${instanceId}-header`;
+  }
+
+  if (!body.id) {
+    body.id = `${instanceId}-panel`;
+  }
+
+  header.setAttribute('aria-controls', body.id);
+  header.setAttribute('aria-expanded', initiallyOpen ? 'true' : 'false');
+  header.setAttribute('aria-disabled', 'false');
+  body.setAttribute('role', 'region');
+  body.setAttribute('aria-labelledby', header.id);
+  body.setAttribute('aria-hidden', initiallyOpen ? 'false' : 'true');
+
+  if (initiallyOpen) {
+    accordion.classList.add('is-open');
+  } else {
+    accordion.classList.remove('is-open');
+  }
+}
+
+function updateAccordionAria(accordion, isOpen) {
+  const header = accordion.querySelector('.accordion__header');
+  const body = accordion.querySelector('.accordion__body');
+  if (!header || !body) return;
+
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  body.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
 }
