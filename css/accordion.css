@@ -102,6 +102,11 @@
   transform: scale(1.15);
 }
 
+.accordion.is-open {
+  z-index: 10;
+  position: relative;
+}
+
 .accordion.is-open .accordion__chevron {
   transform: rotate(180deg) scale(1.05);
 }
@@ -117,15 +122,18 @@
   opacity: 0;
   transition:
     grid-template-rows var(--accordion-duration) var(--accordion-collapse-ease),
-    opacity 200ms var(--accordion-collapse-ease);
+    opacity 200ms var(--accordion-collapse-ease),
+    overflow 0s;
 }
 
 .accordion.is-open .accordion__body {
   grid-template-rows: 1fr;
   opacity: 1;
+  overflow: visible;
   transition:
     grid-template-rows calc(var(--accordion-duration) * 1.1) var(--accordion-spring-ease),
-    opacity 280ms var(--accordion-spring-ease) 60ms;
+    opacity 280ms var(--accordion-spring-ease) 60ms,
+    overflow 0s 500ms;
 }
 
 .accordion:not(.is-ready) .accordion__body,
@@ -146,19 +154,22 @@
     padding-bottom 200ms var(--accordion-collapse-ease),
     opacity 200ms var(--accordion-collapse-ease),
     transform 260ms var(--accordion-collapse-ease),
-    visibility 200ms step-end;
+    visibility 200ms step-end,
+    overflow 0s;
 }
 
 .accordion.is-open .accordion__content {
   padding-bottom: 20px; /* Restore padding when open */
   opacity: 1;
   visibility: visible;
+  overflow: visible;
   transform: translateY(0) scale(1);
   transition:
     padding-bottom 320ms var(--accordion-spring-ease),
     opacity 320ms var(--accordion-spring-ease) 80ms,
     transform 420ms var(--accordion-spring-ease) 80ms,
-    visibility 0ms step-start;
+    visibility 0ms step-start,
+    overflow 0s 500ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
