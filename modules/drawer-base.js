@@ -52,6 +52,8 @@ function openDrawer(drawer) {
   drawer.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   drawer.isOpen = true;
 
+  // Force reflow to ensure transition/animation triggers
+  void element.offsetWidth;
   element.classList.add('is-open', 'is-springing');
   element.setAttribute('aria-hidden', 'false');
   element.addEventListener('animationend', () => element.classList.remove('is-springing'), { once: true });

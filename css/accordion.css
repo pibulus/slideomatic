@@ -121,6 +121,21 @@
     opacity 320ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms;
 }
 
+.accordion.is-closing .accordion__body {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  transition:
+    max-height 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Allow overflow when fully open so dropdowns aren't clipped */
+.accordion.is-open:not(.is-opening):not(.is-closing) .accordion__body {
+  overflow: visible;
+  max-height: none;
+}
+
 .accordion__content {
   padding: 0 20px 20px;
   opacity: 0;
