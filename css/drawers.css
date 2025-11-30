@@ -236,63 +236,69 @@
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-ink);
   color: var(--color-ink);
-  padding: 12px 18px;
+  padding: 14px 20px;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   border-radius: var(--radius);
   cursor: pointer;
   width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   transition:
-    transform 160ms cubic-bezier(0.2, 2, 0.4, 1),
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-  box-shadow: none;
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+  box-shadow: var(--shadow-sm);
 }
 
-.edit-drawer__button:hover,
+.edit-drawer__button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+}
+
+.edit-drawer__button:active {
+  transform: translate(0, 0);
+  box-shadow: var(--shadow-sm);
+}
+
 .edit-drawer__button:focus-visible {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.18);
+  outline: none;
+  box-shadow: var(--shadow-md);
 }
 
 .edit-drawer__button--primary {
   background: var(--color-accent);
-  font-size: 1rem;
 }
 
 .edit-drawer__button--secondary {
-  background: #ffe7fb;
+  background: rgba(255, 159, 243, 0.2);
 }
 
 .edit-drawer__button--ghost {
   background: transparent;
   color: var(--color-ink);
   box-shadow: none;
-  transition:
-    color 160ms ease,
-    transform 160ms cubic-bezier(0.2, 2, 0.4, 1),
-    box-shadow 160ms ease;
+}
+
+.edit-drawer__button--ghost:hover {
+  box-shadow: var(--shadow-sm);
 }
 
 .edit-drawer__button--delete {
+  background: rgba(201, 42, 42, 0.1);
   color: #c92a2a;
   border-color: #c92a2a;
-  opacity: 0.7;
 }
 
 .edit-drawer__button--delete:hover {
-  opacity: 1;
-  background: #ffe0e0;
+  background: rgba(201, 42, 42, 0.2);
   color: #991b1b;
-  transform: translate(-2px, -2px);
-  box-shadow: 2px 2px 0 #c92a2a;
+  border-color: #991b1b;
 }
 
 .edit-drawer__actions-grid {

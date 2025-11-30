@@ -2,8 +2,8 @@
    CUSTOM SELECT COMPONENT - Pastel Punk Style
    ═══════════════════════════════════════════════════════════════════════════
 
-   Beautiful custom dropdowns that replace ugly browser defaults.
-   Spring animations and whimsical micro-interactions.
+   Custom dropdowns with chunky borders and hard shadows.
+   Consistent with global theme system.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .custom-select {
@@ -20,20 +20,20 @@
 .custom-select__trigger {
   appearance: none;
   width: 100%;
-  padding: 12px 40px 12px 14px;
+  padding: 12px 40px 12px 16px;
   border: var(--border-width) solid var(--color-ink);
   border-radius: var(--radius);
-  background: #fffdf7;
+  background: white;
   font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition:
-    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 180ms ease,
-    background 180ms ease,
-    border-color 200ms ease;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,23 +43,21 @@
 }
 
 .custom-select__trigger:hover {
-  transform: translateY(-1px) scale(1.01);
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.14);
-  background: rgba(255, 159, 243, 0.08);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+  background: rgba(255, 159, 243, 0.06);
   border-color: var(--color-surface);
 }
 
 .custom-select__trigger:focus {
   outline: none;
   border-color: var(--color-surface);
-  box-shadow:
-    4px 4px 0 rgba(0, 0, 0, 0.12),
-    0 0 0 3px rgba(255, 159, 243, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .custom-select__trigger:active {
-  transform: translateY(0) scale(0.99);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
+  transform: translate(0, 0);
+  box-shadow: var(--shadow-sm);
 }
 
 .custom-select__trigger.is-open {
@@ -128,8 +126,8 @@
   overflow-y: auto;
   border-width: var(--border-width);
   border-top: none;
-  box-shadow: 4px 8px 0 rgba(0, 0, 0, 0.16);
-  animation: dropdownSpringIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-md);
+  animation: dropdownSpringIn 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 250;
 }
 
@@ -158,7 +156,9 @@
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    background 120ms ease,
+    padding 120ms ease;
   text-align: left;
   color: var(--color-ink);
   position: relative;
@@ -178,13 +178,12 @@
   background: var(--color-surface);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .custom-select__option:hover {
-  background: rgba(255, 159, 243, 0.12);
-  padding-left: 24px;
-  transform: translateX(4px);
+  background: rgba(255, 159, 243, 0.1);
+  padding-left: 20px;
 }
 
 .custom-select__option:hover::before {
@@ -192,14 +191,13 @@
 }
 
 .custom-select__option:active {
-  background: rgba(255, 159, 243, 0.2);
-  transform: scale(0.98);
+  background: rgba(255, 159, 243, 0.18);
 }
 
 .custom-select__option.is-selected {
-  background: rgba(255, 159, 243, 0.15);
+  background: rgba(255, 159, 243, 0.12);
   font-weight: 700;
-  padding-left: 24px;
+  padding-left: 20px;
 }
 
 .custom-select__option.is-selected::before {

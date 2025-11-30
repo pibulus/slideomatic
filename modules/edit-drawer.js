@@ -371,7 +371,7 @@ function buildCombinedContentSection(slide, type) {
 
   if (fields.length === 0) return '';
 
-  return buildAccordion('Content', fields.join(''), { icon: '✏️', startOpen: true });
+  return buildAccordion('Content', fields.join(''), { startOpen: true });
 }
 
 function buildActionsSection() {
@@ -388,22 +388,22 @@ function buildActionsSection() {
       <span style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-surface);">${statusIcon}</span>
     </div>
     <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-      💾 Save
+      Save Changes
     </button>
     <div style="display: flex; gap: 10px;">
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
-        ✨ Duplicate
+        Duplicate
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn" style="flex: 1;">
-        🗑️ Delete
+        Delete
       </button>
     </div>
     <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-      📦 Export
+      Export Deck
     </button>
   `;
 
-  return buildAccordion('Actions', content, { icon: '⚡', modifier: ' accordion--actions', startOpen: false });
+  return buildAccordion('Actions', content, { modifier: ' accordion--actions', startOpen: false });
 }
 
 function getLayoutDescription(value) {
@@ -543,14 +543,14 @@ function buildLayoutControl(currentType, currentLayout) {
     </div>
   `;
 
-  return buildAccordion('Slide Type', content, { icon: '🎬', modifier: '', startOpen: false });
+  return buildAccordion('Slide Type', content, { startOpen: false });
 }
 
 function buildImagesSection(slide) {
   return buildAccordion(
     'Images',
     buildImageManager(slide),
-    { icon: '📷', modifier: ' accordion--images', startOpen: false }
+    { modifier: ' accordion--images', startOpen: false }
   );
 }
 
@@ -571,7 +571,7 @@ function buildSplitContentSection(slide) {
     </div>
   `;
 
-  return buildAccordion('Split Content', content, { icon: '↔️', startOpen: true });
+  return buildAccordion('Split Content', content, { startOpen: true });
 }
 
 function buildThemeSection() {
@@ -615,27 +615,27 @@ function buildThemeSection() {
           ${themeOptions}
         </div>
       </div>
-      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px; font-style: italic;">
-        💡 Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize instantly
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px;">
+        Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize
       </p>
     </div>
     <div class="accordion__group">
       <label class="edit-drawer__label" style="margin-bottom: 8px;">Theme Actions</label>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme to library">
-          💾 Save
+          Save Theme
         </button>
         <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
-          🎲 Random
+          Randomize
         </button>
       </div>
       <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI" style="width: 100%;">
-        ✨ AI Theme
+        AI Theme
       </button>
     </div>
   `;
 
-  return buildAccordion('Theme', content, { icon: '🎨', modifier: ' accordion--theme', startOpen: true });
+  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: true });
 }
 
 function buildAdvancedSection(slide) {
@@ -648,7 +648,7 @@ function buildAdvancedSection(slide) {
       style="font-family: var(--font-mono); font-size: 0.9rem;"
     >${jsonString}</textarea>
   `;
-  return buildAccordion('Advanced JSON', content, { icon: '{ }', modifier: ' accordion--advanced', startOpen: false });
+  return buildAccordion('Advanced JSON', content, { modifier: ' accordion--advanced', startOpen: false });
 }
 
 /**
@@ -1208,7 +1208,7 @@ export function renderEditForm(context) {
     const aiBtn = document.getElementById('theme-ai-btn-inline');
     if (aiBtn instanceof HTMLButtonElement) {
       aiBtn.disabled = true;
-      aiBtn.textContent = '✨ Generating...';
+      aiBtn.textContent = 'Generating...';
     }
 
     try {
@@ -1273,7 +1273,7 @@ Make the colors harmonious and ensure good contrast for readability.`;
     } finally {
       if (aiBtn instanceof HTMLButtonElement) {
         aiBtn.disabled = false;
-        aiBtn.textContent = '✨ AI Theme';
+        aiBtn.textContent = 'AI Theme';
       }
     }
   };
