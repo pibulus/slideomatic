@@ -105,6 +105,7 @@ function openDrawer(drawer) {
   drawer.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   drawer.isOpen = true;
 
+  element.classList.remove('is-closing');
   element.classList.add('is-open', 'is-springing');
   element.setAttribute('aria-hidden', 'false');
   element.addEventListener('animationend', () => element.classList.remove('is-springing'), { once: true });
@@ -144,8 +145,8 @@ function closeDrawer(drawer, options = {}) {
   const { restoreFocus = true } = options;
 
   drawer.isOpen = false;
-  element.classList.remove('is-open');
   element.classList.remove('is-springing');
+  element.classList.add('is-closing');
   element.setAttribute('aria-hidden', 'true');
 
   if (drawer.keydownHandler) {
@@ -161,12 +162,27 @@ function closeDrawer(drawer, options = {}) {
   const target = restoreFocus && drawer.previousFocus && typeof drawer.previousFocus.focus === 'function'
     ? drawer.previousFocus
     : null;
-  if (target) {
-    requestAnimationFrame(() => target.focus());
-  }
-  drawer.previousFocus = null;
 
-  drawer.onClose?.(drawer);
+  // Wait for close animation to complete
+  const onAnimationEnd = () => {
+    element.removeEventListener('animationend', onAnimationEnd);
+    element.classList.remove('is-open', 'is-closing');
+    if (target) {
+      requestAnimationFrame(() => target.focus());
+    }
+    drawer.previousFocus = null;
+    drawer.onClose?.(drawer);
+  };
+
+  element.addEventListener('animationend', onAnimationEnd);
+
+  // Fallback in case animation doesn't fire
+  setTimeout(() => {
+    if (element.classList.contains('is-closing')) {
+      element.removeEventListener('animationend', onAnimationEnd);
+      onAnimationEnd();
+    }
+  }, 500);
 }
 
 export {

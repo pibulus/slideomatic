@@ -29,25 +29,43 @@
 
 .edit-drawer.is-closing {
   pointer-events: none;
+  animation: edit-drawer-close 380ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes edit-drawer-close {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(105%);
+    opacity: 0.92;
+  }
 }
 
 .edit-drawer.is-open.is-springing {
-  animation: edit-drawer-spring 720ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: edit-drawer-spring 620ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .edit-drawer.is-open.is-springing .edit-drawer__content {
-  animation: fade-slide-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both 100ms;
+  animation: fade-slide-in 480ms cubic-bezier(0.34, 1.2, 0.64, 1) both 80ms;
 }
 
 @keyframes edit-drawer-spring {
   0% {
-    transform: translateX(104%);
+    transform: translateX(105%);
   }
-  55% {
-    transform: translateX(-60px);
+  68% {
+    transform: translateX(0);
   }
-  72% {
-    transform: translateX(8px);
+  82% {
+    transform: translateX(1.6%);
+  }
+  94% {
+    transform: translateX(0.25%);
   }
   100% {
     transform: translateX(0);
