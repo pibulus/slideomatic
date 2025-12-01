@@ -12,7 +12,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { escapeHtml, formatBytes, fileToBase64 } from './utils.js';
+import { escapeHtml, fileToBase64 } from './utils.js';
 import {
   prepareSlideForEditing,
   restoreBase64FromTokens,
@@ -21,13 +21,21 @@ import {
   buildImageManager,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
+  setupImageAIButtons,
   setupImageDragReorder,
   removeImageByIndex,
   replaceImageByIndex,
   reorderSlideImages,
   addImageToSlide,
   updateImageAltText,
-} from './image-manager.js';
+} from './slide-image-ui.js';
+import { askAIForImage } from './image-ai.js';
+import { setupAccordion } from './accordion.js';
+import { setupCustomSelect, getCustomSelectValue } from './custom-select.js';
+import {
+  loadThemeLibrary,
+  getCurrentThemePath,
+} from './theme-manager.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -130,16 +138,41 @@ function getLayoutMeta(value) {
   return LAYOUT_OPTIONS.find((option) => option.value === value);
 }
 
-function buildSection(title, content, options = {}) {
+/**
+ * Build an accordion section with whimsical animations
+ * @param {string} title - Section title
+ * @param {string} content - HTML content for the accordion body
+ * @param {Object} options - Configuration options
+ * @param {string} options.icon - Optional icon emoji/text
+ * @param {string} options.modifier - Optional CSS modifier class
+ * @param {boolean} options.startOpen - Whether to start expanded (default: false)
+ * @returns {string} HTML for accordion
+ */
+function buildAccordion(title, content, options = {}) {
   if (!content) return '';
-  const modifier = options.modifier ? ` ${options.modifier}` : '';
+
+  const {
+    icon = '',
+    modifier = '',
+    startOpen = false,
+  } = options;
+
+  const openClass = startOpen ? ' is-open' : '';
+  const iconHTML = icon ? `<span class="accordion__icon">${icon}</span>` : '';
+
   return `
-    <section class="edit-drawer__section${modifier}">
-      <div class="edit-drawer__section-header">
-        <p class="edit-drawer__section-title">${escapeHtml(title)}</p>
-      </div>
-      <div class="edit-drawer__section-body">
-        ${content}
+    <section class="accordion${modifier}${openClass}">
+      <button type="button" class="accordion__header">
+        <h3 class="accordion__title">
+          ${iconHTML}
+          ${escapeHtml(title)}
+        </h3>
+        <span class="accordion__chevron">▼</span>
+      </button>
+      <div class="accordion__body">
+        <div class="accordion__content accordion__stack">
+          ${content}
+        </div>
       </div>
     </section>
   `;
@@ -183,47 +216,100 @@ function resolveField(slide, candidates) {
   return null;
 }
 
+const STANDARD_LAYOUT_OPTIONS = [
+  { value: 'default', label: 'Default (Image Right)' },
+  { value: 'image-left', label: 'Image Left' },
+  { value: 'image-top', label: 'Image Top' },
+  { value: 'image-bottom', label: 'Image Bottom' },
+];
+
+const SPLIT_LAYOUT_OPTIONS = [
+  { value: 'default', label: '50/50 Split' },
+  { value: 'feature', label: 'Feature Card' },
+];
+
+// ... (existing code) ...
+
 function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
-    buildLayoutControl(type),
-    buildContentFieldsSection(slide, type),
-    buildBodySection(slide, type),
+    buildThemeSection(),
+    buildLayoutControl(type, slide.layout),
+    type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildImagesSection(slide),
   ].filter(Boolean);
   return sections.join('');
 }
 
-function getLayoutDescription(value) {
-  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
+// ... (existing code) ...
+
+function getSelectedLayoutVariant() {
+  const standardSelect = document.getElementById('standard-layout-select-wrapper');
+  if (standardSelect) {
+    return standardSelect.dataset.value || null;
+  }
+  const splitSelect = document.getElementById('split-layout-select-wrapper');
+  if (splitSelect) {
+    return splitSelect.dataset.value || null;
+  }
+  const quoteSelect = document.getElementById('quote-layout-select-wrapper');
+  if (quoteSelect) {
+    return quoteSelect.dataset.value || null;
+  }
+  return null;
 }
 
-function buildLayoutControl(currentType) {
-  const selectTitle = getLayoutDescription(currentType) || 'Choose slide type';
-  const options = LAYOUT_OPTIONS.map(({ value, label }) => {
-    const selected = value === currentType ? 'selected' : '';
-    const optionTitle = getLayoutDescription(value) || label;
-    return `<option value="${value}" ${selected} title="${escapeHtml(optionTitle)}">${escapeHtml(label)}</option>`;
-  }).join('');
-
-  const content = `
-    <div class="edit-drawer__layout-controls">
-      <select class="edit-drawer__select" id="slide-layout-select" title="${escapeHtml(selectTitle)}">
-        ${options}
-      </select>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type">
-        Update Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type">
-        Add Slide
-      </button>
-    </div>
-  `;
-
-  return buildSection('Slide Type', content, { modifier: ' edit-drawer__section--layout' });
+function handleLayoutApply(context) {
+  const layout = getSelectedLayoutValue();
+  const variant = getSelectedLayoutVariant();
+  const ctx = ensureContext(context);
+  if (!layout) {
+    ctx.showHudStatus('Select a slide type first', 'warning');
+    setTimeout(() => ctx.hideHudStatus(), 1500);
+    return;
+  }
+  applyLayoutToCurrentSlide(ctx, layout, variant);
 }
 
-function buildContentFieldsSection(slide, type) {
+// ... (existing code) ...
+
+function applyLayoutToCurrentSlide(ctx, layout, variant) {
+  const template = ctx.getSlideTemplate(layout);
+  if (!template) {
+    alert(`No template available for type "${layout}".`);
+    return;
+  }
+
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
+  
+  // Apply variant if present and type matches
+  if (layout === 'standard' && variant) {
+    mergedSlide.layout = variant;
+    delete mergedSlide.variant; // Clean up potential split/quote variant
+  } else if ((layout === 'split' || layout === 'quote') && variant) {
+    mergedSlide.variant = variant;
+    delete mergedSlide.layout; // Clean up potential standard layout
+  } else {
+    delete mergedSlide.layout;
+    // Only clear variant if switching to a type that doesn't use it
+    if (layout !== 'split' && layout !== 'quote') delete mergedSlide.variant;
+  }
+
+  ctx.updateSlide(currentIndex, mergedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  renderEditForm(ctx);
+
+  const label = getLayoutMeta(layout)?.label || layout;
+  ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
+  setTimeout(() => ctx.hideHudStatus(), 1600);
+}
+
+function buildCombinedContentSection(slide, type) {
   const fields = [];
 
   // Label/Eyebrow
@@ -273,77 +359,293 @@ function buildContentFieldsSection(slide, type) {
     fields.push(buildInputField(subtitleData.field, subtitleData.value, subtitlePlaceholder));
   }
 
-  if (fields.length === 0) return '';
-
-  const content = `
-    <div class="edit-drawer__stack">
-      ${fields.join('')}
-    </div>
-  `;
-
-  return buildSection('Content', content);
-}
-
-function buildBodySection(slide, type) {
-  const shouldShow =
+  // Body
+  const shouldShowBody =
     Object.prototype.hasOwnProperty.call(slide, 'body') ||
     ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
-  if (!shouldShow) return '';
-  const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
-  return buildSection('Body', buildTextareaField('body', bodyValue, 'Body copy'));
-}
+  
+  if (shouldShowBody) {
+    const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
+    fields.push(buildTextareaField('body', bodyValue, 'Body copy'));
+  }
 
-function buildImagesSection(slide) {
-  return buildSection(
-    'Images',
-    `<div class="edit-drawer__stack edit-drawer__stack--images">${buildImageManager(slide)}</div>`,
-    { modifier: ' edit-drawer__section--images' }
-  );
+  if (fields.length === 0) return '';
+
+  return buildAccordion('Content', fields.join(''), { startOpen: true });
 }
 
 function buildActionsSection() {
-  return buildSection(
-    'Actions',
-    `
-      <div class="edit-drawer__actions-grid">
-        <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-          Save
+  const isAutoSave = localStorage.getItem('slideomatic_autosave') !== 'false';
+  const checked = isAutoSave ? 'checked' : '';
+  const statusIcon = isAutoSave ? '✓' : '○';
+
+  const content = `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(255, 159, 243, 0.08); border-radius: var(--radius); border: 2px solid var(--color-surface); margin-bottom: 8px;">
+      <label class="edit-drawer__checkbox-label" style="margin: 0; cursor: pointer; user-select: none;">
+        <input type="checkbox" id="autosave-toggle" ${checked} style="accent-color: var(--color-surface); width: 18px; height: 18px;">
+        <span style="font-weight: 600; color: var(--color-ink);">Auto-save changes</span>
+      </label>
+      <span style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-surface);">${statusIcon}</span>
+    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
+      Save Changes
+    </button>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
+        Duplicate
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn" style="flex: 1;">
+        Delete
+      </button>
+    </div>
+    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
+      Export Deck
+    </button>
+  `;
+
+  return buildAccordion('Actions', content, { modifier: ' accordion--actions', startOpen: false });
+}
+
+function getLayoutDescription(value) {
+  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
+}
+
+const QUOTE_LAYOUT_OPTIONS = [
+  { value: 'simple', label: 'Simple (Default)' },
+  { value: 'card', label: 'Card Style' },
+  { value: 'image-bg', label: 'Image Background' },
+];
+
+function buildLayoutControl(currentType, currentLayout) {
+  const currentOption = LAYOUT_OPTIONS.find(opt => opt.value === currentType);
+  const currentLabel = currentOption?.label || 'Select type';
+
+  // Build custom select options
+  const selectOptions = LAYOUT_OPTIONS.map(({ value, label, description }) => {
+    const isSelected = value === currentType ? 'is-selected' : '';
+    return `
+      <button
+        type="button"
+        class="custom-select__option ${isSelected}"
+        data-value="${value}"
+        title="${escapeHtml(description)}"
+      >
+        <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        <span class="custom-select__option-desc">${escapeHtml(description)}</span>
+      </button>
+    `;
+  }).join('');
+
+  let layoutSelector = '';
+  if (currentType === 'standard') {
+    const layoutOptions = STANDARD_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const isSelected = (currentLayout || 'default') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
         </button>
-        <div class="edit-drawer__actions-row">
-          <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn">
-            Duplicate
+      `;
+    }).join('');
+
+    const currentStandardLabel = STANDARD_LAYOUT_OPTIONS.find(opt => opt.value === (currentLayout || 'default'))?.label || 'Default (Image Right)';
+
+    layoutSelector = `
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Layout Variant</label>
+        <div class="custom-select" id="standard-layout-select-wrapper" data-value="${currentLayout || 'default'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentStandardLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
           </button>
-          <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn">
-            Delete
-          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
         </div>
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-          Export
+      </div>
+    `;
+  } else if (currentType === 'split') {
+    const currentVariant = Array.isArray(currentLayout) ? currentLayout[0] : currentLayout;
+    const layoutOptions = SPLIT_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const isSelected = (currentVariant || 'default') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        </button>
+      `;
+    }).join('');
+
+    const currentSplitLabel = SPLIT_LAYOUT_OPTIONS.find(opt => opt.value === (currentVariant || 'default'))?.label || '50/50 Split';
+
+    layoutSelector = `
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Split Style</label>
+        <div class="custom-select" id="split-layout-select-wrapper" data-value="${currentVariant || 'default'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentSplitLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (currentType === 'quote') {
+    const currentVariant = currentLayout;
+    const layoutOptions = QUOTE_LAYOUT_OPTIONS.map(({ value, label }) => {
+      const isSelected = (currentVariant || 'simple') === value ? 'is-selected' : '';
+      return `
+        <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+          <span class="custom-select__option-label">${escapeHtml(label)}</span>
+        </button>
+      `;
+    }).join('');
+
+    const currentQuoteLabel = QUOTE_LAYOUT_OPTIONS.find(opt => opt.value === (currentVariant || 'simple'))?.label || 'Simple (Default)';
+
+    layoutSelector = `
+      <div class="accordion__group">
+        <label class="edit-drawer__label">Quote Style</label>
+        <div class="custom-select" id="quote-layout-select-wrapper" data-value="${currentVariant || 'simple'}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(currentQuoteLabel)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${layoutOptions}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const content = `
+    <div class="accordion__group">
+      <div class="custom-select" id="slide-layout-select-wrapper" data-value="${currentType}">
+        <button type="button" class="custom-select__trigger">
+          <span class="custom-select__value">${escapeHtml(currentLabel)}</span>
+          <span class="custom-select__arrow">▼</span>
+        </button>
+        <div class="custom-select__dropdown">
+          ${selectOptions}
+        </div>
+      </div>
+    </div>
+    ${layoutSelector}
+    <div class="accordion__group" style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type" style="flex: 1;">
+        Update Slide
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type" style="flex: 1;">
+        Add Slide
+      </button>
+    </div>
+  `;
+
+  return buildAccordion('Slide Type', content, { startOpen: false });
+}
+
+function buildImagesSection(slide) {
+  return buildAccordion(
+    'Images',
+    buildImageManager(slide),
+    { modifier: ' accordion--images', startOpen: false }
+  );
+}
+
+function buildSplitContentSection(slide) {
+  const left = slide.left || {};
+  const right = slide.right || {};
+
+  const content = `
+    <div class="accordion__group">
+      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Left Column</p>
+      ${buildInputField('left.headline', left.headline || '', 'Headline')}
+      ${buildTextareaField('left.body', Array.isArray(left.body) ? left.body.join('\n') : (left.body || ''), 'Body copy')}
+    </div>
+    <div class="accordion__group">
+      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Right Column</p>
+      ${buildInputField('right.headline', right.headline || '', 'Headline')}
+      ${buildTextareaField('right.body', Array.isArray(right.body) ? right.body.join('\n') : (right.body || ''), 'Body copy')}
+    </div>
+  `;
+
+  return buildAccordion('Split Content', content, { startOpen: true });
+}
+
+function buildThemeSection() {
+  // Build theme select options from library + defaults
+  const library = loadThemeLibrary();
+  const currentPath = getCurrentThemePath() || 'theme.json';
+
+  const defaultThemes = [
+    { value: 'theme.json', label: 'Default' },
+    { value: 'themes/gameboy.json', label: 'Gameboy' },
+    { value: 'themes/vaporwave.json', label: 'Vaporwave' },
+    { value: 'themes/slack.json', label: 'Slack' },
+  ];
+
+  const savedThemes = library.map((entry) => ({
+    value: `saved:${entry.name}`,
+    label: `✨ ${entry.name}`,
+  }));
+
+  const allThemes = [...defaultThemes, ...savedThemes];
+  const currentTheme = allThemes.find(t => currentPath.includes(t.value.replace('saved:', ''))) || defaultThemes[0];
+
+  const themeOptions = allThemes.map(({ value, label }) => {
+    const isSelected = currentTheme.value === value ? 'is-selected' : '';
+    return `
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+        <span class="custom-select__option-label">${escapeHtml(label)}</span>
+      </button>
+    `;
+  }).join('');
+
+  const content = `
+    <div class="accordion__group">
+      <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
+        <button type="button" class="custom-select__trigger">
+          <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
+          <span class="custom-select__arrow">▼</span>
+        </button>
+        <div class="custom-select__dropdown">
+          ${themeOptions}
+        </div>
+      </div>
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px;">
+        Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize
+      </p>
+    </div>
+    <div class="accordion__group">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme to library">
+          Save Theme
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
+          Randomize
         </button>
       </div>
-    `,
-    { modifier: ' edit-drawer__section--actions' }
-  );
+      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI" style="width: 100%;">
+        AI Theme
+      </button>
+    </div>
+  `;
+
+  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: true });
 }
 
 function buildAdvancedSection(slide) {
   const jsonString = JSON.stringify(slide, null, 2);
-  return `
-    <section class="edit-drawer__section edit-drawer__section--advanced">
-      <button type="button" class="edit-drawer__json-toggle" id="json-toggle" aria-expanded="false">
-        <span class="edit-drawer__json-toggle-icon">▶</span>
-        <span class="edit-drawer__json-toggle-text">Advanced JSON</span>
-      </button>
-      <div class="edit-drawer__json-container" id="json-container" hidden>
-        <textarea
-          class="edit-drawer__textarea"
-          id="slide-json-editor"
-          rows="20"
-          style="font-family: var(--font-mono); font-size: 0.9rem;"
-        >${jsonString}</textarea>
-      </div>
-    </section>
+  const content = `
+    <textarea
+      class="edit-drawer__textarea"
+      id="slide-json-editor"
+      rows="20"
+      style="font-family: var(--font-mono); font-size: 0.9rem;"
+    >${jsonString}</textarea>
   `;
+  return buildAccordion('Advanced JSON', content, { modifier: ' accordion--advanced', startOpen: false });
 }
 
 /**
@@ -357,49 +659,87 @@ function setupQuickEditSync(context) {
   // Use event delegation on the container instead of individual inputs
   const handleInput = (event) => {
     const input = event.target;
-    if (!input.matches('[data-field]')) return;
+    if (!(input instanceof Element) || !input.matches('[data-field]')) return;
 
     syncQuickEditToJSON();
 
-    // Auto-save after idle typing
-    clearTimeout(autoSaveTimeout);
-    autoSaveTimeout = setTimeout(() => {
-      autoSaveSlide(context);
-    }, AUTO_SAVE_DELAY_MS);
+    // Check if auto-save is enabled
+    const autoSaveToggle = document.getElementById('autosave-toggle');
+    const isAutoSaveEnabled = (autoSaveToggle instanceof HTMLInputElement) ? autoSaveToggle.checked : true;
+
+    if (isAutoSaveEnabled) {
+      // Auto-save after idle typing
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveSlide(context);
+      }, AUTO_SAVE_DELAY_MS);
+    }
   };
 
   addTrackedListener(content, 'input', handleInput);
+  
+  // Also track the toggle change to save preference
+  const autoSaveToggle = document.getElementById('autosave-toggle');
+  if (autoSaveToggle) {
+    addTrackedListener(autoSaveToggle, 'change', (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        localStorage.setItem('slideomatic_autosave', String(e.target.checked));
+      }
+    });
+  }
 }
 
 function syncQuickEditToJSON() {
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const slide = JSON.parse(textarea.value);
     const inputs = document.querySelectorAll('[data-field]');
 
     inputs.forEach((input) => {
+      if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLTextAreaElement)) return;
+      
       const field = input.dataset.field;
-      let value = input.value;
+      if (!field) return;
 
-      if (field === 'body' && value.includes('\n')) {
-        const lines = value
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean);
-        value = lines.length ? lines : '';
+      let rawValue = input.value;
+      let finalValue = rawValue;
+
+      if (field.endsWith('.body') || field === 'body') {
+        if (rawValue.includes('\n')) {
+          const lines = rawValue
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+          // @ts-ignore - Reassigning to array is intentional here
+          finalValue = lines.length ? lines : '';
+        }
       }
 
-      if (value === '' || value == null) {
-        delete slide[field];
+      // Handle nested fields (e.g., 'left.headline')
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        if (!slide[parent]) slide[parent] = {};
+        
+        if (finalValue === '' || finalValue == null) {
+          delete slide[parent][child];
+        } else {
+          slide[parent][child] = finalValue;
+        }
       } else {
-        slide[field] = value;
+        // Handle top-level fields
+        if (finalValue === '' || finalValue == null) {
+          delete slide[field];
+        } else {
+          // @ts-ignore - Body can be an array
+          slide[field] = finalValue;
+        }
       }
     });
 
     textarea.value = JSON.stringify(slide, null, 2);
-  } catch (error) {
+  } catch {
     console.warn('Cannot sync quick-edit: invalid JSON');
   }
 }
@@ -409,7 +749,7 @@ function autoSaveSlide(context) {
   syncQuickEditToJSON();
 
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const editedSlide = JSON.parse(textarea.value);
@@ -430,6 +770,9 @@ function autoSaveSlide(context) {
   }
 }
 
+/**
+ * @param {object} context
+ */
 function showAutoSaveStatus(context) {
   const ctx = ensureContext(context);
   ctx.showHudStatus('✓ Saved', 'success');
@@ -437,31 +780,18 @@ function showAutoSaveStatus(context) {
 }
 
 function getSelectedLayoutValue() {
-  const select = document.getElementById('slide-layout-select');
-  return select?.value || '';
-}
-
-function updateLayoutSelectTooltip(select) {
-  if (!select) return;
-  const desc = getLayoutDescription(select.value);
-  if (desc) {
-    select.title = desc;
-  } else {
-    select.removeAttribute('title');
+  const select = document.getElementById('slide-layout-select-wrapper');
+  if (select) {
+    return select.dataset.value || '';
   }
+  return '';
 }
 
-function handleLayoutApply(context) {
-  const layout = getSelectedLayoutValue();
-  const ctx = ensureContext(context);
-  if (!layout) {
-    ctx.showHudStatus('Select a slide type first', 'warning');
-    setTimeout(() => ctx.hideHudStatus(), 1500);
-    return;
-  }
-  applyLayoutToCurrentSlide(ctx, layout);
-}
+// updateLayoutSelectTooltip removed - now handled by custom select component
 
+/**
+ * @param {object} context
+ */
 function handleLayoutAdd(context) {
   const layout = getSelectedLayoutValue();
   const ctx = ensureContext(context);
@@ -473,6 +803,10 @@ function handleLayoutAdd(context) {
   addNewSlideWithLayout(ctx, layout);
 }
 
+/**
+ * @param {object} ctx
+ * @param {string} layout
+ */
 function addNewSlideWithLayout(ctx, layout) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
@@ -508,28 +842,10 @@ const PRESERVED_FIELDS = [
   'description',
 ];
 
-function applyLayoutToCurrentSlide(ctx, layout) {
-  const template = ctx.getSlideTemplate(layout);
-  if (!template) {
-    alert(`No template available for type "${layout}".`);
-    return;
-  }
-
-  const slides = ctx.getSlides();
-  const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
-  ctx.updateSlide(currentIndex, mergedSlide);
-  ctx.replaceSlideAt(currentIndex);
-  renderEditForm(ctx);
-
-  const label = getLayoutMeta(layout)?.label || layout;
-  ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
-  setTimeout(() => ctx.hideHudStatus(), 1600);
-}
-
+/**
+ * @param {object} template
+ * @param {object} currentSlide
+ */
 function mergeSlideWithTemplate(template, currentSlide) {
   const merged = JSON.parse(JSON.stringify(template));
   PRESERVED_FIELDS.forEach((key) => {
@@ -550,6 +866,9 @@ function mergeSlideWithTemplate(template, currentSlide) {
   return merged;
 }
 
+/**
+ * @param {object} context
+ */
 function handleDownloadDeck(context) {
   const ctx = ensureContext(context);
   const persisted = ctx.downloadDeck();
@@ -559,6 +878,10 @@ function handleDownloadDeck(context) {
   }
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ */
 function handleImageRemove(context, imageIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -575,6 +898,10 @@ function handleImageRemove(context, imageIndex) {
   console.log('✓ Image removed from slide');
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ */
 function handleImageReplace(context, imageIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -591,6 +918,11 @@ function handleImageReplace(context, imageIndex) {
   console.log('✓ Image replaced - src cleared, title preserved');
 }
 
+/**
+ * @param {object} context
+ * @param {number} fromIndex
+ * @param {number} toIndex
+ */
 function handleImageReorder(context, fromIndex, toIndex) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -605,6 +937,11 @@ function handleImageReorder(context, fromIndex, toIndex) {
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
+/**
+ * @param {object} context
+ * @param {number} imageIndex
+ * @param {string} altText
+ */
 function handleImageAltUpdate(context, imageIndex, altText) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -619,6 +956,9 @@ function handleImageAltUpdate(context, imageIndex, altText) {
   // Just update the slide in the background
 }
 
+/**
+ * @param {object} context
+ */
 function handleImageAdd(context) {
   const ctx = ensureContext(context);
 
@@ -638,6 +978,10 @@ function handleImageAdd(context) {
   setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
+/**
+ * @param {object} context
+ * @param {File} file
+ */
 async function handleImageFile(context, file) {
   if (!file || !file.type.startsWith('image/')) return;
   const ctx = ensureContext(context);
@@ -674,13 +1018,17 @@ async function handleImageFile(context, file) {
 }
 
 // Helper functions for image compression (simplified versions)
+/**
+ * @param {File} file
+ */
 async function compressImageForEdit(file) {
-  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-  const TARGET_SIZE = 500 * 1024; // 500KB
+  const MAX_SIZE = 500 * 1024; // 500KB hard cap
+  const TARGET_SIZE = 400 * 1024; // 400KB ideal
 
+  // @ts-ignore - Global from script tag
   if (typeof imageCompression === 'undefined') {
     if (file.size > MAX_SIZE) {
-      throw new Error('Image too large. Please use a smaller image (<2MB).');
+      throw new Error('Image too large. Please use a smaller image (<500KB).');
     }
     return { file, format: file.type || 'image/png' };
   }
@@ -690,6 +1038,7 @@ async function compressImageForEdit(file) {
   }
 
   try {
+    // @ts-ignore - Global from script tag
     const compressed = await imageCompression(file, {
       maxWidthOrHeight: 1920,
       maxSizeMB: TARGET_SIZE / (1024 * 1024),
@@ -698,7 +1047,7 @@ async function compressImageForEdit(file) {
     });
 
     if (compressed.size > MAX_SIZE) {
-      throw new Error('Could not compress image below 2MB. Try a smaller source.');
+      throw new Error('Could not compress image below 500KB. Try a smaller source.');
     }
 
     return { file: compressed, format: 'image/webp' };
@@ -707,25 +1056,37 @@ async function compressImageForEdit(file) {
   }
 }
 
-function handleJsonToggle() {
-  const container = document.getElementById('json-container');
-  const jsonToggle = document.getElementById('json-toggle');
-  if (!container || !jsonToggle) return;
+// handleJsonToggle removed - now handled by accordion component
 
-  const icon = jsonToggle.querySelector('.edit-drawer__json-toggle-icon');
-  const isHidden = container.hasAttribute('hidden');
+function setupTextareaExpansion() {
+  const textareas = document.querySelectorAll('.edit-drawer__textarea');
+  textareas.forEach(textarea => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
 
-  if (isHidden) {
-    container.removeAttribute('hidden');
-    jsonToggle.setAttribute('aria-expanded', 'true');
-    if (icon) icon.textContent = '▼';
-  } else {
-    container.setAttribute('hidden', '');
-    jsonToggle.setAttribute('aria-expanded', 'false');
-    if (icon) icon.textContent = '▶';
-  }
+    const adjustHeight = () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    };
+
+    // Initial adjustment if it has content and is visible
+    if (textarea.value && textarea.offsetParent !== null) {
+      // We might need a slight delay for layout to settle if it was just inserted
+      requestAnimationFrame(adjustHeight);
+    }
+
+    addTrackedListener(textarea, 'input', adjustHeight);
+    addTrackedListener(textarea, 'focus', adjustHeight);
+    
+    // Contract on blur
+    addTrackedListener(textarea, 'blur', () => {
+       textarea.style.height = ''; 
+    });
+  });
 }
 
+/**
+ * @param {object} context
+ */
 export function renderEditForm(context) {
   const ctx = ensureContext(context);
   const content = document.getElementById('edit-drawer-content');
@@ -751,6 +1112,172 @@ export function renderEditForm(context) {
       ${advancedSection}
     </form>
   `;
+
+  // Setup auto-expanding textareas
+  setupTextareaExpansion();
+
+  // Setup accordions with whimsical animations
+  setupAccordion(content, { allowMultiple: true, addTrackedListener });
+
+  // Setup custom selects
+  setupCustomSelect(content, { addTrackedListener });
+
+  // Setup theme button handlers (inline in edit drawer)
+  const handleThemeChange = async (themePath) => {
+    // Import theme functions dynamically
+    const { applyTheme, setCurrentTheme } = await import('./theme-manager.js');
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+
+    try {
+      if (themePath.startsWith('saved:')) {
+        const savedName = themePath.replace('saved:', '');
+        const library = loadThemeLibrary();
+        const entry = library.find((entry) => entry.name === savedName);
+        if (entry) {
+          const normalizedTheme = applyTheme(entry.theme);
+          setCurrentTheme(normalizedTheme, { source: themePath });
+        }
+      } else {
+        const response = await fetch(themePath, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+        const theme = await response.json();
+        const normalizedTheme = applyTheme(theme);
+        setCurrentTheme(normalizedTheme, { source: themePath });
+      }
+      showHudStatus('✨ Theme applied', 'success');
+      setTimeout(hideHudStatus, 1600);
+      // Re-render to update theme UI
+      renderEditForm(ctx);
+    } catch (error) {
+      console.error('Failed to apply theme:', error);
+    }
+  };
+
+  const themeSelect = document.getElementById('edit-theme-select');
+  if (themeSelect) {
+    themeSelect.addEventListener('customSelectChange', (e) => {
+      handleThemeChange(e.detail.value);
+    });
+  }
+
+  const handleSaveThemeInline = async () => {
+    const { getCurrentTheme, saveThemeToLibrary, setCurrentTheme } = await import('./theme-manager.js');
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+
+    try {
+      const theme = getCurrentTheme();
+      const currentPath = getCurrentThemePath() || '';
+      const name = prompt('Name your theme:', '');
+      if (!name || !name.trim()) return;
+
+      saveThemeToLibrary(name.trim(), theme);
+      setCurrentTheme(theme, { source: `saved:${name.trim()}` });
+      showHudStatus('💾 Theme saved', 'success');
+      setTimeout(hideHudStatus, 1600);
+      renderEditForm(ctx);
+    } catch (error) {
+      console.error('Failed to save theme:', error);
+    }
+  };
+
+  const handleRandomThemeInline = async () => {
+    const { randomizeTheme } = await import('./theme-drawer.js');
+    randomizeTheme();
+    // Re-render to show updated theme in the selector
+    setTimeout(() => renderEditForm(ctx), 100);
+  };
+
+  const handleAIThemeInline = async () => {
+    const { showHudStatus, hideHudStatus } = await import('./hud.js');
+    const { getGeminiApiKey } = await import('./voice-modes.js');
+    const { getCurrentTheme, applyTheme, setCurrentTheme, getCurrentThemePath } = await import('./theme-manager.js');
+
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      showHudStatus('⚠️ Set your Gemini API key in Settings (S) first', 'warning');
+      setTimeout(hideHudStatus, 3000);
+      return;
+    }
+
+    const prompt = window.prompt('Describe the theme vibe you want:', 'pastel punk with neon accents');
+    if (!prompt || !prompt.trim()) return;
+
+    const aiBtn = document.getElementById('theme-ai-btn-inline');
+    if (aiBtn instanceof HTMLButtonElement) {
+      aiBtn.disabled = true;
+      aiBtn.textContent = 'Generating...';
+    }
+
+    try {
+      showHudStatus('🤖 Asking Gemini for a theme...', 'info');
+
+      const currentTheme = getCurrentTheme();
+      const themePrompt = `You are a theme generator. Create a beautiful color theme based on this description: "${prompt}".
+
+Return ONLY a JSON object with these exact fields (no markdown, no explanation):
+{
+  "primary": "#hex",
+  "secondary": "#hex",
+  "accent": "#hex",
+  "background": "#hex",
+  "surface": "#hex",
+  "text": "#hex"
+}
+
+Make the colors harmonious and ensure good contrast for readability.`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: themePrompt }] }],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!textContent) {
+        throw new Error('No theme generated');
+      }
+
+      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid theme format');
+      }
+
+      const aiTheme = JSON.parse(jsonMatch[0]);
+      const mergedTheme = { ...currentTheme, ...aiTheme };
+      const normalizedTheme = applyTheme(mergedTheme);
+
+      setCurrentTheme(normalizedTheme, { source: `ai:${prompt.slice(0, 30)}` });
+
+      showHudStatus('✨ AI theme applied!', 'success');
+      setTimeout(hideHudStatus, 1600);
+      renderEditForm(ctx);
+
+    } catch (error) {
+      console.error('AI theme generation failed:', error);
+      showHudStatus('❌ Failed to generate theme', 'error');
+      setTimeout(hideHudStatus, 2000);
+    } finally {
+      if (aiBtn instanceof HTMLButtonElement) {
+        aiBtn.disabled = false;
+        aiBtn.textContent = 'AI Theme';
+      }
+    }
+  };
+
+  addTrackedListener(document.getElementById('theme-save-btn-inline'), 'click', handleSaveThemeInline);
+  addTrackedListener(document.getElementById('theme-random-btn-inline'), 'click', handleRandomThemeInline);
+  addTrackedListener(document.getElementById('theme-ai-btn-inline'), 'click', handleAIThemeInline);
 
   // Register all button click handlers with cleanup tracking
   addTrackedListener(
@@ -789,18 +1316,6 @@ export function renderEditForm(context) {
     () => handleLayoutAdd(ctx)
   );
 
-  const layoutSelect = document.getElementById('slide-layout-select');
-  if (layoutSelect) {
-    updateLayoutSelectTooltip(layoutSelect);
-    addTrackedListener(layoutSelect, 'change', () => updateLayoutSelectTooltip(layoutSelect));
-  }
-
-  addTrackedListener(
-    document.getElementById('json-toggle'),
-    'click',
-    handleJsonToggle
-  );
-
   addTrackedListener(
     document.getElementById('add-image-btn'),
     'click',
@@ -821,7 +1336,7 @@ export function renderEditForm(context) {
     addTrackedListener,
   });
 
-  const dropzone = document.getElementById('image-dropzone');
+  const dropzone = document.getElementById('image-manager-dropzone');
   if (dropzone) {
     let imagePicker = null;
     const getImagePicker = () => {
@@ -841,10 +1356,25 @@ export function renderEditForm(context) {
       return imagePicker;
     };
 
-    addTrackedListener(dropzone, 'click', (event) => {
-      event.preventDefault();
-      getImagePicker().click();
-    });
+    // Only trigger file picker if clicking the empty state dropzone or the add button
+    // We don't want to trigger it when clicking the list itself (unless on empty space?)
+    // Actually, let's keep the click listener specific to the empty state dropzone if it exists
+    const emptyDropzone = dropzone.querySelector('.edit-drawer__image-dropzone');
+    if (emptyDropzone) {
+        addTrackedListener(emptyDropzone, 'click', (event) => {
+            event.preventDefault();
+            getImagePicker().click();
+        });
+    }
+
+    // Also attach to the add button if it exists
+    const addBtn = document.getElementById('add-image-btn');
+    if (addBtn) {
+        addTrackedListener(addBtn, 'click', (event) => {
+            event.preventDefault();
+            getImagePicker().click();
+        });
+    }
 
     addTrackedListener(dropzone, 'dragover', (event) => {
       event.preventDefault();
@@ -867,30 +1397,58 @@ export function renderEditForm(context) {
   }
 
   const imageList = content.querySelector('.edit-drawer__image-list');
-  setupImageDragReorder({
-    container: imageList,
-    onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
-    addTrackedListener,
+  if (imageList instanceof HTMLElement) {
+    setupImageDragReorder({
+      container: imageList,
+      onReorder: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
+      addTrackedListener,
+    });
+  }
+
+  setupImageAIButtons({
+    root: content,
+    onAI: (imageIndex) => {
+      const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
+      if (!currentSlide) return;
+      
+      const context = {
+        slideIndex: ctx.getCurrentIndex(),
+        headline: currentSlide.headline || currentSlide.title || '',
+        body: Array.isArray(currentSlide.body) ? currentSlide.body.join(' ') : (currentSlide.body || ''),
+        slideType: currentSlide.type || 'standard'
+      };
+
+      askAIForImage(null, {
+        context,
+        slideIndex: ctx.getCurrentIndex(),
+        imageIndex,
+        onSuccess: () => renderEditForm(ctx)
+      });
+    },
+    addTrackedListener
   });
 
   // Setup alt text input event listeners using event delegation
   addTrackedListener(content, 'input', (event) => {
     const input = event.target;
-    if (!input.matches('.edit-drawer__image-alt-input')) return;
+    if (!(input instanceof HTMLInputElement) || !input.matches('.edit-drawer__image-alt-input')) return;
 
-    const imageIndex = Number.parseInt(input.dataset.imageIndex, 10);
+    const imageIndex = Number.parseInt(input.dataset.imageIndex || '', 10);
     if (Number.isNaN(imageIndex)) return;
     const altText = input.value;
     handleImageAltUpdate(ctx, imageIndex, altText);
   });
 }
 
+/**
+ * @param {object} context
+ */
 export function saveCurrentSlide(context) {
   const ctx = ensureContext(context);
   syncQuickEditToJSON();
 
   const textarea = document.getElementById('slide-json-editor');
-  if (!textarea) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
   try {
     const editedSlide = JSON.parse(textarea.value);
@@ -923,6 +1481,9 @@ export function saveCurrentSlide(context) {
   }
 }
 
+/**
+ * @param {object} context
+ */
 export function duplicateCurrentSlide(context) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();
@@ -939,6 +1500,9 @@ export function duplicateCurrentSlide(context) {
   console.log('✓ Slide duplicated');
 }
 
+/**
+ * @param {object} context
+ */
 export function deleteCurrentSlide(context) {
   const ctx = ensureContext(context);
   const slides = ctx.getSlides();

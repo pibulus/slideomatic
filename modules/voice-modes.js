@@ -12,24 +12,23 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { applyTheme, setCurrentTheme } from './theme-manager.js';
+import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
 
 const defaultContext = {
   getCurrentIndex: () => 0,
   getSlides: () => [],
-  insertSlideAt: () => {},
-  replaceSlideAt: () => {},
-  setActiveSlide: () => {},
-  setOverviewCursor: () => {},
-  updateSlide: () => {},
-  validateSlides: () => {},
-  showHudStatus: () => {},
+  insertSlideAt: (_index, _slide, _options) => {},
+  replaceSlideAt: (_index, _options) => {},
+  setActiveSlide: (_index) => {},
+  setOverviewCursor: (_index) => {},
+  updateSlide: (_index, _slide) => {},
+  validateSlides: (_slides) => {},
+  showHudStatus: (_message, _type) => {},
   hideHudStatus: () => {},
-  showApiKeyStatus: () => {},
+  showApiKeyStatus: (_type, _message) => {},
   openSettingsModal: () => {},
-  downloadTheme: () => {},
 };
 
 let voiceContext = { ...defaultContext };
@@ -91,7 +90,6 @@ export function initVoiceButtons(partialContext = {}) {
   if (editBtn) {
     voiceButtons.edit = editBtn;
     ensureButtonInitialized(editBtn, () => toggleVoiceRecording('edit'));
-    updateVoiceUI('edit', 'idle');
   }
 
   const themeVoiceBtn = document.getElementById('theme-voice-btn');
@@ -105,7 +103,7 @@ function disableVoiceButtons() {
 
   buttons.forEach(btnId => {
     const btn = document.getElementById(btnId);
-    if (btn) {
+    if (btn instanceof HTMLButtonElement) {
       btn.disabled = true;
       btn.style.opacity = '0.5';
       btn.style.cursor = 'not-allowed';
@@ -290,9 +288,9 @@ export async function processVoiceToSlide(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -301,7 +299,7 @@ export async function processVoiceToSlide(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -372,9 +370,9 @@ async function processVoiceEditSlide(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -383,7 +381,7 @@ async function processVoiceEditSlide(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -449,9 +447,9 @@ export async function processVoiceToTheme(audioBlob) {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           contents: [
@@ -460,7 +458,7 @@ export async function processVoiceToTheme(audioBlob) {
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: audioBlob.type || "audio/webm",
+                    mimeType: audioBlob.type || 'audio/webm',
                     data: audioData,
                   },
                 },
@@ -495,7 +493,7 @@ export async function processVoiceToTheme(audioBlob) {
 
     const normalizedTheme = applyTheme(themeData);
 
-    context.downloadTheme(normalizedTheme);
+    downloadTheme(normalizedTheme);
     setCurrentTheme(normalizedTheme, { source: '__ai__' });
 
     await ensureMinimumDelay(uiStart, 1500);
@@ -504,8 +502,8 @@ export async function processVoiceToTheme(audioBlob) {
     console.log('✅ Theme applied and downloaded!');
   } catch (error) {
     console.error('❌ Error processing theme:', error);
-    alert(`Failed to create theme: ${error.message}`);
-    context.hideHudStatus();
+    context.showHudStatus(`❌ Failed to create theme: ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 4000);
   }
 }
 
@@ -678,8 +676,8 @@ THEME SCHEMA - ALL fields required:
   "border-width": "5px",
   "gutter": "clamp(32px, 5vw, 72px)",
   "radius": "12px",
-  "font-sans": "\"Inter\", sans-serif",
-  "font-mono": "\"Space Mono\", monospace",
+  "font-sans": '"Inter", sans-serif',
+  "font-mono": '"Space Mono", monospace',
   "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
   "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
   "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",

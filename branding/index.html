@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand & Marketing Decks</title>
+    <meta name="description" content="Decks and resources for branding and marketing in music and life.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="stylesheet" href="../css/landing.css">
+    <link rel="stylesheet" href="../css/collections.css">
+  </head>
+  <body>
+    <main class="collections">
+      <header class="collections__hero">
+        <div class="collections__hero-content">
+          <p class="collections__eyebrow">Branding & marketing</p>
+          <h1 class="collections__title">Decks & resources</h1>
+          <p class="collections__description">A small stack of slides covering branding, visuals, and getting your story out there—for music projects and just life in general.</p>
+          <p class="collections__description">More content will be added here over time. These decks were built with Slide-o-Matic—the presentation app I put together for making this stuff fast. Thanks for being patient while it grows.</p>
+        </div>
+      </header>
+
+      <section class="collections__group" id="collection">
+        <header class="collections__group-header">
+          <h2>Current decks</h2>
+          <p>Open them, read through, duplicate the ones you want, or just keep the link handy.</p>
+        </header>
+        <ul class="collections__deck-list" data-deck-list></ul>
+        <p class="collections__empty" data-empty-message hidden>More decks are coming soon.</p>
+        <p class="collections__note">Need anything else or spot a bug? Reply to the email this link came from and I'll sort it.</p>
+      </section>
+    </main>
+
+    <script type="module">
+      import { safeParse } from '../modules/utils.js';
+
+      const deckList = document.querySelector('[data-deck-list]');
+      const emptyMessage = document.querySelector('[data-empty-message]');
+      const defaultCollection = 'design-starter-pack';
+
+      init();
+
+      async function init() {
+        const data = await fetchCollections();
+        if (!Array.isArray(data) || data.length === 0) {
+          showEmptyState('No decks available right now. Check back soon.');
+          return;
+        }
+
+        const targetId = getRequestedCollectionId() || defaultCollection;
+        const group = data.find((entry) => entry.id === targetId) || data[0];
+        if (!group) {
+          showEmptyState('Could not find that deck group yet, but more is coming.');
+          return;
+        }
+        renderDecks(group);
+      }
+
+      async function fetchCollections() {
+        try {
+          const response = await fetch('../deck-collections.json', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(`Failed to load deck collections (${response.status})`);
+          }
+          const text = await response.text();
+          return safeParse(text) || [];
+        } catch (error) {
+          console.error('Unable to fetch deck collections', error);
+          showEmptyState('Unable to load the decks right now. Give it a minute and refresh.');
+          return [];
+        }
+      }
+
+      function renderDecks(group) {
+        if (!deckList) return;
+        deckList.innerHTML = '';
+
+        const decks = Array.isArray(group.decks) ? group.decks : [];
+        if (decks.length === 0) {
+          showEmptyState('Decks are uploading—check back soon.');
+          return;
+        }
+
+        if (emptyMessage) {
+          emptyMessage.hidden = true;
+        }
+
+        decks.forEach((deck) => {
+          deckList.appendChild(createDeckCard(deck));
+        });
+      }
+
+      function createDeckCard(deck) {
+        const item = document.createElement('li');
+        item.className = 'collection-card';
+
+        const body = document.createElement('div');
+        body.className = 'collection-card__body';
+
+        const title = document.createElement('h3');
+        title.className = 'collection-card__title';
+        title.textContent = deck.title || 'Untitled deck';
+
+        const summary = document.createElement('p');
+        summary.className = 'collection-card__summary';
+        summary.textContent = deck.summary || '';
+
+        body.append(title, summary);
+
+        if (Array.isArray(deck.tags) && deck.tags.length > 0) {
+          const tags = document.createElement('ul');
+          tags.className = 'collection-card__tags';
+          deck.tags.forEach((tag) => {
+            const li = document.createElement('li');
+            li.textContent = tag;
+            tags.appendChild(li);
+          });
+          body.appendChild(tags);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'collection-card__actions';
+        const link = document.createElement('a');
+        link.className = 'button button--secondary';
+        link.textContent = deck.ctaLabel || 'Open deck';
+        link.href = buildDeckUrl(deck);
+        link.target = '_blank';
+        link.rel = 'noopener';
+        actions.appendChild(link);
+
+        item.append(body, actions);
+        return item;
+      }
+
+      function buildDeckUrl(deck) {
+        if (deck?.shareId) {
+          return `deck.html?share=${encodeURIComponent(deck.shareId)}`;
+        }
+        if (deck?.slides) {
+          return `deck.html#slides=${encodeURIComponent(deck.slides)}`;
+        }
+        if (deck?.deckId) {
+          return `deck.html#deck=${encodeURIComponent(deck.deckId)}`;
+        }
+        return 'deck.html';
+      }
+
+      function showEmptyState(message) {
+        if (deckList) deckList.innerHTML = '';
+        if (emptyMessage) {
+          emptyMessage.hidden = false;
+          emptyMessage.textContent = message || 'No decks yet.';
+        }
+      }
+
+      function getRequestedCollectionId() {
+        const search = new URLSearchParams(window.location.search);
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        return search.get('collection') || hash.get('collection');
+      }
+    </script>
+  </body>
+</html>

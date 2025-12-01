@@ -30,7 +30,10 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
 
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/accordion.css" />
+    <link rel="stylesheet" href="css/custom-select.css" />
+    <link rel="stylesheet" href="css/print.css" />
     <link
       rel="preconnect"
       href="https://fonts.googleapis.com"
@@ -49,8 +52,8 @@
   <body>
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <!-- Toast Notification Container -->
-    <div class="toast-container" id="toast-container"></div>
-    <div class="app" id="app">
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <div class="app app-container" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
       <!-- Theme Editor Drawer (Right Side) -->
       <aside class="theme-drawer" id="theme-drawer">
@@ -105,9 +108,9 @@
       </aside>
 
       <!-- Speaker Notes Modal -->
-      <div class="notes-modal" id="notes-modal">
-        <div class="notes-modal__backdrop"></div>
-        <div class="notes-modal__content">
+      <div class="notes-modal modal-base" id="notes-modal">
+        <div class="notes-modal__backdrop modal-backdrop"></div>
+        <div class="notes-modal__content modal-content">
           <div class="notes-modal__header">
             <h2>📝 Speaker Notes</h2>
             <button class="notes-modal__close" aria-label="Close notes">×</button>
@@ -122,15 +125,15 @@
       </div>
 
       <!-- Settings Modal -->
-      <div class="settings-modal" id="settings-modal">
-        <div class="settings-modal__backdrop"></div>
-        <div class="settings-modal__content">
+      <div class="settings-modal modal-base" id="settings-modal">
+        <div class="settings-modal__backdrop modal-backdrop"></div>
+        <div class="settings-modal__content modal-content">
           <div class="settings-modal__header">
             <h2>⚙️ Settings</h2>
             <button class="settings-modal__close" aria-label="Close settings">×</button>
           </div>
           <div class="settings-modal__body">
-            <div class="settings-field">
+            <form class="settings-field" onsubmit="event.preventDefault();">
               <label class="settings-field__label" for="gemini-api-key">
                 Gemini API Key
                 <span class="settings-field__hint">Required for voice-to-slide and voice-to-theme</span>
@@ -142,8 +145,9 @@
                   class="settings-field__input"
                   placeholder="Enter your Gemini API key..."
                   autocomplete="off"
+                  name="gemini-api-key"
                 />
-                <button class="settings-field__toggle" id="toggle-api-key-visibility" aria-label="Toggle visibility">
+                <button type="button" class="settings-field__toggle" id="toggle-api-key-visibility" aria-label="Toggle visibility">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 7C8.34315 7 7 8.34315 7 10C7 11.6569 8.34315 13 10 13C11.6569 13 13 11.6569 13 10C13 8.34315 11.6569 7 10 7Z" fill="currentColor"/>
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M10 3C5.58172 3 2.73251 6.52344 1.46567 8.5C1.04096 9.1409 1.04096 9.8591 1.46567 10.5C2.73251 12.4766 5.58172 16 10 16C14.4183 16 17.2675 12.4766 18.5343 10.5C18.959 9.8591 18.959 9.1409 18.5343 8.5C17.2675 6.52344 14.4183 3 10 3ZM5 10C5 7.23858 7.23858 5 10 5C12.7614 5 15 7.23858 15 10C15 12.7614 12.7614 15 10 15C7.23858 15 5 12.7614 5 10Z" fill="currentColor"/>
@@ -151,18 +155,18 @@
                 </button>
               </div>
               <div class="settings-field__actions">
-                <button class="settings-btn settings-btn--primary" id="save-api-key">
+                <button type="button" class="settings-btn settings-btn--primary" id="save-api-key">
                   Save Key
                 </button>
-                <button class="settings-btn settings-btn--secondary" id="test-api-key">
+                <button type="button" class="settings-btn settings-btn--secondary" id="test-api-key">
                   Test Connection
                 </button>
-                <button class="settings-btn settings-btn--danger" id="clear-api-key">
+                <button type="button" class="settings-btn settings-btn--danger" id="clear-api-key">
                   Clear Key
                 </button>
               </div>
               <div class="settings-field__status" id="api-key-status"></div>
-            </div>
+            </form>
             <div class="settings-help">
               <p><strong>Don't have an API key?</strong></p>
               <p>Get one free at <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></p>
@@ -172,64 +176,13 @@
         </div>
       </div>
 
-      <!-- Keyboard Help Modal -->
-      <div class="keyboard-help-modal" id="keyboard-help-modal" aria-hidden="true">
-        <div class="keyboard-help-modal__backdrop"></div>
-        <div class="keyboard-help-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="keyboard-help-title">
-          <div class="keyboard-help-modal__header">
-            <h2 id="keyboard-help-title">⌨️ Keyboard Shortcuts</h2>
-            <button class="keyboard-help-modal__close" aria-label="Close" id="keyboard-help-close">×</button>
-          </div>
-          <div class="keyboard-help-modal__body">
-            <div class="keyboard-help-section">
-              <h3>Navigation</h3>
-              <dl class="keyboard-help-list">
-                <dt><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></dt>
-                <dd>Navigate slides</dd>
-                <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
-                <dd>First / Last slide</dd>
-                <dt><kbd>O</kbd></dt>
-                <dd>Toggle overview mode</dd>
-                <dt><kbd>I</kbd></dt>
-                <dd>Toggle slide index</dd>
-              </dl>
-            </div>
-            <div class="keyboard-help-section">
-              <h3>Editing</h3>
-              <dl class="keyboard-help-list">
-                <dt><kbd>V</kbd></dt>
-                <dd>Add slide with voice</dd>
-                <dt><kbd>E</kbd></dt>
-                <dd>Open edit drawer</dd>
-                <dt><kbd>T</kbd></dt>
-                <dd>Open theme drawer</dd>
-              </dl>
-            </div>
-            <div class="keyboard-help-section">
-              <h3>Utilities</h3>
-              <dl class="keyboard-help-list">
-                <dt><kbd>D</kbd></dt>
-                <dd>Download deck JSON</dd>
-                <dt><kbd>U</kbd></dt>
-                <dd>Upload deck JSON</dd>
-                <dt><kbd>N</kbd></dt>
-                <dd>Toggle speaker notes</dd>
-                <dt><kbd>S</kbd></dt>
-                <dd>Open settings</dd>
-                <dt><kbd>?</kbd></dt>
-                <dd>Show this help</dd>
-                <dt><kbd>Esc</kbd></dt>
-                <dd>Close modals</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Keyboard Help Modal (Removed - consolidated into hints-modal) -->
+      <!-- Intro Modal (Removed - consolidated into hints-modal) -->
 
       <!-- Keyboard Hints Modal (First Visit) -->
-      <div class="hints-modal" id="hints-modal" aria-hidden="true">
-        <div class="hints-modal__backdrop"></div>
-        <div class="hints-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
+      <div class="hints-modal modal-base" id="hints-modal" aria-hidden="true">
+        <div class="hints-modal__backdrop modal-backdrop"></div>
+        <div class="hints-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
           <button class="hints-modal__close" aria-label="Close hints" id="hints-modal-close">×</button>
           <div class="hints-modal__header">
             <h2 id="hints-modal-title">⌨️ Quick Guide</h2>
@@ -271,15 +224,15 @@
       </div>
 
       <!-- Share Modal -->
-      <div class="share-modal" id="share-modal" aria-hidden="true">
-        <div class="share-modal__backdrop"></div>
-        <div class="share-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+      <div class="share-modal modal-base" id="share-modal" aria-hidden="true">
+        <div class="share-modal__backdrop modal-backdrop"></div>
+        <div class="share-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
           <div class="share-modal__header">
             <h2 id="share-modal-title">Share this deck</h2>
             <button class="share-modal__close" aria-label="Close" id="share-modal-close">×</button>
           </div>
           <div class="share-modal__body">
-            <p class="share-modal__intro">Anyone with this link can view your deck. It's read-only and loads from the web.</p>
+            <p class="share-modal__intro">We snapshot your deck to Netlify Blobs. Anyone with this link can view that read-only copy.</p>
 
             <div class="share-modal__section">
               <label for="share-url-input" class="share-modal__label">Share link</label>
@@ -306,26 +259,47 @@
               <p class="share-modal__qr-hint">Scan to open on mobile</p>
             </div>
 
+            <!-- Optimization stats -->
+            <div class="share-modal__section share-modal__stats" id="share-stats" style="display: none;">
+              <p class="share-modal__label">Share Details</p>
+              <div class="share-modal__stats-grid">
+                <div class="share-modal__stat">
+                  <span class="share-modal__stat-label">Share size</span>
+                  <span class="share-modal__stat-value" id="share-size-display">—</span>
+                </div>
+                <div class="share-modal__stat" id="share-savings-stat" style="display: none;">
+                  <span class="share-modal__stat-label">Optimized</span>
+                  <span class="share-modal__stat-value share-modal__stat-value--success" id="share-savings-display">—</span>
+                </div>
+              </div>
+              <p class="share-modal__stats-detail" id="share-stats-detail"></p>
+            </div>
+
             <div class="share-modal__status" id="share-status"></div>
           </div>
         </div>
       </div>
 
       <main class="slides" id="slides" aria-live="polite"></main>
-      <footer class="hud">
+      <footer class="hud" data-hidden="true">
         <div class="hud__controls">
+          <button class="hud__nav-btn hud__nav-btn--prev" id="hud-prev-btn" aria-label="Previous slide" title="Previous slide">←</button>
           <button class="hud__action hud__back" id="home-btn" aria-label="Back to deck library" title="Back to deck library">
             Back
           </button>
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
-            Grid
+            Overview
           </button>
           <button class="hud__action hud__help-btn" id="help-btn" aria-label="Keyboard shortcuts (?)" title="Press ? for all keyboard shortcuts">
             Help
           </button>
+          <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share this deck" title="Create a read-only share link">
+            Share
+          </button>
           <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
             <span class="hud__notes-icon">📝</span>
           </div>
+          <button class="hud__nav-btn hud__nav-btn--next" id="hud-next-btn" aria-label="Next slide" title="Next slide">→</button>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>
@@ -337,8 +311,8 @@
         </div>
       </footer>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+    <script src="js/vendor/browser-image-compression.js"></script>
+    <script src="js/vendor/qr-code-styling.js"></script>
     <script type="module" src="main.js"></script>
   </body>
 </html>

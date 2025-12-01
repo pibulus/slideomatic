@@ -14,18 +14,18 @@
 
 const defaultContext = {
   isOverview: () => false,
-  moveOverviewCursorBy: () => {},
-  exitOverview: () => {},
+  moveOverviewCursorBy: (_x, _y) => {},
+  exitOverview: (_targetIndex) => {},
   getOverviewCursor: () => 0,
   toggleOverview: () => {},
   downloadDeck: () => {},
   toggleSpeakerNotes: () => {},
-  setActiveSlide: () => {},
+  setActiveSlide: (_index) => {},
   getCurrentIndex: () => 0,
   getSlideCount: () => 0,
   toggleEditDrawer: () => {},
-  toggleVoiceRecording: () => {},
-  toggleThemeDrawer: () => {},
+  toggleVoiceRecording: (_mode) => {},
+  randomizeTheme: () => {},
   openSettingsModal: () => {},
   closeSettingsModal: () => {},
   triggerDeckUpload: () => {},
@@ -50,6 +50,12 @@ export function initKeyboardNav(partialContext = {}) {
       target instanceof HTMLElement &&
       (target.matches('input, textarea, select') || target.isContentEditable)
     ) {
+      return;
+    }
+
+    // Disable global shortcuts if a modal is open
+    // We allow drawers to stay open while navigating or toggling other drawers
+    if (document.querySelector('.modal-base.is-open')) {
       return;
     }
 
@@ -150,8 +156,10 @@ export function initKeyboardNav(partialContext = {}) {
 
     if (lowerKey === 'e') {
       event.preventDefault();
-      flashKeyFeedback('E');
-      context.toggleEditDrawer();
+      const drawerIsOpen = context.toggleEditDrawer();
+      if (!drawerIsOpen) {
+        flashKeyFeedback('E');
+      }
       return;
     }
 
@@ -164,8 +172,7 @@ export function initKeyboardNav(partialContext = {}) {
 
     if (lowerKey === 't') {
       event.preventDefault();
-      flashKeyFeedback('T');
-      context.toggleThemeDrawer();
+      context.randomizeTheme();
       return;
     }
 
@@ -205,18 +212,6 @@ export function initKeyboardNav(partialContext = {}) {
   };
 }
 
-function flashKeyFeedback(key) {
-  const feedback = document.createElement('div');
-  feedback.className = 'key-feedback';
-  feedback.textContent = key;
-  document.body.appendChild(feedback);
-
-  requestAnimationFrame(() => {
-    feedback.classList.add('active');
-  });
-
-  setTimeout(() => {
-    feedback.classList.remove('active');
-    setTimeout(() => feedback.remove(), 300);
-  }, 400);
+function flashKeyFeedback() {
+  // Key feedback HUD disabled intentionally.
 }

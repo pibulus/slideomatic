@@ -30,15 +30,20 @@ const REQUIRED_THEME_TOKENS = {
   'color-surface': '#ff9ff3',
   'color-surface-alt': '#88d4ff',
   'color-accent': '#feca57',
+  'color-accent-secondary': '#54a0ff',
+  'color-accent-tertiary': '#feca57',
   'badge-bg': '#feca57',
   'badge-color': '#1b1b1b',
   'color-ink': '#000000',
   'color-muted': '#2b2b2b',
   'border-width': '5px',
-  'gutter': "clamp(32px, 5vw, 72px)",
+  'gutter': 'clamp(32px, 5vw, 72px)',
   'radius': '12px',
+  'radius-sm': '6px',
+  'radius-lg': '24px',
   'font-sans': '"Inter", "Helvetica Neue", Arial, sans-serif',
   'font-mono': '"Space Mono", "IBM Plex Mono", monospace',
+  'font-serif': '"Merriweather", "Georgia", serif',
   'shadow-sm': '6px 6px 0 rgba(0, 0, 0, 0.25)',
   'shadow-md': '10px 10px 0 rgba(0, 0, 0, 0.3)',
   'shadow-lg': '16px 16px 0 rgba(0, 0, 0, 0.35)',
@@ -192,7 +197,7 @@ function getCurrentTheme() {
     console.warn('Failed to load current theme:', error);
     try {
       localStorage.removeItem(CURRENT_THEME_KEY);
-    } catch (_) {
+    } catch (_cleanupError) {
       // Ignore cleanup failure
     }
     return null;
@@ -278,6 +283,97 @@ function checkContrast(fg, bg) {
   const darker = Math.min(L1, L2);
   const ratio = (lighter + 0.05) / (darker + 0.05);
   return Number.isFinite(ratio) ? Number(ratio.toFixed(2)) : null;
+}
+
+export function downloadTheme(themeData) {
+  const json = JSON.stringify(themeData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'theme.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log('✓ Theme downloaded as theme.json');
+}
+
+export function hslToHex(h, s, l) {
+  const hue = ((h % 360) + 360) % 360;
+  const saturation = Math.max(0, Math.min(100, s)) / 100;
+  const lightness = Math.max(0, Math.min(100, l)) / 100;
+
+  const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+  const m = lightness - c / 2;
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (hue < 60) {
+    r = c; g = x; b = 0;
+  } else if (hue < 120) {
+    r = x; g = c; b = 0;
+  } else if (hue < 180) {
+    r = 0; g = c; b = x;
+  } else if (hue < 240) {
+    r = 0; g = x; b = c;
+  } else if (hue < 300) {
+    r = x; g = 0; b = c;
+  } else {
+    r = c; g = 0; b = x;
+  }
+
+  const toHex = (value) =>
+    Math.round((value + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export function hexToRgb(hex) {
+  const sanitized = typeof hex === 'string' ? hex.replace('#', '') : '';
+  if (sanitized.length !== 6 || Number.isNaN(Number.parseInt(sanitized, 16))) {
+    return [255, 255, 255];
+  }
+  const intVal = Number.parseInt(sanitized, 16);
+  const r = (intVal >> 16) & 255;
+  const g = (intVal >> 8) & 255;
+  const b = intVal & 255;
+  return [r, g, b];
+}
+
+export function hexToRgbaString(hex, alpha = 1) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha))})`;
+}
+
+export function mixHexColors(colorA, colorB, ratio = 0.5) {
+  const [r1, g1, b1] = hexToRgb(colorA);
+  const [r2, g2, b2] = hexToRgb(colorB);
+  const blend = (a, b) => Math.round(a * (1 - ratio) + b * ratio);
+  return `#${[blend(r1, r2), blend(g1, g2), blend(b1, b2)]
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+export function applyAlpha(hex, alpha) {
+  return hexToRgbaString(hex, alpha);
+}
+
+export function shiftHex(hex, amount = 0) {
+  const ratio = Math.max(0, Math.min(1, Math.abs(amount)));
+  const target = amount >= 0 ? '#ffffff' : '#000000';
+  return mixHexColors(hex, target, ratio);
+}
+
+export function getAccessibleTextColor(backgroundHex) {
+  const blackContrast = checkContrast('#000000', backgroundHex) || 0;
+  const whiteContrast = checkContrast('#ffffff', backgroundHex) || 0;
+  return blackContrast >= whiteContrast ? '#000000' : '#ffffff';
 }
 
 export {

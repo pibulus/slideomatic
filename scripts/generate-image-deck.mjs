@@ -10,26 +10,26 @@
  * - Captions and alt text default to the file name (title-cased).
  */
 
-import { readdir, stat, writeFile } from "node:fs/promises";
-import { dirname, extname, join, resolve, relative, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readdir, stat, writeFile } from 'node:fs/promises';
+import { dirname, extname, join, resolve, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, "..");
+const root = resolve(__dirname, '..');
 
 const IMAGE_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".gif",
-  ".avif",
-  ".bmp",
-  ".tiff",
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.gif',
+  '.avif',
+  '.bmp',
+  '.tiff',
 ]);
 
 main().catch((error) => {
-  console.error("✖ Failed to generate slides:", error.message);
+  console.error('✖ Failed to generate slides:', error.message);
   process.exitCode = 1;
 });
 
@@ -53,14 +53,14 @@ async function main() {
   const slides = imageFiles.map((file, index) => {
     const caption = toTitle(file.name);
     return {
-      type: "image",
+      type: 'image',
       badge: `Screenshot ${index + 1}`,
       image: {
         src: toPosix(relative(root, file.path)),
         alt: caption,
         fullBleed: true,
-        objectFit: "contain",
-        objectPosition: "center",
+        objectFit: 'contain',
+        objectPosition: 'center',
       },
       caption,
     };
@@ -68,7 +68,7 @@ async function main() {
 
   if (!options.quiet) {
     console.log(
-      `Found ${slides.length} image${slides.length === 1 ? "" : "s"} in ${
+      `Found ${slides.length} image${slides.length === 1 ? '' : 's'} in ${
         options.dir
       }`
     );
@@ -76,7 +76,7 @@ async function main() {
 
   if (options.dryRun) {
     if (!options.quiet) {
-      console.log("Dry run enabled — no file written.");
+      console.log('Dry run enabled — no file written.');
     }
     if (!options.quiet) {
       console.log(JSON.stringify(slides, null, 2));
@@ -84,7 +84,7 @@ async function main() {
     return;
   }
 
-  await writeFile(outputPath, `${JSON.stringify(slides, null, 2)}\n`, "utf8");
+  await writeFile(outputPath, `${JSON.stringify(slides, null, 2)}\n`, 'utf8');
 
   if (!options.quiet) {
     console.log(`✔ Wrote ${options.out}`);
@@ -93,8 +93,8 @@ async function main() {
 
 function parseArgs(argv) {
   const options = {
-    dir: "images/screenshots",
-    out: "slides-screenshots.json",
+    dir: 'images/screenshots',
+    out: 'slides-screenshots.json',
     dryRun: false,
     quiet: false,
     showHelp: false,
@@ -103,22 +103,22 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
-      case "--dir":
-      case "-d":
+      case '--dir':
+      case '-d':
         options.dir = argv[++i] ?? options.dir;
         break;
-      case "--out":
-      case "-o":
+      case '--out':
+      case '-o':
         options.out = argv[++i] ?? options.out;
         break;
-      case "--dry-run":
+      case '--dry-run':
         options.dryRun = true;
         break;
-      case "--quiet":
+      case '--quiet':
         options.quiet = true;
         break;
-      case "--help":
-      case "-h":
+      case '--help':
+      case '-h':
         options.showHelp = true;
         break;
       default:
@@ -154,12 +154,12 @@ async function collectImages(directory) {
 }
 
 function toPosix(path) {
-  return path.split(sep).join("/");
+  return path.split(sep).join('/');
 }
 
 function toTitle(filename) {
-  const base = filename.replace(/\.[^.]+$/, "") // strip extension
-    .replace(/[-_]+/g, " ")
+  const base = filename.replace(/\.[^.]+$/, '') // strip extension
+    .replace(/[-_]+/g, ' ')
     .trim();
 
   if (base.length === 0) return filename;
@@ -167,7 +167,7 @@ function toTitle(filename) {
   return base
     .split(/\s+/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }
 
 function printHelp() {

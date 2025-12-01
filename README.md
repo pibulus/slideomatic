@@ -54,6 +54,17 @@ That's it—no build step, no frameworks.
 
 ---
 
+## Sharing Decks
+
+- Click the new **Share** button in the deck HUD to snapshot the current slides + theme into [Netlify Blobs](https://docs.netlify.com/blobs/). You get a short `?share=` link and QR code that load a read-only copy of the deck.
+- Images you drag/drop or paste are auto-compressed to ~400KB target (WebP/JPEG), uploaded via `/.netlify/functions/upload-asset`, and referenced by short URLs instead of giant base64 strings. Hard cap: **500KB per asset**.
+- Old assets get cleaned up automatically a few seconds after you replace/delete them, so Netlify Blobs doesn’t fill up with unused files. Manual deletes trigger instantly when available.
+- The Netlify Functions live at `/.netlify/functions/share`, `/.netlify/functions/upload-asset`, `/.netlify/functions/delete-asset`, and `/.netlify/functions/asset`. Share payloads stay under ~400KB since assets live separately.
+- For local testing, run `netlify dev` (not `npm run dev`) so those functions + blob context are available. When deployed to Netlify it all wires up automatically.
+- Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
+
+---
+
 ## Documenting Your Deck Format
 
 You can add a `_schema` slide at the top of `slides.json` to document your format inline. The renderer will ignore it:
@@ -239,8 +250,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `Esc` – Exit overview
 - `?` – Show keyboard shortcuts help
 - `V` – **Voice-to-slide** (record audio, AI generates slide)
-- `T` – **Open theme drawer** (select themes, randomize, or use voice-to-theme)
-- `E` – Edit current slide
+- `T` – **Randomize theme** (instantly generates a new random theme variation)
+- `E` – Edit current slide (includes all theme controls)
 - `D` – Export deck as JSON
 - `U` – Upload deck from JSON
 - `S` – Settings (configure Gemini API key)
@@ -250,8 +261,12 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 ### 🎙️ Voice-to-Slide (NEW!)
 Press `V` or click the voice button in the HUD to generate slides using AI! Just describe what you want and Gemini will create the perfect slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
 
-### 🎨 Voice-to-Theme (NEW!)
-Press `T` to open the theme drawer, then click the voice button to generate a complete theme using AI! Just describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and save it to your library.
+### 🎨 Theme Controls (Unified in Edit Drawer!)
+Press `E` to open the edit drawer where you'll find all theme controls in one place:
+- **Select themes** from presets (Default, Gameboy, Vaporwave, Slack) or your saved library
+- **Randomize** themes with one click (or press `T` for instant randomization!)
+- **AI Theme Generation** – Describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and save it to your library
+- **Save themes** to your personal library for quick access later
 
 ---
 

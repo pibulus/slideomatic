@@ -14,66 +14,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { formatBytes, escapeHtml, deepClone } from './utils.js';
-
-function collectImagePaths(slide) {
-  if (!slide || typeof slide !== 'object') return [];
-
-  const entries = [];
-  const push = (path, image) => {
-    if (image?.src) {
-      entries.push({ path, image });
-    }
-  };
-
-  push(['image'], slide.image);
-
-  if (Array.isArray(slide.media)) {
-    slide.media.forEach((item, index) => {
-      push(['media', index, 'image'], item?.image);
-    });
-  }
-
-  if (Array.isArray(slide.items)) {
-    slide.items.forEach((item, index) => {
-      push(['items', index, 'image'], item?.image);
-    });
-  }
-
-  if (slide.left?.image) {
-    push(['left', 'image'], slide.left.image);
-  }
-
-  if (slide.right?.image) {
-    push(['right', 'image'], slide.right.image);
-  }
-
-  if (Array.isArray(slide.pillars)) {
-    slide.pillars.forEach((pillar, index) => {
-      push(['pillars', index, 'image'], pillar?.image);
-    });
-  }
-
-  return entries;
-}
-
-function collectSlideImages(slide) {
-  return collectImagePaths(slide).map((entry) => entry.image);
-}
+import { collectImagePaths, collectSlideImages, getContainerAtPath } from './image-utils.js';
 
 function cloneSlide(slide) {
   return deepClone(slide);
-}
-
-function getContainerAtPath(slide, path) {
-  if (!Array.isArray(path) || path.length === 0) return null;
-  let current = slide;
-  for (let index = 0; index < path.length - 1; index += 1) {
-    const key = path[index];
-    if (current == null) return null;
-    current = current[key];
-  }
-  const key = path[path.length - 1];
-  return { container: current, key };
 }
 
 function removeImageByIndex(imageIndex, slide) {
@@ -154,12 +98,34 @@ function reorderSlideImages(fromIndex, toIndex, slide) {
   return updatedSlide;
 }
 
+function canAddMoreImages(slide) {
+  if (!slide) return true;
+  const type = slide.type || 'standard';
+
+  if (type === 'standard' || type === 'intro' || type === 'big-number' || type === 'quote') {
+    // Single image types
+    return !slide.image || !slide.image.src;
+  } else if (type === 'split') {
+    // Two images max
+    const hasLeft = slide.left?.image?.src;
+    const hasRight = slide.right?.image?.src;
+    return !(hasLeft && hasRight);
+  }
+  
+  // Arrays (gallery, grid, pillars, title) are effectively unlimited
+  return true;
+}
+
 function buildImageManager(slide) {
   const images = collectSlideImages(slide);
+  const canAdd = canAddMoreImages(slide);
   let html = '';
 
+  // Always wrap in a container that can serve as a drop target
+  html += '<div class="edit-drawer__image-manager" id="image-manager-dropzone">';
+
   if (images.length > 0) {
-    html += `<div class="edit-drawer__image-list">`;
+    html += '<div class="edit-drawer__image-list">';
 
     images.forEach((img, index) => {
       const filename = img.originalFilename || img.src?.split('/').pop() || 'image';
@@ -184,27 +150,39 @@ function buildImageManager(slide) {
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
+          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="AI Assist: Search or Generate">✨</button>` : ''}
           ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image">↻</button>` : ''}
           <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot">×</button>
         </div>
       `;
     });
 
-    html += `</div>`;
+    html += '</div>';
   } else {
+    // Empty state dropzone
     html += `
-      <div class="edit-drawer__image-dropzone" id="image-dropzone">
+      <div class="edit-drawer__image-dropzone">
         <span class="edit-drawer__image-dropzone-icon">✶</span>
         <p>Add or drop images</p>
       </div>
     `;
   }
 
-  html += `
-    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
-      Add image
-    </button>
-  `;
+  if (canAdd) {
+    html += `
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
+        Add image
+      </button>
+    `;
+  } else {
+    html += `
+      <div class="edit-drawer__empty-note" style="text-align: center; padding: 8px;">
+        Slide full. Remove an image to add another.
+      </div>
+    `;
+  }
+
+  html += '</div>'; // Close manager container
 
   return html;
 }
@@ -257,6 +235,29 @@ function setupImageReplaceButtons({ root, onReplace, addTrackedListener }) {
   addTrackedListener(root, 'click', handleReplace);
 }
 
+/**
+ * Setup AI buttons using event delegation
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onAI - Callback function
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageAIButtons({ root, onAI, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  const handleAI = (event) => {
+    const button = event.target.closest('.edit-drawer__image-ai');
+    if (!button) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    if (Number.isNaN(index)) return;
+    onAI?.(index);
+  };
+
+  addTrackedListener(root, 'click', handleAI);
+}
+
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.edit-drawer__image-item:not(.dragging)')];
 
@@ -297,20 +298,30 @@ function setupImageDragReorder({ container, onReorder, addTrackedListener }) {
     event.dataTransfer.setData('text/html', target.innerHTML);
   };
 
+  let isDragOverScheduled = false;
+  let lastClientY = 0;
+
   const handleDragOver = (event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
+    lastClientY = event.clientY;
 
-    const afterElement = getDragAfterElement(container, event.clientY);
-    const draggable = container.querySelector('.dragging');
+    if (isDragOverScheduled) return;
+    isDragOverScheduled = true;
 
-    if (!draggable) return;
+    requestAnimationFrame(() => {
+      const afterElement = getDragAfterElement(container, lastClientY);
+      const draggable = container.querySelector('.dragging');
 
-    if (afterElement == null) {
-      container.appendChild(draggable);
-    } else {
-      container.insertBefore(draggable, afterElement);
-    }
+      if (draggable) {
+        if (afterElement == null) {
+          container.appendChild(draggable);
+        } else {
+          container.insertBefore(draggable, afterElement);
+        }
+      }
+      isDragOverScheduled = false;
+    });
   };
 
   const handleDragEnd = () => {
@@ -394,5 +405,6 @@ export {
   buildImageManager,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
+  setupImageAIButtons,
   setupImageDragReorder,
 };

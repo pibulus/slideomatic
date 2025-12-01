@@ -7,12 +7,18 @@
   "homepage": "https://slideomatic.app",
   "scripts": {
     "dev": "serve .",
-    "check": "node scripts/validate.mjs"
+    "check": "node scripts/validate.mjs",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "eslint": "9.39.1",
+    "globals": "16.5.0",
     "serve": "^14.2.1"
   },
   "dependencies": {
-    "run-deepseek-cli": "0.1.1"
+    "@netlify/blobs": "10.4.1",
+    "run-deepseek-cli": "0.1.1",
+    "sharp": "^0.33.0"
   }
 }
