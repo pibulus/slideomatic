@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide-o-Matic Deck Collections</title>
+    <meta name="description" content="Share a bundle of Slide-o-Matic decks with one link.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="stylesheet" href="css/landing.css">
+    <link rel="stylesheet" href="css/collections.css">
+  </head>
+  <body>
+    <main class="collections">
+      <header class="collections__hero">
+        <div class="collections__hero-content">
+          <a class="link-button" href="index.html">← Back to Slide-o-Matic</a>
+          <p class="collections__eyebrow" data-collection-eyebrow>Classroom pack</p>
+          <h1 class="collections__title" data-collection-title>Deck collection</h1>
+          <p class="collections__tagline" data-collection-tagline></p>
+          <p class="collections__description" data-collection-description></p>
+          <div class="collections__actions">
+            <a class="button button--primary" href="#collection" data-hero-cta>Jump to decks</a>
+            <button class="button button--secondary" type="button" data-copy-link>Copy share link</button>
+            <span class="collections__copy-status" data-copy-status>Link copied</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="collections__tabs" data-collection-tabs></div>
+
+      <section class="collections__group" id="collection">
+        <header class="collections__group-header">
+          <h2 data-group-title>Deck bundle</h2>
+          <p data-group-description>Ready-to-share decks from Slide-o-Matic.</p>
+        </header>
+        <ul class="collections__deck-list" data-deck-list></ul>
+        <p class="collections__empty" data-empty-message hidden>More decks coming soon.</p>
+      </section>
+    </main>
+
+    <script type="module">
+      import { safeParse } from './modules/utils.js';
+
+      const heroEyebrow = document.querySelector('[data-collection-eyebrow]');
+      const heroTitle = document.querySelector('[data-collection-title]');
+      const heroTagline = document.querySelector('[data-collection-tagline]');
+      const heroDescription = document.querySelector('[data-collection-description]');
+      const groupTitle = document.querySelector('[data-group-title]');
+      const groupDescription = document.querySelector('[data-group-description]');
+      const deckList = document.querySelector('[data-deck-list]');
+      const emptyMessage = document.querySelector('[data-empty-message]');
+      const tabsContainer = document.querySelector('[data-collection-tabs]');
+      const copyButton = document.querySelector('[data-copy-link]');
+      const copyStatus = document.querySelector('[data-copy-status]');
+
+      let collections = [];
+      let activeGroupId = null;
+
+      init();
+
+      async function init() {
+        const data = await fetchCollections();
+        if (!Array.isArray(data) || data.length === 0) {
+          showEmptyState('No deck collections configured yet.');
+          return;
+        }
+
+        collections = data;
+        activeGroupId = getRequestedCollectionId() || collections[0].id;
+
+        renderTabs();
+        renderActiveGroup();
+        bindCopyButton();
+      }
+
+      async function fetchCollections() {
+        try {
+          const response = await fetch('deck-collections.json', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(`Failed to load deck collections (${response.status})`);
+          }
+          const text = await response.text();
+          return safeParse(text) || [];
+        } catch (error) {
+          console.error('Unable to fetch deck collections', error);
+          showEmptyState('Unable to load the collection right now. Try refreshing in a bit.');
+          return [];
+        }
+      }
+
+      function renderTabs() {
+        if (!tabsContainer) return;
+        tabsContainer.innerHTML = '';
+        if (collections.length <= 1) {
+          tabsContainer.hidden = true;
+          return;
+        }
+
+        tabsContainer.hidden = false;
+        collections.forEach((group) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'collections__tab';
+          button.textContent = group.title;
+          const isActive = group.id === activeGroupId;
+          button.setAttribute('aria-pressed', String(isActive));
+          button.addEventListener('click', () => {
+            if (activeGroupId === group.id) return;
+            activeGroupId = group.id;
+            updateUrl(group.id);
+            renderTabs();
+            renderActiveGroup();
+          });
+          tabsContainer.appendChild(button);
+        });
+      }
+
+      function renderActiveGroup() {
+        const group = collections.find((entry) => entry.id === activeGroupId) || collections[0];
+        if (!group) {
+          showEmptyState('No decks found for this collection.');
+          return;
+        }
+        updateHero(group);
+        renderDecks(group);
+      }
+
+      function updateHero(group) {
+        if (heroEyebrow) heroEyebrow.textContent = group.eyebrow || 'Deck collection';
+        if (heroTitle) heroTitle.textContent = group.title || 'Deck collection';
+        if (heroTagline) heroTagline.textContent = group.tagline || '';
+        if (heroDescription) heroDescription.textContent = group.description || '';
+        if (groupTitle) groupTitle.textContent = group.title || 'Deck bundle';
+        if (groupDescription) {
+          const fallback = 'Share multiple Slide-o-Matic decks with one link.';
+          groupDescription.textContent = group.description || fallback;
+        }
+      }
+
+      function renderDecks(group) {
+        if (!deckList) return;
+        deckList.innerHTML = '';
+        const decks = Array.isArray(group.decks) ? group.decks : [];
+        if (decks.length === 0) {
+          showEmptyState('Empty bundle for now. Check back soon.');
+          return;
+        }
+
+        if (emptyMessage) {
+          emptyMessage.hidden = true;
+        }
+
+        decks.forEach((deck) => {
+          deckList.appendChild(createDeckCard(deck));
+        });
+      }
+
+      function createDeckCard(deck) {
+        const item = document.createElement('li');
+        item.className = 'collection-card';
+
+        const body = document.createElement('div');
+        body.className = 'collection-card__body';
+
+        const title = document.createElement('h3');
+        title.className = 'collection-card__title';
+        title.textContent = deck.title || 'Untitled deck';
+
+        const summary = document.createElement('p');
+        summary.className = 'collection-card__summary';
+        summary.textContent = deck.summary || '';
+
+        body.append(title, summary);
+
+        if (Array.isArray(deck.tags) && deck.tags.length > 0) {
+          const tags = document.createElement('ul');
+          tags.className = 'collection-card__tags';
+          deck.tags.forEach((tag) => {
+            const li = document.createElement('li');
+            li.textContent = tag;
+            tags.appendChild(li);
+          });
+          body.appendChild(tags);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'collection-card__actions';
+        const link = document.createElement('a');
+        link.className = 'button button--secondary';
+        link.textContent = deck.ctaLabel || 'Open deck';
+        link.href = buildDeckUrl(deck);
+        link.target = '_blank';
+        link.rel = 'noopener';
+        actions.appendChild(link);
+
+        if (deck.note) {
+          const note = document.createElement('p');
+          note.className = 'collection-card__note';
+          note.textContent = deck.note;
+          actions.appendChild(note);
+        }
+
+        item.append(body, actions);
+        return item;
+      }
+
+      function buildDeckUrl(deck) {
+        if (deck?.shareId) {
+          return `deck.html?share=${encodeURIComponent(deck.shareId)}`;
+        }
+        if (deck?.slides) {
+          return `deck.html#slides=${encodeURIComponent(deck.slides)}`;
+        }
+        if (deck?.deckId) {
+          return `deck.html#deck=${encodeURIComponent(deck.deckId)}`;
+        }
+        return 'deck.html';
+      }
+
+      function showEmptyState(message) {
+        if (heroTitle) heroTitle.textContent = 'Nothing to share yet';
+        if (heroDescription) heroDescription.textContent = message || 'Add a collection to get started.';
+        if (deckList) deckList.innerHTML = '';
+        if (emptyMessage) {
+          emptyMessage.hidden = false;
+          emptyMessage.textContent = message || 'No decks yet.';
+        }
+      }
+
+      function bindCopyButton() {
+        if (!copyButton) return;
+        copyButton.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            showCopyStatus('Link copied', 'success');
+          } catch (error) {
+            console.warn('Clipboard copy failed', error);
+            showCopyStatus('Copy failed. Select the URL manually.', 'error');
+          }
+        });
+      }
+
+      function showCopyStatus(message, state = 'success') {
+        if (!copyStatus) return;
+        copyStatus.textContent = message;
+        copyStatus.classList.add('is-visible');
+        copyStatus.dataset.state = state;
+        setTimeout(() => {
+          copyStatus.classList.remove('is-visible');
+        }, 2500);
+      }
+
+      function getRequestedCollectionId() {
+        const search = new URLSearchParams(window.location.search);
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        return search.get('collection') || hash.get('collection');
+      }
+
+      function updateUrl(groupId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('collection', groupId);
+        window.history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
+      }
+    </script>
+  </body>
+</html>

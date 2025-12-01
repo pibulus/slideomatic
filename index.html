@@ -122,11 +122,26 @@
         </div>
       </section>
 
+      <!-- ===== COLLECTION PROMO ===== -->
+      <section class="collection-promo">
+        <div class="collection-promo__content">
+          <p class="collection-promo__eyebrow">Shared pack</p>
+          <h2>Design Starter Pack</h2>
+          <p>
+            Free Design Resources plus the Brand &amp; Visual deck now live on one page. Open it, duplicate a deck, share the link—whatever you need.
+          </p>
+        </div>
+        <div class="collection-promo__actions">
+          <a class="button button--secondary" href="collections.html?collection=design-starter-pack">Open the page</a>
+        </div>
+      </section>
+
       <!-- ===== YOUR DECKS: Simplified (moved to bottom) ===== -->
       <section class="deck-shelf" id="saved">
         <header class="deck-shelf__header">
           <div>
             <h2>Saved Decks</h2>
+            <p class="deck-shelf__subtitle">Local decks stay on this device. The two default decks moved to <a href="collections.html?collection=design-starter-pack">this shared link</a>.</p>
           </div>
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
@@ -492,34 +507,13 @@
 
       async function renderDeckShelf() {
         deckShelfCache = getSavedDecks();
-
-        // Add built-in demo decks
-        const builtInDecks = [
-          {
-            id: 'design-resources',
-            name: 'Free Design Resources',
-            updatedAt: 1, // Will appear above demo-deck
-            slideCount: '?',
-            isBuiltIn: true,
-            starred: false,
-          },
-          {
-            id: 'demo-deck',
-            name: 'Brand and Visual Presentation',
-            updatedAt: 0, // Will appear at the bottom
-            slideCount: '?',
-            isBuiltIn: true,
-            starred: false,
-          }
-        ];
-
-        const allDecks = [...builtInDecks, ...deckShelfCache];
+        const allDecks = [...deckShelfCache];
 
         if (!shelfList) return;
         shelfList.querySelectorAll('.deck-card').forEach((node) => node.remove());
 
         if (shelfEmpty) {
-          shelfEmpty.hidden = true;
+          shelfEmpty.hidden = allDecks.length > 0;
         }
 
         allDecks.forEach((deck) => {
