@@ -456,18 +456,6 @@ function getKeyboardContext() {
     },
   };
 }
-const editDrawerSpringProfile = {
-  open: 'is-springing', // Use CSS class for open animation
-  close: {
-    keyframes: [
-      { transform: 'translateX(0)' },
-      { transform: 'translateX(8px)', offset: 0.3, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
-      { transform: 'translateX(104%)', offset: 1, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
-    ],
-    options: { duration: 360, fill: 'forwards' },
-  },
-};
-
 const createdEditDrawer = createDrawer({
   id: 'edit-drawer',
   onOpen: () => {
@@ -482,7 +470,6 @@ const createdEditDrawer = createDrawer({
   onClose: () => {
     setEditDrawerOpen(false);
   },
-  motionProfile: editDrawerSpringProfile,
 });
 setEditDrawerInstance(createdEditDrawer);
 

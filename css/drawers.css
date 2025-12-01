@@ -19,8 +19,11 @@
   pointer-events: none;
 }
 
-.edit-drawer.is-open {
+.edit-drawer.is-open:not(.is-springing) {
   transform: translateX(0);
+}
+
+.edit-drawer.is-open {
   pointer-events: auto;
 }
 
@@ -142,10 +145,6 @@
   overflow-x: hidden; /* Prevent horizontal scrollbar from dropdowns */
   padding: 24px;
   background: linear-gradient(180deg, #fffdfa 0%, #fff6ec 100%);
-}
-
-.edit-drawer.is-open .edit-drawer__content {
-  animation: fade-slide-in 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both 100ms;
 }
 
 .edit-drawer__form {
