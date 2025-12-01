@@ -603,6 +603,14 @@
             renameDeck(deck);
           });
 
+          const duplicateBtn = document.createElement('button');
+          duplicateBtn.type = 'button';
+          duplicateBtn.textContent = 'Duplicate';
+          duplicateBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click
+            duplicateDeck(deck);
+          });
+
           const deleteBtn = document.createElement('button');
           deleteBtn.type = 'button';
           deleteBtn.textContent = 'Delete';
@@ -611,7 +619,7 @@
             deleteDeck(deck);
           });
 
-          actions.append(renameBtn, deleteBtn);
+          actions.append(renameBtn, duplicateBtn, deleteBtn);
         }
 
         item.append(meta, actions);
@@ -691,6 +699,36 @@
           showToast('Deck renamed', 'success');
         } catch (error) {
           showToast('Unable to save. Storage may be full.', 'error');
+        }
+      }
+
+      function duplicateDeck(deck) {
+        if (!deck) return;
+        const payload = getDeckPayload(deck.id);
+        if (!payload) return;
+
+        const newDeckId = generateDeckId();
+        const newName = `Copy of ${deck.name}`;
+        
+        const newPayload = {
+          ...payload,
+          meta: {
+            ...payload.meta,
+            name: newName,
+            updatedAt: Date.now(),
+            deckId: newDeckId,
+            starred: false // Don't copy starred status
+          },
+          updatedAt: Date.now(),
+          source: `duplicate:${deck.id}`
+        };
+
+        try {
+          localStorage.setItem(buildDeckKey(newDeckId), JSON.stringify(newPayload));
+          renderDeckShelf();
+          showToast('Deck duplicated', 'success');
+        } catch (error) {
+          showToast('Unable to duplicate deck. Storage may be full.', 'error');
         }
       }
 

@@ -172,7 +172,7 @@
 .toast {
   background: var(--color-ink);
   border: var(--border-width) solid var(--color-ink);
-  color: var(--cream);
+  color: var(--color-surface);
   padding: 12px 18px;
   border-radius: var(--radius);
   font-family: var(--font-mono);
@@ -189,7 +189,7 @@
 }
 
 .toast--success {
-  background: var(--riso-green);
+  background: linear-gradient(120deg, var(--color-accent), var(--color-accent-secondary));
   color: var(--color-ink);
   border-color: var(--color-ink);
   box-shadow: var(--shadow-md);

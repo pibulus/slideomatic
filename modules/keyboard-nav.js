@@ -172,7 +172,6 @@ export function initKeyboardNav(partialContext = {}) {
 
     if (lowerKey === 't') {
       event.preventDefault();
-      flashKeyFeedback('🎲');
       context.randomizeTheme();
       return;
     }

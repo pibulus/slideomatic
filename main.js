@@ -393,12 +393,13 @@ async function loadAutoLinks() {
 
 
 function toggleEditDrawer() {
-  if (!editDrawerInstance) return;
+  if (!editDrawerInstance) return false;
   if (editDrawerInstance.isOpen) {
     closeDrawer(editDrawerInstance);
   } else {
     openEditDrawer();
   }
+  return Boolean(editDrawerInstance?.isOpen);
 }
 
 function openEditDrawer() {
