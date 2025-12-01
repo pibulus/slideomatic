@@ -392,15 +392,20 @@ function buildActionsSection() {
     </button>
     <div style="display: flex; gap: 10px;">
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
-        Duplicate
+        Duplicate Slide
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--delete" id="delete-slide-btn" style="flex: 1;">
-        Delete
+        Delete Slide
       </button>
     </div>
-    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-      Export Deck
-    </button>
+    <div style="display: flex; gap: 10px; margin-top: 8px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-deck-btn" style="flex: 1;">
+        Duplicate Deck
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn" style="flex: 1;">
+        Export JSON
+      </button>
+    </div>
   `;
 
   return buildAccordion('Actions', content, { modifier: ' accordion--actions', startOpen: false });
@@ -1299,6 +1304,12 @@ Make the colors harmonious and ensure good contrast for readability.`;
   );
 
   addTrackedListener(
+    document.getElementById('duplicate-deck-btn'),
+    'click',
+    () => handleDuplicateDeck(ctx)
+  );
+
+  addTrackedListener(
     document.getElementById('download-deck-btn'),
     'click',
     () => handleDownloadDeck(ctx)
@@ -1523,5 +1534,49 @@ export function deleteCurrentSlide(context) {
     ctx.showHudStatus('🗑️ Slide deleted', 'success');
     setTimeout(() => ctx.hideHudStatus(), 1600);
     console.log('✓ Slide deleted');
+  }
+}
+
+/**
+ * @param {object} context
+ */
+async function handleDuplicateDeck(context) {
+  const ctx = ensureContext(context);
+  
+  const generateId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `deck-${crypto.randomUUID()}`;
+    }
+    return `deck-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  };
+
+  const slides = ctx.getSlides();
+  const { deriveDeckName } = await import('./utils.js');
+  const currentName = deriveDeckName(slides);
+  const newName = `Copy of ${currentName}`;
+  const newDeckId = generateId();
+  
+  const payload = {
+    version: 1,
+    updatedAt: Date.now(),
+    source: 'duplicate:drawer',
+    slides: slides,
+    meta: {
+      name: newName,
+      updatedAt: Date.now(),
+      deckId: newDeckId,
+      starred: false
+    }
+  };
+
+  try {
+    const key = `slideomatic_deck_overrides:${encodeURIComponent(newDeckId)}`;
+    localStorage.setItem(key, JSON.stringify(payload));
+    ctx.showHudStatus('✨ Deck duplicated to Saved Decks', 'success');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
+  } catch (error) {
+    console.error('Failed to duplicate deck:', error);
+    ctx.showHudStatus('❌ Failed to duplicate deck', 'error');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
   }
 }

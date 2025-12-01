@@ -156,8 +156,10 @@ export function initKeyboardNav(partialContext = {}) {
 
     if (lowerKey === 'e') {
       event.preventDefault();
-      flashKeyFeedback('E');
-      context.toggleEditDrawer();
+      const drawerIsOpen = context.toggleEditDrawer();
+      if (!drawerIsOpen) {
+        flashKeyFeedback('E');
+      }
       return;
     }
 
@@ -215,6 +217,13 @@ let feedbackEl = null;
 let feedbackTimeout = null;
 
 function flashKeyFeedback(key) {
+  if (isDrawerOpen()) {
+    if (feedbackEl) {
+      feedbackEl.classList.remove('active');
+    }
+    return;
+  }
+
   if (!feedbackEl) {
     feedbackEl = document.createElement('div');
     feedbackEl.className = 'key-feedback';
@@ -232,4 +241,8 @@ function flashKeyFeedback(key) {
   feedbackTimeout = setTimeout(() => {
     feedbackEl.classList.remove('active');
   }, 400);
+}
+
+function isDrawerOpen() {
+  return Boolean(document.querySelector('.edit-drawer.is-open, .theme-drawer.is-open'));
 }
