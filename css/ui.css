@@ -189,7 +189,7 @@
 }
 
 .toast--success {
-  background: linear-gradient(120deg, var(--color-accent), var(--color-accent-secondary));
+  background: var(--color-accent);
   color: var(--color-ink);
   border-color: var(--color-ink);
   box-shadow: var(--shadow-md);
@@ -210,32 +210,6 @@
 }
 
 
-
-/* --- Key Feedback --- */
-.key-feedback {
-  position: fixed;
-  top: clamp(16px, 4vw, 32px);
-  right: clamp(16px, 4vw, 32px);
-  transform: translateY(-16px) scale(0.85);
-  font-family: var(--font-mono);
-  font-size: 2.4rem;
-  font-weight: 900;
-  color: var(--color-surface);
-  background: var(--color-ink);
-  padding: 16px 22px;
-  border: var(--border-width) solid var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-xl);
-  z-index: var(--z-tooltip);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 200ms ease, transform 200ms cubic-bezier(0.2, 2, 0.4, 1);
-}
-
-.key-feedback.active {
-  opacity: 0.95;
-  transform: translateY(0) scale(1);
-}
 
 /* --- Responsive UI --- */
 @media (max-width: 768px) {
@@ -311,12 +285,6 @@
     display: block;
   }
 
-  .key-feedback {
-    font-size: 1.6rem;
-    padding: 12px 18px;
-    right: clamp(12px, 4vw, 20px);
-  }
-  
   .toast-container {
     bottom: 140px; /* Make room for larger HUD */
     right: 16px;

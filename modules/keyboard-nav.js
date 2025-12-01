@@ -212,36 +212,6 @@ export function initKeyboardNav(partialContext = {}) {
   };
 }
 
-let feedbackEl = null;
-let feedbackTimeout = null;
-
-function flashKeyFeedback(key) {
-  if (isDrawerOpen()) {
-    if (feedbackEl) {
-      feedbackEl.classList.remove('active');
-    }
-    return;
-  }
-
-  if (!feedbackEl) {
-    feedbackEl = document.createElement('div');
-    feedbackEl.className = 'key-feedback';
-    document.body.appendChild(feedbackEl);
-  }
-
-  feedbackEl.textContent = key;
-  
-  // Reset animation
-  feedbackEl.classList.remove('active');
-  void feedbackEl.offsetWidth; // Force reflow
-  feedbackEl.classList.add('active');
-
-  clearTimeout(feedbackTimeout);
-  feedbackTimeout = setTimeout(() => {
-    feedbackEl.classList.remove('active');
-  }, 400);
-}
-
-function isDrawerOpen() {
-  return Boolean(document.querySelector('.edit-drawer.is-open, .theme-drawer.is-open'));
+function flashKeyFeedback() {
+  // Key feedback HUD disabled intentionally.
 }
