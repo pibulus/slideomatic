@@ -133,16 +133,17 @@
       }
 
       function buildDeckUrl(deck) {
+        const base = '/deck.html';
         if (deck?.shareId) {
-          return `deck.html?share=${encodeURIComponent(deck.shareId)}`;
+          return `${base}?share=${encodeURIComponent(deck.shareId)}`;
         }
         if (deck?.slides) {
-          return `deck.html#slides=${encodeURIComponent(deck.slides)}`;
+          return `${base}#slides=${encodeURIComponent(deck.slides)}`;
         }
         if (deck?.deckId) {
-          return `deck.html#deck=${encodeURIComponent(deck.deckId)}`;
+          return `${base}#deck=${encodeURIComponent(deck.deckId)}`;
         }
-        return 'deck.html';
+        return base;
       }
 
       function showEmptyState(message) {
