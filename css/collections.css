@@ -175,7 +175,7 @@ body {
 
 .collection-card:hover {
   transform: translateY(-2px);
-  border-color: var(--riso-blue);
+  background: rgba(0, 120, 191, 0.05);
   box-shadow: 8px 8px 0 rgba(26, 21, 34, 0.15);
 }
 

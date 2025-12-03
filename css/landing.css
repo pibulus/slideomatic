@@ -444,6 +444,20 @@ main {
   color: white;
 }
 
+/* Fix for a.button inheriting link styles */
+a.button {
+  border-bottom: 4px solid var(--ink);
+}
+
+a.button:hover {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+a.button--secondary:hover {
+  color: white;
+}
+
 /* ===================================================================
    FEATURES SECTION - TIGHTER, MORE COLOR
    ================================================================ */
