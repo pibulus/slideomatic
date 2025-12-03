@@ -59,6 +59,10 @@ export function getGeminiApiKey() {
   return localStorage.getItem(STORAGE_KEY_API) || '';
 }
 
+export function getVoiceAssistantContext() {
+  return getVoiceContext();
+}
+
 function ensureButtonInitialized(button, handler) {
   if (!button) return;
   if (!button.dataset.voiceInitialized) {
@@ -578,6 +582,89 @@ function cleanupVoiceThemeRecording() {
   isRecordingTheme = false;
 }
 
+export async function generateSlideFromPrompt(promptText, { insert = false } = {}) {
+  const context = getVoiceContext();
+  const request = (promptText || '').trim();
+  if (!request) {
+    throw new Error('Describe the slide you want first.');
+  }
+
+  const apiKey = ensureApiKeyOrThrow(context);
+  context.showHudStatus('🪄 Summoning a slide...', 'info');
+
+  try {
+    const prompt = buildSlideDesignPrompt(request);
+    const slide = await requestGeminiJson(apiKey, prompt, {
+      temperature: 0.65,
+      maxOutputTokens: 2048,
+    });
+
+    context.validateSlides([slide]);
+
+    if (insert) {
+      const newIndex = insertSlideAfterCurrent(slide);
+      context.setActiveSlide(newIndex);
+      context.setOverviewCursor(newIndex);
+    }
+
+    context.showHudStatus('✨ Slide ready', 'success');
+    setTimeout(context.hideHudStatus, 2000);
+    return slide;
+  } catch (error) {
+    console.error('Gemini slide prompt failed:', error);
+    context.showHudStatus(`❌ ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 3500);
+    throw error;
+  }
+}
+
+export async function generateDeckFromPrompt(promptText, { insert = false, slideCount = 5 } = {}) {
+  const context = getVoiceContext();
+  const request = (promptText || '').trim();
+  if (!request) {
+    throw new Error('Describe the deck you want first.');
+  }
+
+  const apiKey = ensureApiKeyOrThrow(context);
+  context.showHudStatus('📚 Drafting a deck...', 'info');
+
+  try {
+    const prompt = buildDeckDesignPrompt(request, slideCount);
+    const payload = await requestGeminiJson(apiKey, prompt, {
+      temperature: 0.7,
+      maxOutputTokens: 4096,
+    });
+
+    const slidesArray = extractSlidesArray(payload);
+    if (!slidesArray.length) {
+      throw new Error('No slides returned');
+    }
+
+    context.validateSlides(slidesArray);
+
+    if (insert) {
+      let insertIndex = context.getCurrentIndex();
+      slidesArray.forEach((slide, idx) => {
+        insertIndex += 1;
+        const shouldActivate = idx === slidesArray.length - 1;
+        context.insertSlideAt(insertIndex, slide, { activate: shouldActivate });
+      });
+      const firstInserted = insertIndex - slidesArray.length + 1;
+      context.setActiveSlide(firstInserted);
+      context.setOverviewCursor(firstInserted);
+    }
+
+    context.showHudStatus(`✨ Added ${slidesArray.length} slides`, 'success');
+    setTimeout(context.hideHudStatus, 2200);
+    return slidesArray;
+  } catch (error) {
+    console.error('Gemini deck prompt failed:', error);
+    context.showHudStatus(`❌ ${error.message}`, 'error');
+    setTimeout(context.hideHudStatus, 3500);
+    throw error;
+  }
+}
+
 function insertSlideAfterCurrent(slideData) {
   const context = getVoiceContext();
   const newIndex = context.getCurrentIndex() + 1;
@@ -600,8 +687,8 @@ function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
   return new Promise((resolve) => setTimeout(resolve, minimumMs - elapsed));
 }
 
-function buildSlideDesignPrompt() {
-  return `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's voice description.
+function buildSlideDesignPrompt(description = null) {
+  let basePrompt = `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's request.
 
 RULES:
 - Only respond with JSON (no markdown, no explanation)
@@ -632,7 +719,96 @@ AVAILABLE SLIDE TYPES:
 9. "graph" - AI-generated infographic/graph
 10. "typeface" - Font showcase
 
-Return ONLY valid JSON matching the schema. No markdown, no explanations.`;
+`;
+
+  if (description) {
+    basePrompt += `\nUSER REQUEST:\n${description}\n`;
+  } else {
+    basePrompt += '\nThe request will be provided via audio input.';
+  }
+
+  basePrompt += '\nReturn ONLY valid JSON matching the schema. No markdown, no explanations.';
+  return basePrompt;
+}
+
+function buildDeckDesignPrompt(description, desiredCount = 5) {
+  const safeCount = Math.max(3, Math.min(desiredCount, 10));
+  return `You are a presentation director for Slideomatic. Create an ordered array of ${safeCount} slide JSON objects that tell a cohesive story.
+
+SCHEMA REQUIREMENTS:
+- Each slide must follow the Slideomatic schema (same rules as buildSlideDesignPrompt) and include a "type".
+- Vary slide types (mix of title, standard, split, gallery, quote, graph, pillars, etc.)
+- Include descriptive image alt/search text when visuals are needed.
+- Use "notes" field when extra presenter context is useful.
+
+TONE + CONTENT:
+- Follow this creative brief: ${description}
+- Maintain consistent voice and theme.
+- If data or stats are mentioned, include them.
+- Ensure the deck flows logically with progression (intro → content → close).
+
+OUTPUT:
+- Return ONLY a JSON array (no markdown wrapper) of slide objects, or an object with a "slides" array.`;
+}
+
+function ensureApiKeyOrThrow(context) {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    context.openSettingsModal?.();
+    context.showApiKeyStatus?.('error', 'Add your Gemini API key to unlock AI cheats');
+    throw new Error('Gemini API key required. Press S to add it.');
+  }
+  return apiKey;
+}
+
+async function requestGeminiJson(apiKey, prompt, generationConfig = {}) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 2048,
+          ...generationConfig,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error?.message || `API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  const parts = data.candidates?.[0]?.content?.parts;
+  const text = parts?.map((part) => part.text).filter(Boolean).join('\n').trim();
+  if (!text) {
+    throw new Error('No response from Gemini');
+  }
+
+  return parseJsonPayload(text);
+}
+
+function parseJsonPayload(text) {
+  const blockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const raw = blockMatch ? blockMatch[1] : text;
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error('Failed to parse Gemini JSON:', raw);
+    throw new Error('Gemini returned invalid JSON');
+  }
+}
+
+function extractSlidesArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.slides)) return payload.slides;
+  if (payload && Array.isArray(payload.deck)) return payload.deck;
+  throw new Error('Expected an array of slides from Gemini');
 }
 
 function buildSlideEditPrompt(slide) {

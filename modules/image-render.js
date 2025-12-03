@@ -1,8 +1,9 @@
 import { debug } from './constants.js';
 import { isOverview } from './state.js';
 import { registerLazyImage } from './lazy-images.js';
-import { askAIForImage } from './image-ai.js';
+import { askAIForImage, generateGraphVisualization } from './image-ai.js';
 import { handleImageUpload } from './image-upload.js';
+import { showHudStatus, hideHudStatus } from './hud.js';
 import {
     buildImageSearchUrl,
     normalizeOrientation,
@@ -124,6 +125,16 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
         image.query ||
         '';
     const trimmedQuery = query.trim();
+    const isGraphContext = context === 'graph';
+    const customMagicHandler = typeof image?.__magicHandler === 'function' ? image.__magicHandler : null;
+
+    const defaultText = isGraphContext
+        ? trimmedQuery
+            ? `Generate graph for "${trimmedQuery}"`
+            : 'Describe and generate graph'
+        : trimmedQuery
+            ? `Search "${trimmedQuery}" or drag & drop`
+            : 'Drag & drop or paste image';
 
     const icon = document.createElement('span');
     icon.className = 'image-placeholder__icon';
@@ -132,15 +143,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     const text = document.createElement('span');
     text.className = 'image-placeholder__text';
     
-    if (context === 'graph') {
-        text.textContent = trimmedQuery
-            ? `Generate graph for "${trimmedQuery}"`
-            : 'Describe and generate graph';
-    } else {
-        text.textContent = trimmedQuery
-            ? `Search "${trimmedQuery}" or drag & drop`
-            : 'Drag & drop or paste image';
-    }
+    text.textContent = defaultText;
 
     const progressBar = document.createElement('div');
     progressBar.className = 'image-placeholder__progress';
@@ -154,7 +157,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     const listeners = [];
 
     // Click handler for Google Image Search
-    if (trimmedQuery) {
+    if (trimmedQuery && !isGraphContext) {
         placeholder.dataset.searchQuery = trimmedQuery;
         placeholder.setAttribute('aria-label', `Search images for ${trimmedQuery} or drag and drop`);
         const clickHandler = (event) => {
@@ -165,11 +168,13 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
         };
         placeholder.addEventListener('click', clickHandler);
         listeners.push({ element: placeholder, event: 'click', handler: clickHandler });
-    } else {
+    } else if (!isGraphContext) {
         placeholder.setAttribute(
             'aria-label',
             'Drag and drop or paste an image'
         );
+    } else {
+        placeholder.setAttribute('aria-label', 'Describe the graph you want to generate');
     }
 
     // Drag & drop handlers
@@ -186,9 +191,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
         event.preventDefault();
         event.stopPropagation();
         placeholder.classList.remove('image-placeholder--dragover');
-        text.textContent = trimmedQuery
-            ? `Search "${trimmedQuery}" or drag & drop`
-            : 'Drag & drop or paste image';
+        text.textContent = defaultText;
     };
     placeholder.addEventListener('dragleave', dragleaveHandler);
     listeners.push({ element: placeholder, event: 'dragleave', handler: dragleaveHandler });
@@ -220,25 +223,32 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
 
     wrapper.appendChild(placeholder);
 
-    // Only show AI button when there's NO query
-    if (!trimmedQuery) {
-        const aiBtn = document.createElement('button');
-        aiBtn.type = 'button';
-        aiBtn.className = 'image-placeholder__magic-btn';
-        aiBtn.textContent = '🪄';
-        aiBtn.title = 'Generate image with AI';
-        aiBtn.setAttribute('aria-label', 'Generate image with AI');
+    // Magic button appears once there's a description (or always enabled for custom handlers)
+    const aiBtn = document.createElement('button');
+    aiBtn.type = 'button';
+    aiBtn.className = 'image-placeholder__magic-btn';
+    aiBtn.textContent = isGraphContext ? '📊' : '🪄';
+    aiBtn.title = isGraphContext
+        ? 'Generate chart with AI'
+        : trimmedQuery ? 'Generate image with AI' : 'Add a description to unlock AI assist';
+    aiBtn.setAttribute('aria-label', aiBtn.title);
+    const magicAlwaysEnabled = isGraphContext || Boolean(customMagicHandler);
+    aiBtn.disabled = !trimmedQuery && !magicAlwaysEnabled;
 
-        const aiClickHandler = async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            await askAIForImage(placeholder, image);
-        };
-        aiBtn.addEventListener('click', aiClickHandler);
-        listeners.push({ element: aiBtn, event: 'click', handler: aiClickHandler });
+    const aiClickHandler = async (event) => {
+        if (aiBtn.disabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (customMagicHandler) {
+            await customMagicHandler({ placeholder, image, button: aiBtn });
+            return;
+        }
+        await askAIForImage(placeholder, image);
+    };
+    aiBtn.addEventListener('click', aiClickHandler);
+    listeners.push({ element: aiBtn, event: 'click', handler: aiClickHandler });
 
-        wrapper.appendChild(aiBtn);
-    }
+    wrapper.appendChild(aiBtn);
 
     // Store reference on wrapper
     /** @type {any} */ (wrapper)._imageRef = image;
@@ -368,12 +378,55 @@ export function handleImageModalTrigger(event) {
     });
 }
 
-export function generateGraphImage(slide, container) {
-    // Placeholder for graph generation logic
-    // In a real implementation, this would use a library like Chart.js or similar
-    // to generate a graph based on slide data and update the container.
-    console.log('Generating graph for slide:', slide);
-    if (container) {
-        container.innerHTML = '<p style="text-align:center; padding: 2rem;">Graph generation not implemented yet.</p>';
+export async function generateGraphImage(slide, container) {
+    if (!slide || !container) return;
+    try {
+        container.classList.add('graph-container--loading');
+        container.dataset.state = 'loading';
+        showHudStatus('📊 Generating graph...', 'info');
+
+        const graphImage = await generateGraphVisualization(slide);
+        if (!graphImage?.src) {
+            throw new Error('No graph returned');
+        }
+
+        slide.imageData = graphImage.src;
+        slide.graphAlt = graphImage.alt;
+        slide.orientation = 'landscape';
+
+        container.innerHTML = '';
+
+        const img = document.createElement('img');
+        img.className = 'graph-image';
+        img.src = graphImage.src;
+        img.alt = graphImage.alt || slide.description || 'Generated graph';
+        img.dataset.orientation = 'landscape';
+
+        const regenerateBtn = document.createElement('button');
+        regenerateBtn.className = 'graph-regenerate-btn';
+        regenerateBtn.textContent = '🔄 Regenerate';
+        regenerateBtn.addEventListener('click', () => generateGraphImage(slide, container));
+
+        container.appendChild(img);
+        container.appendChild(regenerateBtn);
+
+        showHudStatus('✨ Graph generated', 'success');
+        setTimeout(hideHudStatus, 2000);
+    } catch (error) {
+        console.error('Graph generation failed:', error);
+        const message = error instanceof Error ? error.message : 'Graph generation failed';
+        showHudStatus(`❌ ${message}`, 'error');
+        setTimeout(hideHudStatus, 3500);
+        container.innerHTML = `
+            <div class="graph-error">
+                <p>${message}. Try again?</p>
+                <button type="button" class="graph-regenerate-btn">Retry</button>
+            </div>
+        `;
+        const retryBtn = container.querySelector('.graph-regenerate-btn');
+        retryBtn?.addEventListener('click', () => generateGraphImage(slide, container));
+    } finally {
+        container.classList.remove('graph-container--loading');
+        delete container.dataset.state;
     }
 }

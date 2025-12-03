@@ -1,7 +1,7 @@
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { STORAGE_KEY_API } from './voice-modes.js';
 import { openSettingsModal } from './settings-modal.js';
-import { getCurrentThemePath } from './theme-manager.js';
+import { getCurrentThemePath, getCurrentTheme } from './theme-manager.js';
 import { isOverview } from './state.js';
 import { replaceSlideAt } from './slide-actions.js';
 import { setActiveSlide } from './navigation.js';
@@ -20,10 +20,8 @@ export function requireGeminiApiKey() {
     const apiKey = localStorage.getItem(STORAGE_KEY_API);
     if (!apiKey) {
         showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
-        setTimeout(() => {
-            hideHudStatus();
-            openSettingsModal();
-        }, 2000);
+        openSettingsModal();
+        setTimeout(() => hideHudStatus(), 2000);
         return null;
     }
     return apiKey;
@@ -239,5 +237,137 @@ The image should be visually striking and support the slide content.`;
         console.error('AI image generation failed:', error);
         showHudStatus(`❌ ${error.message}`, 'error');
         setTimeout(hideHudStatus, 3000);
+    }
+}
+
+export async function generateGraphVisualization(slide = {}, options = {}) {
+    const apiKey = requireGeminiApiKey();
+    if (!apiKey) return null;
+
+    const theme = typeof getCurrentTheme === 'function' ? getCurrentTheme() : null;
+    const palette = theme
+        ? [
+              theme['color-surface'],
+              theme['color-surface-alt'],
+              theme['color-accent'],
+              theme['badge-bg'],
+              theme['color-ink'],
+          ].filter(Boolean)
+        : [];
+
+    const paletteLine = palette.length
+        ? `Palette reference: ${palette.join(', ')}.`
+        : 'Palette reference: riso magenta, cyan, mustard, ink black.';
+
+    const headline = slide.title || slide.headline || slide.badge || 'Untitled Graph';
+    const description = slide.description || slide.summary || '';
+    const slideFacts = summarizeSlideForGraph(slide);
+
+    const prompt = `
+You are Slideomatic's risograph data visualiser. Create a single 16:9 infographic image (PNG/JPEG) that feels screen-printed, textural, and bold.
+
+Slide context:
+Title: ${headline}
+Description: ${description}
+${slideFacts}
+
+${paletteLine}
+Use chunky ink lines, halftone fills, and grain. Choose an appropriate chart style (bar, line, radial, stacked, comparison cards, etc.) that best communicates the data/story. Label axes or segments minimally, keep typography clean (Inter / Space Mono inspiration). Avoid realistic photos or UI chrome. Include the title within the graphic. Output only an image.
+`.trim();
+
+    const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey,
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: options.temperature ?? 0.65,
+                    responseModalities: ['Image'],
+                    imageConfig: {
+                        aspectRatio: options.aspectRatio ?? '16:9',
+                    },
+                },
+            }),
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error?.message || `API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const imagePart = result.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+    if (!imagePart || !imagePart.inlineData) {
+        throw new Error('No graph returned from Gemini');
+    }
+
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    const base64Data = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+
+    return {
+        src: base64Data,
+        alt: slide.description || slide.title || slide.headline || 'Generated graph',
+    };
+}
+
+function summarizeSlideForGraph(slide) {
+    if (!slide || typeof slide !== 'object') return 'No structured data provided.';
+    const lines = [];
+    const textKeys = ['headline', 'subtitle', 'description', 'notes', 'goal', 'audience'];
+    textKeys.forEach((key) => {
+        if (slide[key]) {
+            lines.push(`${key}: ${truncateText(slide[key])}`);
+        }
+    });
+
+    const listKeys = ['metrics', 'points', 'items', 'pillars', 'data', 'values', 'stats'];
+    listKeys.forEach((key) => {
+        const value = slide[key];
+        if (Array.isArray(value) && value.length) {
+            const formatted = value
+                .slice(0, 6)
+                .map((item) => formatDataPoint(item))
+                .join(' | ');
+            lines.push(`${key}: ${formatted}`);
+        } else if (value && typeof value === 'object') {
+            lines.push(`${key}: ${safeJson(value)}`);
+        }
+    });
+
+    if (slide.comparison) {
+        lines.push(`comparison: ${safeJson(slide.comparison)}`);
+    }
+
+    if (!lines.length) {
+        return 'No explicit data list. Create a conceptual infographic based on the description.';
+    }
+    return lines.join('\n');
+}
+
+function formatDataPoint(item) {
+    if (typeof item === 'string') return truncateText(item, 80);
+    if (!item || typeof item !== 'object') return truncateText(String(item), 80);
+    if (item.label && item.value) return `${item.label}: ${item.value}`;
+    if (item.title && item.value) return `${item.title}: ${item.value}`;
+    if (item.name && item.percent) return `${item.name} ${item.percent}`;
+    return truncateText(JSON.stringify(item), 80);
+}
+
+function truncateText(text, length = 140) {
+    const str = typeof text === 'string' ? text : String(text);
+    return str.length > length ? `${str.slice(0, length - 3)}...` : str;
+}
+
+function safeJson(value) {
+    try {
+        return JSON.stringify(value);
+    } catch {
+        return String(value);
     }
 }

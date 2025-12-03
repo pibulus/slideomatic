@@ -505,7 +505,10 @@ export function renderGraphSlide(section, slide) {
         graphContainer.appendChild(regenerateBtn);
     } else {
         const placeholder = createImagePlaceholder(
-            { alt: slide.description || 'Describe and generate graph' },
+            {
+                alt: slide.description || 'Describe and generate graph',
+                __magicHandler: async () => generateGraphImage(slide, graphContainer),
+            },
             'graph-placeholder',
             'graph'
         );

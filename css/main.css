@@ -10,3 +10,144 @@
 @import './drawers.css';
 @import './modals.css';
 @import './animations.css';
+
+/* Cheat Console ---------------------------------------------------------- */
+.cheat-console {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1400;
+}
+
+.cheat-console.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cheat-console__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 7, 15, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.cheat-console__panel {
+  position: relative;
+  width: min(520px, 90vw);
+  background: var(--slide-bg, #fffdf7);
+  border: 3px solid var(--color-ink, #111);
+  border-radius: 16px;
+  box-shadow: 16px 16px 0 rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cheat-console__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cheat-console__eyebrow {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted, #444);
+  margin-bottom: 4px;
+}
+
+.cheat-console__close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-ink, #111);
+}
+
+.cheat-console__hint {
+  font-size: 0.95rem;
+  color: var(--color-muted, #444);
+  margin: 0;
+}
+
+.cheat-console__textarea {
+  width: 100%;
+  border: 2px solid var(--color-ink, #111);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  background: #fff;
+}
+
+.cheat-console__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cheat-console__btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink, #111);
+  background: var(--color-surface-alt, #ffdfe9);
+  color: var(--color-ink, #111);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.cheat-console__btn--primary {
+  background: var(--color-accent, #feca57);
+}
+
+.cheat-console__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cheat-console__btn:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.cheat-console__status {
+  min-height: 1.4rem;
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--color-muted, #444);
+}
+
+.cheat-console__status[data-state='error'] {
+  color: #b33939;
+}
+
+.cheat-console__status[data-state='success'] {
+  color: #0c8d43;
+}
+
+.cheat-console__footer {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted, #555);
+  margin: 0;
+  text-align: center;
+}
+
+body.cheat-console-open {
+  overflow: hidden;
+}

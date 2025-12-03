@@ -321,6 +321,40 @@
         </div>
       </footer>
     </div>
+
+    <!-- Cheat Console -->
+    <div class="cheat-console" id="cheat-console" aria-hidden="true">
+      <div class="cheat-console__backdrop" data-cheat-close></div>
+      <div class="cheat-console__panel" role="dialog" aria-modal="true" aria-labelledby="cheat-console-unlocked">
+        <div class="cheat-console__header">
+          <div>
+            <p class="cheat-console__eyebrow" id="cheat-console-unlocked">Cheat unlocked</p>
+            <h3>AI Cheat Console</h3>
+          </div>
+          <button class="cheat-console__close" aria-label="Close cheat console" data-cheat-close>×</button>
+        </div>
+        <p class="cheat-console__hint">
+          Describe the slide or deck you want. Gemini cooks it live. Need an API key?
+          <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Grab one here</a>,
+          then tap <strong>S</strong> to paste it into Settings.
+        </p>
+        <textarea
+          id="cheat-console-prompt"
+          class="cheat-console__textarea"
+          rows="5"
+          placeholder="e.g. create 4 slides pitching a creative coding workshop for teens with playful visuals"
+        ></textarea>
+        <div class="cheat-console__actions">
+          <button type="button" class="cheat-console__btn" id="cheat-console-slide">Generate slide</button>
+          <button type="button" class="cheat-console__btn cheat-console__btn--primary" id="cheat-console-deck">
+            Generate mini deck
+          </button>
+        </div>
+        <p class="cheat-console__status" id="cheat-console-status" data-state="info"></p>
+        <p class="cheat-console__footer">Cheat codes: IDDQD · IDKFA · ABRACADABRA</p>
+      </div>
+    </div>
+
     <script src="js/vendor/browser-image-compression.js"></script>
     <script src="js/vendor/qr-code-styling.js"></script>
     <script type="module" src="main.js"></script>

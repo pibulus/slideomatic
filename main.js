@@ -44,6 +44,7 @@ import {
 import {
   toggleSlideIndex,
 } from './modules/slide-index.js';
+import { initCheatConsole } from './modules/cheat-codes.js';
 import {
   loadSlides,
   generateDeckId,
@@ -565,6 +566,8 @@ async function initDeckWithTheme() {
     updateSlide: (index, slide) => { slides[index] = slide; },
     validateSlides,
   });
+
+  initCheatConsole();
 
   const homeBtn = document.getElementById('home-btn');
   if (homeBtn) {
