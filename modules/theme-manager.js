@@ -221,6 +221,18 @@ function applyTheme(themeData) {
     if (value == null) return;
     root.style.setProperty(`--${token}`, value);
   });
+  const derivedColorTokens = [
+    'color-accent',
+    'color-surface',
+    'color-surface-alt',
+    'badge-bg',
+  ];
+  derivedColorTokens.forEach((token) => {
+    const rgb = toRgb(normalized[token]);
+    if (rgb) {
+      root.style.setProperty(`--${token}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    }
+  });
   currentTheme = normalized;
   return normalized;
 }

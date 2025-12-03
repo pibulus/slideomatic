@@ -46,91 +46,293 @@ body::before {
 }
 
 /* ===================================================================
-   OVERVIEW MODE
+   OVERVIEW MODE - HORIZONTAL FILMSTRIP
    ================================================================ */
 
 body[data-mode="overview"] {
-  overflow: auto;
+  overflow: hidden; /* Prevent body scroll */
 }
 
+/* Horizontal Filmstrip Container */
 body[data-mode="overview"] .slides {
-  display: grid;
-  grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  grid-template-rows: auto;
-  align-items: start;
-  justify-content: center;
+  --overview-scale: 0.34;
+  --overview-slide-overlap: clamp(-230px, -12vw, -96px);
+  --overview-slide-width: clamp(620px, 40vw, 900px);
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(2px, 0.6vw, 12px);
+
   width: 100%;
-  min-width: 100%;
   height: 100vh;
   height: 100dvh;
   max-height: none;
-  padding: clamp(40px, 5vh, 80px);
-  gap: clamp(32px, 4vw, 64px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  touch-action: pan-y;
-  scroll-padding: 40px;
+  padding: clamp(64px, 7vh, 120px) clamp(80px, 16vw, 320px) clamp(48px, 5vh, 72px);
+
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: clamp(80px, 20vw, 360px);
+  scroll-behavior: smooth;
+
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 21, 34, 0.4) transparent;
+
+  counter-reset: slide-counter;
+  position: relative;
 }
 
+/* Individual Thumbnails */
 body[data-mode="overview"] .slide {
+  flex: 0 0 auto;
+  width: var(--overview-slide-width);
+  height: auto;
+  aspect-ratio: 16/9;
+
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+
   position: relative;
+  z-index: 2;
   opacity: 1;
   transform: none;
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 200ms ease,
               border-color 200ms ease;
   cursor: pointer;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16/9;
+
   border: var(--border-width) solid var(--color-ink);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   background: white;
+  overflow: visible !important;
+
+  counter-increment: slide-counter;
+}
+
+body[data-mode="overview"] .slide + .slide {
+  margin-left: var(--overview-slide-overlap);
 }
 
 body[data-mode="overview"] .slide:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: var(--shadow-xl);
   border-color: var(--color-accent);
-  z-index: 10;
+  z-index: 4; /* Below HUD (z-index: 5) */
 }
 
 body[data-mode="overview"] .slide.is-active {
   border-color: var(--color-accent);
-  border-width: 4px;
-  box-shadow: 0 0 0 4px rgba(var(--color-accent-rgb, 255, 159, 243), 0.3), var(--shadow-lg);
+  border-width: 5px;
+  box-shadow: 0 0 0 4px rgba(var(--color-accent-rgb, 255, 159, 243), 0.25),
+              var(--shadow-lg);
+  transform: translateY(-6px) scale(1.035);
+  z-index: 6;
 }
 
+/* Keyboard Focus */
+body[data-mode="overview"] .slide:focus-visible {
+  outline: 4px solid var(--color-accent);
+  outline-offset: 4px;
+  z-index: 6;
+}
+
+body[data-mode="overview"] .slide:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Scaled Slide Content */
 body[data-mode="overview"] .slide__content {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 16px;
-  gap: 8px;
-  font-size: 0.35em; /* Scale down text significantly for thumbnails */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 1920px !important;
+  height: 1080px !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 64px 96px !important;
+  gap: 24px;
+  transform: scale(var(--overview-scale, 0.34));
+  transform-origin: top left;
   overflow: hidden;
-  pointer-events: none; /* Prevent interaction with content in overview */
+  border-radius: inherit;
+  z-index: 1;
+  pointer-events: none;
 }
 
+/* Hide existing badge from presentation mode */
+body[data-mode="overview"] .slide > .badge {
+  display: none;
+}
+
+/* Base Number Badge - Always Visible, Top-Left */
+body[data-mode="overview"] .slide::before {
+  content: counter(slide-counter);
+  position: absolute;
+  top: -48px;
+  left: 32px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  background: var(--color-paper, #ffeab6);
+  padding: 10px 20px;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: 999px;
+  box-shadow: 4px 4px 0 var(--color-ink);
+  z-index: 40;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+/* Hover Number Overlay - Large Centered */
+body[data-mode="overview"] .slide::after {
+  content: counter(slide-counter);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--color-ink, #1a1522);
+  background: linear-gradient(135deg,
+    rgba(var(--color-accent-rgb, 255, 159, 243), 0.55) 0%,
+    rgba(var(--color-surface-rgb, 136, 212, 255), 0.45) 100%);
+  backdrop-filter: blur(3px);
+  border-radius: var(--radius);
+  z-index: 50;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 250ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+body[data-mode="overview"] .slide:hover::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+body[data-mode="overview"] .slide:hover::before {
+  opacity: 0; /* Hide badge when overlay shown */
+}
+
+/* Edge Scroll Indicators */
+body[data-mode="overview"] .slides::before,
+body[data-mode="overview"] .slides::after {
+  content: '';
+  position: sticky;
+  top: 0;
+  width: 80px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+body[data-mode="overview"] .slides::before {
+  left: 0;
+  background: linear-gradient(to right,
+    var(--color-bg) 0%,
+    transparent 100%);
+}
+
+body[data-mode="overview"] .slides::after {
+  right: 0;
+  background: linear-gradient(to left,
+    var(--color-bg) 0%,
+    transparent 100%);
+}
+
+body[data-mode="overview"] .slides.has-scroll-left::before {
+  opacity: 0.4;
+}
+
+body[data-mode="overview"] .slides.has-scroll-right::after {
+  opacity: 0.4;
+}
+
+/* Mobile Optimizations */
 @media (max-width: 768px) {
   body[data-mode="overview"] .slides {
-    grid-auto-flow: row;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    width: 100%;
-    height: auto;
-    max-height: none;
-    gap: 24px;
-    padding: 24px 16px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    gap: 12px;
+    padding: 36px 40px 42px;
+    scroll-snap-type: x mandatory; /* Stronger snap on mid-sized tablets */
+    scroll-padding-inline: 22vw;
   }
 
   body[data-mode="overview"] .slide {
-    width: 100%;
-    aspect-ratio: 16/9;
-    scroll-snap-align: start;
+    width: clamp(420px, 94vw, 540px);
+  }
+
+  body[data-mode="overview"] .slide::before {
+    top: -28px;
+    left: 18px;
+    font-size: 0.95rem;
+    padding: 6px 16px;
+  }
+
+  body[data-mode="overview"] .slide::after {
+    font-size: clamp(2.75rem, 10vw, 4.5rem);
+  }
+
+  body[data-mode="overview"] .slide__content {
+    transform: scale(0.29);
+  }
+}
+
+@media (max-width: 640px) {
+  body[data-mode="overview"] .slides {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: clamp(20px, 5vh, 40px) clamp(12px, 4vw, 20px) 80px;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y proximity;
+    scroll-padding-inline: 0;
+    scroll-padding-block: 20vh;
+    touch-action: pan-y;
+  }
+
+  body[data-mode="overview"] .slide {
+    width: min(92vw, 460px);
+    margin-left: 0;
+    margin-top: -28px;
+  }
+
+  body[data-mode="overview"] .slide:first-child {
+    margin-top: 0;
+  }
+
+  body[data-mode="overview"] .slide::before {
+    top: 12px;
+    left: 12px;
+    border-radius: 10px;
+    background: var(--color-accent);
+    padding: 4px 10px;
+  }
+
+  body[data-mode="overview"] .slide__content {
+    transform: scale(0.26);
+  }
+
+  body[data-mode="overview"] .slides::before,
+  body[data-mode="overview"] .slides::after {
+    display: none;
   }
 }
