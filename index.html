@@ -42,48 +42,50 @@
   <body>
     <main class="landing">
       <!-- ===== HERO SECTION: Combined H1 + CTAs ===== -->
-      <section class="landing__hero">
-        <div class="landing__intro">
-          <p class="landing__eyebrow">Slide builder</p>
-          <h1 class="landing__title landing__title--main">Slide-o-Matic</h1>
-          <h2 class="landing__title landing__title--sub">Slideshows that don't suck</h2>
-          <p class="landing__subtitle">
-            Does the thing and gets out of the way.
-          </p>
-        </div>
+      <div class="landing__hero-wrapper">
+        <section class="landing__hero">
+          <div class="landing__intro">
+            <p class="landing__eyebrow">Slide builder</p>
+            <h1 class="landing__title landing__title--main">Slide-o-Matic</h1>
+            <h2 class="landing__title landing__title--sub">Slideshows that don't suck</h2>
+            <p class="landing__subtitle">
+              Does the thing and gets out of the way.
+            </p>
+          </div>
 
-        <div class="landing__cta-grid">
-          <article class="cta-panel cta-panel--primary">
-            <div class="cta-panel__header">
-              <p class="cta-panel__eyebrow">First time?</p>
-              <h3>See how it works</h3>
-            </div>
-            <p>Interactive guide shows you around. Keep building or start fresh.</p>
-            <div class="cta-panel__actions">
-              <button class="button button--primary" type="button" data-action="open-demo">Open guide deck</button>
-            </div>
-          </article>
+          <div class="landing__cta-grid">
+            <article class="cta-panel cta-panel--primary">
+              <div class="cta-panel__header">
+                <p class="cta-panel__eyebrow">First time?</p>
+                <h3>See how it works</h3>
+              </div>
+              <p>Interactive guide shows you around. Keep building or start fresh.</p>
+              <div class="cta-panel__actions">
+                <button class="button button--primary" type="button" data-action="open-demo">Open guide deck</button>
+              </div>
+            </article>
 
-          <article class="cta-panel cta-panel--secondary">
-            <div class="cta-panel__header">
-              <p class="cta-panel__eyebrow">Ready to go</p>
-              <h3>Start blank</h3>
-            </div>
-            <p>Jump in. Press ? for shortcuts.</p>
-            <div class="start-menu">
-              <a class="button button--secondary" href="deck.html#deck=new&open=edit">
-                New deck
-              </a>
-              <!-- <div class="start-menu__secondary-actions">
-                <button type="button" class="link-button" data-new-mode="paste">Paste JSON</button>
-                <span class="separator">•</span>
-                <button type="button" class="link-button" data-new-mode="upload">Upload JSON</button>
-              </div> -->
-            </div>
-            <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
-          </article>
-        </div>
-      </section>
+            <article class="cta-panel cta-panel--secondary">
+              <div class="cta-panel__header">
+                <p class="cta-panel__eyebrow">Ready to go</p>
+                <h3>Start blank</h3>
+              </div>
+              <p>Jump in. Press ? for shortcuts.</p>
+              <div class="start-menu">
+                <a class="button button--secondary" href="deck.html#deck=new&open=edit">
+                  New deck
+                </a>
+                <!-- <div class="start-menu__secondary-actions">
+                  <button type="button" class="link-button" data-new-mode="paste">Paste JSON</button>
+                  <span class="separator">•</span>
+                  <button type="button" class="link-button" data-new-mode="upload">Upload JSON</button>
+                </div> -->
+              </div>
+              <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
+            </article>
+          </div>
+        </section>
+      </div>
 
       <!-- ===== FEATURES SECTION: Combined headline + cards ===== -->
       <section class="landing__features">

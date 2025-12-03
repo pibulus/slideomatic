@@ -123,6 +123,22 @@ main {
   gap: clamp(32px, 5vw, 48px);
 }
 
+@media (min-width: 1024px) {
+  .landing__hero-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .landing__hero {
+    margin: 0; /* Reset margin since flex handles centering */
+    width: min(1100px, 90vw); /* Slightly narrower max width */
+    padding: 64px 56px; /* Balanced padding */
+  }
+}
+
 /* LARGE fluorescent circle - top right */
 .landing__hero::after {
   content: "";
