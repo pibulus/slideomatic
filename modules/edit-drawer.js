@@ -31,11 +31,20 @@ import {
 } from './slide-image-ui.js';
 import { askAIForImage } from './image-ai.js';
 import { setupAccordion } from './accordion.js';
-import { setupCustomSelect, getCustomSelectValue } from './custom-select.js';
+import { setupCustomSelect, setCustomSelectValue } from './custom-select.js';
 import {
   loadThemeLibrary,
   getCurrentThemePath,
 } from './theme-manager.js';
+import { exportDeckToPdf } from './pdf-export.js';
+import {
+  getRadioChannelList,
+  getRadioState,
+  setRadioChannel,
+  enableRadio,
+  disableRadio,
+  getChannelById,
+} from './radio.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -399,7 +408,7 @@ function buildActionsSection() {
       </button>
     </div>
     <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-      Export Deck
+      Download PDF
     </button>
   `;
 
@@ -578,6 +587,11 @@ function buildThemeSection() {
   const library = loadThemeLibrary();
   const currentPath = getCurrentThemePath() || 'theme.json';
 
+  const radioChannels = getRadioChannelList();
+  const radioState = getRadioState();
+  const activeRadioChannel = radioChannels.find((channel) => channel.id === radioState.channelId) || radioChannels[0];
+  const isRadioEnabled = radioState.enabled && !!activeRadioChannel;
+
   const defaultThemes = [
     { value: 'theme.json', label: 'Default' },
     { value: 'themes/vaporwave.json', label: 'Vaporwave' },
@@ -602,6 +616,16 @@ function buildThemeSection() {
     `;
   }).join('');
 
+  const radioOptions = radioChannels.map((channel) => {
+    const isSelected = activeRadioChannel.id === channel.id ? 'is-selected' : '';
+    return `
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${channel.id}">
+        <span class="custom-select__option-label">${escapeHtml(channel.name)}</span>
+        <span class="custom-select__option-desc">${escapeHtml(channel.description)}</span>
+      </button>
+    `;
+  }).join('');
+
   const content = `
     <div class="accordion__group">
       <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
@@ -616,6 +640,30 @@ function buildThemeSection() {
       <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px;">
         Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize
       </p>
+    </div>
+    <div class="accordion__group theme-radio ${isRadioEnabled ? 'is-active' : ''}">
+      <button type="button" class="theme-radio__toggle ${isRadioEnabled ? 'is-active' : ''}" id="theme-radio-toggle" aria-pressed="${isRadioEnabled ? 'true' : 'false'}">
+        <span class="theme-radio__icon">📻</span>
+        <span class="theme-radio__copy">
+          <span class="theme-radio__label">SomaFM Radio</span>
+          <span class="theme-radio__status" id="theme-radio-status">
+            ${isRadioEnabled ? `${escapeHtml(activeRadioChannel.shortLabel || activeRadioChannel.name)} is live` : 'Off'}
+          </span>
+        </span>
+        <span class="theme-radio__pill" id="theme-radio-pill">${isRadioEnabled ? 'On' : 'Off'}</span>
+      </button>
+      <div class="theme-radio__channels ${isRadioEnabled ? 'is-visible' : ''}" id="theme-radio-channel">
+        <div class="custom-select custom-select--radio" id="theme-radio-select" data-value="${activeRadioChannel.id}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(activeRadioChannel.name)}</span>
+            <span class="custom-select__arrow">▼</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${radioOptions}
+          </div>
+        </div>
+        <p class="theme-radio__hint">Quick SomaFM vibes for the drawer. Toggle on, pick a station, done.</p>
+      </div>
     </div>
     <div class="accordion__group">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
@@ -633,6 +681,87 @@ function buildThemeSection() {
   `;
 
   return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: true });
+}
+
+function setupThemeRadioControls() {
+  const toggle = document.getElementById('theme-radio-toggle');
+  const select = document.getElementById('theme-radio-select');
+  const statusEl = document.getElementById('theme-radio-status');
+  const pillEl = document.getElementById('theme-radio-pill');
+  const channelWrapper = document.getElementById('theme-radio-channel');
+
+  if (!toggle || !select) return;
+
+  const state = { ...getRadioState() };
+
+  const getActiveChannel = () => getChannelById(state.channelId);
+
+  const updateVisualState = (enabled, channel = getActiveChannel()) => {
+    toggle.classList.toggle('is-active', enabled);
+    toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    channelWrapper?.classList.toggle('is-visible', enabled);
+    if (pillEl) pillEl.textContent = enabled ? 'On' : 'Off';
+    if (statusEl) {
+      statusEl.textContent = enabled
+        ? `${channel.shortLabel || channel.name} is live`
+        : 'Off';
+    }
+  };
+
+  updateVisualState(state.enabled, getActiveChannel());
+
+  addTrackedListener(toggle, 'click', async () => {
+    if (state.enabled) {
+      disableRadio();
+      state.enabled = false;
+      updateVisualState(false);
+      const { showHudStatus, hideHudStatus } = await import('./hud.js');
+      showHudStatus('⏹️ Radio paused', 'info');
+      setTimeout(hideHudStatus, 1400);
+      return;
+    }
+
+    try {
+      const channel = await enableRadio(state.channelId);
+      state.enabled = true;
+      updateVisualState(true, channel);
+      const { showHudStatus, hideHudStatus } = await import('./hud.js');
+      showHudStatus(`📻 ${channel.name} is on`, 'success');
+      setTimeout(hideHudStatus, 1800);
+    } catch (error) {
+      console.error('Failed to start radio', error);
+      const { showHudStatus, hideHudStatus } = await import('./hud.js');
+      showHudStatus('❌ Radio blocked', 'error');
+      setTimeout(hideHudStatus, 2200);
+      state.enabled = false;
+      updateVisualState(false);
+    }
+  });
+
+  addTrackedListener(select, 'customSelectChange', async (event) => {
+    const nextId = event?.detail?.value;
+    if (!nextId) return;
+    const channel = setRadioChannel(nextId);
+    state.channelId = channel.id;
+    setCustomSelectValue(select, channel.id);
+
+    if (state.enabled) {
+      try {
+        await enableRadio(channel.id);
+        updateVisualState(true, channel);
+        const { showHudStatus, hideHudStatus } = await import('./hud.js');
+        showHudStatus(`🎶 ${channel.name}`, 'success');
+        setTimeout(hideHudStatus, 1600);
+      } catch (error) {
+        console.error('Failed to switch radio station', error);
+        const { showHudStatus, hideHudStatus } = await import('./hud.js');
+        showHudStatus('⚠️ Could not switch station', 'warning');
+        setTimeout(hideHudStatus, 2000);
+      }
+    } else {
+      updateVisualState(false, channel);
+    }
+  });
 }
 
 function buildAdvancedSection(slide) {
@@ -869,12 +998,23 @@ function mergeSlideWithTemplate(template, currentSlide) {
 /**
  * @param {object} context
  */
-function handleDownloadDeck(context) {
+async function handleDownloadDeck(context) {
   const ctx = ensureContext(context);
-  const persisted = ctx.downloadDeck();
-  if (persisted) {
-    ctx.showHudStatus('💾 Deck downloaded', 'success');
-    setTimeout(() => ctx.hideHudStatus(), 1600);
+  const downloadBtn = document.getElementById('download-deck-btn');
+  const deckNameInput = document.getElementById('deck-name-text') || document.getElementById('deck-name');
+  const deckName = (deckNameInput?.value || deckNameInput?.textContent || 'slideomatic').trim();
+
+  try {
+    if (downloadBtn) downloadBtn.disabled = true;
+    ctx.showHudStatus('📄 Rendering PDF…', 'info');
+    await exportDeckToPdf(deckName);
+    ctx.showHudStatus('✅ PDF ready', 'success');
+  } catch (error) {
+    console.error('PDF export failed:', error);
+    ctx.showHudStatus('❌ PDF export failed', 'error');
+  } finally {
+    if (downloadBtn) downloadBtn.disabled = false;
+    setTimeout(() => ctx.hideHudStatus(), 2000);
   }
 }
 
@@ -1121,6 +1261,7 @@ export function renderEditForm(context) {
 
   // Setup custom selects
   setupCustomSelect(content, { addTrackedListener });
+  setupThemeRadioControls();
 
   // Setup theme button handlers (inline in edit drawer)
   const handleThemeChange = async (themePath) => {
