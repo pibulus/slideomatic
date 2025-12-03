@@ -45,6 +45,106 @@ let getEditDrawerContextHook = () => ({
 let renderEditFormHook = (_context) => {};
 let toggleSpeakerNotesHook = () => {};
 
+const columnOverviewQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+  ? window.matchMedia('(max-width: 640px)')
+  : { matches: false };
+let glideAnimationFrame = null;
+
+const handleOrientationChange = () => {
+  if (!isOverview) return;
+  cancelGlide();
+  requestAnimationFrame(() => {
+    const current = slideElements[overviewCursor];
+    if (current) {
+      glideToSlide(current);
+    }
+    updateScrollGradients();
+  });
+};
+
+if (typeof columnOverviewQuery.addEventListener === 'function') {
+  columnOverviewQuery.addEventListener('change', handleOrientationChange);
+} else if (typeof columnOverviewQuery.addListener === 'function') {
+  columnOverviewQuery.addListener(handleOrientationChange);
+}
+
+function isColumnOverview() {
+  return columnOverviewQuery.matches;
+}
+
+function cancelGlide() {
+  if (glideAnimationFrame) {
+    cancelAnimationFrame(glideAnimationFrame);
+    glideAnimationFrame = null;
+  }
+}
+
+function startGlide(target, axis = 'x') {
+  if (!slidesRoot) return;
+  cancelGlide();
+  const duration = 550;
+  const start = axis === 'y' ? slidesRoot.scrollTop : slidesRoot.scrollLeft;
+  const distance = target - start;
+  if (Math.abs(distance) < 1) {
+    if (axis === 'y') {
+      slidesRoot.scrollTop = target;
+    } else {
+      slidesRoot.scrollLeft = target;
+    }
+    return;
+  }
+
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  const initialTime = performance.now();
+
+  const step = (now) => {
+    const elapsed = now - initialTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutCubic(progress);
+    const value = start + distance * eased;
+    if (axis === 'y') {
+      slidesRoot.scrollTop = value;
+    } else {
+      slidesRoot.scrollLeft = value;
+    }
+
+    if (progress < 1) {
+      glideAnimationFrame = requestAnimationFrame(step);
+    } else {
+      glideAnimationFrame = null;
+    }
+  };
+
+  glideAnimationFrame = requestAnimationFrame(step);
+}
+
+function glideToSlide(slide) {
+  if (!slidesRoot || !slide) return;
+  const axis = isColumnOverview() ? 'y' : 'x';
+  const containerRect = slidesRoot.getBoundingClientRect();
+  const slideRect = slide.getBoundingClientRect();
+  const currentOffset = axis === 'y' ? slidesRoot.scrollTop : slidesRoot.scrollLeft;
+  const delta = axis === 'y' ? slideRect.top - containerRect.top : slideRect.left - containerRect.left;
+  const viewportSize = axis === 'y' ? slidesRoot.clientHeight : slidesRoot.clientWidth;
+  const slideSize = axis === 'y' ? slideRect.height : slideRect.width;
+  const rawTarget = currentOffset + delta - (viewportSize - slideSize) / 2;
+  const maxScroll = Math.max((axis === 'y' ? slidesRoot.scrollHeight - viewportSize : slidesRoot.scrollWidth - viewportSize), 0);
+  const boundedTarget = clamp(rawTarget, 0, maxScroll);
+  startGlide(boundedTarget, axis);
+}
+
+function bindGlideInterruptions(shouldBind) {
+  if (!slidesRoot) return;
+  const events = ['wheel', 'pointerdown', 'touchstart'];
+  events.forEach((eventName) => {
+    if (shouldBind) {
+      slidesRoot.addEventListener(eventName, cancelGlide, { passive: true });
+    } else {
+      slidesRoot.removeEventListener(eventName, cancelGlide, { passive: true });
+    }
+  });
+}
+
 export function registerNavigationHooks(hooks = {}) {
   if (typeof hooks.closeThemeDrawer === 'function') {
     closeThemeDrawerHook = hooks.closeThemeDrawer;
@@ -86,12 +186,18 @@ export function enterOverview() {
   if (focusedSlide) {
     requestAnimationFrame(() => focusedSlide.focus({ preventScroll: true }));
   }
+  // Bind scroll listener for gradient indicators
+  slidesRoot?.addEventListener('scroll', updateScrollGradients, { passive: true });
+  bindGlideInterruptions(true);
   updateOverviewButton();
 }
 
 export function exitOverview(targetIndex = currentIndex) {
   delete document.body.dataset.mode;
   setOverview(false);
+  // Remove scroll listener
+  slidesRoot?.removeEventListener('scroll', updateScrollGradients);
+  bindGlideInterruptions(false);
   slideElements.forEach((slide, index) => {
     if (index !== targetIndex) {
       slide.style.visibility = 'hidden';
@@ -121,6 +227,30 @@ export function updateOverviewButton() {
   }
 }
 
+export function updateScrollGradients() {
+  if (!slidesRoot) return;
+
+  if (isColumnOverview()) {
+    slidesRoot.classList.remove('has-scroll-left', 'has-scroll-right');
+    return;
+  }
+
+  const { scrollLeft, scrollWidth, clientWidth } = slidesRoot;
+  const maxScroll = scrollWidth - clientWidth;
+
+  if (scrollLeft > 20) {
+    slidesRoot.classList.add('has-scroll-left');
+  } else {
+    slidesRoot.classList.remove('has-scroll-left');
+  }
+
+  if (scrollLeft < maxScroll - 20) {
+    slidesRoot.classList.add('has-scroll-right');
+  } else {
+    slidesRoot.classList.remove('has-scroll-right');
+  }
+}
+
 export function updateOverviewLayout() {
   const totalSlides = slideElements.length;
   if (!totalSlides) return;
@@ -128,6 +258,7 @@ export function updateOverviewLayout() {
   setOverviewColumnCount(totalSlides);
   slidesRoot?.style.setProperty('--overview-row-count', overviewRowCount);
   slidesRoot?.style.setProperty('--overview-column-count', overviewColumnCount);
+  updateScrollGradients();
   setOverviewCursor(clamp(overviewCursor, 0, totalSlides - 1));
   if (isOverview) {
     highlightOverviewSlide(overviewCursor, { scroll: false });
@@ -153,7 +284,7 @@ export function highlightOverviewSlide(index, { scroll = true } = {}) {
     current.classList.add('is-active');
     current.tabIndex = 0;
     if (scroll) {
-      current.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      glideToSlide(current);
     }
   }
   setLastOverviewHighlight(overviewCursor);

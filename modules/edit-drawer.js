@@ -580,9 +580,9 @@ function buildThemeSection() {
 
   const defaultThemes = [
     { value: 'theme.json', label: 'Default' },
-    { value: 'themes/gameboy.json', label: 'Gameboy' },
     { value: 'themes/vaporwave.json', label: 'Vaporwave' },
     { value: 'themes/slack.json', label: 'Slack' },
+    { value: 'themes/gameboy.json', label: 'Gameboy' },
   ];
 
   const savedThemes = library.map((entry) => ({
