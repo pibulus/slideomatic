@@ -3,20 +3,20 @@
     "id": "design-starter-pack",
     "eyebrow": "Grab-and-go set",
     "title": "Design Starter Pack",
-    "tagline": "Two handy decks we reach for all the time.",
-    "description": "These used to be pinned on the homepage. Now they live together so you can open the decks, duplicate them, or copy the link whenever you need.",
+    "tagline": "Brief intro.",
+    "description": "Resources will be consistently updated and improved, much more to come.",
     "shareLabel": "Share this collection",
     "decks": [
       {
         "id": "brand-visual",
         "title": "Brand and Visual Presentation",
-        "summary": "Workshop deck that walks through building a visual narrative, including prompts we use live in class.",
+        "summary": "Workshop deck that walks through building a visual narrative.",
         "slides": "demo-deck"
       },
       {
         "id": "design-resources",
         "title": "Free Design Resources",
-        "summary": "Curated toolbox full of mockups, color pickers, font libraries, and inspiration boards. Great as a launchpad for assignments.",
+        "summary": "Curated toolbox full of mockups, color pickers, font libraries, and inspiration boards.",
         "slides": "design-resources"
       }
     ]
