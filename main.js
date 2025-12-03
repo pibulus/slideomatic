@@ -612,6 +612,15 @@ async function initDeckWithTheme() {
   isInitializing = false;
   isInitialized = true;
   console.log('[Init] initDeckWithTheme completed');
+
+  // Hide loading overlay
+  const loadingOverlay = document.getElementById('loading-overlay');
+  if (loadingOverlay) {
+    loadingOverlay.classList.add('is-loaded');
+    setTimeout(() => {
+      loadingOverlay.remove();
+    }, 1000); // Remove from DOM after transition
+  }
 }
 
 function handleInitialIntent() {

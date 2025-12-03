@@ -8,18 +8,16 @@
     "shareLabel": "Share this collection",
     "decks": [
       {
-        "id": "design-resources",
-        "title": "Free Design Resources",
-        "summary": "Curated toolbox full of mockups, color pickers, font libraries, and inspiration boards. Great as a launchpad for assignments.",
-        "slides": "design-resources",
-        "tags": ["Resource kit", "Self-guided"]
-      },
-      {
         "id": "brand-visual",
         "title": "Brand and Visual Presentation",
         "summary": "Workshop deck that walks through building a visual narrative, including prompts we use live in class.",
-        "slides": "demo-deck",
-        "tags": ["Workshop", "Storytelling"]
+        "slides": "demo-deck"
+      },
+      {
+        "id": "design-resources",
+        "title": "Free Design Resources",
+        "summary": "Curated toolbox full of mockups, color pickers, font libraries, and inspiration boards. Great as a launchpad for assignments.",
+        "slides": "design-resources"
       }
     ]
   }

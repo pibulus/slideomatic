@@ -53,6 +53,16 @@
     <input type="file" id="deck-upload" accept=".json" style="display: none;" />
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-spinner">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+      <p class="loading-text">Loading deck...</p>
+    </div>
     <div class="app app-container" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
       <!-- Theme Editor Drawer (Right Side) -->
@@ -287,9 +297,9 @@
           <button class="hud__action hud__back" id="home-btn" aria-label="Back to deck library" title="Back to deck library">
             Back
           </button>
-          <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
+          <!-- <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
             Overview
-          </button>
+          </button> -->
           <button class="hud__action hud__help-btn" id="help-btn" aria-label="Keyboard shortcuts (?)" title="Press ? for all keyboard shortcuts">
             Help
           </button>

@@ -78,10 +78,13 @@ function handleSwipeGesture(startX, startY, endX, endY) {
     if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
       if (deltaY < 0) {
         // Swipe Up -> Toggle Overview
+        // Disabled for now as per user request
+        /*
         if (typeof touchContext.toggleOverview === 'function') {
           vibrate('medium');
           touchContext.toggleOverview();
         }
+        */
       }
     }
   }
