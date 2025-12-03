@@ -71,22 +71,13 @@
             </div>
             <p>Jump in. Press ? for shortcuts.</p>
             <div class="start-menu">
-              <button class="button button--secondary" type="button" data-start-toggle aria-expanded="false">
+              <a class="button button--secondary" href="deck.html#deck=new&open=edit">
                 New deck
-              </button>
-              <div class="start-menu__list" data-start-menu hidden>
-                <button type="button" data-new-mode="live">
-                  <strong>Blank deck</strong>
-                  <span>Start from scratch with full creative control</span>
-                </button>
-                <button type="button" data-new-mode="paste">
-                  <strong>Paste JSON</strong>
-                  <span>Got exported slides? Drop them in and keep editing</span>
-                </button>
-                <button type="button" data-new-mode="upload">
-                  <strong>Upload JSON</strong>
-                  <span>Import a deck file from your computer</span>
-                </button>
+              </a>
+              <div class="start-menu__secondary-actions">
+                <button type="button" class="link-button" data-new-mode="paste">Paste JSON</button>
+                <span class="separator">•</span>
+                <button type="button" class="link-button" data-new-mode="upload">Upload JSON</button>
               </div>
             </div>
             <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />

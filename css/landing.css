@@ -389,6 +389,35 @@ main {
   transform: translateX(1px) scale(0.98);
 }
 
+.start-menu__secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.start-menu__secondary-actions .link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: transparent;
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+
+.start-menu__secondary-actions .link-button:hover {
+  color: var(--riso-blue);
+  text-decoration-color: var(--riso-blue);
+}
+
 /* ===================================================================
    BUTTONS - CHUNKY FLUORESCENT
    ================================================================ */
