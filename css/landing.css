@@ -332,6 +332,13 @@ main {
   margin-top: 6px;
 }
 
+.cta-panel__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
 /* ===================================================================
    START MENU DROPDOWN
    ================================================================ */
