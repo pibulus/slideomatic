@@ -741,7 +741,15 @@ a.button--secondary:hover {
 .collection-promo__content p {
   margin: 0;
   color: var(--ink-soft);
-  max-width: 60ch;
+}
+
+.collection-promo__subtitle,
+.deck-shelf__subtitle {
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.5;
+  max-width: 52ch;
+  color: var(--ink-soft);
+  margin: 0;
 }
 
 .collection-promo__actions {
@@ -826,13 +834,7 @@ a.button--secondary:hover {
   line-height: 1.1;
 }
 
-.deck-shelf__subtitle {
-  margin: 0;
-  color: var(--ink-soft);
-  max-width: 48ch;
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
+
 
 .deck-shelf__list {
   list-style: none;

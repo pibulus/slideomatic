@@ -1,80 +1,186 @@
 [
   {
     "type": "title",
-    "title": "Quick guide",
-    "subtitle": "How this works",
+    "title": "Slideomatic Field Guide",
+    "subtitle": "Use these slides to poke every control in real time",
     "media": [
       {
-        "type": "image",
-        "src": "og-image.jpg",
-        "alt": "Slide-o-Matic - Easy slideshow builder"
+        "image": {
+          "src": "images/lofi-blur.jpg",
+          "alt": "Lo-fi blur collage",
+          "objectFit": "cover",
+          "orientation": "landscape"
+        }
+      },
+      {
+        "color": "#111827",
+        "label": "Local-first"
+      },
+      {
+        "color": "#F472B6",
+        "label": "Play mode"
       }
     ]
   },
   {
     "type": "standard",
-    "badge": "Welcome",
-    "headline": "Some stuff is jank, but it's gonna get better",
+    "badge": "Start here",
+    "headline": "This deck is the manual",
     "body": [
-      "Slideomatic is actively being improved.",
-      "Hit up bonesouprules@gmail.com",
-      "Presentating made easy! XD"
+      "Arrow keys move, `?` opens the cheat sheet. Hit it once now so you know what\u2019s there.",
+      "Every slide is a prompt\u2014read it, try it. Nothing saves to a server; all edits live in your browser until you export JSON or PDF."
     ]
   },
   {
     "type": "standard",
-    "badge": "Navigation",
-    "headline": "Arrow keys move between slides",
+    "badge": "Drawer time",
+    "headline": "Press **E** and keep it open",
     "body": [
-      "Left and right arrows navigate. (Mobile Nav coming soon)",
-      "Press **?** to see all keyboard shortcuts."
+      "Content tab = titles, body arrays, badges, quotes, captions. Type something, click out, it auto-saves.",
+      "Layouts tab lets you swap this slide into quote/gallery/pillars or add a new slide already styled.",
+      "Media tab handles uploads, compression, captions. Right rail also hides SomaFM and the **Download PDF** button."
     ]
   },
   {
     "type": "standard",
-    "badge": "Edit drawer",
-    "headline": "Press E to open the edit drawer",
+    "badge": "Try it now",
+    "headline": "Change this slide",
     "body": [
-      "This is where you change text, swap or add slides, add images.",
-      "Press **E** to try it on this slide. It auto saves! (Undo coming soon)",
-      "Press **Escape** to close it."
+      "Duplicate it, flip the layout, or rewrite the headline. Undo isn\u2019t here yet, so dupes are your safety net.",
+      "Reorder by dragging the slide chip in the left rail. Slide numbers update automatically.",
+      "Delete = Cmd/Ctrl + Backspace inside the drawer if you hate clicking."
+    ]
+  },
+  {
+    "type": "gallery",
+    "badge": "Layouts",
+    "headline": "Keep the rhythm weird",
+    "body": "Standard, quote, gallery, pillars, typeface, image\u2014all one click away. Swap a couple.",
+    "items": [
+      {
+        "image": {
+          "src": "images/tribe.webp",
+          "alt": "Tribal print"
+        }
+      },
+      {
+        "image": {
+          "src": "images/curatedcollage.webp",
+          "alt": "Collage"
+        }
+      },
+      {
+        "image": {
+          "src": "images/indie-album.jpg",
+          "alt": "Indie album"
+        }
+      },
+      {
+        "image": {
+          "src": "images/teenage-engineering.jpg",
+          "alt": "Synth gear"
+        }
+      }
+    ]
+  },
+  {
+    "type": "typeface",
+    "badge": "Typeface flex",
+    "headline": "Fonts are mood swings",
+    "body": "Override the `font` field when you need a new voice mid-story.",
+    "samples": [
+      {
+        "font": "Space Grotesk, Inter, sans-serif",
+        "text": "Grotesk = designer zine energy"
+      },
+      {
+        "font": "Space Mono, Courier, monospace",
+        "text": "Mono = secret console logs"
+      },
+      {
+        "font": "Press Start 2P, monospace",
+        "text": "Pixel = retro cheat code wink"
+      }
+    ]
+  },
+  {
+    "type": "image",
+    "badge": "Image playground",
+    "caption": "Leave `image.src` empty and keep the `alt` text to unlock the Google Images button while presenting.",
+    "image": {
+      "src": "images/riotgrrl.webp",
+      "alt": "Riot grrl collage",
+      "objectFit": "cover"
+    }
+  },
+  {
+    "type": "standard",
+    "badge": "Themes + tunes",
+    "headline": "Press **T** whenever the vibe feels stale",
+    "body": [
+      "Theme drawer lets you randomize palettes, tweak layer styles, and save presets. Everything updates live.",
+      "The SomaFM toggle pipes Deep Space Disco straight into the drawer so you can design with a soundtrack.",
+      "Got a Gemini API key? Drop it in, hit the wand, and let it remix palettes/fonts off your prompts."
     ]
   },
   {
     "type": "standard",
-    "badge": "Themes",
-    "headline": "Press T for themes",
+    "badge": "Keyboard autopilot",
+    "headline": "Keep these in your fingers",
     "body": [
-      "Switch between presets or hit random.",
-      "Themes update live, and can be saved and named."
+      "`Cmd/Ctrl + Enter` jumps into presenter mode, `Esc` bounces back to edit.",
+      "`Shift + Arrow` skips five slides, `Option/Alt + Arrow` duplicates without touching the drawer.",
+      "`Cmd/Ctrl + L` focuses the location bar so you can copy the deck URL with its current query params.",
+      "Word on the street says some old-school cheat codes unlock extra superpowers. If you know you know."
+    ]
+  },
+  {
+    "type": "pillars",
+    "badge": "Saving & export",
+    "headline": "When you need artifacts",
+    "pillars": [
+      {
+        "title": "JSON",
+        "text": "`D` downloads the current deck. `U` uploads one. Keep a `_schema` slide at the top if you want inline docs."
+      },
+      {
+        "title": "PDF",
+        "text": "Hit **Download PDF** in the drawer to trigger the exporter (writes into `/exports`)."
+      },
+      {
+        "title": "Local stash",
+        "text": "Deck autosaves live in `localStorage` under `slideomatic_deck_overrides:*`. Clear them if you need a clean slate."
+      },
+      {
+        "title": "Voice",
+        "text": "Tap the mic icon in the HUD to narrate slides hands-free."
+      }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "Reminder",
+    "quote": "Ship the weird draft. Future you can clean it up.",
+    "attribution": "Pablo"
+  },
+  {
+    "type": "standard",
+    "badge": "Troubleshooting",
+    "headline": "If something feels off",
+    "body": [
+      "Hard refresh (`Cmd/Ctrl + Shift + R`) nukes cached JSON + themes.",
+      "If the drawer yells about missing fields, it\u2019s telling the truth. Fix it there and the slide unblocks.",
+      "Still stuck? Open devtools, inspect the `slideomatic` keys, copy the JSON, and DM it to Pablo."
     ]
   },
   {
     "type": "standard",
-    "badge": "What's JSON?",
-    "headline": "Everything exports as JSON",
+    "badge": "Now go",
+    "headline": "Treat Slideomatic like a sketchbook",
     "body": [
-      "JSON is a file format that stores data (slides) in a simple, list-like structure.",
-      "Press **D** to export a deck as JSON. Press **U** to upload one.",
-      "AI tools can help edit JSON files."
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "Saving",
-    "headline": "Everything saves locally",
-    "body": [
-      "Decks auto-save in the browser.",
-      "Nothing leaves your device unless you export it."
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "That's it",
-    "headline": "Make slides and go wild",
-    "body": [
-      "Click **Back** to start a new deck.",
-      "**?** for keyboard shortcuts."
+      "Duplicate this deck, tear it apart, swap in your own chaos. It\u2019s yours.",
+      "When you land something you love, log it in `~/.codex/codex_diary.md` so future you remembers how it felt.",
+      "Have fun, keep it human, keep it moving."
     ]
   }
 ]
