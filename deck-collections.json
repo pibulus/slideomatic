@@ -3,20 +3,20 @@
     "id": "design-starter-pack",
     "eyebrow": "Grab-and-go set",
     "title": "Design Starter Pack",
-    "tagline": "Brief intro.",
-    "description": "Resources will be consistently updated and improved, much more to come.",
-    "shareLabel": "Share this collection",
+    "tagline": "A couple of fresh deck to get started with.",
+    "description": "Resources and hot tips, cheat codes and useful links, all the fun stuff, these slides will be constantly updated as I find more cool stuff..",
+    "shareLabel": "Share the vibes",
     "decks": [
       {
         "id": "brand-visual",
         "title": "Brand and Visual Presentation",
-        "summary": "Workshop deck that walks through building a visual narrative.",
+        "summary": "How to get go. Compressing meaning into symbols. A practical toolkit of mental models to brand and build",
         "slides": "demo-deck"
       },
       {
         "id": "design-resources",
         "title": "Free Design Resources",
-        "summary": "Curated toolbox full of mockups, color pickers, font libraries, and inspiration boards.",
+        "summary": "Curated toolbox full of free resoueces, cool tools, cheat codes, color pickers, font libraries, and inspiration boards.",
         "slides": "design-resources"
       }
     ]
