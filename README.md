@@ -54,14 +54,15 @@ That's it—no build step, no frameworks.
 
 ---
 
-## Sharing Decks
+## Saving & Exporting
 
-- Click the new **Share** button in the deck HUD to snapshot the current slides + theme into [Netlify Blobs](https://docs.netlify.com/blobs/). You get a short `?share=` link and QR code that load a read-only copy of the deck.
-- Images you drag/drop or paste are auto-compressed to ~400KB target (WebP/JPEG), uploaded via `/.netlify/functions/upload-asset`, and referenced by short URLs instead of giant base64 strings. Hard cap: **500KB per asset**.
-- Old assets get cleaned up automatically a few seconds after you replace/delete them, so Netlify Blobs doesn’t fill up with unused files. Manual deletes trigger instantly when available.
-- The Netlify Functions live at `/.netlify/functions/share`, `/.netlify/functions/upload-asset`, `/.netlify/functions/delete-asset`, and `/.netlify/functions/asset`. Share payloads stay under ~400KB since assets live separately.
-- For local testing, run `netlify dev` (not `npm run dev`) so those functions + blob context are available. When deployed to Netlify it all wires up automatically.
-- Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
+- **Autosave:** Every deck you touch is cached locally under `slideomatic_deck_overrides:*`. Clear these keys in devtools if you want a blank slate.
+- **JSON:** Press `D` (or the drawer button) to download the current deck. Press `U` to upload any exported JSON. Keep a `_schema` slide at the top if you want inline documentation.
+- **PDF:** Use the **Download PDF** button inside the edit drawer—this runs `scripts/export-pdf.mjs` under the hood and writes to `/exports`.
+- **Voice & Notes:** The mic icon in the HUD lets you narrate slides hands‑free while you build. Great for quick reviews.
+- **Sharing (paused):** The Netlify Blobs share flow is temporarily hidden from the UI while we rework it. The infrastructure is still in `/netlify/functions`, and `SHARING_OPTIMIZATIONS.md` documents the current design if you need to re-enable it.
+
+Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
 
 ---
 

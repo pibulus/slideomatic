@@ -1,5 +1,7 @@
 # 🎯 Slideomatic Sharing Optimizations
 
+> **Heads up:** The Share HUD button is temporarily hidden while we focus on the local-first flow. The Netlify Blob pipeline documented here still works and can be re-enabled at any time—these notes remain for future reference and maintenance.
+
 ## Overview
 
 Enhanced Netlify Blobs sharing system with aggressive image compression, deduplication, and size limits optimized for practical deck sharing.
