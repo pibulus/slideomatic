@@ -9,6 +9,8 @@ export function showIntroModalIfFirstVisit() {
 }
 
 export function showKeyboardHintsIfFirstVisit() {
+  // Commented out for mobile - popup doesn't fit well on mobile screens
+  /*
   const HINTS_SEEN_KEY = 'slideomatic_hints_seen';
   const hintsModal = document.getElementById('hints-modal');
   const closeBtn = document.getElementById('hints-modal-close');
@@ -30,11 +32,12 @@ export function showKeyboardHintsIfFirstVisit() {
     const markSeen = () => {
       localStorage.setItem(HINTS_SEEN_KEY, 'true');
     };
-    
+
     closeBtn?.addEventListener('click', markSeen);
     gotItBtn?.addEventListener('click', markSeen);
     backdrop?.addEventListener('click', markSeen);
   }
+  */
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
