@@ -787,10 +787,11 @@ Return ONLY a JSON object with these exact fields (no markdown, no explanation):
 Make the colors harmonious and ensure good contrast for readability.`;
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          signal: AbortSignal.timeout(30_000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: themePrompt }] }],
           }),
