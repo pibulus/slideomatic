@@ -896,10 +896,10 @@
 
 .slide--quote blockquote {
   font-family: var(--font-sans);
-  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-size: clamp(2rem, 4.5vw, 3.4rem);
   font-weight: 700;
   margin: 0;
-  line-height: 1.25;
+  line-height: 1.35;
   padding: clamp(36px, 5vw, 64px);
   padding-left: clamp(48px, 6vw, 80px);
   border-left: clamp(12px, 2vw, 24px) solid var(--color-surface);
@@ -955,7 +955,7 @@
   position: absolute;
   top: clamp(-16px, -2vw, -8px);
   left: clamp(24px, 4vw, 48px);
-  font-size: clamp(8rem, 16vw, 14rem);
+  font-size: clamp(6rem, 12vw, 10rem);
   color: var(--color-surface);
   opacity: 0.3;
   line-height: 1;

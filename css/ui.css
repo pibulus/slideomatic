@@ -39,7 +39,7 @@
   transform: translateX(-50%);
   width: min(760px, calc(100vw - 32px));
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 16px;
   padding: 14px 20px;
@@ -58,6 +58,24 @@
   50% { transform: translateX(-50%) translateY(-2px); }
 }
 
+.hud__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* Legacy class kept for backwards compat */
 .hud__controls {
   display: flex;
   align-items: center;
@@ -110,6 +128,11 @@
   background: rgba(0, 0, 0, 0.1);
   overflow: hidden;
   position: relative;
+  cursor: pointer;
+}
+
+.hud__progress:hover {
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 .hud__progress-bar {
@@ -214,7 +237,7 @@
 /* --- Responsive UI --- */
 @media (max-width: 768px) {
   .hud {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto auto 1fr;
     gap: 8px;
     text-align: center;
     padding: 10px 12px;
@@ -222,29 +245,16 @@
     width: calc(100vw - 20px);
     border-radius: 16px;
   }
-  
-  .hud__controls {
-    justify-content: space-between;
+
+  .hud__nav {
+    gap: 6px;
+  }
+
+  .hud__actions {
+    grid-column: 1 / -1;
+    justify-content: center;
+    gap: 12px;
     font-size: 0.72rem;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .hud__controls > * {
-    flex-shrink: 0;
-  }
-
-  .hud__controls .hud__action {
-    flex: 1;
-    text-align: center;
-  }
-
-  .hud__controls .hud__notes-indicator {
-    margin-left: auto;
-  }
-
-  .hud__controls .hud__nav-btn {
-    flex: 0 0 auto;
   }
 
   .hud__action {
@@ -291,7 +301,7 @@
     left: 16px;
     align-items: center;
   }
-  
+
   .toast {
     width: 100%;
     max-width: none;
@@ -306,9 +316,13 @@
     font-size: 0.78rem;
   }
 
-  .hud__controls {
-    font-size: 0.68rem;
+  .hud__nav {
+    gap: 4px;
+  }
+
+  .hud__actions {
     gap: 8px;
+    font-size: 0.68rem;
   }
 
   .hud__action {
