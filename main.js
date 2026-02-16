@@ -547,7 +547,6 @@ async function initDeckWithTheme() {
   }, slidesRoot);
   slidesRoot.addEventListener('click', handleSlideClick);
   document.addEventListener('click', handleImageModalTrigger);
-  document.addEventListener('paste', handleGlobalPaste);
 
   const uploadInput = document.getElementById('deck-upload');
   if (uploadInput) {

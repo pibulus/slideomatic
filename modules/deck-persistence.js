@@ -24,6 +24,7 @@ import {
   LAST_DECK_KEY,
 } from './state.js';
 import { deriveDeckName } from './utils.js';
+import { validateSlides } from './validation.js';
 
 const noop = () => {};
 
@@ -205,6 +206,15 @@ function loadPersistedDeck() {
       return null;
     }
     console.log('[loadPersistedDeck] Successfully loaded', payload.slides.length, 'slides');
+
+    // Validate loaded slides to catch corrupted localStorage data
+    try {
+      validateSlides(payload.slides);
+    } catch (validationError) {
+      console.warn('[loadPersistedDeck] Stored slides failed validation, discarding:', validationError);
+      return null;
+    }
+
     return payload.slides;
   } catch (error) {
     console.warn('Failed to load deck overrides from localStorage:', error);
@@ -318,6 +328,13 @@ export function saveAsNewDeck() {
   try {
     const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(newDeckId)}`;
     localStorage.setItem(key, JSON.stringify(payload));
+
+    // Verify the save actually persisted before navigating
+    const verification = localStorage.getItem(key);
+    if (!verification) {
+      throw new Error('Save appeared to succeed but data not found in storage');
+    }
+
     showHudStatusHook('✓ Deck saved!', 'success');
 
     setTimeout(() => {

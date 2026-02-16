@@ -8,7 +8,11 @@ const authPasswordInput = document.getElementById('auth-password');
 const authError = document.getElementById('auth-error');
 
 const AUTH_TOKEN_KEY = 'deck-admin-token';
-const ADMIN_PASSWORD = 'bonesoup'; // change to your secret
+// To change the password: run in browser console:
+//   crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourpassword'))
+//     .then(h => console.log(Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,'0')).join('')))
+// Then paste the hex string below.
+const ADMIN_PASSWORD_HASH = '1b1a8e28a3adde50adf938c0e8b5e9a14cd1e7060ca7a03f7ed6bfe7ef5ece3e'; // 'bonesoup'
 const SLIDES_PATH = resolveSlidesPath();
 
 let slides = [];
@@ -58,11 +62,11 @@ async function loadSlides(force = false) {
   }
 }
 
-function handleAuthSubmit(event) {
+async function handleAuthSubmit(event) {
   event.preventDefault();
   const input = authPasswordInput.value.trim();
-  if (verifyPassword(input)) {
-    storeToken(input);
+  if (await verifyPassword(input)) {
+    await storeToken(input);
     authPasswordInput.value = '';
     authError.textContent = '';
     hideAuthScreen();
@@ -91,21 +95,27 @@ function hideAuthScreen() {
   authScreen.setAttribute('aria-hidden', 'true');
 }
 
-function generateToken(input) {
-  return btoa(Array.from(input).reverse().join(''));
+async function hashPassword(input) {
+  const encoded = new TextEncoder().encode(input);
+  const buffer = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
-function storeToken(password) {
-  localStorage.setItem(AUTH_TOKEN_KEY, generateToken(password));
+async function storeToken(password) {
+  const hash = await hashPassword(password);
+  localStorage.setItem(AUTH_TOKEN_KEY, hash);
 }
 
 function hasValidToken() {
   const stored = localStorage.getItem(AUTH_TOKEN_KEY);
-  return stored != null && stored === generateToken(ADMIN_PASSWORD);
+  return stored != null && stored === ADMIN_PASSWORD_HASH;
 }
 
-function verifyPassword(input) {
-  return input === ADMIN_PASSWORD;
+async function verifyPassword(input) {
+  const hash = await hashPassword(input);
+  return hash === ADMIN_PASSWORD_HASH;
 }
 
 function renderSlides() {
