@@ -44,6 +44,7 @@ let getEditDrawerContextHook = () => ({
 });
 let renderEditFormHook = (_context) => {};
 let toggleSpeakerNotesHook = () => {};
+let onSlideChangeHook = (_index) => {};
 
 const columnOverviewQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
   ? window.matchMedia('(max-width: 640px)')
@@ -157,6 +158,9 @@ export function registerNavigationHooks(hooks = {}) {
   }
   if (typeof hooks.toggleSpeakerNotes === 'function') {
     toggleSpeakerNotesHook = hooks.toggleSpeakerNotes;
+  }
+  if (typeof hooks.onSlideChange === 'function') {
+    onSlideChangeHook = hooks.onSlideChange;
   }
 }
 
@@ -359,6 +363,7 @@ export function setActiveSlide(nextIndex) {
   preloadSlideImages(currentIndex);
   preloadSlideImages(currentIndex + 1);
   preloadSlideImages(currentIndex + 2);
+  onSlideChangeHook(currentIndex);
 }
 
 export function updateTotalCounter(total) {

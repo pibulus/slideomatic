@@ -67,10 +67,11 @@ or
 GENERATE`;
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+                signal: AbortSignal.timeout(30_000),
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: decisionPrompt }] }],
                     generationConfig: {
@@ -176,6 +177,7 @@ The image should be visually striking and support the slide content.`;
                     'Content-Type': 'application/json',
                     'x-goog-api-key': apiKey,
                 },
+                signal: AbortSignal.timeout(60_000),
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
@@ -283,6 +285,7 @@ Use chunky ink lines, halftone fills, and grain. Choose an appropriate chart sty
                 'Content-Type': 'application/json',
                 'x-goog-api-key': apiKey,
             },
+            signal: AbortSignal.timeout(60_000),
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {

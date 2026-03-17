@@ -2,7 +2,7 @@
   {
     "type": "title",
     "title": "Slideomatic Field Guide",
-    "subtitle": "Use these slides to poke every control in real time",
+    "subtitle": "Voice-powered presentations, built in the browser",
     "media": [
       {
         "image": {
@@ -18,7 +18,7 @@
       },
       {
         "color": "#F472B6",
-        "label": "Play mode"
+        "label": "AI-powered"
       }
     ]
   },
@@ -27,35 +27,71 @@
     "badge": "Start here",
     "headline": "This deck is the manual",
     "body": [
-      "Arrow keys move, `?` opens the cheat sheet. Hit it once now so you know what\u2019s there.",
-      "Every slide is a prompt\u2014read it, try it. Nothing saves to a server; all edits live in your browser until you export JSON or PDF."
+      "Arrow keys move between slides. Press `?` to see every keyboard shortcut.",
+      "Each slide walks you through a feature\u2014read it, try it. Nothing saves to a server; all edits live in your browser until you export."
+    ]
+  },
+  {
+    "type": "pillars",
+    "badge": "Voice + AI",
+    "headline": "Talk to build slides",
+    "pillars": [
+      {
+        "title": "Create",
+        "text": "Press **V** and describe a slide. Gemini turns your voice into a fully structured slide with the right layout."
+      },
+      {
+        "title": "Edit",
+        "text": "Record while on any slide to edit it by voice\u2014change the headline, swap the layout, add bullet points."
+      },
+      {
+        "title": "Theme",
+        "text": "Voice-generate an entire theme. Say \u201cvaporwave neon\u201d or \u201cminimal paper\u201d and watch the palette change live."
+      },
+      {
+        "title": "Images",
+        "text": "AI decides whether to search stock photos or generate an illustration, then fills the placeholder automatically."
+      }
     ]
   },
   {
     "type": "standard",
-    "badge": "Drawer time",
-    "headline": "Press **E** and keep it open",
+    "badge": "Setup",
+    "headline": "Add your Gemini API key",
     "body": [
-      "Content tab = titles, body arrays, badges, quotes, captions. Type something, click out, it auto-saves.",
-      "Layouts tab lets you swap this slide into quote/gallery/pillars or add a new slide already styled.",
-      "Media tab handles uploads, compression, captions. Right rail also hides SomaFM and the **Download PDF** button."
+      "Press **S** to open Settings. Paste your Gemini API key and hit **Save Key**. Use **Test Connection** to verify it works.",
+      "Get a free key at [Google AI Studio](https://aistudio.google.com/apikey). Your key stays in your browser\u2014it never touches our servers.",
+      "All voice and AI features (slide generation, theme generation, image AI) require this key. Everything else works without it."
     ]
   },
   {
     "type": "standard",
-    "badge": "Try it now",
-    "headline": "Change this slide",
+    "badge": "The drawer",
+    "headline": "Press **E** to edit anything",
     "body": [
-      "Duplicate it, flip the layout, or rewrite the headline. Undo isn\u2019t here yet, so dupes are your safety net.",
-      "Reorder by dragging the slide chip in the left rail. Slide numbers update automatically.",
-      "Delete = Cmd/Ctrl + Backspace inside the drawer if you hate clicking."
+      "**Content** tab: titles, body text, badges, quotes, captions. Type and click out to auto-save.",
+      "**Layouts** tab: swap this slide to quote, gallery, pillars, split, or any other type. Add new slides already styled.",
+      "**Media** tab: upload images, compress them, add captions. Also home to the SomaFM radio and **Download PDF** button."
     ]
+  },
+  {
+    "type": "split",
+    "badge": "Split layout",
+    "headline": "Two columns, side by side",
+    "left": {
+      "headline": "Left side",
+      "body": "Split slides are great for comparisons, before/after, or pairing an image with text. Each column stands on its own."
+    },
+    "right": {
+      "headline": "Right side",
+      "body": "Use the edit drawer to fill each column independently. Split is one of 10 available slide types."
+    }
   },
   {
     "type": "gallery",
-    "badge": "Layouts",
+    "badge": "Gallery",
     "headline": "Keep the rhythm weird",
-    "body": "Standard, quote, gallery, pillars, typeface, image\u2014all one click away. Swap a couple.",
+    "body": "Standard, quote, gallery, pillars, typeface, split, grid, image\u2014all one click away in the Layouts tab.",
     "items": [
       {
         "image": {
@@ -87,7 +123,7 @@
     "type": "typeface",
     "badge": "Typeface flex",
     "headline": "Fonts are mood swings",
-    "body": "Override the `font` field when you need a new voice mid-story.",
+    "body": "Override the `font` field per-slide when you need a different voice mid-deck.",
     "samples": [
       {
         "font": "Space Grotesk, Inter, sans-serif",
@@ -106,7 +142,7 @@
   {
     "type": "image",
     "badge": "Image playground",
-    "caption": "Leave `image.src` empty and keep the `alt` text to unlock the Google Images button while presenting.",
+    "caption": "Leave `image.src` empty but keep the `alt` text to unlock the AI image button while presenting.",
     "image": {
       "src": "images/riotgrrl.webp",
       "alt": "Riot grrl collage",
@@ -119,8 +155,21 @@
     "headline": "Press **T** whenever the vibe feels stale",
     "body": [
       "Theme drawer lets you randomize palettes, tweak layer styles, and save presets. Everything updates live.",
-      "The SomaFM toggle pipes Deep Space Disco straight into the drawer so you can design with a soundtrack.",
-      "Got a Gemini API key? Drop it in, hit the wand, and let it remix palettes/fonts off your prompts."
+      "SomaFM radio pipes curated streams straight into the drawer so you can design with a soundtrack.",
+      "With a Gemini API key, hit the wand icon to AI-generate themes from a text description\u2014or use voice."
+    ]
+  },
+  {
+    "type": "grid",
+    "badge": "Grid layout",
+    "headline": "Color swatches or image grids",
+    "items": [
+      { "color": "#F472B6", "label": "Pink" },
+      { "color": "#818CF8", "label": "Indigo" },
+      { "color": "#34D399", "label": "Emerald" },
+      { "color": "#FBBF24", "label": "Amber" },
+      { "color": "#F87171", "label": "Red" },
+      { "color": "#60A5FA", "label": "Blue" }
     ]
   },
   {
@@ -128,32 +177,32 @@
     "badge": "Keyboard autopilot",
     "headline": "Keep these in your fingers",
     "body": [
-      "`Cmd/Ctrl + Enter` jumps into presenter mode, `Esc` bounces back to edit.",
-      "`Shift + Arrow` skips five slides, `Option/Alt + Arrow` duplicates without touching the drawer.",
-      "`Cmd/Ctrl + L` focuses the location bar so you can copy the deck URL with its current query params.",
-      "Word on the street says some old-school cheat codes unlock extra superpowers. If you know you know."
+      "**E** = edit drawer, **T** = themes, **V** = voice, **S** = settings, **O** = overview grid.",
+      "**D** downloads the deck as JSON. **U** uploads one. **N** toggles speaker notes.",
+      "`Shift + Arrow` skips five slides. `Option/Alt + Arrow` duplicates the current slide.",
+      "`?` opens the full cheat sheet any time you forget."
     ]
   },
   {
     "type": "pillars",
-    "badge": "Saving & export",
+    "badge": "Saving + export",
     "headline": "When you need artifacts",
     "pillars": [
       {
         "title": "JSON",
-        "text": "`D` downloads the current deck. `U` uploads one. Keep a `_schema` slide at the top if you want inline docs."
+        "text": "**D** downloads the deck. **U** uploads one. The JSON format is portable\u2014edit it by hand or share it."
       },
       {
         "title": "PDF",
-        "text": "Hit **Download PDF** in the drawer to trigger the exporter (writes into `/exports`)."
+        "text": "Hit **Download PDF** in the edit drawer to export a printable version of your slides."
       },
       {
         "title": "Local stash",
-        "text": "Deck autosaves live in `localStorage` under `slideomatic_deck_overrides:*`. Clear them if you need a clean slate."
+        "text": "Decks autosave to your browser's localStorage. Clear them in devtools if you need a clean slate."
       },
       {
-        "title": "Voice",
-        "text": "Tap the mic icon in the HUD to narrate slides hands-free."
+        "title": "Share",
+        "text": "Use the share feature to create a link anyone can view\u2014no account required."
       }
     ]
   },
@@ -161,17 +210,7 @@
     "type": "quote",
     "badge": "Reminder",
     "quote": "Ship the weird draft. Future you can clean it up.",
-    "attribution": "Pablo"
-  },
-  {
-    "type": "standard",
-    "badge": "Troubleshooting",
-    "headline": "If something feels off",
-    "body": [
-      "Hard refresh (`Cmd/Ctrl + Shift + R`) nukes cached JSON + themes.",
-      "If the drawer yells about missing fields, it\u2019s telling the truth. Fix it there and the slide unblocks.",
-      "Still stuck? Open devtools, inspect the `slideomatic` keys, copy the JSON, and DM it to Pablo."
-    ]
+    "attribution": "Slideomatic"
   },
   {
     "type": "standard",
@@ -179,7 +218,7 @@
     "headline": "Treat Slideomatic like a sketchbook",
     "body": [
       "Duplicate this deck, tear it apart, swap in your own chaos. It\u2019s yours.",
-      "When you land something you love, log it in `~/.codex/codex_diary.md` so future you remembers how it felt.",
+      "Try the voice features\u2014press **V** and describe a slide. It\u2019s the fastest way to build.",
       "Have fun, keep it human, keep it moving."
     ]
   }

@@ -57,7 +57,7 @@ body[data-mode="overview"] {
 body[data-mode="overview"] .slides {
   --overview-scale: 0.34;
   --overview-slide-overlap: clamp(-230px, -12vw, -96px);
-  --overview-slide-width: clamp(620px, 40vw, 900px);
+  --overview-slide-width: clamp(280px, 40vw, 900px);
 
   display: flex;
   flex-direction: row;
@@ -274,7 +274,7 @@ body[data-mode="overview"] .slides.has-scroll-right::after {
   }
 
   body[data-mode="overview"] .slide {
-    width: clamp(420px, 94vw, 540px);
+    width: min(94vw, 540px);
   }
 
   body[data-mode="overview"] .slide::before {

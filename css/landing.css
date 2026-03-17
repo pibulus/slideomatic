@@ -966,7 +966,8 @@ a.button--secondary:hover {
   border: 2px solid var(--ink);
   background: var(--paper);
   border-radius: var(--radius-round);
-  padding: 7px 16px;
+  padding: 10px 16px;
+  min-height: 44px;
   font-weight: 800;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -1320,14 +1321,16 @@ a.button--secondary:hover {
 
   .deck-card__actions {
     width: 100%;
-    flex-direction: row; /* Force row layout */
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
   }
 
   .deck-card__actions button {
-    flex: 1; /* Equal width */
-    padding: 8px 4px; /* Slightly tighter padding */
-    font-size: 0.75rem; /* Slightly smaller text */
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
   }
 
   .cta-panel__actions .button {

@@ -42,6 +42,7 @@ import {
   showApiKeyStatus,
 } from './modules/settings-modal.js';
 import {
+  initSlideIndex,
   toggleSlideIndex,
 } from './modules/slide-index.js';
 import { initCheatConsole } from './modules/cheat-codes.js';
@@ -149,6 +150,7 @@ registerNavigationHooks({
   getEditDrawerContext,
   renderEditForm,
   toggleSpeakerNotes,
+  onSlideChange: (index) => pushSlideHistory(index),
 });
 
 registerSlideActionHooks({
@@ -545,7 +547,6 @@ async function initDeckWithTheme() {
   }, slidesRoot);
   slidesRoot.addEventListener('click', handleSlideClick);
   document.addEventListener('click', handleImageModalTrigger);
-  document.addEventListener('paste', handleGlobalPaste);
 
   const uploadInput = document.getElementById('deck-upload');
   if (uploadInput) {
@@ -572,7 +573,7 @@ async function initDeckWithTheme() {
   const homeBtn = document.getElementById('home-btn');
   if (homeBtn) {
     homeBtn.addEventListener('click', () => {
-      navigateToDeckHome();
+      setActiveSlide(0);
     });
   }
 
@@ -600,6 +601,13 @@ async function initDeckWithTheme() {
   // Show keyboard hints on first visit
   showKeyboardHintsIfFirstVisit();
 
+  // Initialize slide index (jump to any slide with I key)
+  initSlideIndex({
+    getSlides: () => slides,
+    getCurrentIndex: () => currentIndex,
+    setActiveSlide,
+  });
+
   // Initialize share modal
   initShareModal();
 
@@ -609,6 +617,7 @@ async function initDeckWithTheme() {
   setActiveSlide(0);
   updateOverviewButton();
   setOverviewCursor(currentIndex);
+  initBrowserHistory();
   handleInitialIntent();
 
   // Mark initialization as complete
@@ -684,6 +693,18 @@ function initHudControls() {
     });
   }
 
+  // Clickable progress bar - jump to slide by clicking position
+  const progressEl = document.getElementById('hud-progress');
+  if (progressEl) {
+    progressEl.addEventListener('click', (e) => {
+      const rect = progressEl.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const targetIndex = Math.round(ratio * (slideElements.length - 1));
+      setActiveSlide(targetIndex);
+      revealHud();
+    });
+  }
+
   const handleInteraction = () => {
     if (!autoHideQuery.matches) return;
     const now = Date.now();
@@ -718,4 +739,37 @@ function initHudControls() {
   } else {
     hud.dataset.hidden = 'false';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BROWSER HISTORY SUPPORT
+// ═══════════════════════════════════════════════════════════════════════════
+// Push slide changes to browser history so the back button navigates
+// between slides instead of leaving the presentation entirely.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let historyInitialized = false;
+
+function initBrowserHistory() {
+  if (historyInitialized) return;
+  historyInitialized = true;
+
+  // Replace current state with slide 0
+  window.history.replaceState({ slide: 0 }, '');
+
+  // Listen for popstate (browser back/forward)
+  window.addEventListener('popstate', (event) => {
+    if (event.state && typeof event.state.slide === 'number') {
+      setActiveSlide(event.state.slide);
+    }
+  });
+}
+
+// Called from setActiveSlide hook - pushes new state when slide changes
+function pushSlideHistory(index) {
+  if (!historyInitialized) return;
+  // Only push if different from current history state
+  const currentState = window.history.state;
+  if (currentState && currentState.slide === index) return;
+  window.history.pushState({ slide: index }, '');
 }

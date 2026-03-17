@@ -32,8 +32,8 @@ export function initTouchNav(partialContext = {}, targetElement = document.body)
   target.addEventListener('touchend', handleTouchEnd, { passive: true });
 
   return () => {
-    target.removeEventListener('touchstart', handleTouchStart);
-    target.removeEventListener('touchend', handleTouchEnd);
+    target.removeEventListener('touchstart', handleTouchStart, { passive: true });
+    target.removeEventListener('touchend', handleTouchEnd, { passive: true });
   };
 }
 

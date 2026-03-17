@@ -317,6 +317,7 @@ async function generateThemeWithAI(description) {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
       },
+      signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         contents: [
           {
