@@ -639,7 +639,7 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
     const payload = await requestGeminiJson(apiKey, prompt, {
       temperature: 0.75,
       maxOutputTokens: 8192,
-    });
+    }, { timeout: 60_000 });
 
     const slidesArray = extractSlidesArray(payload);
     if (!slidesArray.length) {
@@ -763,18 +763,33 @@ SLIDE MIX (vary these):
 - 1-2 slides with discussion questions or provocations that could be used in a talk
 - 1 closing slide that reframes the topic or leaves a thread to pull
 
-SCHEMA REQUIREMENTS:
-- Each slide must include a "type" key
-- Available types: title, standard, quote, split, grid, pillars, gallery, image, graph, typeface
-- Include descriptive image alt text using FINDABLE search language (e.g. "brutalist concrete building London" not "photo1")
-- Body text supports markdown: **bold**, *italic*, [links](url)
-- For links in body text, use the format: **[Display Text](https://real-url.com)** — these must be real, working URLs
+STRICT SCHEMA — follow these EXACTLY:
+
+VALID SLIDE TYPES (use ONLY these, never invent new ones):
+- "title" — keys: type, title, subtitle, image:{src,alt}, notes
+- "standard" — keys: type, badge, headline, body:["line","line"], image:{src,alt}, notes
+- "quote" — keys: type, quote, attribution, notes
+- "split" — keys: type, badge, headline, left:{}, right:{}, notes
+- "pillars" — keys: type, badge, headline, pillars:[{title,body}], notes
+- "gallery" — keys: type, badge, headline, items:[{image:{src,alt},caption}], notes
+- "image" — keys: type, image:{src,alt}, notes
+- "graph" — keys: type, badge, headline, description, notes
+
+CRITICAL RULES:
+- ONLY use the types listed above. Do NOT invent types like "discussion" or "closing"
+- For discussion/closing slides, use "standard" type
+- Links go INLINE in body text as markdown: "**[Display Text](https://real-url.com)**"
+- Do NOT use separate "links" or "discussion_questions" arrays — embed everything in body text
+- "body" is always an array of strings, each string is one line/bullet
+- For quote slides: use "quote" (the text) and "attribution" (the person) — NOT "quote_text"/"quote_author"
+- Image objects: { "src": "", "alt": "descriptive search text" } — leave src empty, the app will generate images
+- All URLs in body text must be real, likely-working URLs (Wikipedia, YouTube, major publications)
 
 TOPIC:
 ${description}
 
 OUTPUT:
-- Return ONLY a JSON array of slide objects, or an object with a "slides" array. No markdown wrapper.`;
+- Return ONLY a JSON array of slide objects, or an object with a "slides" array. No markdown wrapper, no \`\`\`json fences.`;
 }
 
 function ensureApiKeyOrThrow(context) {
@@ -787,13 +802,13 @@ function ensureApiKeyOrThrow(context) {
   return apiKey;
 }
 
-async function requestGeminiJson(apiKey, prompt, generationConfig = {}) {
+async function requestGeminiJson(apiKey, prompt, generationConfig = {}, { timeout = 30_000 } = {}) {
   const response = await fetch(
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(timeout),
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {

@@ -259,14 +259,26 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `I` – Toggle slide index
 - `N` – Toggle speaker notes
 
-### 🎙️ Voice-to-Slide (NEW!)
-Press `V` or click the voice button in the HUD to generate slides using AI! Just describe what you want and Gemini will create the perfect slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
+### 🎙️ Voice-to-Slide
+Press `V` or click the voice button in the HUD to generate slides using AI. Describe what you want and Gemini creates the slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
 
-### 🎨 Theme Controls (Unified in Edit Drawer!)
-Press `E` to open the edit drawer where you'll find all theme controls in one place:
+### 🕹️ AI Starter Deck (Cheat Codes!)
+Type `IDDQD`, `IDKFA`, or `ABRACADABRA` anywhere in the deck view to open the AI Cheat Console. Describe a topic and Gemini builds an 8-slide starter deck with:
+- Real facts, names, dates, and working links (Wikipedia, YouTube, publications)
+- Discussion questions that double as research prompts
+- AI-generated images for each slide (generated automatically after the deck appears)
+- Presenter notes with rabbit holes and tangents to explore
+
+The deck is designed as a **research springboard** — good enough to present today, but with enough visible threads that you naturally want to pull on them and make the deck your own.
+
+### ✨ AI Image Generation
+When a slide has an empty image slot, click the `✨` button in the edit drawer. Gemini decides whether to search for a stock photo or generate a custom illustration in risograph style, matched to your current theme colours.
+
+### 🎨 Theme Controls
+Press `E` to open the edit drawer where you'll find all theme controls:
 - **Select themes** from presets (Default, Gameboy, Vaporwave, Slack) or your saved library
-- **Randomize** themes with one click (or press `T` for instant randomization!)
-- **AI Theme Generation** – Describe the vibe ("dark cyberpunk with neon accents", "warm retro 70s", "minimal clean white") and Gemini will create a full theme, apply it live, and save it to your library
+- **Randomize** themes with one click (or press `T` for instant randomization)
+- **AI Theme Generation** — describe the vibe and Gemini creates a full theme
 - **Save themes** to your personal library for quick access later
 
 ---

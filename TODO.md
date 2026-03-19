@@ -170,13 +170,19 @@
 
 ---
 
+## Completed (Post-Sprint)
+
+- ✅ **AI Starter Deck Generation** — Cheat console (IDDQD/IDKFA/ABRACADABRA) generates 8-slide research springboard decks with real links, discussion questions, and presenter notes
+- ✅ **Auto Image Generation for Decks** — After starter deck creation, AI generates images for all slides with empty image slots
+- ✅ **AI Image Generation in Edit Drawer** — `✨` button on empty image slots triggers Gemini to search or generate illustrations
+- ✅ **Landing Page Tightened** — Removed 100vh hero, compressed spacing so demo decks are visible faster
+- ✅ **Design Resources Deck Cleanup** — Removed 7 broken links, replaced with working alternatives, reordered for better flow
+
 ## Next Steps
 
-1. **Start with Sprint 1** - get quick wins shipped
-2. **Research Gemini Imagen API** for graph generation
-3. **Study conversation_mapper** theme saving for reference
-4. **Test theme transparency** live to find sweet spot (0.82-0.85 range)
-5. **Consider batching AI operations** if user feedback requests it
+1. **PWA setup** — manifest.json, service worker, icons, Apple meta tags for home screen install
+2. **Mobile testing** — verify starter deck flow and image generation on phone/tablet
+3. **Test AI features end-to-end** — verify cheat console, image gen, and voice features with live Gemini API key
 
 ---
 
