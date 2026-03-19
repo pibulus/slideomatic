@@ -731,6 +731,15 @@
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
 }
 
+.hints-modal__easter-egg {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  color: var(--color-ink);
+  opacity: 0.35;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 480px) {
   .hints-modal__dialog {
     padding: 20px;

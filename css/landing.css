@@ -125,17 +125,16 @@ main {
 
 @media (min-width: 1024px) {
   .landing__hero-wrapper {
-    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 40px 20px 20px;
   }
 
   .landing__hero {
-    margin: 0; /* Reset margin since flex handles centering */
-    width: min(1100px, 90vw); /* Slightly narrower max width */
-    padding: 64px 56px; /* Balanced padding */
+    margin: 0;
+    width: min(1100px, 90vw);
+    padding: 48px 56px;
   }
 }
 
@@ -526,10 +525,10 @@ a.button--secondary:hover {
 
 .landing__features {
   width: 100%;
-  padding: clamp(48px, 8vw, 80px) clamp(24px, 5vw, 48px);
-  margin-top: clamp(40px, 6vw, 64px);
+  padding: clamp(32px, 5vw, 48px) clamp(24px, 5vw, 48px);
+  margin-top: clamp(24px, 4vw, 40px);
   display: grid;
-  gap: clamp(32px, 6vw, 56px);
+  gap: clamp(24px, 4vw, 40px);
   position: relative;
   background:
     linear-gradient(135deg,
@@ -689,7 +688,7 @@ a.button--secondary:hover {
 
 .collection-promo {
   width: min(1200px, 96vw);
-  margin: clamp(40px, 6vw, 60px) auto 0;
+  margin: clamp(24px, 4vw, 40px) auto 0;
   padding: clamp(24px, 4vw, 48px);
   border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
@@ -773,7 +772,7 @@ a.button--secondary:hover {
 
 .deck-shelf {
   width: min(1200px, 96vw);
-  margin: clamp(48px, 8vw, 80px) auto clamp(48px, 8vw, 72px);
+  margin: clamp(32px, 5vw, 48px) auto clamp(32px, 5vw, 48px);
   background: var(--paper);
   border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
