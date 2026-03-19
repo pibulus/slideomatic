@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { connectLambda, getStore } from '@netlify/blobs';
 import {
   STORE_NAMES,
@@ -8,7 +9,10 @@ import {
   buildAssetUrl,
   decodeDataUrl,
   hashImageContent,
-  recompressForShare
+  recompressForShare,
+  generateShareSlug,
+  hashSharePassword,
+  verifySharePassword
 } from './utils/common.js';
 
 export async function handler(event) {
@@ -84,6 +88,16 @@ async function handlePost(event) {
     },
   };
 
+  const passphrase = (payload.meta?.password || payload.password || '').trim();
+  if (passphrase) {
+    const hashed = hashSharePassword(passphrase);
+    shareRecord.meta.passwordProtected = true;
+    shareRecord.meta.passwordHash = hashed.hash;
+    shareRecord.meta.passwordSalt = hashed.salt;
+  } else {
+    shareRecord.meta.passwordProtected = false;
+  }
+
   const { assetIds, stats } = await externalizeInlineAssets(slidesClone, event);
   if (assetIds.length) {
     shareRecord.assets = assetIds;
@@ -100,8 +114,8 @@ async function handlePost(event) {
     };
   }
 
-  const shareId = createShareId();
   const store = getStore(STORE_NAMES.SHARES);
+  const shareId = await createUniqueShareId(store);
   await store.set(shareId, serialized, {
     metadata: {
       bytes,
@@ -142,26 +156,67 @@ async function handleGet(event) {
     };
   }
 
+  const passwordProtected = Boolean(record?.meta?.passwordProtected && record.meta.passwordHash);
+  if (passwordProtected) {
+    const password = (event.queryStringParameters?.password || '').trim();
+    if (!password) {
+      return {
+        statusCode: 401,
+        headers: BASE_HEADERS,
+        body: JSON.stringify({ error: 'Password required', requiresPassword: true }),
+      };
+    }
+
+    const valid = verifySharePassword(password, record.meta.passwordSalt, record.meta.passwordHash);
+    if (!valid) {
+      return {
+        statusCode: 401,
+        headers: BASE_HEADERS,
+        body: JSON.stringify({ error: 'Invalid password', requiresPassword: true, invalidPassword: true }),
+      };
+    }
+  }
+
+  const sanitized = {
+    ...record,
+    meta: {
+      ...record.meta,
+      passwordProtected,
+    },
+  };
+
+  if (sanitized.meta) {
+    delete sanitized.meta.passwordHash;
+    delete sanitized.meta.passwordSalt;
+  }
+
   return {
     statusCode: 200,
     headers: BASE_HEADERS,
-    body: JSON.stringify(record),
+    body: JSON.stringify(sanitized),
   };
 }
 
-function createShareId() {
-  const random = Math.random().toString(36).slice(2, 8);
-  const timestamp = Date.now().toString(36);
-  return `${timestamp}-${random}`;
+async function createUniqueShareId(store, attempt = 0) {
+  const slug = generateShareSlug();
+  const existing = await store.get(slug);
+  if (!existing) return slug;
+  if (attempt >= 5) {
+    const fallback = `${slug}-${crypto.randomBytes(2).toString('hex')}`;
+    const fallbackExisting = await store.get(fallback);
+    if (!fallbackExisting) return fallback;
+    return `${slug}-${Date.now().toString(36)}`;
+  }
+  return createUniqueShareId(store, attempt + 1);
 }
 
 function buildShareUrl(event, shareId) {
   const host = event.headers?.['x-forwarded-host'] || event.headers?.host;
   const protocol = event.headers?.['x-forwarded-proto'] || 'https';
 
-  if (!host) return null;
+  if (!host) return `/s/${shareId}`;
 
-  return `${protocol}://${host}/deck.html?share=${shareId}`;
+  return `${protocol}://${host}/s/${shareId}`;
 }
 
 async function externalizeInlineAssets(slides, event) {

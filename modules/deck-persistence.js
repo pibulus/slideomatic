@@ -42,6 +42,8 @@ let updateDeckNameDisplayHook = noop;
 let getSlideTemplateHook = () => ({ type: 'title' });
 /** @type {(theme: any) => void} */
 let applySharedThemeHook = noop;
+/** @type {(options?: { invalid?: boolean }) => Promise<string | null>} */
+let requestSharePasswordHook = null;
 
 export function registerDeckPersistenceHooks(hooks = {}) {
   if (typeof hooks.getParam === 'function') getParamHook = hooks.getParam;
@@ -57,32 +59,17 @@ export function registerDeckPersistenceHooks(hooks = {}) {
   if (typeof hooks.applySharedTheme === 'function') {
     applySharedThemeHook = hooks.applySharedTheme;
   }
+  if (typeof hooks.requestSharePassword === 'function') {
+    requestSharePasswordHook = hooks.requestSharePassword;
+  }
 }
 
 export async function loadSlides() {
   const shareParam = getParamHook('share');
   if (shareParam) {
-    try {
-      const response = await fetch(`/.netlify/functions/share?id=${encodeURIComponent(shareParam)}`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch shared deck (${response.status})`);
-      }
-      const data = await response.json();
-      if (Array.isArray(data?.slides)) {
-        if (data.theme) {
-          applySharedThemeHook(data.theme);
-        }
-        showHudStatusHook('✓ Loaded shared deck', 'success');
-        setTimeout(hideHudStatusHook, 2000);
-        return data.slides;
-      }
-      throw new Error('Malformed shared deck payload');
-    } catch (error) {
-      console.error('Failed to load shared deck', error);
-      showHudStatusHook('⚠️ Failed to load shared deck', 'error');
-      setTimeout(hideHudStatusHook, 3000);
+    const sharedSlides = await attemptSharedDeckLoad(shareParam);
+    if (Array.isArray(sharedSlides) && sharedSlides.length) {
+      return sharedSlides;
     }
   }
 
@@ -150,6 +137,87 @@ export async function loadSlides() {
   }
 
   return [getSlideTemplateHook('title')];
+}
+
+class SharePasswordError extends Error {
+  constructor(message, { invalidPassword = false } = {}) {
+    super(message);
+    this.name = 'SharePasswordError';
+    this.invalidPassword = invalidPassword;
+  }
+}
+
+async function attemptSharedDeckLoad(shareId) {
+  let password = null;
+  while (true) {
+    try {
+      const record = await fetchSharedRecord(shareId, password);
+      if (Array.isArray(record?.slides)) {
+        if (record.theme) {
+          applySharedThemeHook(record.theme);
+        }
+        showHudStatusHook('✓ Loaded shared deck', 'success');
+        setTimeout(hideHudStatusHook, 2000);
+        return record.slides;
+      }
+      throw new Error('Malformed shared deck payload');
+    } catch (error) {
+      if (error instanceof SharePasswordError) {
+        password = await requestPassphrase(error.invalidPassword);
+        if (!password) {
+          showHudStatusHook('Share requires a passphrase.', 'error');
+          setTimeout(hideHudStatusHook, 3000);
+          return null;
+        }
+        continue;
+      }
+      console.error('Failed to load shared deck', error);
+      showHudStatusHook('⚠️ Failed to load shared deck', 'error');
+      setTimeout(hideHudStatusHook, 3000);
+      return null;
+    }
+  }
+}
+
+async function fetchSharedRecord(shareId, password) {
+  const params = new URLSearchParams({ id: shareId });
+  if (password) {
+    params.set('password', password);
+  }
+
+  const response = await fetch(`/.netlify/functions/share?${params.toString()}`, { cache: 'no-store' });
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    // Ignore – handled below
+  }
+
+  if (response.status === 401 && payload?.requiresPassword) {
+    throw new SharePasswordError(payload?.error || 'Password required', {
+      invalidPassword: Boolean(payload?.invalidPassword),
+    });
+  }
+
+  if (!response.ok) {
+    const message = payload?.error || `Failed to fetch shared deck (${response.status})`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
+async function requestPassphrase(isInvalid) {
+  if (typeof requestSharePasswordHook === 'function') {
+    return requestSharePasswordHook({ invalid: isInvalid });
+  }
+  const promptText = isInvalid
+    ? 'Passphrase was incorrect. Try again:'
+    : 'Enter the passphrase to unlock this deck:';
+  const response = window.prompt(promptText);
+  return response ? response.trim() : null;
 }
 
 export function resolveSlidesPath() {
@@ -358,4 +426,3 @@ function markDeckAsRecent() {
     console.warn('Unable to record last deck ID:', error);
   }
 }
-

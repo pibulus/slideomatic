@@ -595,17 +595,19 @@
 }
 
 .hints-modal__dialog {
-  width: min(480px, 90vw);
+  width: min(400px, 90vw);
   max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
   border-radius: 28px;
   border: var(--border-width) solid var(--color-ink);
   box-shadow: 18px 20px 0 rgba(0, 0, 0, 0.28);
-  padding: clamp(32px, 5vw, 40px);
+  padding: clamp(24px, 5vw, 40px);
   animation: modal-slide-up 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
   background: var(--color-surface);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .hints-modal__close {
@@ -640,7 +642,7 @@
   background: transparent;
   justify-content: center;
   text-align: center;
-  margin-bottom: clamp(16px, 4vh, 32px);
+  margin-bottom: 0;
 }
 
 .hints-modal__header h2 {
@@ -654,15 +656,15 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: clamp(16px, 4vh, 32px);
+  gap: 10px;
+  margin-bottom: 0;
 }
 
 .hint-item {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 12px 16px;
+  gap: 14px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.6);
   border: 2px solid var(--color-ink);
   border-radius: 12px;
@@ -675,8 +677,9 @@
 }
 
 .hint-item__key {
-  min-width: 48px;
-  height: 48px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -685,8 +688,9 @@
   border-radius: 8px;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.1rem;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .hint-item__desc {
@@ -728,14 +732,39 @@
 }
 
 @media (max-width: 480px) {
+  .hints-modal__dialog {
+    padding: 20px;
+    gap: 16px;
+    border-radius: 20px;
+    box-shadow: 10px 12px 0 rgba(0, 0, 0, 0.28);
+  }
+
+  .hints-modal__header h2 {
+    font-size: 1.5rem;
+  }
+
+  .hints-modal__body {
+    gap: 8px;
+  }
+
   .hint-item {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 8px 12px;
+    gap: 12px;
   }
 
   .hint-item__key {
-    min-width: 100%;
-    justify-content: flex-start;
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+
+  .hint-item__desc {
+    font-size: 0.9rem;
+  }
+
+  .hints-modal__btn {
+    padding: 12px 28px;
+    font-size: 0.95rem;
   }
 }
 
@@ -836,6 +865,10 @@
   gap: 12px;
 }
 
+.share-modal__actions {
+  align-items: flex-start;
+}
+
 .share-modal__section--qr {
   align-items: center;
   text-align: center;
@@ -895,6 +928,15 @@
   color: var(--color-ink);
 }
 
+.share-modal__label-hint {
+  margin-left: 6px;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #666);
+}
+
 .share-modal__input-group {
   display: flex;
   gap: 8px;
@@ -915,6 +957,12 @@
 .share-modal__input:focus {
   outline: none;
   box-shadow: 0 0 0 4px rgba(255, 115, 200, 0.25);
+}
+
+.share-modal__hint {
+  margin: -4px 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted, #666);
 }
 
 .share-modal__copy-btn {
@@ -995,6 +1043,59 @@
   background: rgba(255, 67, 54, 0.2);
   color: #c62828;
   border: 2px solid #FF6B6B;
+}
+
+.share-protect {
+  z-index: 1200;
+}
+
+.share-protect__dialog {
+  max-width: 440px;
+  padding: clamp(24px, 4vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.share-protect__header h2 {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 4vw, 2rem);
+}
+
+.share-protect__intro {
+  margin: 0;
+  color: var(--color-text-muted, #666);
+}
+
+.share-protect__label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.share-protect__input {
+  width: 100%;
+  border: 2px solid var(--color-ink);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 1rem;
+}
+
+.share-protect__input:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 115, 200, 0.25);
+}
+
+.share-protect__status {
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  color: var(--riso-red);
+  margin: 4px 0 0;
+}
+
+.share-protect__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
 /* --- Slide Index --- */

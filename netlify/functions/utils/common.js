@@ -3,6 +3,8 @@
 // Netlify Functions Shared Utilities
 // ═══════════════════════════════════════════════════════════════════════════
 
+import crypto from 'node:crypto';
+
 export const STORE_NAMES = {
   ASSETS: 'deck-assets',
   SHARES: 'shared-decks',
@@ -26,6 +28,16 @@ export const BASE_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   Vary: 'Origin',
 };
+
+const ADJECTIVES = [
+  'lunar', 'fizzy', 'velvet', 'lilac', 'glossy', 'cosmic', 'spicy', 'sunlit',
+  'midnight', 'holo', 'vivid', 'lofi', 'neon', 'turbo', 'sugar', 'chill'
+];
+
+const NOUNS = [
+  'panda', 'tiger', 'echo', 'drift', 'pulsar', 'marble', 'comet', 'noodle',
+  'petal', 'zeppelin', 'dawn', 'orbit', 'pixel', 'mixtape', 'seahorse', 'satchel'
+];
 
 export function corsHeaders(headers = {}, methods = 'GET,POST,OPTIONS') {
   const origin = headers.origin || headers.Origin || '*';
@@ -92,7 +104,6 @@ export function decodeDataUrl(dataUrl, overrideMime) {
  * Uses first 16 bytes of content for quick comparison
  */
 export function hashImageContent(buffer) {
-  const crypto = require('crypto');
   return crypto.createHash('md5').update(buffer).digest('hex').slice(0, 16);
 }
 
@@ -152,4 +163,31 @@ export async function recompressForShare(buffer, mimeType) {
     }
     return { buffer, mimeType, recompressed: false };
   }
+}
+
+export function generateShareSlug() {
+  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const tail = crypto.randomBytes(2).toString('hex');
+  return `${adjective}${noun}${tail}`;
+}
+
+export function hashSharePassword(password) {
+  const salt = crypto.randomBytes(16);
+  const hash = crypto.scryptSync(password, salt, 32);
+  return {
+    salt: salt.toString('hex'),
+    hash: hash.toString('hex'),
+  };
+}
+
+export function verifySharePassword(password, saltHex, hashHex) {
+  if (!saltHex || !hashHex) return false;
+  const salt = Buffer.from(saltHex, 'hex');
+  const stored = Buffer.from(hashHex, 'hex');
+  const derived = crypto.scryptSync(password, salt, stored.length);
+  if (derived.length !== stored.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(derived, stored);
 }

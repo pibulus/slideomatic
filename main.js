@@ -102,6 +102,7 @@ import {
 } from './modules/navigation.js';
 import { initTouchNav } from './modules/touch-nav.js';
 import { initShareModal } from './modules/share-modal.js';
+import { initSharePasswordModal, requestSharePassword } from './modules/share-password-modal.js';
 import {
   showIntroModalIfFirstVisit,
   showKeyboardHintsIfFirstVisit,
@@ -143,6 +144,7 @@ registerDeckPersistenceHooks({
   updateDeckNameDisplay,
   getSlideTemplate,
   applySharedTheme: applySharedThemeFromShare,
+  requestSharePassword,
 });
 
 registerNavigationHooks({
@@ -609,7 +611,8 @@ async function initDeckWithTheme() {
   });
 
   // Initialize share modal
-  initShareModal();
+initShareModal();
+initSharePasswordModal();
 
   // Initialize speaker notes
   initSpeakerNotes();

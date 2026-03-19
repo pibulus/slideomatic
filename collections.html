@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slide-o-Matic Deck Collections</title>
     <meta name="description" content="Share a bundle of Slide-o-Matic decks with one link.">
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://slideomatic.app/collections" />
+    <meta property="og:title" content="Slide-o-Matic Deck Collection" />
+    <meta property="og:description" content="Share a bundle of Slide-o-Matic decks with one link." />
+    <meta property="og:image" content="https://slideomatic.app/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Slide-o-Matic Interface" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Slide-o-Matic Deck Collection" />
+    <meta name="twitter:description" content="Share a bundle of Slide-o-Matic decks with one link." />
+    <meta name="twitter:image" content="https://slideomatic.app/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Slide-o-Matic Interface" />
+
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
     <link rel="stylesheet" href="css/landing.css">
     <link rel="stylesheet" href="css/collections.css">
@@ -19,8 +35,7 @@
           <p class="collections__tagline" data-collection-tagline></p>
           <p class="collections__description" data-collection-description></p>
           <div class="collections__actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a class="button button--primary" href="#collection" data-hero-cta style="flex: 1; text-align: center;">Jump to decks</a>
-            <button class="button button--secondary" type="button" data-copy-link style="flex: 1;">Copy share link</button>
+            <button class="button button--primary" type="button" data-copy-link style="flex: 1;">Copy share link</button>
             <span class="collections__copy-status" data-copy-status>Link copied</span>
           </div>
         </div>
@@ -130,11 +145,9 @@
         if (heroTitle) heroTitle.textContent = group.title || 'Deck collection';
         if (heroTagline) heroTagline.textContent = group.tagline || '';
         if (heroDescription) heroDescription.textContent = group.description || '';
-        if (groupTitle) groupTitle.textContent = group.title || 'Deck bundle';
-        if (groupDescription) {
-          const fallback = 'Share multiple Slide-o-Matic decks with one link.';
-          groupDescription.textContent = group.description || fallback;
-        }
+        const deckCount = Array.isArray(group.decks) ? group.decks.length : 0;
+        if (groupTitle) groupTitle.textContent = `${deckCount} ${deckCount === 1 ? 'deck' : 'decks'} in this pack`;
+        if (groupDescription) groupDescription.textContent = '';
       }
 
       function renderDecks(group) {
@@ -206,7 +219,7 @@
 
       function buildDeckUrl(deck) {
         if (deck?.shareId) {
-          return `deck.html?share=${encodeURIComponent(deck.shareId)}`;
+          return `/s/${encodeURIComponent(deck.shareId)}`;
         }
         if (deck?.slides) {
           return `deck.html#slides=${encodeURIComponent(deck.slides)}`;

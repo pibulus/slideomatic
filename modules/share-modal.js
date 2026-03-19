@@ -22,6 +22,8 @@ export function initShareModal() {
   const savingsDisplay = document.getElementById('share-savings-display');
   const savingsStat = document.getElementById('share-savings-stat');
   const statsDetail = document.getElementById('share-stats-detail');
+  const passwordInput = /** @type {HTMLInputElement} */ (document.getElementById('share-password-input'));
+  const generateBtn = document.getElementById('share-generate-btn');
 
   if (!shareBtn || !shareModal) return;
 
@@ -31,6 +33,10 @@ export function initShareModal() {
 
   closeBtn?.addEventListener('click', closeShareModal);
   backdrop?.addEventListener('click', closeShareModal);
+
+  generateBtn?.addEventListener('click', async () => {
+    await generateLink();
+  });
 
   copyBtn?.addEventListener('click', () => {
     if (urlInput?.value) {
@@ -61,14 +67,16 @@ export function initShareModal() {
     shareModal.classList.add('is-open');
     shareModal.setAttribute('aria-hidden', 'false');
 
-    // Reset state
-    if (urlInput) urlInput.value = '';
-    if (qrContainer) qrContainer.innerHTML = '';
-    if (statsSection) statsSection.style.display = 'none';
-    showShareStatus('🔗 Generating share link...', 'loading');
+    resetShareModalState();
+    hideShareStatus();
+    showShareStatus('Add an optional passphrase, then hit Generate link.', 'loading');
 
     // Focus management
-    focusFirstElement(shareModal);
+    if (passwordInput) {
+      passwordInput.focus();
+    } else {
+      focusFirstElement(shareModal);
+    }
 
     if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
     keydownHandler = (e) => {
@@ -80,17 +88,7 @@ export function initShareModal() {
     };
     document.addEventListener('keydown', keydownHandler);
 
-    try {
-      const { shareUrl, bytes, optimization } = await generateShareUrl();
-      if (urlInput) urlInput.value = shareUrl;
-      generateQRCode(shareUrl);
-      displayShareStats(bytes, optimization);
-      showShareStatus('✓ Ready to share!', 'success');
-      setTimeout(() => hideShareStatus(), 3000);
-    } catch (error) {
-      console.error('Share failed:', error);
-      showShareStatus(`❌ ${error.message}`, 'error');
-    }
+    // Defer generation until user clicks the button
   }
 
   function closeShareModal() {
@@ -108,6 +106,36 @@ export function initShareModal() {
       document.removeEventListener('keydown', keydownHandler);
       keydownHandler = null;
     }
+    generateBtn?.removeAttribute('data-loading');
+  }
+
+  function resetShareModalState() {
+    if (urlInput) urlInput.value = '';
+    if (qrContainer) qrContainer.innerHTML = '';
+    if (statsSection) statsSection.style.display = 'none';
+    if (sizeDisplay) sizeDisplay.textContent = '—';
+    if (savingsDisplay) savingsDisplay.textContent = '—';
+    if (savingsStat) savingsStat.style.display = 'none';
+    if (statsDetail) statsDetail.textContent = '';
+  }
+
+  async function generateLink() {
+    if (generateBtn?.getAttribute('data-loading') === 'true') return;
+    generateBtn?.setAttribute('data-loading', 'true');
+    showShareStatus('🔗 Generating share link...', 'loading');
+    try {
+      const { shareUrl, bytes, optimization } = await generateShareUrl();
+      if (urlInput) urlInput.value = shareUrl;
+      generateQRCode(shareUrl);
+      displayShareStats(bytes, optimization);
+      showShareStatus('✓ Ready to share!', 'success');
+      setTimeout(() => hideShareStatus(), 3000);
+    } catch (error) {
+      console.error('Share failed:', error);
+      showShareStatus(`❌ ${error.message}`, 'error');
+    } finally {
+      generateBtn?.removeAttribute('data-loading');
+    }
   }
 
   async function generateShareUrl() {
@@ -120,6 +148,11 @@ export function initShareModal() {
         createdAt: Date.now(),
       },
     };
+
+    const passwordValue = passwordInput?.value?.trim();
+    if (passwordValue) {
+      deckPayload.meta.password = passwordValue;
+    }
 
     let response;
     try {

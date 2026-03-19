@@ -203,32 +203,20 @@
               <div class="hint-item__desc">Navigate slides</div>
             </div>
             <div class="hint-item">
-              <div class="hint-item__key">O</div>
-              <div class="hint-item__desc">Overview (see all slides)</div>
-            </div>
-            <div class="hint-item">
-              <div class="hint-item__key">I</div>
-              <div class="hint-item__desc">Slide index (jump to any slide)</div>
-            </div>
-            <div class="hint-item">
               <div class="hint-item__key">E</div>
-              <div class="hint-item__desc">Edit or add new slides</div>
+              <div class="hint-item__desc">Edit or add slides</div>
+            </div>
+            <div class="hint-item">
+              <div class="hint-item__key">O</div>
+              <div class="hint-item__desc">Overview</div>
             </div>
             <div class="hint-item">
               <div class="hint-item__key">T</div>
-              <div class="hint-item__desc">Randomize theme</div>
+              <div class="hint-item__desc">Change theme</div>
             </div>
             <div class="hint-item">
-              <div class="hint-item__key">N</div>
-              <div class="hint-item__desc">Speaker notes</div>
-            </div>
-            <div class="hint-item">
-              <div class="hint-item__key">D</div>
-              <div class="hint-item__desc">Download deck as JSON</div>
-            </div>
-            <div class="hint-item">
-              <div class="hint-item__key">Home / End</div>
-              <div class="hint-item__desc">First / last slide</div>
+              <div class="hint-item__key">I</div>
+              <div class="hint-item__desc">Slide index</div>
             </div>
           </div>
           <div class="hints-modal__footer">
@@ -246,7 +234,20 @@
             <button class="share-modal__close" aria-label="Close" id="share-modal-close">×</button>
           </div>
           <div class="share-modal__body">
-            <p class="share-modal__intro">We snapshot your deck to Netlify Blobs. Anyone with this link can view that read-only copy.</p>
+            <p class="share-modal__intro">We snapshot your deck to Netlify Blobs. Anyone with this link can view that read-only copy. Add a passphrase if you want to lock it.</p>
+
+            <div class="share-modal__section">
+              <label for="share-password-input" class="share-modal__label">Passphrase <span class="share-modal__label-hint">(optional)</span></label>
+              <div class="share-modal__input-group">
+                <input
+                  type="password"
+                  id="share-password-input"
+                  class="share-modal__input"
+                  placeholder="Leave blank for an open link"
+                />
+              </div>
+              <p class="share-modal__hint">Anyone with the link + passphrase can open the deck.</p>
+            </div>
 
             <div class="share-modal__section">
               <label for="share-url-input" class="share-modal__label">Share link</label>
@@ -263,6 +264,10 @@
                   Copy
                 </button>
               </div>
+            </div>
+
+            <div class="share-modal__section share-modal__actions">
+              <button type="button" class="button button--primary" id="share-generate-btn">Generate link</button>
             </div>
 
             <div class="share-modal__section share-modal__section--qr">
@@ -290,6 +295,26 @@
             </div>
 
             <div class="share-modal__status" id="share-status"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Share password prompt -->
+      <div class="share-protect modal-base" id="share-protect-modal" aria-hidden="true">
+        <div class="share-protect__backdrop modal-backdrop" data-share-protect-cancel></div>
+        <div class="share-protect__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-protect-title">
+          <div class="share-protect__header">
+            <h2 id="share-protect-title">This deck is locked</h2>
+            <p class="share-protect__intro">Enter the passphrase to view it.</p>
+          </div>
+          <div class="share-protect__body">
+            <label for="share-protect-input" class="share-protect__label">Passphrase</label>
+            <input type="password" id="share-protect-input" class="share-protect__input" autocomplete="off" />
+            <p class="share-protect__status" id="share-protect-status"></p>
+          </div>
+          <div class="share-protect__actions">
+            <button type="button" class="button button--primary" id="share-protect-submit">Unlock</button>
+            <button type="button" class="button button--secondary" id="share-protect-cancel" data-share-protect-cancel>Cancel</button>
           </div>
         </div>
       </div>

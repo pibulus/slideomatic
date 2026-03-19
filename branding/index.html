@@ -135,7 +135,7 @@
       function buildDeckUrl(deck) {
         const base = '/deck.html';
         if (deck?.shareId) {
-          return `${base}?share=${encodeURIComponent(deck.shareId)}`;
+          return `${base.replace(/\/deck\.html$/, '')}/s/${encodeURIComponent(deck.shareId)}`;
         }
         if (deck?.slides) {
           return `${base}#slides=${encodeURIComponent(deck.slides)}`;
