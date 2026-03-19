@@ -637,8 +637,8 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
   try {
     const prompt = buildDeckDesignPrompt(request, slideCount);
     const payload = await requestGeminiJson(apiKey, prompt, {
-      temperature: 0.7,
-      maxOutputTokens: 4096,
+      temperature: 0.75,
+      maxOutputTokens: 8192,
     });
 
     const slidesArray = extractSlidesArray(payload);
@@ -737,24 +737,44 @@ AVAILABLE SLIDE TYPES:
   return basePrompt;
 }
 
-function buildDeckDesignPrompt(description, desiredCount = 5) {
-  const safeCount = Math.max(3, Math.min(desiredCount, 10));
-  return `You are a presentation director for Slideomatic. Create an ordered array of ${safeCount} slide JSON objects that tell a cohesive story.
+function buildDeckDesignPrompt(description, desiredCount = 8) {
+  const safeCount = Math.max(3, Math.min(desiredCount, 12));
+  return `You are a presentation coach and researcher for Slideomatic. Create ${safeCount} slides that form a REAL, PRESENTABLE deck on this topic — not a skeleton or outline.
+
+PHILOSOPHY:
+This deck should be good enough to present TODAY, but obviously better once the person adds their own knowledge and examples. Think of it as a research springboard + starter kit:
+- Include REAL facts, specific names, dates, and examples — not vague summaries
+- Include WORKING links to real websites, articles, Wikipedia pages, YouTube videos, or resources (use well-known URLs that are likely to work — Wikipedia, YouTube, major publications, established tools)
+- Include discussion questions that work BOTH as presentation talking points AND as research prompts for the person building the deck
+- Leave visible threads — mention interesting tangents without fully explaining them, so the person naturally wants to dig deeper
+- Use "notes" field for presenter tips, extra context, or "you might also look into..." suggestions
+
+CONTENT STRATEGY:
+The goal is dual-use content. Every slide should work as a real presentation slide AND open doors:
+- A great quote makes them want to find more from that person
+- A specific example makes them think "oh I know an even better one"
+- A discussion question works in class AND sends the deck-builder down a rabbithole
+- Real links give them a starting point to branch off from
+- Mentioning a controversy or surprising fact makes them curious enough to explore
+
+SLIDE MIX (vary these):
+- 1 title slide with a compelling angle on the topic
+- 4-5 content slides with real substance (facts, links, images, examples)
+- 1-2 slides with discussion questions or provocations that could be used in a talk
+- 1 closing slide that reframes the topic or leaves a thread to pull
 
 SCHEMA REQUIREMENTS:
-- Each slide must follow the Slideomatic schema (same rules as buildSlideDesignPrompt) and include a "type".
-- Vary slide types (mix of title, standard, split, gallery, quote, graph, pillars, etc.)
-- Include descriptive image alt/search text when visuals are needed.
-- Use "notes" field when extra presenter context is useful.
+- Each slide must include a "type" key
+- Available types: title, standard, quote, split, grid, pillars, gallery, image, graph, typeface
+- Include descriptive image alt text using FINDABLE search language (e.g. "brutalist concrete building London" not "photo1")
+- Body text supports markdown: **bold**, *italic*, [links](url)
+- For links in body text, use the format: **[Display Text](https://real-url.com)** — these must be real, working URLs
 
-TONE + CONTENT:
-- Follow this creative brief: ${description}
-- Maintain consistent voice and theme.
-- If data or stats are mentioned, include them.
-- Ensure the deck flows logically with progression (intro → content → close).
+TOPIC:
+${description}
 
 OUTPUT:
-- Return ONLY a JSON array (no markdown wrapper) of slide objects, or an object with a "slides" array.`;
+- Return ONLY a JSON array of slide objects, or an object with a "slides" array. No markdown wrapper.`;
 }
 
 function ensureApiKeyOrThrow(context) {

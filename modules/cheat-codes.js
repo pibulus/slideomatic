@@ -97,7 +97,7 @@ async function handleCheatAction(mode) {
   const otherBtn = mode === 'slide' ? deckBtn : slideBtn;
   triggerBtn.disabled = true;
   otherBtn.disabled = true;
-  triggerBtn.textContent = mode === 'slide' ? 'Cooking...' : 'Mixing deck...';
+  triggerBtn.textContent = mode === 'slide' ? 'Cooking...' : 'Researching...';
   setStatus('', 'info');
 
   try {
@@ -107,7 +107,7 @@ async function handleCheatAction(mode) {
     } else {
       const context = getVoiceAssistantContext();
       const insertAfter = context.getCurrentIndex();
-      const slides = await generateDeckFromPrompt(prompt, { insert: true, slideCount: 6 });
+      const slides = await generateDeckFromPrompt(prompt, { insert: true, slideCount: 8 });
       setStatus('✨ Mini deck added! Generating images...', 'success');
 
       // Fire off image generation in the background for slides with empty image slots
@@ -118,7 +118,7 @@ async function handleCheatAction(mode) {
   } finally {
     triggerBtn.disabled = false;
     otherBtn.disabled = false;
-    triggerBtn.textContent = mode === 'slide' ? 'Generate slide' : 'Generate mini deck';
+    triggerBtn.textContent = mode === 'slide' ? 'Generate slide' : 'Generate starter deck';
   }
 }
 
