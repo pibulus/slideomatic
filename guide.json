@@ -2,7 +2,7 @@
   {
     "type": "title",
     "title": "Slideomatic Field Guide",
-    "subtitle": "Voice-powered presentations, built in the browser",
+    "subtitle": "Build beautiful decks right in your browser",
     "media": [
       {
         "image": {
@@ -18,7 +18,7 @@
       },
       {
         "color": "#F472B6",
-        "label": "AI-powered"
+        "label": "No setup needed"
       }
     ]
   },
@@ -27,41 +27,32 @@
     "badge": "Start here",
     "headline": "This deck is the manual",
     "body": [
-      "Arrow keys move between slides. Press `?` to see every keyboard shortcut.",
-      "Each slide walks you through a feature\u2014read it, try it. Nothing saves to a server; all edits live in your browser until you export."
+      "Use the **arrow keys** to move between slides. Press `?` any time to see every keyboard shortcut.",
+      "Each slide walks you through a feature — read it, try it. Nothing saves to a server; all edits live in your browser until you export.",
+      "By the end of this guide you'll know how to create slides, change layouts, add images, apply themes, and export your finished deck."
     ]
   },
   {
     "type": "pillars",
-    "badge": "Voice + AI",
-    "headline": "Talk to build slides",
+    "badge": "The basics",
+    "headline": "Four things to know",
     "pillars": [
       {
-        "title": "Create",
-        "text": "Press **V** and describe a slide. Gemini turns your voice into a fully structured slide with the right layout."
+        "title": "Navigate",
+        "text": "**Arrow keys** move between slides. **Home** and **End** jump to the first or last slide. **Shift + Arrow** skips five at a time."
       },
       {
         "title": "Edit",
-        "text": "Record while on any slide to edit it by voice\u2014change the headline, swap the layout, add bullet points."
+        "text": "Press **E** to open the edit drawer. Change text, swap layouts, upload images — everything updates live on screen."
       },
       {
         "title": "Theme",
-        "text": "Voice-generate an entire theme. Say \u201cvaporwave neon\u201d or \u201cminimal paper\u201d and watch the palette change live."
+        "text": "Press **T** to randomize the theme instantly, or open the edit drawer to browse presets and fine-tune colours."
       },
       {
-        "title": "Images",
-        "text": "AI decides whether to search stock photos or generate an illustration, then fills the placeholder automatically."
+        "title": "Export",
+        "text": "Press **D** to download your deck as JSON. Use **Download PDF** in the edit drawer for a printable version."
       }
-    ]
-  },
-  {
-    "type": "standard",
-    "badge": "Setup",
-    "headline": "Add your Gemini API key",
-    "body": [
-      "Press **S** to open Settings. Paste your Gemini API key and hit **Save Key**. Use **Test Connection** to verify it works.",
-      "Get a free key at [Google AI Studio](https://aistudio.google.com/apikey). Your key stays in your browser\u2014it never touches our servers.",
-      "All voice and AI features (slide generation, theme generation, image AI) require this key. Everything else works without it."
     ]
   },
   {
@@ -69,9 +60,21 @@
     "badge": "The drawer",
     "headline": "Press **E** to edit anything",
     "body": [
-      "**Content** tab: titles, body text, badges, quotes, captions. Type and click out to auto-save.",
-      "**Layouts** tab: swap this slide to quote, gallery, pillars, split, or any other type. Add new slides already styled.",
-      "**Media** tab: upload images, compress them, add captions. Also home to the SomaFM radio and **Download PDF** button."
+      "The edit drawer is your control centre. It slides in from the right and has three tabs:",
+      "**Content** tab: edit titles, body text, badges, quotes, and captions. Changes save automatically when you click away.",
+      "**Layouts** tab: swap this slide to any of the available types — standard, quote, gallery, pillars, split, grid, typeface, or image. You can also add brand-new slides from here, already styled and ready to fill in.",
+      "**Media** tab: upload images, compress them, and add captions. You'll also find the **Download PDF** button here."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Adding slides",
+    "headline": "Build your deck one slide at a time",
+    "body": [
+      "Open the edit drawer with **E**, then go to the **Layouts** tab. Pick any slide type and a new slide appears right after the current one.",
+      "Want to duplicate the slide you're on? Press **Alt + Arrow Right** (or **Option + Arrow Right** on Mac) to clone it instantly.",
+      "To reorder slides, use the overview grid (**O**) to see the whole deck at a glance, then rearrange from there.",
+      "There's no limit on how many slides you can add. Go wild — you can always trim later."
     ]
   },
   {
@@ -84,14 +87,14 @@
     },
     "right": {
       "headline": "Right side",
-      "body": "Use the edit drawer to fill each column independently. Split is one of 10 available slide types."
+      "body": "Use the edit drawer to fill each column independently. Split is one of the available slide types you can pick from the Layouts tab."
     }
   },
   {
     "type": "gallery",
     "badge": "Gallery",
     "headline": "Keep the rhythm weird",
-    "body": "Standard, quote, gallery, pillars, typeface, split, grid, image\u2014all one click away in the Layouts tab.",
+    "body": "Standard, quote, gallery, pillars, typeface, split, grid, image — all one click away in the Layouts tab.",
     "items": [
       {
         "image": {
@@ -123,7 +126,7 @@
     "type": "typeface",
     "badge": "Typeface flex",
     "headline": "Fonts are mood swings",
-    "body": "Override the `font` field per-slide when you need a different voice mid-deck.",
+    "body": "Override the font on any slide using the edit drawer or by setting the `font` field in JSON. Presets include sans, mono, grotesk, jetbrains, and pixel.",
     "samples": [
       {
         "font": "Space Grotesk, Inter, sans-serif",
@@ -142,7 +145,7 @@
   {
     "type": "image",
     "badge": "Image playground",
-    "caption": "Leave `image.src` empty but keep the `alt` text to unlock the AI image button while presenting.",
+    "caption": "Upload images through the Media tab in the edit drawer, or set the `src` path directly in the JSON.",
     "image": {
       "src": "images/riotgrrl.webp",
       "alt": "Riot grrl collage",
@@ -154,9 +157,9 @@
     "badge": "Themes + tunes",
     "headline": "Press **T** whenever the vibe feels stale",
     "body": [
-      "Theme drawer lets you randomize palettes, tweak layer styles, and save presets. Everything updates live.",
-      "SomaFM radio pipes curated streams straight into the drawer so you can design with a soundtrack.",
-      "With a Gemini API key, hit the wand icon to AI-generate themes from a text description\u2014or use voice."
+      "Hit **T** to instantly randomize the entire colour palette, shadows, and textures. Keep pressing until something clicks.",
+      "For more control, open the edit drawer (**E**) and browse the theme presets — Default, Gameboy, Vaporwave, Slack, and more.",
+      "Save any theme you like to your personal library so you can switch back to it later. SomaFM radio is built in too, so you can design with a soundtrack."
     ]
   },
   {
@@ -174,12 +177,12 @@
   },
   {
     "type": "standard",
-    "badge": "Keyboard autopilot",
+    "badge": "Keyboard shortcuts",
     "headline": "Keep these in your fingers",
     "body": [
-      "**E** = edit drawer, **T** = themes, **V** = voice, **S** = settings, **O** = overview grid.",
+      "**E** = edit drawer, **T** = randomize theme, **I** = slide index, **O** = overview grid.",
       "**D** downloads the deck as JSON. **U** uploads one. **N** toggles speaker notes.",
-      "`Shift + Arrow` skips five slides. `Option/Alt + Arrow` duplicates the current slide.",
+      "**Shift + Arrow** skips five slides. **Alt/Option + Arrow** duplicates the current slide.",
       "`?` opens the full cheat sheet any time you forget."
     ]
   },
@@ -190,7 +193,7 @@
     "pillars": [
       {
         "title": "JSON",
-        "text": "**D** downloads the deck. **U** uploads one. The JSON format is portable\u2014edit it by hand or share it."
+        "text": "**D** downloads the deck. **U** uploads one. The JSON format is portable — edit it by hand or share it."
       },
       {
         "title": "PDF",
@@ -202,7 +205,7 @@
       },
       {
         "title": "Share",
-        "text": "Use the share feature to create a link anyone can view\u2014no account required."
+        "text": "Use the share feature to create a link anyone can view — no account required."
       }
     ]
   },
@@ -217,8 +220,8 @@
     "badge": "Now go",
     "headline": "Treat Slideomatic like a sketchbook",
     "body": [
-      "Duplicate this deck, tear it apart, swap in your own chaos. It\u2019s yours.",
-      "Try the voice features\u2014press **V** and describe a slide. It\u2019s the fastest way to build.",
+      "Duplicate this deck, tear it apart, swap in your own content. It's yours.",
+      "Open the edit drawer (**E**), pick a layout, start typing. That's all there is to it.",
       "Have fun, keep it human, keep it moving."
     ]
   }
