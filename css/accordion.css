@@ -37,6 +37,10 @@
   background: linear-gradient(135deg, rgba(255, 159, 243, 0.08) 0%, rgba(255, 159, 243, 0.04) 100%), white;
 }
 
+.accordion--radio {
+  background: linear-gradient(135deg, rgba(156, 202, 255, 0.1) 0%, rgba(156, 202, 255, 0.04) 100%), white;
+}
+
 .accordion--images {
   background: white;
 }

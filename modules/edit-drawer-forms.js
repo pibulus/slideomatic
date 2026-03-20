@@ -134,6 +134,7 @@ export function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
     buildThemeSection(),
+    buildRadioSection(),
     buildLayoutControl(type, slide.layout),
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildImagesSection(slide),
@@ -410,11 +411,6 @@ function buildThemeSection() {
   const library = loadThemeLibrary();
   const currentPath = getCurrentThemePath() || 'theme.json';
 
-  const radioChannels = getRadioChannelList();
-  const radioState = getRadioState();
-  const activeRadioChannel = radioChannels.find((channel) => channel.id === radioState.channelId) || radioChannels[0];
-  const isRadioEnabled = radioState.enabled && !!activeRadioChannel;
-
   const defaultThemes = [
     { value: 'theme.json', label: 'Default' },
     { value: 'themes/vaporwave.json', label: 'Vaporwave' },
@@ -424,7 +420,7 @@ function buildThemeSection() {
 
   const savedThemes = library.map((entry) => ({
     value: `saved:${entry.name}`,
-    label: `✨ ${entry.name}`,
+    label: `\u2728 ${entry.name}`,
   }));
 
   const allThemes = [...defaultThemes, ...savedThemes];
@@ -439,22 +435,12 @@ function buildThemeSection() {
     `;
   }).join('');
 
-  const radioOptions = radioChannels.map((channel) => {
-    const isSelected = activeRadioChannel.id === channel.id ? 'is-selected' : '';
-    return `
-      <button type="button" class="custom-select__option ${isSelected}" data-value="${channel.id}">
-        <span class="custom-select__option-label">${escapeHtml(channel.name)}</span>
-        <span class="custom-select__option-desc">${escapeHtml(channel.description)}</span>
-      </button>
-    `;
-  }).join('');
-
   const content = `
     <div class="accordion__group">
       <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
-          <span class="custom-select__arrow">▼</span>
+          <span class="custom-select__arrow">\u25bc</span>
         </button>
         <div class="custom-select__dropdown">
           ${themeOptions}
@@ -463,30 +449,6 @@ function buildThemeSection() {
       <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px;">
         Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize
       </p>
-    </div>
-    <div class="accordion__group theme-radio ${isRadioEnabled ? 'is-active' : ''}">
-      <button type="button" class="theme-radio__toggle ${isRadioEnabled ? 'is-active' : ''}" id="theme-radio-toggle" aria-pressed="${isRadioEnabled ? 'true' : 'false'}">
-        <span class="theme-radio__icon">📻</span>
-        <span class="theme-radio__copy">
-          <span class="theme-radio__label">SomaFM Radio</span>
-          <span class="theme-radio__status" id="theme-radio-status">
-            ${isRadioEnabled ? `${escapeHtml(activeRadioChannel.shortLabel || activeRadioChannel.name)} is live` : 'Off'}
-          </span>
-        </span>
-        <span class="theme-radio__pill" id="theme-radio-pill">${isRadioEnabled ? 'On' : 'Off'}</span>
-      </button>
-      <div class="theme-radio__channels ${isRadioEnabled ? 'is-visible' : ''}" id="theme-radio-channel">
-        <div class="custom-select custom-select--radio" id="theme-radio-select" data-value="${activeRadioChannel.id}">
-          <button type="button" class="custom-select__trigger">
-            <span class="custom-select__value">${escapeHtml(activeRadioChannel.name)}</span>
-            <span class="custom-select__arrow">▼</span>
-          </button>
-          <div class="custom-select__dropdown">
-            ${radioOptions}
-          </div>
-        </div>
-        <p class="theme-radio__hint">Quick SomaFM vibes for the drawer. Toggle on, pick a station, done.</p>
-      </div>
     </div>
     <div class="accordion__group">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
@@ -504,6 +466,52 @@ function buildThemeSection() {
   `;
 
   return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: true });
+}
+
+function buildRadioSection() {
+  const radioChannels = getRadioChannelList();
+  const radioState = getRadioState();
+  const activeRadioChannel = radioChannels.find((channel) => channel.id === radioState.channelId) || radioChannels[0];
+  const isRadioEnabled = radioState.enabled && !!activeRadioChannel;
+
+  const radioOptions = radioChannels.map((channel) => {
+    const isSelected = activeRadioChannel.id === channel.id ? 'is-selected' : '';
+    return `
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${channel.id}">
+        <span class="custom-select__option-label">${escapeHtml(channel.name)}</span>
+        <span class="custom-select__option-desc">${escapeHtml(channel.description)}</span>
+      </button>
+    `;
+  }).join('');
+
+  const content = `
+    <div class="accordion__group theme-radio ${isRadioEnabled ? 'is-active' : ''}">
+      <button type="button" class="theme-radio__toggle ${isRadioEnabled ? 'is-active' : ''}" id="theme-radio-toggle" aria-pressed="${isRadioEnabled ? 'true' : 'false'}">
+        <span class="theme-radio__icon">\ud83d\udcfb</span>
+        <span class="theme-radio__copy">
+          <span class="theme-radio__label">SomaFM Radio</span>
+          <span class="theme-radio__status" id="theme-radio-status">
+            ${isRadioEnabled ? `${escapeHtml(activeRadioChannel.shortLabel || activeRadioChannel.name)} is live` : 'Off'}
+          </span>
+        </span>
+        <span class="theme-radio__pill" id="theme-radio-pill">${isRadioEnabled ? 'On' : 'Off'}</span>
+      </button>
+      <div class="theme-radio__channels ${isRadioEnabled ? 'is-visible' : ''}" id="theme-radio-channel">
+        <div class="custom-select custom-select--radio" id="theme-radio-select" data-value="${activeRadioChannel.id}">
+          <button type="button" class="custom-select__trigger">
+            <span class="custom-select__value">${escapeHtml(activeRadioChannel.name)}</span>
+            <span class="custom-select__arrow">\u25bc</span>
+          </button>
+          <div class="custom-select__dropdown">
+            ${radioOptions}
+          </div>
+        </div>
+        <p class="theme-radio__hint">Quick SomaFM vibes while you work. Toggle on, pick a station, done.</p>
+      </div>
+    </div>
+  `;
+
+  return buildAccordion('Radio', content, { modifier: ' accordion--radio', startOpen: false });
 }
 
 export function setupThemeRadioControls(addTrackedListener) {
