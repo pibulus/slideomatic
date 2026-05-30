@@ -96,12 +96,22 @@ export async function loadSlides() {
   const dataParam = getParamHook('data');
   if (dataParam) {
     try {
-      const decoded = decodeURIComponent(escape(atob(dataParam)));
-      const data = JSON.parse(decoded);
+      const json = await decodeDataParam(dataParam);
+      const data = JSON.parse(json);
+
+      // Support both plain arrays (legacy) and {slides, theme} objects
       if (Array.isArray(data)) {
         showHudStatusHook('✓ Loaded deck from share link', 'success');
         setTimeout(hideHudStatusHook, 2000);
         return data;
+      }
+      if (data && Array.isArray(data.slides)) {
+        if (data.theme) {
+          applySharedThemeHook(data.theme);
+        }
+        showHudStatusHook('✓ Loaded deck from share link', 'success');
+        setTimeout(hideHudStatusHook, 2000);
+        return data.slides;
       }
     } catch (error) {
       console.error('Failed to load deck from data parameter', error);
@@ -425,4 +435,27 @@ function markDeckAsRecent() {
   } catch (error) {
     console.warn('Unable to record last deck ID:', error);
   }
+}
+
+/**
+ * Decode a `?data=` parameter.
+ * Supports two formats:
+ *   - `gz.<base64url>` — gzip-compressed via CompressionStream
+ *   - plain base64 (legacy)
+ */
+async function decodeDataParam(param) {
+  if (param.startsWith('gz.')) {
+    const b64 = param.slice(3).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const decompressed = await new Response(stream).text();
+    return decompressed;
+  }
+
+  // Legacy plain base64
+  return decodeURIComponent(escape(atob(param)));
 }

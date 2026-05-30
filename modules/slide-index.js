@@ -89,6 +89,7 @@ export function openSlideIndex() {
 
   isOpen = true;
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  panel.classList.remove('is-closing');
   panel.classList.add('is-open');
   panel.setAttribute('aria-hidden', 'false');
   document.addEventListener('keydown', handleKeydown, true);
@@ -104,9 +105,23 @@ export function closeSlideIndex() {
   if (!isOpen || !panel) return;
 
   isOpen = false;
-  panel.classList.remove('is-open');
-  panel.setAttribute('aria-hidden', 'true');
   document.removeEventListener('keydown', handleKeydown, true);
+
+  // Play the close animation, then remove classes
+  panel.classList.add('is-closing');
+  const onAnimEnd = () => {
+    panel.removeEventListener('animationend', onAnimEnd);
+    panel.classList.remove('is-open', 'is-closing');
+    panel.setAttribute('aria-hidden', 'true');
+  };
+  panel.addEventListener('animationend', onAnimEnd);
+
+  // Fallback: if animation doesn't fire (e.g. reduced motion), clean up after timeout
+  setTimeout(() => {
+    if (panel.classList.contains('is-closing')) {
+      onAnimEnd();
+    }
+  }, 420);
 
   const target = previousFocus && typeof previousFocus.focus === 'function'
     ? previousFocus
@@ -171,18 +186,24 @@ function ensurePanel() {
   closeBtn.className = 'slide-index__close';
   closeBtn.setAttribute('aria-label', 'Close slide index');
   closeBtn.dataset.indexClose = 'true';
-  closeBtn.textContent = '×';
+  closeBtn.textContent = '\u00d7';
 
   header.append(title, closeBtn);
 
+  // Scrollable body — matches edit drawer structure
+  const body = document.createElement('div');
+  body.className = 'slide-index__body';
+
   listEl = document.createElement('ol');
   listEl.className = 'slide-index__list';
+
+  body.appendChild(listEl);
 
   const footer = document.createElement('div');
   footer.className = 'slide-index__footer';
   footer.textContent = 'Jump anywhere without leaving flow.';
 
-  panelContent.append(header, listEl, footer);
+  panelContent.append(header, body, footer);
   panel.append(backdrop, panelContent);
   document.body.appendChild(panel);
 

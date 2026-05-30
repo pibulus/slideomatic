@@ -232,23 +232,10 @@
         <div class="share-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
           <div class="share-modal__header">
             <h2 id="share-modal-title">Share this deck</h2>
-            <button class="share-modal__close" aria-label="Close" id="share-modal-close">×</button>
+            <button class="share-modal__close" aria-label="Close" id="share-modal-close">&times;</button>
           </div>
           <div class="share-modal__body">
-            <p class="share-modal__intro">We snapshot your deck to Netlify Blobs. Anyone with this link can view that read-only copy. Add a passphrase if you want to lock it.</p>
-
-            <div class="share-modal__section">
-              <label for="share-password-input" class="share-modal__label">Passphrase <span class="share-modal__label-hint">(optional)</span></label>
-              <div class="share-modal__input-group">
-                <input
-                  type="password"
-                  id="share-password-input"
-                  class="share-modal__input"
-                  placeholder="Leave blank for an open link"
-                />
-              </div>
-              <p class="share-modal__hint">Anyone with the link + passphrase can open the deck.</p>
-            </div>
+            <p class="share-modal__intro">Generate a link that includes your slides and theme. Anyone who opens it gets a copy of the deck in their browser.</p>
 
             <div class="share-modal__section">
               <label for="share-url-input" class="share-modal__label">Share link</label>
@@ -259,7 +246,7 @@
                   class="share-modal__input"
                   readonly
                   value=""
-                  placeholder="Generating link..."
+                  placeholder="Click Generate link below"
                 />
                 <button class="share-modal__copy-btn" id="share-copy-btn" title="Copy to clipboard">
                   Copy
@@ -269,30 +256,6 @@
 
             <div class="share-modal__section share-modal__actions">
               <button type="button" class="button button--primary" id="share-generate-btn">Generate link</button>
-            </div>
-
-            <div class="share-modal__section share-modal__section--qr">
-              <p class="share-modal__label">QR Code</p>
-              <div class="share-modal__qr" id="share-qr-code">
-                <!-- QR code will be generated here -->
-              </div>
-              <p class="share-modal__qr-hint">Scan to open on mobile</p>
-            </div>
-
-            <!-- Optimization stats -->
-            <div class="share-modal__section share-modal__stats" id="share-stats" style="display: none;">
-              <p class="share-modal__label">Share Details</p>
-              <div class="share-modal__stats-grid">
-                <div class="share-modal__stat">
-                  <span class="share-modal__stat-label">Share size</span>
-                  <span class="share-modal__stat-value" id="share-size-display">—</span>
-                </div>
-                <div class="share-modal__stat" id="share-savings-stat" style="display: none;">
-                  <span class="share-modal__stat-label">Optimized</span>
-                  <span class="share-modal__stat-value share-modal__stat-value--success" id="share-savings-display">—</span>
-                </div>
-              </div>
-              <p class="share-modal__stats-detail" id="share-stats-detail"></p>
             </div>
 
             <div class="share-modal__status" id="share-status"></div>
@@ -388,7 +351,7 @@
     </div>
 
     <script src="js/vendor/browser-image-compression.js"></script>
-    <script src="js/vendor/qr-code-styling.js"></script>
+
     <script type="module" src="main.js"></script>
   </body>
 </html>
