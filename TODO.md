@@ -178,11 +178,14 @@
 - ✅ **Landing Page Tightened** — Removed 100vh hero, compressed spacing so demo decks are visible faster
 - ✅ **Design Resources Deck Cleanup** — Removed 7 broken links, replaced with working alternatives, reordered for better flow
 
-## Next Steps
+## Launch Checklist
 
-1. **PWA setup** — manifest.json, service worker, icons, Apple meta tags for home screen install
-2. **Mobile testing** — verify starter deck flow and image generation on phone/tablet
-3. **Test AI features end-to-end** — verify cheat console, image gen, and voice features with live Gemini API key
+1. ✅ **PWA setup** — manifest, service worker, icons, and Apple install meta tags are wired.
+2. ✅ **Git consolidation** — latest Claude branch has been merged into `main`.
+3. ✅ **Baseline QA** — `npm run check`, `npm run lint`, local browser smoke, drawer/hit-target/share/PWA checks passed.
+4. **Live Gemini pass** — verify Settings test, IDDQD starter deck, auto image generation, graph generation, and voice generation with a real key.
+5. **Real iPhone PWA pass** — install from production, open blank deck, edit, share, reload, and confirm offline-ish cached shell behavior.
+6. **Deploy/push** — push `main`, deploy, and do the production smoke at `https://slideomatic.app`.
 
 ---
 

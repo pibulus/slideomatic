@@ -13,6 +13,7 @@ const allowedTypes = new Set([
   'grid',
   'pillars',
   'gallery',
+  'graph',
   'image',
   'typeface',
   '_schema'  // Documentation slide type (ignored during render)

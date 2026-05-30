@@ -1,13 +1,13 @@
 # Slide-o-Matic Architecture
 
-**Status:** Modular, post-refactor (January 2025)
+**Status:** Modular static app, launch audit refreshed May 2026
 **Philosophy:** Compression over complexity. Each module does one thing well.
 
 ---
 
 ## 🏗️ System Overview
 
-Slide-o-Matic is a **vanilla JavaScript** presentation engine with voice AI, drag-drop editing, and theme management. The codebase is organized into focused modules that handle specific concerns, coordinated by `main.js`.
+Slide-o-Matic is a **vanilla JavaScript** presentation engine with local-first deck persistence, drawer-based editing, PWA install support, client-side share links, voice/cheat AI, drag-drop image handling, and theme management. The codebase is organized into focused modules coordinated by `main.js`.
 
 **Core principle:** `main.js` is the conductor, modules are the orchestra.
 
@@ -17,14 +17,15 @@ Slide-o-Matic is a **vanilla JavaScript** presentation engine with voice AI, dra
 
 ### Core Orchestration
 
-#### `main.js` (3,590 lines)
+#### `main.js`
 **Purpose:** Application coordinator and presentation runtime
 
 **Responsibilities:**
-- Slide rendering (title, standard, quote, split, grid, pillars, gallery, typeface, image, graph)
-- Navigation (keyboard + overview mode)
-- Deck loading/saving (JSON import/export)
-- Autolinks and lazy image loading
+- Application bootstrap and context wiring
+- Deck loading, validation, rendering orchestration
+- Keyboard/touch navigation and HUD controls
+- Drawer/modal/slide-index/share/notes initialization
+- Autolinks, history, initial URL intents, and local deck naming
 - Module initialization and context wiring
 
 **Key exports:** None (entry point)
@@ -35,7 +36,7 @@ Slide-o-Matic is a **vanilla JavaScript** presentation engine with voice AI, dra
 - `modules/keyboard-nav.js` - Keyboard shortcuts
 - `modules/edit-drawer.js` - Slide editing UI
 - `modules/drawer-base.js` - Drawer behaviors
-- `modules/image-manager.js` - Image operations (via edit-drawer)
+- `modules/image-render.js`, `modules/image-upload.js`, `modules/image-utils.js`, `modules/slide-image-ui.js`, `modules/image-ai.js` - Image operations
 - `modules/base64-tokens.js` - JSON readability
 - `modules/utils.js` - Shared utilities
 
@@ -55,7 +56,7 @@ Slide-o-Matic is a **vanilla JavaScript** presentation engine with voice AI, dra
 
 ### Feature Modules
 
-#### `modules/voice-modes.js` (667 lines)
+#### `modules/voice-modes.js`
 **Purpose:** Voice recording and AI slide/theme generation
 
 **Responsibilities:**
@@ -190,7 +191,8 @@ renderEditForm(context) // Build and render edit drawer contents
 
 **Dependencies:**
 - `drawer-base.js` (drawer lifecycle)
-- `image-manager.js` (image UI + operations)
+- `edit-drawer-forms.js` (accordion/form HTML builders)
+- `slide-image-ui.js` (image manager UI + operations)
 - `base64-tokens.js` (prepare/restore slides)
 - `utils.js` (formatBytes, escapeHtml)
 
@@ -198,7 +200,21 @@ renderEditForm(context) // Build and render edit drawer contents
 
 ---
 
-#### `modules/image-manager.js` (256 lines)
+#### Image Modules
+
+Image work is now split by concern:
+
+- `modules/image-render.js` — render images/placeholders, modal viewing, graph image trigger.
+- `modules/image-upload.js` — paste/drop upload, compression, optional Netlify asset upload, inline fallback.
+- `modules/image-utils.js` — image path collection/update helpers, search URLs, asset cleanup queue.
+- `modules/slide-image-ui.js` — edit drawer image list, remove/replace/reorder/add/AI buttons.
+- `modules/image-ai.js` — Gemini-powered image decisions, illustration generation, graph visualization.
+
+Older docs may mention `modules/image-manager.js`; that name is retired.
+
+<!-- Historical notes below kept for shape/reference. -->
+
+#### Historical: `modules/image-manager.js`
 **Purpose:** Image path collection, removal, and reordering
 
 **Responsibilities:**

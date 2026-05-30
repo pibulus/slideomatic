@@ -37,7 +37,8 @@ export function setupAccordion(container, options = {}) {
 
     if (!header || !body) return;
 
-    hydrateAccordionA11y(accordion, header, body, { startOpen: openFirst && index === 0 });
+    const explicitStartOpen = openFirst && index === 0 ? true : undefined;
+    hydrateAccordionA11y(accordion, header, body, { startOpen: explicitStartOpen });
 
     const toggleAccordion = () => {
       const isOpen = accordion.classList.contains('is-open');

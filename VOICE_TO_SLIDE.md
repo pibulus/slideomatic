@@ -4,7 +4,7 @@ Generate slides using voice commands powered by Gemini AI.
 
 ## Setup
 
-1. Get a Gemini API key from https://makersuite.google.com/app/apikey
+1. Get a Gemini API key from Google AI Studio: https://makersuite.google.com/app/apikey
 
 2. Open the deck (`deck.html`) and press `S` or click the settings button in the HUD.
 
@@ -18,7 +18,7 @@ Generate slides using voice commands powered by Gemini AI.
 Press `V` to start/stop recording
 
 ### Voice Button
-Click the 🎙 voice button in the HUD (bottom controls)
+Use the voice controls exposed in the deck/edit UI when available.
 
 ### Recording Flow
 1. **Press V or click the voice button** - Mic icon turns to ⏹ (red, pulsing)
@@ -89,7 +89,8 @@ This means when you click the 🔍 button on placeholders, you'll actually find 
 6. **pillars** - Feature cards (2-4 columns)
 7. **gallery** - Visual gallery with labels
 8. **image** - Full-bleed image with caption
-9. **typeface** - Font showcase
+9. **graph** - AI-generated infographic or chart image
+10. **typeface** - Font showcase
 
 ## Tips for Best Results
 
@@ -111,7 +112,7 @@ Use natural language: "Quote slide that says X by Y" or "Add a quote from..."
 → Grant microphone permissions in your browser settings
 
 ### "Failed to create slide: Gemini API call failed"
-→ Check your API key in `main.js` is correct
+→ Open Settings with `S`, save your API key, then use **Test Connection**.
 
 ### "Failed to create slide: Invalid JSON"
 → Rare AI hallucination - try recording again with clearer instructions
@@ -123,7 +124,7 @@ Use natural language: "Quote slide that says X by Y" or "Add a quote from..."
 
 **Privacy**: Audio is sent to Google's Gemini API for processing. Not stored anywhere.
 
-**Cost**: Gemini 2.0 Flash is extremely cheap (~$0.01 per 100 slides). Your API usage shows at https://makersuite.google.com
+**Cost**: The app currently calls `gemini-2.5-flash`. Your API usage shows in Google AI Studio.
 
 ## Future Ideas
 
@@ -135,4 +136,4 @@ Use natural language: "Quote slide that says X by Y" or "Add a quote from..."
 
 ---
 
-Built with ❤️ using Gemini 2.0 Flash multimodal API
+Built with Gemini 2.5 Flash multimodal API

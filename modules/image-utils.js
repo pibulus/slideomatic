@@ -236,10 +236,10 @@ export async function flushAssetDeletions() {
     debug('Flushing asset deletions:', assetsToDelete);
 
     try {
-        await fetch('/.netlify/functions/delete-assets', {
+        await fetch('/.netlify/functions/delete-asset', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assetIds: assetsToDelete }),
+            body: JSON.stringify({ ids: assetsToDelete }),
             keepalive: true,
         });
         assetDeletionQueue.clear();

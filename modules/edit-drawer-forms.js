@@ -32,10 +32,6 @@ export const LAYOUT_OPTIONS = [
   { value: 'typeface', label: 'Typeface', description: 'Type specimen' },
 ];
 
-const TYPE_NOTES = Object.fromEntries(
-  LAYOUT_OPTIONS.map(({ value, description, label }) => [value, description || label])
-);
-
 export function getLayoutMeta(value) {
   return LAYOUT_OPTIONS.find((option) => option.value === value);
 }
@@ -237,10 +233,6 @@ export function buildActionsSection() {
   `;
 
   return buildAccordion('Actions', content, { modifier: ' accordion--actions', startOpen: false });
-}
-
-function getLayoutDescription(value) {
-  return getLayoutMeta(value)?.description || TYPE_NOTES[value] || '';
 }
 
 const QUOTE_LAYOUT_OPTIONS = [

@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FF9FF3" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Slide-o-Matic" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Slide-o-Matic Editor</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="admin.css" />
   </head>
   <body>
@@ -35,6 +41,7 @@
       </section>
     </template>
 
+    <script type="module" src="modules/pwa.js"></script>
     <script type="module" src="admin.js"></script>
   </body>
 </html>

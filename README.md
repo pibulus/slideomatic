@@ -1,6 +1,6 @@
 # Slide-o-matic 🎬
 
-Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Create presentations with your voice, generate themes with AI, and swap stories or palettes without touching code.
+Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Create presentations with JSON, the edit drawer, voice, or the AI cheat console; save locally; share compressed links; and install it as a small PWA.
 
 ---
 
@@ -20,9 +20,11 @@ Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Cr
 
    Then open <http://localhost:3000/index.html> (or the port printed). Pick a deck and launch it (default deck lives at `/deck.html`).
 
-3. **Open the deck editor** at `/admin.html`, unlock it with the password (default `bonesoup`), tweak slides, then download the updated `slides.json`.
+3. **Open the main builder** at `/deck.html` or start from `/index.html`. Press `E` to edit, `?` for shortcuts, and `S` to add a Gemini key.
 
 That's it—no build step, no frameworks.
+
+For the current launch state, read `LAUNCH_AUDIT.md`.
 
 ---
 
@@ -32,13 +34,16 @@ That's it—no build step, no frameworks.
 | --- | --- |
 | `index.html` | Deck library hub. Lists available slide/theme combinations. |
 | `deck.html` | Presentation shell that renders the selected deck. |
-| `main.js` | Slide renderer, keyboard nav, modals, preloading, auto-linking. |
+| `main.js` | Runtime orchestrator that wires deck loading, modules, HUD, drawers, and navigation. |
+| `modules/` | Focused runtime modules for rendering, persistence, drawers, image handling, AI, sharing, and PWA setup. |
 | `slides.json` | Default slide content. |
 | `theme.json` | Default theme (colors, spacing, shadows, background layers, slide chrome). |
 | `themes/*.json` | Optional theme variants (loaded via `?theme=` query param). |
 | `catalog.json` | Deck catalog used by the index page. |
 | `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
+| `manifest.webmanifest` / `sw.js` / `icons/` | PWA install shell. |
 | `admin.html` / `admin.js` / `admin.css` | Browser-based slide editor with password gate. |
+| `netlify/functions/` | Optional/legacy Blob share + asset endpoints. |
 | `images/` | All deck imagery. Drop your own assets here. |
 
 ---
@@ -49,6 +54,7 @@ That's it—no build step, no frameworks.
 | --- | --- |
 | `npm run dev` | Serves the repo locally using `serve`. Required for JSON fetches. |
 | `npm run check` | Validates `slides.json`, theme files, catalog entries, and optional autolinks. |
+| `npm run lint` | Runs ESLint on source files. |
 | `deck.html?slides=foo.json&theme=themes/bar.json` | Manual check for alternate slide/theme combos. |
 | `admin.html?slides=foo.json` | Opens the editor for a non-default slide file. |
 
@@ -60,9 +66,10 @@ That's it—no build step, no frameworks.
 - **JSON:** Press `D` (or the drawer button) to download the current deck. Press `U` to upload any exported JSON. Keep a `_schema` slide at the top if you want inline documentation.
 - **PDF:** Use the **Download PDF** button inside the edit drawer—this runs `scripts/export-pdf.mjs` under the hood and writes to `/exports`.
 - **Voice & Notes:** The mic icon in the HUD lets you narrate slides hands‑free while you build. Great for quick reviews.
-- **Sharing (paused):** The Netlify Blobs share flow is temporarily hidden from the UI while we rework it. The infrastructure is still in `/netlify/functions`, and `SHARING_OPTIMIZATIONS.md` documents the current design if you need to re-enable it.
+- **Sharing:** The HUD Share button generates a compressed client-side `?data=` link containing the slides and current theme. Large inline data images are stripped from that URL to keep it usable; export JSON for image-heavy decks.
+- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. Do a real iPhone install pass before calling production fully done.
 
-Old `?url=` and `?data=` parameters still load decks if you need to sideload JSON manually.
+Old `?url=`, `?data=`, and legacy `?share=` parameters still load decks if you need to sideload JSON manually or maintain old links.
 
 ---
 
@@ -75,7 +82,7 @@ You can add a `_schema` slide at the top of `slides.json` to document your forma
   {
     "type": "_schema",
     "note": "This slide is ignored - use it to document your deck",
-    "availableTypes": ["title", "standard", "quote", "split", "grid", "pillars", "gallery", "typeface"],
+    "availableTypes": ["title", "standard", "quote", "split", "grid", "pillars", "gallery", "graph", "typeface", "image"],
     "fontPresets": ["sans", "mono", "grotesk", "jetbrains", "pixel"],
     "tip": "Add any documentation fields you want here"
   },
@@ -111,6 +118,7 @@ Edit `slides.json` directly. Each slide is a JSON object. Supported `type` value
 - `grid`
 - `pillars`
 - `gallery`
+- `graph` (AI-generated infographic/graph image)
 - `typeface` (font showcase)
 - `image` (full-bleed visual with optional caption overlay)
 
@@ -274,6 +282,8 @@ The deck is designed as a **research springboard** — good enough to present to
 ### ✨ AI Image Generation
 When a slide has an empty image slot, click the `✨` button in the edit drawer. Gemini decides whether to search for a stock photo or generate a custom illustration in risograph style, matched to your current theme colours.
 
+The AI cheat console also tries to fill empty image slots after generating a starter deck.
+
 ### 🎨 Theme Controls
 Press `E` to open the edit drawer where you'll find all theme controls:
 - **Select themes** from presets (Default, Gameboy, Vaporwave, Slack) or your saved library
@@ -293,7 +303,7 @@ Press `E` to open the edit drawer where you'll find all theme controls:
 
 ## Deploying
 
-Because every asset is static, any static host works (Vercel, Netlify, GitHub Pages, S3, etc.). Ensure your host serves JSON files correctly. Example with `serve` for testing:
+Because every core asset is static, any static host works (Netlify, Vercel, GitHub Pages, S3, etc.). Ensure your host serves JSON, webmanifest, JS modules, and the service worker from the site root. Example with `serve` for testing:
 
 ```bash
 npx serve .

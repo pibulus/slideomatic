@@ -15,7 +15,15 @@ export default [
     }
   },
   {
-    ignores: ['admin.js', 'node_modules/**', 'js/vendor/**', 'netlify/functions/**']
+    ignores: [
+      'admin.js',
+      'node_modules/**',
+      '.netlify/**',
+      'js/vendor/**',
+      'modules/vendor/**',
+      'netlify/functions/**',
+      'exports/**'
+    ]
   },
   pluginJs.configs.recommended,
   {

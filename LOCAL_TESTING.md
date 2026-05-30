@@ -7,15 +7,14 @@ Complete guide to testing all optimizations locally before deploying.
 ## 🚀 **Quick Start**
 
 ```bash
-# Start Netlify dev server (includes Functions + Blobs)
-netlify dev
+# Core static app
+npm run dev
 
-# Open in browser
-open http://localhost:8888
+# Function/Blob testing only
+netlify dev
 ```
 
-**Important**: Use `netlify dev` NOT `npm run dev` (which uses `serve`).
-Only `netlify dev` runs Functions and Blobs locally.
+Use `npm run dev` for normal launcher/deck/drawer/PWA testing. Use `netlify dev` only when testing the optional Netlify Blob endpoints for asset upload, legacy `?share=` links, cleanup, or global asset deduplication.
 
 ---
 
@@ -24,7 +23,8 @@ Only `netlify dev` runs Functions and Blobs locally.
 | Feature | Local Support | Notes |
 |---------|---------------|-------|
 | **Image compression** | ✅ Full | Client-side browser-image-compression |
-| **Share function** | ✅ Full | Netlify Blobs dev mode |
+| **Client-side Share** | ✅ Full | HUD Share creates compressed `?data=` links under `npm run dev` |
+| **Blob Share function** | ✅ Full with `netlify dev` | Legacy/optional Netlify Blobs flow |
 | **Deduplication** | ✅ Full | Local + global across shares |
 | **Re-compression** | ✅ Full | Sharp installed, works locally |
 | **Stats display** | ✅ Full | UI shows all optimization data |

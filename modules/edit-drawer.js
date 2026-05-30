@@ -31,14 +31,10 @@ import {
 import { askAIForImage } from './image-ai.js';
 import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
-import {
-  loadThemeLibrary,
-  getCurrentThemePath,
-} from './theme-manager.js';
+import { loadThemeLibrary } from './theme-manager.js';
 import { exportDeckToPdf } from './pdf-export.js';
 import { CONFIG } from './constants.js';
 import {
-  LAYOUT_OPTIONS,
   getLayoutMeta,
   buildMainSections,
   buildActionsSection,
@@ -726,7 +722,6 @@ export function renderEditForm(context) {
 
     try {
       const theme = getCurrentTheme();
-      const currentPath = getCurrentThemePath() || '';
       const name = prompt('Name your theme:', '');
       if (!name || !name.trim()) return;
 
@@ -750,7 +745,7 @@ export function renderEditForm(context) {
   const handleAIThemeInline = async () => {
     const { showHudStatus, hideHudStatus } = await import('./hud.js');
     const { getGeminiApiKey } = await import('./voice-modes.js');
-    const { getCurrentTheme, applyTheme, setCurrentTheme, getCurrentThemePath } = await import('./theme-manager.js');
+    const { getCurrentTheme, applyTheme, setCurrentTheme } = await import('./theme-manager.js');
 
     const apiKey = getGeminiApiKey();
     if (!apiKey) {

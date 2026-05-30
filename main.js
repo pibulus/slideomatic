@@ -61,7 +61,6 @@ import {
 } from './modules/slide-actions.js';
 import {
   initThemeDrawer,
-  toggleThemeDrawer,
   openThemeDrawer,
   closeThemeDrawer,
   syncThemeSelectUI,
@@ -98,7 +97,6 @@ import {
   setActiveSlide,
   updateTotalCounter,
   handleSlideClick,
-  navigateToDeckHome,
 } from './modules/navigation.js';
 import { initTouchNav } from './modules/touch-nav.js';
 import { initShareModal } from './modules/share-modal.js';

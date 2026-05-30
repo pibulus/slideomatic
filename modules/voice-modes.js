@@ -840,7 +840,7 @@ function parseJsonPayload(text) {
   const raw = blockMatch ? blockMatch[1] : text;
   try {
     return JSON.parse(raw);
-  } catch (error) {
+  } catch {
     console.error('Failed to parse Gemini JSON:', raw);
     throw new Error('Gemini returned invalid JSON');
   }

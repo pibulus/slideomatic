@@ -91,7 +91,9 @@
   appearance: none;
   background: transparent;
   border: none;
-  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
@@ -101,6 +103,9 @@
   cursor: pointer;
   transition: color 160ms ease;
   line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hud__action:hover {
@@ -144,8 +149,8 @@
 }
 
 .hud__nav-btn {
-  width: 32px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: transparent;
   font-family: var(--font-mono);
@@ -258,8 +263,8 @@
   }
 
   .hud__action {
-    min-width: 36px;
-    min-height: 34px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -286,8 +291,8 @@
   }
 
   .hud__nav-btn {
-    width: 28px;
-    height: 24px;
+    width: 44px;
+    height: 44px;
     font-size: 0.9rem;
   }
 
@@ -334,8 +339,8 @@
   }
 
   .hud__nav-btn {
-    width: 24px;
-    height: 22px;
+    width: 44px;
+    height: 44px;
   }
 }
 

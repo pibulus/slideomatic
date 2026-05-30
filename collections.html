@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FF9FF3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Slide-o-Matic">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Slide-o-Matic Deck Collections</title>
     <meta name="description" content="Share a bundle of Slide-o-Matic decks with one link.">
 
@@ -22,6 +26,8 @@
     <meta name="twitter:image:alt" content="Slide-o-Matic Interface" />
 
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="stylesheet" href="css/landing.css">
     <link rel="stylesheet" href="css/collections.css">
   </head>
@@ -53,6 +59,7 @@
       </section>
     </main>
 
+    <script type="module" src="modules/pwa.js"></script>
     <script type="module">
       import { safeParse } from './modules/utils.js';
 

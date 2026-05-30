@@ -1,0 +1,39 @@
+{
+  "name": "Slide-o-Matic",
+  "short_name": "Slideomatic",
+  "description": "A local-first, voice-powered slideshow builder with lush themes and quick JSON exports.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff7de",
+  "theme_color": "#ff9ff3",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Deck",
+      "short_name": "New",
+      "description": "Open a blank Slide-o-Matic deck.",
+      "url": "/deck.html#deck=new&open=edit"
+    },
+    {
+      "name": "Guide Deck",
+      "short_name": "Guide",
+      "description": "Open the Slide-o-Matic guide deck.",
+      "url": "/deck.html?slides=guide"
+    }
+  ]
+}
