@@ -271,7 +271,7 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 Press `V` or click the voice button in the HUD to generate slides using AI. Describe what you want and Gemini creates the slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
 
 ### 🕹️ AI Starter Deck (Cheat Code!)
-Type `XYZZY` anywhere in the deck view to open the AI Cheat Console. Describe a topic and Gemini builds an 8-slide starter deck with:
+Type `666` or `696969` anywhere in the deck view to open the AI Cheat Console. Describe a topic and Gemini builds an 8-slide starter deck with:
 - Real facts, names, dates, and working links (Wikipedia, YouTube, publications)
 - Discussion questions that double as research prompts
 - AI-generated images for each slide (generated automatically after the deck appears)

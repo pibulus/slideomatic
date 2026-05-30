@@ -2,7 +2,7 @@ import { generateSlideFromPrompt, generateDeckFromPrompt, getVoiceAssistantConte
 import { generateAIImage } from './image-ai.js';
 import { collectImagePaths } from './image-utils.js';
 
-const CHEAT_CODES = ['xyzzy'];
+const CHEAT_CODES = ['666', '696969'];
 const MAX_BUFFER = Math.max(...CHEAT_CODES.map(code => code.length));
 
 let buffer = '';
@@ -13,6 +13,7 @@ let statusEl;
 let slideBtn;
 let deckBtn;
 let unlockedLabel;
+let previousFocus = null;
 
 export function initCheatConsole() {
   if (initialized) return;
@@ -50,7 +51,7 @@ function handleGlobalKey(event) {
     return;
   }
 
-  if (!/^[a-z]$/i.test(event.key)) {
+  if (!/^[a-z0-9]$/i.test(event.key)) {
     return;
   }
 
@@ -90,6 +91,7 @@ function hasBlockingModal() {
 
 function showConsole(code) {
   if (!root || !promptInput) return;
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   root.classList.add('is-open');
   root.setAttribute('aria-hidden', 'false');
   document.body.classList.add('cheat-console-open');
@@ -105,6 +107,13 @@ function hideConsole() {
   root.classList.remove('is-open');
   root.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('cheat-console-open');
+  if (document.activeElement === promptInput) {
+    promptInput.blur();
+  }
+  if (previousFocus && typeof previousFocus.focus === 'function' && !root.contains(previousFocus)) {
+    requestAnimationFrame(() => previousFocus?.focus({ preventScroll: true }));
+  }
+  previousFocus = null;
 }
 
 async function handleCheatAction(mode) {
