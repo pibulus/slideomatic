@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin
+Disallow: /.netlify/
+
+Sitemap: https://slideomatic.app/sitemap.xml

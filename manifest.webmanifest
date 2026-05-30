@@ -2,12 +2,14 @@
   "name": "Slide-o-Matic",
   "short_name": "Slideomatic",
   "description": "A local-first, voice-powered slideshow builder with lush themes and quick JSON exports.",
-  "start_url": "/index.html",
+  "id": "/",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#fff7de",
   "theme_color": "#ff9ff3",
   "orientation": "any",
+  "categories": ["productivity", "education", "design"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -33,7 +35,7 @@
       "name": "Guide Deck",
       "short_name": "Guide",
       "description": "Open the Slide-o-Matic guide deck.",
-      "url": "/deck.html?slides=guide"
+      "url": "/deck.html#slides=guide"
     }
   ]
 }

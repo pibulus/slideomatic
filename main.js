@@ -295,7 +295,24 @@ function updateDeckNameDisplay() {
     deckNameText.textContent = name;
   }
 
-  document.title = `${name} — Slide-o-Matic`;
+  document.title = `${name} - Slide-o-Matic`;
+  updateDeckPageMeta(name);
+}
+
+function updateDeckPageMeta(name) {
+  const deckName = name && name !== 'Untitled deck' ? name : 'Slide-o-Matic Deck';
+  const description = `${deckName} made with Slide-o-Matic, the playful local-first slideshow builder.`;
+
+  setMetaContent('meta[name="description"]', description);
+  setMetaContent('meta[property="og:title"]', deckName);
+  setMetaContent('meta[property="og:description"]', description);
+  setMetaContent('meta[name="twitter:title"]', deckName);
+  setMetaContent('meta[name="twitter:description"]', description);
+}
+
+function setMetaContent(selector, content) {
+  const meta = document.querySelector(selector);
+  if (meta) meta.setAttribute('content', content);
 }
 
 function renameDeck() {
