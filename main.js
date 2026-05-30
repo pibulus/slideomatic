@@ -123,14 +123,6 @@ function getParam(name) {
 }
 
 const requestedDeck = getParam('deck');
-console.log('[Init] ==================== DECK.HTML LOADING ====================');
-console.log('[Init] Full URL:', window.location.href);
-console.log('[Init] Search params:', window.location.search);
-console.log('[Init] Hash:', window.location.hash);
-console.log('[Init] Requested deck (from search):', urlParams.get('deck'));
-console.log('[Init] Requested deck (from hash):', hashParams.get('deck'));
-console.log('[Init] Final requested deck:', requestedDeck);
-console.log('[Init] =========================================================');
 
 // renderers imported from slide-rendering.js
 
@@ -142,6 +134,7 @@ registerDeckPersistenceHooks({
   updateDeckNameDisplay,
   getSlideTemplate,
   applySharedTheme: applySharedThemeFromShare,
+  getCurrentTheme,
   requestSharePassword,
 });
 
@@ -190,7 +183,6 @@ if (requestedDeck) {
     setNewDeckRequest(true);
     setActiveDeckId(generateDeckId());
     setDeckStorageKey(null); // Clear cache so getDeckStorageKey() rebuilds with new ID
-    console.log('[Init] New deck request, generated ID:', activeDeckId);
     urlParams.set('deck', activeDeckId);
     const nextSearch = urlParams.toString();
     const nextUrl = `${window.location.pathname}?${nextSearch}${window.location.hash ?? ''}`;
@@ -200,7 +192,6 @@ if (requestedDeck) {
   } else {
     setActiveDeckId(requestedDeck);
     setDeckStorageKey(null); // Clear cache so getDeckStorageKey() rebuilds with deck ID
-    console.log('[Init] Loading existing deck, ID:', activeDeckId);
   }
 }
 
@@ -220,7 +211,6 @@ let isInitialized = false;
 
 if (!isInitializing && !isInitialized) {
   isInitializing = true;
-  console.log('[Init] Starting initDeckWithTheme - FIRST TIME');
   initDeckWithTheme();
 } else {
   console.warn('[Init] Attempted double initialization - BLOCKED');
@@ -624,7 +614,6 @@ initSharePasswordModal();
   // Mark initialization as complete
   isInitializing = false;
   isInitialized = true;
-  console.log('[Init] initDeckWithTheme completed');
 
   // Hide loading overlay
   const loadingOverlay = document.getElementById('loading-overlay');

@@ -413,9 +413,9 @@ function mergeSlideWithTemplate(template, currentSlide) {
 /**
  * @param {object} context
  */
-async function handleDownloadDeck(context) {
+async function handleDownloadPdf(context) {
   const ctx = ensureContext(context);
-  const downloadBtn = document.getElementById('download-deck-btn');
+  const downloadBtn = document.getElementById('download-pdf-btn');
   const deckNameInput = document.getElementById('deck-name-text') || document.getElementById('deck-name');
   const deckName = (deckNameInput?.value || deckNameInput?.textContent || 'slideomatic').trim();
 
@@ -857,7 +857,13 @@ Make the colors harmonious and ensure good contrast for readability.`;
   addTrackedListener(
     document.getElementById('download-deck-btn'),
     'click',
-    () => handleDownloadDeck(ctx)
+    () => ctx.downloadDeck()
+  );
+
+  addTrackedListener(
+    document.getElementById('download-pdf-btn'),
+    'click',
+    () => handleDownloadPdf(ctx)
   );
 
   addTrackedListener(

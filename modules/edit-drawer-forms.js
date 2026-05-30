@@ -227,9 +227,14 @@ export function buildActionsSection() {
         Delete
       </button>
     </div>
-    <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn">
-      Download PDF
-    </button>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-deck-btn" style="flex: 1;">
+        Download JSON
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="download-pdf-btn" style="flex: 1;">
+        Download PDF
+      </button>
+    </div>
   `;
 
   return buildAccordion('Actions', content, { modifier: ' accordion--actions', startOpen: false });

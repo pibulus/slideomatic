@@ -16,6 +16,7 @@ import {
   slides,
   setSlides,
   activeDeckId,
+  setActiveDeckId,
   deckStorageKey,
   setDeckStorageKey,
   deckPersistFailureNotified,
@@ -42,6 +43,8 @@ let updateDeckNameDisplayHook = noop;
 let getSlideTemplateHook = () => ({ type: 'title' });
 /** @type {(theme: any) => void} */
 let applySharedThemeHook = noop;
+/** @type {() => any} */
+let getCurrentThemeHook = () => null;
 /** @type {(options?: { invalid?: boolean }) => Promise<string | null>} */
 let requestSharePasswordHook = null;
 
@@ -58,6 +61,9 @@ export function registerDeckPersistenceHooks(hooks = {}) {
   }
   if (typeof hooks.applySharedTheme === 'function') {
     applySharedThemeHook = hooks.applySharedTheme;
+  }
+  if (typeof hooks.getCurrentTheme === 'function') {
+    getCurrentThemeHook = hooks.getCurrentTheme;
   }
   if (typeof hooks.requestSharePassword === 'function') {
     requestSharePasswordHook = hooks.requestSharePassword;
@@ -101,17 +107,29 @@ export async function loadSlides() {
 
       // Support both plain arrays (legacy) and {slides, theme} objects
       if (Array.isArray(data)) {
-        showHudStatusHook('✓ Loaded deck from share link', 'success');
+        const result = materializeSharedDeck(data, { source: 'share:data' });
+        showHudStatusHook(
+          result.persisted ? '✓ Shared deck copied locally' : '✓ Loaded shared deck',
+          result.persisted ? 'success' : 'warning'
+        );
         setTimeout(hideHudStatusHook, 2000);
-        return data;
+        return result.slides;
       }
       if (data && Array.isArray(data.slides)) {
         if (data.theme) {
           applySharedThemeHook(data.theme);
         }
-        showHudStatusHook('✓ Loaded deck from share link', 'success');
+        const result = materializeSharedDeck(data.slides, {
+          source: 'share:data',
+          theme: data.theme,
+          meta: data.meta,
+        });
+        showHudStatusHook(
+          result.persisted ? '✓ Shared deck copied locally' : '✓ Loaded shared deck',
+          result.persisted ? 'success' : 'warning'
+        );
         setTimeout(hideHudStatusHook, 2000);
-        return data.slides;
+        return result.slides;
       }
     } catch (error) {
       console.error('Failed to load deck from data parameter', error);
@@ -121,10 +139,8 @@ export async function loadSlides() {
   }
 
   if (activeDeckId) {
-    console.log('[loadSlides] Priority 3: Loading deck from localStorage, activeDeckId:', activeDeckId);
     const stored = loadPersistedDeck();
     if (Array.isArray(stored)) {
-      console.log('[loadSlides] Successfully loaded deck with', stored.length, 'slides');
       return stored.slice();
     }
     console.warn('[loadSlides] No stored deck found, creating blank template');
@@ -166,9 +182,17 @@ async function attemptSharedDeckLoad(shareId) {
         if (record.theme) {
           applySharedThemeHook(record.theme);
         }
-        showHudStatusHook('✓ Loaded shared deck', 'success');
+        const result = materializeSharedDeck(record.slides, {
+          source: `share:${shareId}`,
+          theme: record.theme,
+          meta: record.meta,
+        });
+        showHudStatusHook(
+          result.persisted ? '✓ Shared deck copied locally' : '✓ Loaded shared deck',
+          result.persisted ? 'success' : 'warning'
+        );
         setTimeout(hideHudStatusHook, 2000);
-        return record.slides;
+        return result.slides;
       }
       throw new Error('Malformed shared deck payload');
     } catch (error) {
@@ -230,6 +254,58 @@ async function requestPassphrase(isInvalid) {
   return response ? response.trim() : null;
 }
 
+function materializeSharedDeck(slideArray, options = {}) {
+  const sharedSlides = JSON.parse(JSON.stringify(slideArray));
+  validateSlides(sharedSlides);
+
+  const deckId = generateDeckId();
+  const updatedAt = Date.now();
+  const storageKey = `${DECK_STORAGE_PREFIX}${encodeURIComponent(deckId)}`;
+  const meta = options.meta && typeof options.meta === 'object' ? options.meta : {};
+  const payload = {
+    version: 1,
+    updatedAt,
+    source: options.source || 'share',
+    slides: sharedSlides,
+    meta: {
+      name: meta.name || meta.title || deriveDeckName(sharedSlides),
+      updatedAt,
+      deckId,
+    },
+  };
+
+  if (options.theme && typeof options.theme === 'object') {
+    payload.theme = options.theme;
+  }
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(payload));
+    if (!localStorage.getItem(storageKey)) {
+      throw new Error('Save verification failed');
+    }
+    localStorage.setItem(LAST_DECK_KEY, deckId);
+    setActiveDeckId(deckId);
+    setDeckStorageKey(storageKey);
+    replaceUrlWithDeckId(deckId);
+    return { slides: sharedSlides, persisted: true };
+  } catch (error) {
+    console.warn('Unable to save shared deck copy locally:', error);
+    return { slides: sharedSlides, persisted: false };
+  }
+}
+
+function replaceUrlWithDeckId(deckId) {
+  if (!window.history || typeof window.history.replaceState !== 'function') return;
+  try {
+    const target = new URL(window.location.href);
+    target.search = '';
+    target.hash = `deck=${encodeURIComponent(deckId)}`;
+    window.history.replaceState({}, '', target.toString());
+  } catch (error) {
+    console.warn('Unable to replace shared URL with local deck URL:', error);
+  }
+}
+
 export function resolveSlidesPath() {
   const slidesParam = getParamHook('slides');
   if (!slidesParam) {
@@ -243,12 +319,10 @@ export function resolveSlidesPath() {
 
 function getDeckStorageKey() {
   if (deckStorageKey) {
-    console.log('[getDeckStorageKey] Using cached key:', deckStorageKey);
     return deckStorageKey;
   }
   if (activeDeckId) {
     setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(activeDeckId)}`);
-    console.log('[getDeckStorageKey] Built key from activeDeckId:', activeDeckId, '→', deckStorageKey);
     return deckStorageKey;
   }
   const path = resolveSlidesPath();
@@ -256,10 +330,8 @@ function getDeckStorageKey() {
     const url = new URL(path, window.location.href);
     const keySource = `${url.origin}${url.pathname}${url.search ?? ''}`;
     setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(keySource)}`);
-    console.log('[getDeckStorageKey] Built key from path URL:', keySource, '→', deckStorageKey);
-    } catch {
+  } catch {
     setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(path)}`);
-    console.log('[getDeckStorageKey] Built key from path:', path, '→', deckStorageKey);
   }
   return deckStorageKey;
 }
@@ -267,13 +339,10 @@ function getDeckStorageKey() {
 function loadPersistedDeck() {
   try {
     const key = getDeckStorageKey();
-    console.log('[loadPersistedDeck] Looking for deck with key:', key);
     const stored = localStorage.getItem(key);
     if (!stored) {
-      console.log('[loadPersistedDeck] No deck found in localStorage for key:', key);
       return null;
     }
-    console.log('[loadPersistedDeck] Found deck in localStorage, parsing...');
     const payload = JSON.parse(stored);
     if (!payload || typeof payload !== 'object') {
       console.warn('[loadPersistedDeck] Invalid payload structure');
@@ -283,7 +352,9 @@ function loadPersistedDeck() {
       console.warn('[loadPersistedDeck] payload.slides is not an array');
       return null;
     }
-    console.log('[loadPersistedDeck] Successfully loaded', payload.slides.length, 'slides');
+    if (payload.theme && typeof payload.theme === 'object') {
+      applySharedThemeHook(payload.theme);
+    }
 
     // Validate loaded slides to catch corrupted localStorage data
     try {
@@ -319,8 +390,6 @@ export function persistSlides(options = {}) {
     return false;
   }
 
-  console.log('[persistSlides] Saving deck, activeDeckId:', activeDeckId);
-
   if (!silent && activeDeckId) {
     showSaveStatusHook('saving');
   }
@@ -329,7 +398,7 @@ export function persistSlides(options = {}) {
     const updatedAt = Date.now();
     const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
     const storageKey = getDeckStorageKey();
-    console.log('[persistSlides] Using storage key:', storageKey);
+    const currentTheme = getCurrentThemeHook();
     const payload = {
       version: 1,
       updatedAt,
@@ -341,7 +410,10 @@ export function persistSlides(options = {}) {
         deckId: activeDeckId ?? null,
       },
     };
-    localStorage.setItem(getDeckStorageKey(), JSON.stringify(payload));
+    if (currentTheme && typeof currentTheme === 'object') {
+      payload.theme = currentTheme;
+    }
+    localStorage.setItem(storageKey, JSON.stringify(payload));
     setDeckPersistFailureNotified(false);
     markDeckAsRecent();
     updateDeckNameDisplayHook();
@@ -391,6 +463,7 @@ export function saveAsNewDeck() {
   }
 
   const newDeckId = generateDeckId();
+  const currentTheme = getCurrentThemeHook();
   const payload = {
     version: 1,
     updatedAt: Date.now(),
@@ -402,6 +475,9 @@ export function saveAsNewDeck() {
       deckId: newDeckId,
     },
   };
+  if (currentTheme && typeof currentTheme === 'object') {
+    payload.theme = currentTheme;
+  }
 
   try {
     const key = `${DECK_STORAGE_PREFIX}${encodeURIComponent(newDeckId)}`;

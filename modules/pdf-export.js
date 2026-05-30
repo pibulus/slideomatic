@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const HTML2CANVAS_SRC = new URL('./vendor/html2canvas.esm.js', import.meta.url).href;
-const JSPDF_SRC = new URL('./vendor/jspdf.esm.min.js', import.meta.url).href;
+const JSPDF_SRC = new URL('./vendor/jspdf.umd.min.js', import.meta.url).href;
 
 let html2canvasPromise = null;
 let jsPdfPromise = null;
@@ -21,9 +21,42 @@ function loadHtml2Canvas() {
 
 function loadJsPdf() {
   if (!jsPdfPromise) {
-    jsPdfPromise = import(JSPDF_SRC);
+    jsPdfPromise = loadScript(JSPDF_SRC, () => window.jspdf?.jsPDF)
+      .then((jsPDF) => ({ jsPDF }));
   }
   return jsPdfPromise;
+}
+
+function loadScript(src, getGlobal) {
+  const existingGlobal = getGlobal();
+  if (existingGlobal) {
+    return Promise.resolve(existingGlobal);
+  }
+
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${src}"]`);
+    const script = existingScript || document.createElement('script');
+
+    const handleLoad = () => {
+      const loadedGlobal = getGlobal();
+      if (loadedGlobal) {
+        resolve(loadedGlobal);
+        return;
+      }
+      reject(new Error(`Loaded ${src}, but expected global was missing`));
+    };
+
+    script.addEventListener('load', handleLoad, { once: true });
+    script.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+
+    if (!existingScript) {
+      script.src = src;
+      script.async = true;
+      document.head.appendChild(script);
+    } else {
+      setTimeout(handleLoad, 0);
+    }
+  });
 }
 
 function sanitizeFileName(name = 'slideomatic') {

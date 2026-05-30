@@ -895,6 +895,14 @@
   background: var(--color-surface-alt, #fff1e6);
 }
 
+.share-modal__actions .button--primary {
+  background: var(--color-accent);
+}
+
+.share-modal__actions .button--secondary {
+  background: rgba(255, 159, 243, 0.16);
+}
+
 .share-modal__section--qr {
   align-items: center;
   text-align: center;
@@ -989,6 +997,11 @@
   margin: -4px 0 0;
   font-size: 0.9rem;
   color: var(--color-text-muted, #666);
+}
+
+.share-modal__hint.is-warning {
+  color: #8a4a00;
+  font-weight: 700;
 }
 
 .share-modal__copy-btn {

@@ -1,6 +1,6 @@
 # 🎯 Slideomatic Sharing Optimizations
 
-> **Current state:** The visible Share HUD button now creates a compressed client-side `?data=` URL with slides + theme. The Netlify Blob pipeline documented here is legacy/optional infrastructure for heavier asset/share flows and old `?share=` links.
+> **Current state:** The visible Share HUD button now creates a compressed client-side `?data=` URL with slides + theme. Opening that link creates a local deck copy in the recipient browser. Inline `data:` images are intentionally replaced with placeholders in URL links; use JSON backup for full-fidelity image-heavy decks. The Netlify Blob pipeline documented here is legacy/optional infrastructure for heavier asset/share flows and old `?share=` links.
 
 ## Overview
 
