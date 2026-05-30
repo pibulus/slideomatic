@@ -14,7 +14,7 @@ npm run dev
 netlify dev
 ```
 
-Use `npm run dev` for normal launcher/deck/drawer/PWA testing. Use `netlify dev` only when testing the optional Netlify Blob endpoints for asset upload, legacy `?share=` links, cleanup, or global asset deduplication.
+Use `npm run dev` for normal launcher/deck/drawer/PWA testing. Under `npm run dev`, Share falls back to a compressed `?data=` URL. Use `netlify dev` when testing the hosted `/s/...` Share path, Blob asset upload, cleanup, or global asset deduplication.
 
 ## v1 Smoke
 
@@ -43,8 +43,8 @@ Then smoke these in a browser:
 | Feature | Local Support | Notes |
 |---------|---------------|-------|
 | **Image compression** | ✅ Full | Client-side browser-image-compression |
-| **Client-side Share** | ✅ Full | HUD Share creates compressed `?data=` links under `npm run dev` |
-| **Blob Share function** | ✅ Full with `netlify dev` | Legacy/optional Netlify Blobs flow |
+| **Hosted Share** | ✅ Full with `netlify dev` | HUD Share creates `/s/...` links through Netlify Blobs |
+| **Client-side Share fallback** | ✅ Full | HUD Share creates compressed `?data=` links when functions are unavailable |
 | **Deduplication** | ✅ Full | Local + global across shares |
 | **Re-compression** | ✅ Full | Sharp installed, works locally |
 | **Stats display** | ✅ Full | UI shows all optimization data |

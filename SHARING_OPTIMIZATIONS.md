@@ -1,10 +1,10 @@
 # 🎯 Slideomatic Sharing Optimizations
 
-> **Current state:** The visible Share HUD button now creates a compressed client-side `?data=` URL with slides + theme. Opening that link creates a local deck copy in the recipient browser. Inline `data:` images are intentionally replaced with placeholders in URL links; use JSON backup for full-fidelity image-heavy decks. The Netlify Blob pipeline documented here is legacy/optional infrastructure for heavier asset/share flows and old `?share=` links.
+> **Current state:** The visible Share HUD button now tries the Netlify Blob-backed `/s/...` hosted share path first, then falls back to a compressed client-side `?data=` URL when functions are unavailable. Opening either link creates a local deck copy in the recipient browser. Inline `data:` images are externalized/recompressed in hosted shares where possible and replaced with placeholders only in fallback URL links; use JSON backup for full-fidelity offline copies.
 
 ## Overview
 
-Enhanced Netlify Blobs sharing system with aggressive image compression, deduplication, and size limits optimized for practical deck sharing. This is not the default Share UI path as of the current launch pass.
+Enhanced Netlify Blobs sharing system with aggressive image compression, deduplication, and size limits optimized for practical deck sharing. This is the preferred production Share UI path as of v1.0.1.
 
 ---
 
@@ -242,4 +242,4 @@ This optimization embodies the **80/20 rule**: aggressive compression where it m
 ---
 
 **Last updated:** 2026-05-30
-**Status:** Optional/legacy infrastructure. The v1 visible Share UI uses client-side `?data=` links plus JSON backup.
+**Status:** Active production infrastructure for hosted share records and Blob-backed images. Client-side `?data=` remains the static-host fallback.

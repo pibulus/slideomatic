@@ -136,7 +136,10 @@ export function initShareModal() {
       updateShareDetails(result);
       if (copyBtn) copyBtn.disabled = false;
       if (generateBtn) generateBtn.textContent = 'Regenerate link';
-      showShareStatus('\u2713 Ready to share!', 'success');
+      showShareStatus(
+        result.mode === 'server' ? '\u2713 Short share link ready!' : '\u2713 Fallback share link ready!',
+        'success'
+      );
       setTimeout(() => hideShareStatus(), 3000);
     } catch (error) {
       console.error('Share failed:', error);
@@ -167,13 +170,20 @@ export function initShareModal() {
       return;
     }
     details.hidden = false;
-    details.classList.toggle('is-warning', result.strippedCount > 0);
-    if (result.strippedCount > 0) {
-      const plural = result.strippedCount === 1 ? 'image was' : 'images were';
-      details.textContent = `${result.strippedCount} inline ${plural} replaced with placeholders in the URL link. Download JSON backup to keep the full deck.`;
+    details.classList.toggle('is-warning', result.mode === 'client' && (result.strippedCount > 0 || result.fallbackReason));
+    if (result.mode === 'server') {
+      const bytes = result.bytes ? ` Stored deck: ${formatShareBytes(result.bytes)}.` : '';
+      details.textContent = `Short hosted link ready.${bytes} Anyone who opens it gets a local copy. JSON backup keeps a full offline copy too.`;
       return;
     }
-    details.textContent = 'URL link is ready. JSON backup keeps a full offline copy too.';
+    if (result.strippedCount > 0) {
+      const plural = result.strippedCount === 1 ? 'image was' : 'images were';
+      details.textContent = `Using fallback URL link. ${result.strippedCount} inline ${plural} replaced with placeholders. Download JSON backup to keep the full deck.`;
+      return;
+    }
+    details.textContent = result.fallbackReason
+      ? 'Using fallback URL link. JSON backup keeps a full offline copy too.'
+      : 'URL link is ready. JSON backup keeps a full offline copy too.';
   }
 
   async function buildShareUrl() {
@@ -181,12 +191,8 @@ export function initShareModal() {
       throw new Error('No slides to share.');
     }
 
-    // Strip inline images to keep the URL manageable.
-    // Slides with data-URL images would bloat the payload beyond URL limits.
-    const { slides: cleanSlides, strippedCount } = stripDataUrls(slides);
-
     const payload = {
-      slides: cleanSlides,
+      slides: JSON.parse(JSON.stringify(slides)),
       theme: getCurrentTheme() || undefined,
       meta: {
         title: deriveDeckName(slides),
@@ -194,7 +200,86 @@ export function initShareModal() {
       },
     };
 
-    const json = JSON.stringify(payload);
+    if (shouldAttemptHostedShare()) {
+      try {
+        return await buildServerShareUrl(payload);
+      } catch (error) {
+        console.warn('Hosted share unavailable; falling back to URL share', error);
+        return buildClientShareUrl(payload, error.message);
+      }
+    }
+
+    return buildClientShareUrl(payload, 'Hosted sharing skipped on static local server');
+  }
+
+  function shouldAttemptHostedShare() {
+    const host = window.location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+    if (!isLocalHost) return window.location.protocol === 'https:' || window.location.protocol === 'http:';
+
+    const params = new URLSearchParams(window.location.search);
+    return window.location.port === '8888' ||
+      params.has('hostedShare') ||
+      new URLSearchParams(window.location.hash.replace(/^#/, '')).has('hostedShare');
+  }
+
+  async function buildServerShareUrl(payload) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    let response;
+    let body = null;
+
+    try {
+      response = await fetch('/.netlify/functions/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error('Share service timed out');
+      }
+      throw new Error(error?.message || 'Share service unavailable');
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
+    try {
+      body = await response.json();
+    } catch {
+      // Non-JSON responses happen under plain static servers.
+    }
+
+    if (!response.ok) {
+      throw new Error(body?.error || `Share service unavailable (${response.status})`);
+    }
+
+    if (!body?.shareUrl) {
+      throw new Error('Share service returned no link');
+    }
+
+    return {
+      url: new URL(body.shareUrl, window.location.origin).toString(),
+      mode: 'server',
+      strippedCount: 0,
+      bytes: body.bytes || 0,
+      optimization: body.optimization || null,
+    };
+  }
+
+  async function buildClientShareUrl(payload, fallbackReason = '') {
+    // Strip inline images to keep the URL manageable.
+    // Slides with data-URL images would bloat the payload beyond URL limits.
+    const { slides: cleanSlides, strippedCount } = stripDataUrls(payload.slides);
+    const clientPayload = {
+      ...payload,
+      slides: cleanSlides,
+    };
+
+    const json = JSON.stringify(clientPayload);
     const encoded = await compressAndEncode(json);
 
     const url = new URL(window.location.href);
@@ -212,8 +297,17 @@ export function initShareModal() {
 
     return {
       url: url.toString(),
+      mode: 'client',
       strippedCount,
+      fallbackReason,
     };
+  }
+
+  function formatShareBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '';
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   }
 
   /**

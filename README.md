@@ -1,6 +1,6 @@
 # Slide-o-Matic 🎬
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 Voice-powered slide deck builder with a neo-brutalist / pastel-punk aesthetic. Create presentations from the launcher, JSON, the edit drawer, voice, or the AI cheat console; save locally; share compressed links; export JSON/PDF; and install it as a small PWA.
 
@@ -45,7 +45,7 @@ For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE
 | `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
 | `manifest.webmanifest` / `sw.js` / `icons/` | PWA install shell. |
 | `admin.html` / `admin.js` / `admin.css` | Legacy browser-based slide editor with a local password gate. |
-| `netlify/functions/` | Optional/legacy Blob share + asset endpoints. |
+| `netlify/functions/` | Hosted share links, Blob-backed image assets, and cleanup endpoints. |
 | `images/` | All deck imagery. Drop your own assets here. |
 
 ---
@@ -68,10 +68,10 @@ For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE
 - **JSON:** Press `D`, use **Download JSON** in the edit drawer, or use **Download JSON backup** in the Share modal. JSON exports include slides and the current theme. Press `U`, use launcher upload, or paste JSON on the launcher to import a deck.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
 - **Voice & Notes:** Gemini voice tools can generate slides/themes from recordings, and prompt mic buttons clean up speech into text by removing filler words before insertion. Great for quick reviews and rough ideas.
-- **Sharing:** The HUD Share button generates a compressed client-side `?data=` link containing the slides and current theme. Opening a share link now creates a local deck copy in that browser. Large inline data images are replaced with placeholders in URL links to keep them usable; use JSON backup for image-heavy decks.
-- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache is versioned at `slideomatic-v1.0.0`.
+- **Sharing:** The HUD Share button tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks.
+- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache is versioned at `slideomatic-v1.0.1`.
 
-Old `?url=`, `?data=`, and legacy `?share=` parameters still load decks if you need to sideload JSON manually or maintain old links.
+Old `?url=`, fallback `?data=`, and hosted `?share=`/`/s/...` parameters still load decks if you need to sideload JSON manually or maintain old links.
 
 ---
 

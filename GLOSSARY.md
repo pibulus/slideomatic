@@ -28,7 +28,7 @@
 - **admin.html** – Legacy password-gated slide editor. The current hash ships for `bonesoup`; change `ADMIN_PASSWORD_HASH` in `admin.js` before treating it as anything beyond a convenience tool.
 - **collections.html** – Simple UI for showing curated deck bundles (e.g., “Design Starter”).
 - **README.md** – Canonical onboarding (install, dev commands, saving/export info). Should match the current UI feature set.
-- **SHARING_OPTIMIZATIONS.md** – Legacy/optional Netlify Blob/share architecture. Default Share UI now creates compressed client-side `?data=` links.
+- **SHARING_OPTIMIZATIONS.md** – Netlify Blob/share architecture. Default production Share UI creates hosted `/s/...` links and falls back to compressed client-side `?data=` links.
 - **manifest.webmanifest / sw.js / icons/** – PWA install shell for home-screen usage.
 - **LAUNCH_AUDIT.md** – Current audit state, fixed issues, verification, and residual launch risks.
 - **VOICE_TO_SLIDE.md** / **ARCHITECTURE.md** / **REFACTOR_PROMPT.md** – Supporting design docs for voice features, module boundaries, and improvement prompts.
@@ -40,6 +40,8 @@
 - **Deck Autosaves** – Stored in `localStorage` under `slideomatic_deck_overrides:*`. Clear keys when you need a blank state.
 - **Cheat Console** – Type 666 or 696969 to open. Generate single slides or full 8-slide starter decks with AI. Starter decks include working links, discussion questions, and auto-generated images — designed as research springboards, not finished presentations.
 - **AI Image Generation** – Empty image slots show a `✨` button in the edit drawer. Gemini decides: search for a photo or generate a risograph-style illustration matched to the current theme. Also runs automatically after starter deck generation.
-- **Client-side Share Links** – HUD Share encodes slides + theme into a compressed `?data=` URL. Good for text/light decks; use JSON export for heavy image decks.
+- **Hosted Share Links** – HUD Share tries a Netlify Blob-backed `/s/...` link first. Recipients get a local copy when they open it.
+- **Client-side Share Links** – Static-host fallback where HUD Share encodes slides + theme into a compressed `?data=` URL. Good for text/light decks; use JSON export for heavy image decks.
 - **SomaFM Toggle** – Drawer-only switch that pipes curated radio while editing; purely for vibe control.
 - **v1.0.0** – Launch baseline: static app, local-first decks, share/export, PWA shell, Gemini helpers, and accessibility pass.
+- **v1.0.1** – Share patch: visible Share UI now uses hosted `/s/...` links first, with client-side `?data=` fallback.

@@ -1,6 +1,6 @@
 # Slide-o-Matic Architecture
 
-**Status:** v1.0.0 static app, release cut May 30, 2026
+**Status:** v1.0.1 static app, share flow patched May 30, 2026
 **Shape:** Vanilla JS modules, JSON decks, local-first persistence, no build step.
 
 Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck runtime, then delegates focused work to modules under `modules/`. The app can run from any static host, with optional Netlify functions kept for legacy/heavier share flows.
@@ -16,7 +16,7 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `collections.html` | Curated deck bundle surface using `deck-collections.json`. |
 | `admin.html` + `admin.js` | Legacy password-gated JSON slide editor. Useful, but not the main v1 editing path. |
 | `branding/index.html` | Branded/static resource page. |
-| `netlify/functions/*` | Optional Blob share/asset endpoints for old `?share=` and heavier asset flows. Default sharing is client-side `?data=`. |
+| `netlify/functions/*` | Hosted `/s/...` share records, Blob image assets, asset cleanup, and fallback-compatible legacy `?share=` loading. |
 
 ---
 
@@ -27,8 +27,9 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 3. `deck-persistence.js` resolves the source:
    - `#deck=` local saved deck
    - `#slides=guide`
-   - `?data=` compressed share payload
-   - legacy `?share=` / `?url=`
+   - `/s/:slug` / `?share=` hosted Netlify share record
+   - `?data=` compressed fallback share payload
+   - legacy `?url=`
    - fallback `slides.json`
 4. Slides are validated, rendered through `slide-rendering.js`, and activated by `navigation.js`.
 5. User edits go through `edit-drawer.js` and `slide-actions.js`; local saves are written under `slideomatic_deck_overrides:*`.
@@ -51,7 +52,7 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `drawer-base.js` | Shared drawer lifecycle, focus trap, focus restore, `inert`/ARIA state. |
 | `theme-manager.js` | Theme load/apply/save, token normalization, contrast helpers. |
 | `theme-drawer.js` | Theme drawer/dropdown, random themes, AI theme prompts, saved theme library. |
-| `share-modal.js` | Client-side `?data=` share links and JSON backup action. |
+| `share-modal.js` | Netlify hosted `/s/...` share links, compressed `?data=` fallback links, and JSON backup action. |
 | `share-password-modal.js` | Legacy locked-share prompt. |
 | `voice-modes.js` | Gemini API key, mic recording, voice-to-slide/theme/edit, prompt dictation/transcription. |
 | `cheat-codes.js` | Numeric cheat unlocks (`666`, `696969`) and AI starter deck console. |
@@ -98,11 +99,12 @@ See `SCHEMA_EXAMPLE.json` for a deck-format reference.
 - **Autosave:** `localStorage` keys under `slideomatic_deck_overrides:*`.
 - **Last deck:** `slideomatic:last-deck`.
 - **Saved themes:** localStorage theme library managed by `theme-manager.js`.
-- **Client share:** `share-modal.js` compresses slides + theme into a `?data=` URL; opening it creates a local `#deck=` copy.
-- **Large inline images:** replaced with placeholders in URL shares to keep links usable. JSON backup keeps full fidelity.
+- **Hosted share:** `share-modal.js` posts slides + theme to `netlify/functions/share.js`, which stores a share record in Netlify Blobs and returns `/s/:slug`.
+- **Fallback share:** if functions are unavailable, `share-modal.js` compresses slides + theme into a `?data=` URL; opening it creates a local `#deck=` copy.
+- **Large inline images:** hosted shares externalize/recompress them where possible. Fallback URL shares replace inline `data:` images with placeholders to keep links usable. JSON backup keeps full fidelity.
 - **JSON export/import:** available from keyboard (`D`/`U`), edit drawer, Share modal, launcher upload, and launcher paste.
 - **PDF export:** edit drawer uses `html2canvas` + `jsPDF` through `pdf-export.js`.
-- **Legacy Blob share:** `netlify/functions/share.js` still exists for old `?share=` links and optional heavier asset flows.
+- **Blob assets:** `upload-asset`, `asset`, and `delete-asset` support uploaded slide images. Deleted assets can remain publicly cacheable at the edge until cache expiry, so deletion is storage cleanup first.
 
 ---
 

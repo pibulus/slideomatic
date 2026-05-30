@@ -309,12 +309,15 @@ function replaceUrlWithDeckId(deckId) {
 export function resolveSlidesPath() {
   const slidesParam = getParamHook('slides');
   if (!slidesParam) {
-    return 'slides.json';
+    return '/slides.json';
   }
-  if (slidesParam.endsWith('.json')) {
+  if (/^(https?:)?\/\//.test(slidesParam) || slidesParam.startsWith('/')) {
     return slidesParam;
   }
-  return `${slidesParam}.json`;
+  if (slidesParam.endsWith('.json')) {
+    return `/${slidesParam.replace(/^\/+/, '')}`;
+  }
+  return `/${slidesParam.replace(/^\/+/, '')}.json`;
 }
 
 function getDeckStorageKey() {

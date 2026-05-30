@@ -1,5 +1,13 @@
 # Slide-o-Matic Release Notes
 
+## v1.0.1 - May 30, 2026
+
+- Share modal now creates hosted Netlify `/s/...` links first, backed by Netlify Blobs.
+- Static/local hosting still falls back to compressed client-side `?data=` links.
+- Hosted shares preserve theme data and can externalize/recompress inline images through the existing asset pipeline.
+- `/s/...` share URLs now hydrate from the path directly and load deck-shell assets from root-safe URLs.
+- Service-worker cache bumped to `slideomatic-v1.0.1`.
+
 ## v1.0.0 - May 30, 2026
 
 Slide-o-Matic v1 is the launch cut: a local-first, installable slide builder with fast editing, playful themes, Gemini-assisted creation, and practical export/share paths.

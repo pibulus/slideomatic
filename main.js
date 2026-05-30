@@ -119,7 +119,13 @@ const hashParams = new URLSearchParams(window.location.hash.slice(1));
 
 // Helper to get param from search OR hash
 function getParam(name) {
-  return urlParams.get(name) || hashParams.get(name);
+  const value = urlParams.get(name) || hashParams.get(name);
+  if (value) return value;
+  if (name === 'share') {
+    const match = window.location.pathname.match(/^\/s\/([^/]+)\/?$/);
+    if (match) return decodeURIComponent(match[1]);
+  }
+  return null;
 }
 
 const requestedDeck = getParam('deck');
@@ -245,14 +251,17 @@ async function loadAndApplyTheme() {
 
 function resolveThemePath() {
   const themeParam = getParam('theme');
-  if (!themeParam) return 'theme.json';
-  if (themeParam.endsWith('.json')) {
+  if (!themeParam) return '/theme.json';
+  if (/^(https?:)?\/\//.test(themeParam) || themeParam.startsWith('/')) {
     return themeParam;
   }
-  if (themeParam.includes('/')) {
-    return `${themeParam}.json`;
+  if (themeParam.endsWith('.json')) {
+    return `/${themeParam.replace(/^\/+/, '')}`;
   }
-  return `themes/${themeParam}.json`;
+  if (themeParam.includes('/')) {
+    return `/${themeParam.replace(/^\/+/, '')}.json`;
+  }
+  return `/themes/${themeParam}.json`;
 }
 
 function initDeckName() {
@@ -378,7 +387,7 @@ function showSaveStatus(state = 'saved') {
 
 async function loadAutoLinks() {
   try {
-    const response = await fetch('autolinks.json', { cache: 'no-store' });
+    const response = await fetch('/autolinks.json', { cache: 'no-store' });
     if (!response.ok) return;
     const links = await response.json();
     if (!Array.isArray(links)) return;
