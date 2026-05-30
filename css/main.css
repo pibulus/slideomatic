@@ -80,16 +80,47 @@
   margin: 0;
 }
 
+.cheat-console__prompt-wrap {
+  position: relative;
+  display: grid;
+}
+
 .cheat-console__textarea {
   width: 100%;
   border: 2px solid var(--color-ink, #111);
   border-radius: 12px;
-  padding: 12px;
+  padding: 12px 82px 12px 12px;
   font-size: 1rem;
   font-family: inherit;
   resize: vertical;
   min-height: 120px;
   background: #fff;
+}
+
+.cheat-console__mic {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 56px;
+  min-height: 40px;
+  border: 2px solid var(--color-ink, #111);
+  border-radius: 999px;
+  background: var(--color-surface, #ff9ff3);
+  color: var(--color-ink, #111);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.cheat-console__mic.is-recording {
+  background: #ff665e;
+  color: #fff;
+}
+
+.cheat-console__mic:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .cheat-console__actions {

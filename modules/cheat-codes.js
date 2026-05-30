@@ -1,4 +1,11 @@
-import { generateSlideFromPrompt, generateDeckFromPrompt, getVoiceAssistantContext } from './voice-modes.js';
+import {
+  generateSlideFromPrompt,
+  generateDeckFromPrompt,
+  getGeminiApiKey,
+  getVoiceAssistantContext,
+  startSpeechCapture,
+  transcribeSpeechToText,
+} from './voice-modes.js';
 import { generateAIImage } from './image-ai.js';
 import { collectImagePaths } from './image-utils.js';
 
@@ -12,8 +19,10 @@ let promptInput;
 let statusEl;
 let slideBtn;
 let deckBtn;
+let dictateBtn;
 let unlockedLabel;
 let previousFocus = null;
+let dictationSession = null;
 
 export function initCheatConsole() {
   if (initialized) return;
@@ -24,10 +33,11 @@ export function initCheatConsole() {
   statusEl = root.querySelector('#cheat-console-status');
   slideBtn = /** @type {HTMLButtonElement|null} */ (root.querySelector('#cheat-console-slide'));
   deckBtn = /** @type {HTMLButtonElement|null} */ (root.querySelector('#cheat-console-deck'));
+  dictateBtn = /** @type {HTMLButtonElement|null} */ (root.querySelector('#cheat-console-dictate'));
   unlockedLabel = root.querySelector('#cheat-console-unlocked');
   const closeBtn = root.querySelector('[data-cheat-close]');
 
-  if (!promptInput || !slideBtn || !deckBtn || !closeBtn) return;
+  if (!promptInput || !slideBtn || !deckBtn || !dictateBtn || !closeBtn) return;
 
   document.addEventListener('keydown', handleGlobalKey, true);
   closeBtn.addEventListener('click', hideConsole);
@@ -35,6 +45,7 @@ export function initCheatConsole() {
 
   slideBtn.addEventListener('click', () => handleCheatAction('slide'));
   deckBtn.addEventListener('click', () => handleCheatAction('deck'));
+  dictateBtn.addEventListener('click', handleDictationToggle);
 
   initialized = true;
 }
@@ -104,6 +115,7 @@ function showConsole(code) {
 
 function hideConsole() {
   if (!root) return;
+  stopDictationSession();
   root.classList.remove('is-open');
   root.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('cheat-console-open');
@@ -114,6 +126,93 @@ function hideConsole() {
     requestAnimationFrame(() => previousFocus?.focus({ preventScroll: true }));
   }
   previousFocus = null;
+}
+
+async function handleDictationToggle() {
+  if (!promptInput || !dictateBtn) return;
+
+  if (dictationSession) {
+    const session = dictationSession;
+    dictationSession = null;
+    dictateBtn.disabled = true;
+    dictateBtn.textContent = 'Wait';
+    setStatus('Cleaning up transcript...', 'info');
+    session.stop();
+    return;
+  }
+
+  if (!getGeminiApiKey()) {
+    const context = getVoiceAssistantContext();
+    context.openSettingsModal?.();
+    context.showApiKeyStatus?.('error', 'Add your Gemini API key to dictate prompts');
+    setStatus('Add a Gemini API key first.', 'error');
+    return;
+  }
+
+  try {
+    const token = { cancelled: false };
+    setDictationButtonState('recording');
+    setStatus('Recording prompt. Tap Mic again to stop.', 'info');
+    const recorder = await startSpeechCapture({
+      onStop: async (audioBlob) => {
+        if (token.cancelled) return;
+        try {
+          setDictationButtonState('processing');
+          setStatus('Cleaning transcript...', 'info');
+          const transcript = await transcribeSpeechToText(audioBlob);
+          insertPromptText(transcript);
+          setStatus('Transcript added.', 'success');
+        } catch (error) {
+          setStatus(error?.message || 'Could not transcribe audio.', 'error');
+        } finally {
+          dictationSession = null;
+          setDictationButtonState('idle');
+          promptInput?.focus();
+        }
+      },
+      onError: (error) => {
+        if (token.cancelled) return;
+        dictationSession = null;
+        setDictationButtonState('idle');
+        setStatus(error?.message || 'Recording failed.', 'error');
+      },
+    });
+    dictationSession = { stop: recorder.stop, token };
+  } catch (error) {
+    dictationSession = null;
+    setDictationButtonState('idle');
+    setStatus(error?.message || 'Could not start microphone.', 'error');
+  }
+}
+
+function stopDictationSession() {
+  if (!dictationSession) return;
+  const session = dictationSession;
+  dictationSession = null;
+  session.token.cancelled = true;
+  session.stop();
+  setDictationButtonState('idle');
+}
+
+function setDictationButtonState(state) {
+  if (!dictateBtn) return;
+  dictateBtn.classList.toggle('is-recording', state === 'recording');
+  dictateBtn.disabled = state === 'processing';
+  dictateBtn.textContent = state === 'recording' ? 'Stop' : state === 'processing' ? 'Wait' : 'Mic';
+  dictateBtn.setAttribute(
+    'aria-label',
+    state === 'recording' ? 'Stop dictation' : 'Dictate prompt'
+  );
+}
+
+function insertPromptText(text) {
+  if (!promptInput) return;
+  const clean = (text || '').trim();
+  if (!clean) return;
+
+  const current = promptInput.value.trim();
+  promptInput.value = current ? `${current}\n${clean}` : clean;
+  promptInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 async function handleCheatAction(mode) {

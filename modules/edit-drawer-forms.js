@@ -93,15 +93,27 @@ function buildInputField(field, value, placeholder) {
 
 function buildTextareaField(field, value, placeholder) {
   const safeField = escapeHtml(field);
+  const targetId = `quick-edit-${safeField}`;
   return `
-    <textarea
-      class="edit-drawer__textarea"
-      id="quick-edit-${safeField}"
-      data-field="${safeField}"
-      rows="4"
-      placeholder="${escapeHtml(placeholder)}"
-      aria-label="${escapeHtml(placeholder)}"
-    >${escapeHtml(value ?? '')}</textarea>
+    <div class="edit-drawer__dictate-field">
+      <textarea
+        class="edit-drawer__textarea"
+        id="${targetId}"
+        data-field="${safeField}"
+        rows="4"
+        placeholder="${escapeHtml(placeholder)}"
+        aria-label="${escapeHtml(placeholder)}"
+      >${escapeHtml(value ?? '')}</textarea>
+      <button
+        type="button"
+        class="edit-drawer__dictate-btn"
+        data-dictate-target="${targetId}"
+        aria-label="Dictate ${escapeHtml(placeholder)}"
+        title="Dictate ${escapeHtml(placeholder)}"
+      >
+        Mic
+      </button>
+    </div>
   `;
 }
 

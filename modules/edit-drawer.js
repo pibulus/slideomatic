@@ -55,12 +55,14 @@ const AUTO_SAVE_DELAY_MS = CONFIG.AUTO_SAVE_DELAY_MS;
 let activeFormListeners = [];
 let autoSaveTimeout = null;
 let moduleImagePicker = null; // Reused across edit drawer renders to prevent DOM leak
+let drawerDictationSession = null;
 
 /**
  * Clean up all event listeners before re-rendering form
  * Prevents memory leaks from accumulated listeners
  */
 function cleanupFormListeners() {
+  stopDrawerDictation();
   activeFormListeners.forEach(({ element, event, handler }) => {
     element?.removeEventListener(event, handler);
   });
@@ -639,6 +641,109 @@ function setupTextareaExpansion() {
   });
 }
 
+function setupDictationButtons(context) {
+  const buttons = document.querySelectorAll('[data-dictate-target]');
+  buttons.forEach((button) => {
+    if (!(button instanceof HTMLButtonElement)) return;
+    addTrackedListener(button, 'click', () => handleDrawerDictation(button, context));
+  });
+}
+
+async function handleDrawerDictation(button, context) {
+  const ctx = ensureContext(context);
+  const targetId = button.dataset.dictateTarget;
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (!(target instanceof HTMLTextAreaElement)) return;
+
+  if (drawerDictationSession?.button === button) {
+    const session = drawerDictationSession;
+    drawerDictationSession = null;
+    setDrawerDictationButton(button, 'processing');
+    ctx.showHudStatus('Cleaning transcript...', 'info');
+    session.stop();
+    return;
+  }
+
+  stopDrawerDictation();
+
+  const {
+    getGeminiApiKey,
+    startSpeechCapture,
+    transcribeSpeechToText,
+  } = await import('./voice-modes.js');
+
+  if (!getGeminiApiKey()) {
+    ctx.showHudStatus('Add a Gemini API key to dictate text', 'warning');
+    setTimeout(() => ctx.hideHudStatus(), 2200);
+    return;
+  }
+
+  try {
+    const token = { cancelled: false };
+    setDrawerDictationButton(button, 'recording');
+    ctx.showHudStatus('Recording text. Tap Mic again to stop.', 'info');
+    const recorder = await startSpeechCapture({
+      onStop: async (audioBlob) => {
+        if (token.cancelled) return;
+        try {
+          setDrawerDictationButton(button, 'processing');
+          ctx.showHudStatus('Cleaning transcript...', 'info');
+          const transcript = await transcribeSpeechToText(audioBlob);
+          appendTextToTextarea(target, transcript);
+          ctx.showHudStatus('Transcript added', 'success');
+          setTimeout(() => ctx.hideHudStatus(), 1600);
+        } catch (error) {
+          ctx.showHudStatus(`Dictation failed: ${error.message}`, 'error');
+          setTimeout(() => ctx.hideHudStatus(), 3000);
+        } finally {
+          drawerDictationSession = null;
+          setDrawerDictationButton(button, 'idle');
+          target.focus({ preventScroll: true });
+        }
+      },
+      onError: (error) => {
+        if (token.cancelled) return;
+        drawerDictationSession = null;
+        setDrawerDictationButton(button, 'idle');
+        ctx.showHudStatus(error?.message || 'Recording failed', 'error');
+        setTimeout(() => ctx.hideHudStatus(), 3000);
+      },
+    });
+    drawerDictationSession = { button, stop: recorder.stop, token };
+  } catch (error) {
+    drawerDictationSession = null;
+    setDrawerDictationButton(button, 'idle');
+    ctx.showHudStatus(error?.message || 'Could not start microphone', 'error');
+    setTimeout(() => ctx.hideHudStatus(), 3000);
+  }
+}
+
+function stopDrawerDictation() {
+  if (!drawerDictationSession) return;
+  const { button, stop, token } = drawerDictationSession;
+  drawerDictationSession = null;
+  token.cancelled = true;
+  stop();
+  setDrawerDictationButton(button, 'idle');
+}
+
+function setDrawerDictationButton(button, state) {
+  button.classList.toggle('is-recording', state === 'recording');
+  button.disabled = state === 'processing';
+  button.textContent = state === 'recording' ? 'Stop' : state === 'processing' ? 'Wait' : 'Mic';
+  button.setAttribute('aria-label', state === 'recording' ? 'Stop dictation' : 'Dictate text');
+}
+
+function appendTextToTextarea(textarea, text) {
+  const clean = (text || '').trim();
+  if (!clean) return;
+  const current = textarea.value.trim();
+  textarea.value = current ? `${current}\n${clean}` : clean;
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  textarea.style.height = 'auto';
+  textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
 /**
  * @param {object} context
  */
@@ -670,6 +775,7 @@ export function renderEditForm(context) {
 
   // Setup auto-expanding textareas
   setupTextareaExpansion();
+  setupDictationButtons(ctx);
 
   // Setup accordions with whimsical animations
   setupAccordion(content, { allowMultiple: true, addTrackedListener });

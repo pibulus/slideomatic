@@ -151,7 +151,7 @@
             <form class="settings-field" onsubmit="event.preventDefault();">
               <label class="settings-field__label" for="gemini-api-key">
                 Gemini API Key
-                <span class="settings-field__hint">Required for voice-to-slide and voice-to-theme</span>
+                <span class="settings-field__hint">Required for voice, dictation, and AI generation</span>
               </label>
               <div class="settings-field__input-group">
                 <input
@@ -340,12 +340,23 @@
           <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Grab one here</a>,
           then tap <strong>S</strong> to paste it into Settings.
         </p>
-        <textarea
-          id="cheat-console-prompt"
-          class="cheat-console__textarea"
-          rows="5"
-          placeholder="e.g. a presentation about brutalist architecture — who built it, why people hate it, and why it's having a comeback"
-        ></textarea>
+        <div class="cheat-console__prompt-wrap">
+          <textarea
+            id="cheat-console-prompt"
+            class="cheat-console__textarea"
+            rows="5"
+            placeholder="e.g. a presentation about brutalist architecture — who built it, why people hate it, and why it's having a comeback"
+          ></textarea>
+          <button
+            type="button"
+            class="cheat-console__mic"
+            id="cheat-console-dictate"
+            aria-label="Dictate prompt"
+            title="Dictate prompt"
+          >
+            Mic
+          </button>
+        </div>
         <div class="cheat-console__actions">
           <button type="button" class="cheat-console__btn" id="cheat-console-slide">Generate slide</button>
           <button type="button" class="cheat-console__btn cheat-console__btn--primary" id="cheat-console-deck">

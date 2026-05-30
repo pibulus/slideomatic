@@ -65,7 +65,7 @@ For the current launch state, read `LAUNCH_AUDIT.md`.
 - **Autosave:** Every deck you touch is cached locally under `slideomatic_deck_overrides:*`. Clear these keys in devtools if you want a blank slate.
 - **JSON:** Press `D`, use **Download JSON** in the edit drawer, or use **Download JSON backup** in the Share modal. JSON exports include slides and the current theme. Press `U`, use launcher upload, or paste JSON on the launcher to import a deck.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
-- **Voice & Notes:** The mic icon in the HUD lets you narrate slides hands‑free while you build. Great for quick reviews.
+- **Voice & Notes:** Gemini voice tools can generate slides/themes from recordings, and prompt mic buttons clean up speech into text by removing filler words before insertion. Great for quick reviews and rough ideas.
 - **Sharing:** The HUD Share button generates a compressed client-side `?data=` link containing the slides and current theme. Opening a share link now creates a local deck copy in that browser. Large inline data images are replaced with placeholders in URL links to keep them usable; use JSON backup for image-heavy decks.
 - **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. Do a real iPhone install pass before calling production fully done.
 

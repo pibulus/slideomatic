@@ -129,7 +129,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px 20px;
+    padding: clamp(40px, 5vh, 64px) 20px clamp(72px, 9vh, 112px);
   }
 
   .landing__hero {
@@ -326,10 +326,15 @@ main {
 
 .cta-panel__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 12px;
-  align-items: center;
+  align-items: stretch;
   margin-top: 6px;
+}
+
+.cta-panel__actions .button {
+  width: 100%;
+  min-height: 62px;
 }
 
 .cta-panel__meta {
@@ -526,8 +531,8 @@ a.button--secondary:hover {
 
 .landing__features {
   width: 100%;
-  padding: clamp(32px, 5vw, 48px) clamp(24px, 5vw, 48px);
-  margin-top: clamp(24px, 4vw, 40px);
+  padding: clamp(48px, 7vw, 88px) clamp(24px, 5vw, 48px) clamp(40px, 6vw, 64px);
+  margin-top: clamp(40px, 6vw, 72px);
   display: grid;
   gap: clamp(24px, 4vw, 40px);
   position: relative;

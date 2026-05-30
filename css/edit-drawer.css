@@ -292,6 +292,44 @@
     0 0 0 2px rgba(255, 159, 243, 0.15);
 }
 
+.edit-drawer__dictate-field {
+  position: relative;
+  display: grid;
+}
+
+.edit-drawer__dictate-field .edit-drawer__textarea {
+  padding-right: 76px;
+}
+
+.edit-drawer__dictate-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 52px;
+  min-height: 36px;
+  border: 2px solid var(--color-ink);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.edit-drawer__dictate-btn.is-recording {
+  background: #ff665e;
+  color: #fff;
+}
+
+.edit-drawer__dictate-btn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .edit-drawer__textarea {
   min-height: 120px;
   resize: vertical;

@@ -15,6 +15,7 @@
 import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
+export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-2.5-flash-lite';
 
 const defaultContext = {
   getCurrentIndex: () => 0,
@@ -61,6 +62,125 @@ export function getGeminiApiKey() {
 
 export function getVoiceAssistantContext() {
   return getVoiceContext();
+}
+
+function getPreferredAudioMimeType() {
+  const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
+  for (const type of mimeTypes) {
+    if (!type || MediaRecorder.isTypeSupported(type)) {
+      return type;
+    }
+  }
+  return '';
+}
+
+export function canRecordSpeech() {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+}
+
+export async function startSpeechCapture({ onStop, onError } = {}) {
+  if (!canRecordSpeech()) {
+    throw new Error('Voice recording is not supported in this browser.');
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    }
+  });
+
+  const mimeType = getPreferredAudioMimeType();
+  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  const chunks = [];
+
+  const stopTracks = () => {
+    stream.getTracks().forEach((track) => track.stop());
+  };
+
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      chunks.push(event.data);
+    }
+  };
+
+  recorder.onstop = async () => {
+    stopTracks();
+    const audioBlob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+    if (typeof onStop === 'function') {
+      await onStop(audioBlob);
+    }
+  };
+
+  recorder.onerror = (event) => {
+    stopTracks();
+    if (typeof onError === 'function') {
+      onError(event.error || new Error('Voice recording failed.'));
+    }
+  };
+
+  recorder.start(1000);
+
+  return {
+    stop() {
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      } else {
+        stopTracks();
+      }
+    },
+  };
+}
+
+export async function transcribeSpeechToText(audioBlob, options = {}) {
+  const context = getVoiceContext();
+  const apiKey = ensureApiKeyOrThrow(context);
+  const base64Audio = await blobToBase64(audioBlob);
+  const audioData = base64Audio.split(',')[1];
+  const prompt = options.prompt || buildCleanTranscriptionPrompt();
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TRANSCRIPTION_MODEL}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(options.timeout || 30_000),
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 512,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.error?.message || `Transcription failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  const parts = data.candidates?.[0]?.content?.parts;
+  const text = parts?.map((part) => part.text).filter(Boolean).join('\n').trim();
+  if (!text) {
+    throw new Error('No transcript returned');
+  }
+
+  return cleanupTranscript(text);
 }
 
 function ensureButtonInitialized(button, handler) {
@@ -159,14 +279,7 @@ export async function startVoiceRecording(mode) {
       }
     });
 
-    const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', ''];
-    let mimeType = '';
-    for (const type of mimeTypes) {
-      if (!type || MediaRecorder.isTypeSupported(type)) {
-        mimeType = type;
-        break;
-      }
-    }
+    const mimeType = getPreferredAudioMimeType();
 
     mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     audioChunks = [];
@@ -543,7 +656,8 @@ async function startVoiceThemeRecording() {
       }
     });
 
-    themeMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    const mimeType = getPreferredAudioMimeType();
+    themeMediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     themeAudioChunks = [];
     themeMediaStream = stream;
 
@@ -554,7 +668,7 @@ async function startVoiceThemeRecording() {
     };
 
     themeMediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(themeAudioChunks, { type: 'audio/webm' });
+      const audioBlob = new Blob(themeAudioChunks, { type: mimeType || 'audio/webm' });
       await processVoiceToTheme(audioBlob);
       cleanupVoiceThemeRecording();
     };
@@ -800,6 +914,26 @@ function ensureApiKeyOrThrow(context) {
     throw new Error('Gemini API key required. Press S to add it.');
   }
   return apiKey;
+}
+
+function buildCleanTranscriptionPrompt() {
+  return `Transcribe the attached speech into clean text for a prompt box.
+
+Rules:
+- Return only the cleaned transcript text.
+- Do not add labels, quotes, timestamps, markdown, summary, or commentary.
+- Remove filler words and stumbles such as "um", "uh", "er", "ah", "like" when used as filler, "you know", "sort of", and "kind of".
+- Keep the speaker's meaning, proper nouns, concrete details, tone, and useful phrasing.
+- Preserve intentional slang or emphasis when it helps the prompt.
+- Use normal punctuation and sentence casing.`;
+}
+
+function cleanupTranscript(text) {
+  return text
+    .replace(/^["'“”]+|["'“”]+$/g, '')
+    .replace(/^(transcript|clean transcript|text)\s*:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function requestGeminiJson(apiKey, prompt, generationConfig = {}, { timeout = 30_000 } = {}) {
