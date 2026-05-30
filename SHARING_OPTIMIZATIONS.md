@@ -241,5 +241,5 @@ This optimization embodies the **80/20 rule**: aggressive compression where it m
 
 ---
 
-**Last updated:** 2025-11-29
-**Status:** ✅ Implemented, ready for testing
+**Last updated:** 2026-05-30
+**Status:** Optional/legacy infrastructure. The v1 visible Share UI uses client-side `?data=` links plus JSON backup.

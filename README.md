@@ -1,6 +1,8 @@
-# Slide-o-matic 🎬
+# Slide-o-Matic 🎬
 
-Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Create presentations with JSON, the edit drawer, voice, or the AI cheat console; save locally; share compressed links; and install it as a small PWA.
+**Version:** 1.0.0
+
+Voice-powered slide deck builder with a neo-brutalist / pastel-punk aesthetic. Create presentations from the launcher, JSON, the edit drawer, voice, or the AI cheat console; save locally; share compressed links; export JSON/PDF; and install it as a small PWA.
 
 ---
 
@@ -24,7 +26,7 @@ Voice-powered slide deck engine with a neo-brutalist / pastel-punk aesthetic. Cr
 
 That's it—no build step, no frameworks.
 
-For the current launch state, read `LAUNCH_AUDIT.md`.
+For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE.md`.
 
 ---
 
@@ -32,17 +34,17 @@ For the current launch state, read `LAUNCH_AUDIT.md`.
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Deck library hub. Lists available slide/theme combinations. |
+| `index.html` | Launcher and local deck shelf. Starts guide, blank, imported, pasted, and saved decks. |
 | `deck.html` | Presentation shell that renders the selected deck. |
 | `main.js` | Runtime orchestrator that wires deck loading, modules, HUD, drawers, and navigation. |
 | `modules/` | Focused runtime modules for rendering, persistence, drawers, image handling, AI, sharing, and PWA setup. |
 | `slides.json` | Default slide content. |
 | `theme.json` | Default theme (colors, spacing, shadows, background layers, slide chrome). |
 | `themes/*.json` | Optional theme variants (loaded via `?theme=` query param). |
-| `catalog.json` | Deck catalog used by the index page. |
+| `catalog.json` | Deck catalog data for curated/default decks. |
 | `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
 | `manifest.webmanifest` / `sw.js` / `icons/` | PWA install shell. |
-| `admin.html` / `admin.js` / `admin.css` | Browser-based slide editor with password gate. |
+| `admin.html` / `admin.js` / `admin.css` | Legacy browser-based slide editor with a local password gate. |
 | `netlify/functions/` | Optional/legacy Blob share + asset endpoints. |
 | `images/` | All deck imagery. Drop your own assets here. |
 
@@ -67,7 +69,7 @@ For the current launch state, read `LAUNCH_AUDIT.md`.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
 - **Voice & Notes:** Gemini voice tools can generate slides/themes from recordings, and prompt mic buttons clean up speech into text by removing filler words before insertion. Great for quick reviews and rough ideas.
 - **Sharing:** The HUD Share button generates a compressed client-side `?data=` link containing the slides and current theme. Opening a share link now creates a local deck copy in that browser. Large inline data images are replaced with placeholders in URL links to keep them usable; use JSON backup for image-heavy decks.
-- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. Do a real iPhone install pass before calling production fully done.
+- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache is versioned at `slideomatic-v1.0.0`.
 
 Old `?url=`, `?data=`, and legacy `?share=` parameters still load decks if you need to sideload JSON manually or maintain old links.
 
@@ -267,8 +269,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `I` – Toggle slide index
 - `N` – Toggle speaker notes
 
-### 🎙️ Voice-to-Slide
-Press `V` or click the voice button in the HUD to generate slides using AI. Describe what you want and Gemini creates the slide. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
+### 🎙️ Voice-to-Slide + Dictation
+Press `V` or click the voice button in the HUD to generate slides using AI. The edit drawer and cheat console also include mic buttons that transcribe rough speech into cleaned prompt/body text. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
 
 ### 🕹️ AI Starter Deck (Cheat Code!)
 Type `666` or `696969` anywhere in the deck view to open the AI Cheat Console. Describe a topic and Gemini builds an 8-slide starter deck with:
@@ -303,7 +305,7 @@ Press `E` to open the edit drawer where you'll find all theme controls:
 
 ## Deploying
 
-Because every core asset is static, any static host works (Netlify, Vercel, GitHub Pages, S3, etc.). Ensure your host serves JSON, webmanifest, JS modules, and the service worker from the site root. Example with `serve` for testing:
+Because every core asset is static, any static host works (Netlify, Vercel, GitHub Pages, S3, etc.). This repo is wired for Netlify with `netlify.toml`, redirects, headers, optional functions, and no build step. Ensure your host serves JSON, webmanifest, JS modules, and the service worker from the site root. Example with `serve` for testing:
 
 ```bash
 npx serve .
@@ -313,7 +315,7 @@ npx serve .
 
 ## Changing the Admin Password
 
-Open `admin.js` and update the `ADMIN_PASSWORD` constant. The password is stored locally in `localStorage`, so users with access to the repo should know not to commit secret credentials—treat this as a convenience layer, not hardened security.
+The legacy admin editor uses a SHA-256 hash in `admin.js` (`ADMIN_PASSWORD_HASH`). Generate a replacement hash in the browser console with the snippet in that file, paste the new hash, and redeploy. Treat this as a convenience layer for local editing, not hardened security.
 
 ---
 

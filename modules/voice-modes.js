@@ -12,6 +12,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { debug } from './constants.js';
 import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
@@ -309,7 +310,7 @@ export async function startVoiceRecording(mode) {
     mediaRecorder.start(1000);
     isRecording = true;
     updateVoiceUI(mode, 'recording');
-    console.log('🎙️ Recording started...');
+    debug('Recording started');
   } catch (error) {
     console.error('❌ Error starting recording:', error);
     alert('Failed to access microphone. Please check permissions.');
@@ -390,7 +391,7 @@ async function processVoiceAction(mode, audioBlob) {
 export async function processVoiceToSlide(audioBlob) {
   const context = getVoiceContext();
   try {
-    console.log('🤖 Processing audio with Gemini...');
+    debug('Processing audio with Gemini');
     const uiStart = performance.now();
 
     const base64Audio = await blobToBase64(audioBlob);
@@ -457,7 +458,7 @@ export async function processVoiceToSlide(audioBlob) {
     context.showHudStatus('✨ Slide ready — Save Deck to export', 'success');
     context.setActiveSlide(newIndex);
     setTimeout(context.hideHudStatus, 2000);
-    console.log('✅ Slide created and inserted!');
+    debug('Slide created and inserted');
   } catch (error) {
     console.error('❌ Error processing voice:', error);
     context.showHudStatus(`❌ Failed: ${error.message}`, 'error');
@@ -475,7 +476,7 @@ async function processVoiceEditSlide(audioBlob) {
       throw new Error('No slide selected to edit.');
     }
 
-    console.log('🛠 Updating slide with Gemini...');
+    debug('Updating slide with Gemini');
     const uiStart = performance.now();
 
     const base64Audio = await blobToBase64(audioBlob);
@@ -541,7 +542,7 @@ async function processVoiceEditSlide(audioBlob) {
     await ensureMinimumDelay(uiStart, 1300);
     context.showHudStatus('✨ Slide updated — Save Deck to export', 'success');
     setTimeout(context.hideHudStatus, 2000);
-    console.log('✅ Slide updated via Gemini!');
+    debug('Slide updated via Gemini');
   } catch (error) {
     console.error('❌ Error updating slide:', error);
     context.showHudStatus(`❌ Update failed: ${error.message}`, 'error');
@@ -552,7 +553,7 @@ async function processVoiceEditSlide(audioBlob) {
 export async function processVoiceToTheme(audioBlob) {
   const context = getVoiceContext();
   try {
-    console.log('🎨 Generating theme with Gemini...');
+    debug('Generating theme with Gemini');
     const uiStart = performance.now();
 
     const base64Audio = await blobToBase64(audioBlob);
@@ -622,7 +623,7 @@ export async function processVoiceToTheme(audioBlob) {
     await ensureMinimumDelay(uiStart, 1500);
     context.showHudStatus('🎨 Theme created!', 'success');
     setTimeout(context.hideHudStatus, 2200);
-    console.log('✅ Theme applied and downloaded!');
+    debug('Theme applied and downloaded');
   } catch (error) {
     console.error('❌ Error processing theme:', error);
     context.showHudStatus(`❌ Failed to create theme: ${error.message}`, 'error');
@@ -675,7 +676,7 @@ async function startVoiceThemeRecording() {
 
     themeMediaRecorder.start(1000);
     isRecordingTheme = true;
-    console.log('🎙️ Recording theme instructions...');
+    debug('Recording theme instructions');
   } catch (error) {
     console.error('❌ Error starting theme recording:', error);
     alert('Failed to access microphone. Please check permissions.');

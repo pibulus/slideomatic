@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'slideomatic-v1';
+const CACHE_VERSION = 'slideomatic-v1.0.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -9,6 +9,16 @@ const SHELL_ASSETS = [
   '/collections.html',
   '/manifest.webmanifest',
   '/css/main.css',
+  '/css/variables.css',
+  '/css/base.css',
+  '/css/layout.css',
+  '/css/slides.css',
+  '/css/ui.css',
+  '/css/drawers.css',
+  '/css/modals.css',
+  '/css/animations.css',
+  '/css/edit-drawer.css',
+  '/css/theme-drawer.css',
   '/css/landing.css',
   '/css/collections.css',
   '/css/accordion.css',

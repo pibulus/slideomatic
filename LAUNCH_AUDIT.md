@@ -1,61 +1,76 @@
-# Slide-o-Matic Launch Audit
+# Slide-o-Matic v1 Launch Audit
 
 Last updated: 2026-05-30
 
 ## Status
 
-Slide-o-Matic is launch-usable as a static, local-first slide builder. The core launcher, deck runtime, edit drawer, share modal, keyboard help, cheat console, and PWA shell all load locally without browser console errors.
+Slide-o-Matic is v1 launch-ready as a static, local-first slide builder. The launcher, guide deck, deck runtime, edit drawer, theme controls, share/export flows, keyboard/touch navigation, accessibility basics, cheat console, Gemini settings flow, metadata, and PWA shell all verify locally.
 
-## Fixed In This Audit
+The production deploy path is a normal push to `main` for the Netlify-connected repo. No build step is required.
 
-- Merged the remaining Claude branch into `main` so the latest drawer/share/radio work is not stranded off-branch.
-- Made `npm run lint` usable by ignoring generated Netlify output and vendored bundles.
-- Fixed validator drift by adding `graph` to `scripts/validate.mjs`.
-- Fixed edit drawer accordion hydration so intended default-open sections stay open.
-- Raised HUD and close-button hit targets to at least `44x44`.
-- Fixed Netlify asset cleanup to call `delete-asset` with the payload the function expects.
-- Added PWA setup: manifest, service worker, icons, Apple install meta, and registration module.
-- Made share links materialize as real local deck copies instead of ephemeral `?data=` sessions.
-- Preserved deck themes through JSON export/import, pasted JSON, uploaded JSON, shared links, and autosave.
-- Split edit-drawer exports into explicit **Download JSON** and **Download PDF** actions.
-- Fixed browser PDF export by loading the standalone jsPDF UMD bundle instead of the broken bare-import ESM bundle.
-- Added Share-modal JSON backup and an inline warning when URL sharing replaces inline data images with placeholders.
-- Removed noisy launcher/runtime debug logging from the main save/import path.
+## Fixed For v1
+
+- Consolidated work onto `main` and cleared stale local stashes.
+- Made `npm run check` and `npm run lint` pass cleanly.
+- Reworked the launcher into a clearer start flow with guide, blank deck, saved decks, upload, paste import, and about modal.
+- Polished desktop/mobile spacing, drawers, HUD touch targets, modal sizing, and responsive deck flow.
+- Hardened local saves, JSON import/export, PDF export, share link generation, and shared-deck local copy behavior.
+- Preserved themes through local decks, JSON backup, upload, paste, and share links.
+- Added Gemini prompt/body dictation with `gemini-2.5-flash-lite` and direct Google AI Studio API key links.
+- Updated guide deck tone/content and fixed guide deck imagery.
+- Cleaned metadata, OG/Twitter cards, favicon, robots, sitemap, manifest, Netlify headers, and crawler rules.
+- Removed PostHog/Jina references after repo scan; none remain in app files.
+- Added the accessibility pass: dialog semantics, `inert`/`aria-hidden` state, focus traps, focus restore, keyboard image preview, HUD slider ARIA, live regions, and contrast fixes.
+- Cleaned split CSS imports and pre-cached drawer/runtime CSS for quiet PWA/offline loading.
+- Bumped package/cache release signals to v1.0.0.
 
 ## Verified
 
 ```bash
 npm run check
 npm run lint
+git diff --check
 ```
 
-Browser smoke, using system Chrome through Puppeteer:
+Browser/Puppeteer smoke covered:
 
-- `index.html` desktop and mobile load with no page errors.
-- `deck.html` loads with no page errors.
-- Edit drawer opens on desktop/mobile with Theme and Content expanded.
-- Mobile visible HUD/drawer controls are at least `44x44`.
-- Share modal opens from the HUD and generates from the current deck state.
-- Cheat console opens with `666`.
-- Manifest and service worker resolve and register on localhost.
-- Shared `?data=` links open as local `#deck=` copies and preserve theme metadata.
-- Drawer JSON/PDF export buttons are visible and separately wired.
-- PDF export downloads a real `.pdf` from the edit drawer.
-- Launcher upload and paste imports reject invalid deck JSON before creating a saved deck.
+- Landing page desktop/mobile.
+- Paste/about modals.
+- Guide deck load.
+- Blank deck edit flow.
+- Edit/theme drawers.
+- HUD keyboard/touch navigation.
+- Share modal and client-side share URL generation.
+- JSON backup/export/import paths.
+- PDF export path.
+- Settings modal API-key UI.
+- Cheat console unlock with `666`.
+- Image preview modal.
+- PWA manifest/service worker/icon assets.
+- Metadata/favicons/robots/sitemap heads.
 
-## Residual Risks
+Axe smoke returned 0 violations for:
 
-- Live Gemini flows still need a real API-key pass: Settings test, `666` starter deck, auto image generation, graph generation, and voice recording.
-- Real iPhone PWA install still needs a physical-device pass after deployment.
-- Netlify Blob share functions remain in the repo for legacy/optional asset/share flows, while the default Share UI now generates compressed client-side `?data=` links.
-- URL sharing intentionally replaces inline `data:` images with placeholders; JSON backup is the full-fidelity path for decks with inline uploads.
-- Root docs were refreshed, but `REFACTOR_PROMPT.md` is historical and should not be treated as current architecture.
+- Landing page.
+- Paste modal.
+- About modal.
+- Guide deck.
+- Keyboard hints modal.
+- Share modal.
+- Cheat console.
 
-## Suggested Launch Smoke
+## Known Post-Release Checks
 
-1. Deploy `main`.
-2. Open `https://slideomatic.app` on desktop and iPhone.
-3. Install to home screen on iPhone.
-4. Open a blank deck, edit title/body, navigate, export JSON, and generate a Share link.
-5. Add Gemini key, test connection, type `666`, generate an 8-slide starter deck, and confirm images fill in.
-6. Reload installed PWA and confirm the deck still loads.
+These are not local blockers for v1, but they should be checked on the live domain:
+
+1. Real Gemini key: Settings test, `666` starter deck, AI image generation, graph generation, voice-to-slide, and prompt dictation.
+2. Real iPhone PWA: install from `https://slideomatic.app`, reload from home screen, edit a blank deck, share/export, and confirm the cached shell behaves.
+3. Production share sanity: generate a share link on desktop, open it in another browser/device, confirm it becomes a local copy.
+4. Optional legacy Netlify Blob path: only test if preserving old `/s/:slug` or `?share=` links matters for a release.
+
+## Ship Notes
+
+- Default Share UI is client-side `?data=`. Inline `data:` images are replaced with placeholders to keep links sane; JSON backup is the full-fidelity path.
+- Netlify Blob functions remain as optional/legacy infrastructure.
+- `admin.html` is a convenience editor, not a hardened admin product.
+- `REFACTOR_PROMPT.md` and `RADIO_WIDGET.md` are historical/reference docs, not v1 runtime truth.

@@ -1,579 +1,181 @@
 # Slide-o-Matic Architecture
 
-**Status:** Modular static app, launch audit refreshed May 2026
-**Philosophy:** Compression over complexity. Each module does one thing well.
+**Status:** v1.0.0 static app, release cut May 30, 2026
+**Shape:** Vanilla JS modules, JSON decks, local-first persistence, no build step.
+
+Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck runtime, then delegates focused work to modules under `modules/`. The app can run from any static host, with optional Netlify functions kept for legacy/heavier share flows.
 
 ---
 
-## 🏗️ System Overview
+## Entry Points
 
-Slide-o-Matic is a **vanilla JavaScript** presentation engine with local-first deck persistence, drawer-based editing, PWA install support, client-side share links, voice/cheat AI, drag-drop image handling, and theme management. The codebase is organized into focused modules coordinated by `main.js`.
-
-**Core principle:** `main.js` is the conductor, modules are the orchestra.
-
----
-
-## 📁 Module Map
-
-### Core Orchestration
-
-#### `main.js`
-**Purpose:** Application coordinator and presentation runtime
-
-**Responsibilities:**
-- Application bootstrap and context wiring
-- Deck loading, validation, rendering orchestration
-- Keyboard/touch navigation and HUD controls
-- Drawer/modal/slide-index/share/notes initialization
-- Autolinks, history, initial URL intents, and local deck naming
-- Module initialization and context wiring
-
-**Key exports:** None (entry point)
-
-**Imports from:**
-- `modules/theme-manager.js` - Theme operations
-- `modules/voice-modes.js` - Voice recording
-- `modules/keyboard-nav.js` - Keyboard shortcuts
-- `modules/edit-drawer.js` - Slide editing UI
-- `modules/drawer-base.js` - Drawer behaviors
-- `modules/image-render.js`, `modules/image-upload.js`, `modules/image-utils.js`, `modules/slide-image-ui.js`, `modules/image-ai.js` - Image operations
-- `modules/base64-tokens.js` - JSON readability
-- `modules/utils.js` - Shared utilities
-
-**Context it provides:**
-```javascript
-{
-  getCurrentIndex, getSlides, insertSlideAt, replaceSlideAt,
-  setActiveSlide, updateSlide, validateSlides,
-  showHudStatus, hideHudStatus, downloadDeck, downloadTheme,
-  toggleOverview, exitOverview, moveOverviewCursorBy,
-  toggleEditDrawer, toggleThemeDrawer,
-  openSettingsModal, closeSettingsModal
-}
-```
+| Surface | Role |
+| --- | --- |
+| `index.html` | Public launcher, guide/blank entry, local deck shelf, JSON upload/paste, about modal. |
+| `deck.html` + `main.js` | Presentation/runtime shell: load, render, edit, navigate, share, export, voice, and PWA behavior. |
+| `collections.html` | Curated deck bundle surface using `deck-collections.json`. |
+| `admin.html` + `admin.js` | Legacy password-gated JSON slide editor. Useful, but not the main v1 editing path. |
+| `branding/index.html` | Branded/static resource page. |
+| `netlify/functions/*` | Optional Blob share/asset endpoints for old `?share=` and heavier asset flows. Default sharing is client-side `?data=`. |
 
 ---
 
-### Feature Modules
+## Runtime Flow
 
-#### `modules/voice-modes.js`
-**Purpose:** Voice recording and AI slide/theme generation
-
-**Responsibilities:**
-- Microphone access and MediaRecorder management
-- Audio blob → base64 conversion
-- Gemini API integration (slide generation, theme generation, slide editing)
-- Voice UI state (recording, processing, idle)
-- API key storage and validation
-
-**Key exports:**
-```javascript
-initVoiceButtons(context)      // Setup voice buttons
-toggleVoiceRecording(mode)     // Start/stop recording ('add' or 'edit')
-processVoiceToSlide(audioBlob) // Generate slide from audio
-processVoiceToTheme(audioBlob) // Generate theme from audio
-getGeminiApiKey()              // Retrieve API key
-STORAGE_KEY_API                // localStorage key constant
-```
-
-**Dependencies:**
-- `theme-manager.js` (applies generated themes)
-
-**Used by:** `main.js`
-
-**Voice button modes:**
-- `'add'` - Create new slide after current
-- `'edit'` - Modify current slide in-place
+1. `deck.html` loads CSS, modal/drawer shells, `main.js`, and vendor image compression.
+2. `main.js` registers hooks with persistence, navigation, edit, theme, share, voice, and slide-action modules.
+3. `deck-persistence.js` resolves the source:
+   - `#deck=` local saved deck
+   - `#slides=guide`
+   - `?data=` compressed share payload
+   - legacy `?share=` / `?url=`
+   - fallback `slides.json`
+4. Slides are validated, rendered through `slide-rendering.js`, and activated by `navigation.js`.
+5. User edits go through `edit-drawer.js` and `slide-actions.js`; local saves are written under `slideomatic_deck_overrides:*`.
+6. Export/share paths serialize the current slides + theme through `slide-actions.js`, `pdf-export.js`, and `share-modal.js`.
 
 ---
 
-#### `modules/keyboard-nav.js` (215 lines)
-**Purpose:** Centralized keyboard shortcut handling
+## Module Boundaries
 
-**Responsibilities:**
-- Global keydown listener
-- Input field detection (skip shortcuts in text fields)
-- Arrow key navigation (slides + overview mode)
-- Shortcut dispatch to context callbacks
-- Visual key feedback (flash on keypress)
-
-**Key exports:**
-```javascript
-initKeyboardNav(context) // Setup keyboard handlers, returns cleanup function
-```
-
-**Keyboard shortcuts handled:**
-- `←/→` - Previous/Next slide
-- `Space` - Next slide
-- `Home/End` - First/Last slide
-- `O` - Toggle overview
-- `I` - Toggle slide index
-- `E` - Edit current slide
-- `V` - Voice add slide
-- `T` - Theme drawer
-- `D` - Download deck
-- `U` - Upload deck
-- `N` - Speaker notes
-- `S` - Settings
-- `Escape` - Close modals/overview
-
-**Dependencies:** None (pure context-based)
-
-**Used by:** `main.js`
+| Module | Owns |
+| --- | --- |
+| `state.js` | Shared mutable runtime state and setters. |
+| `dom-refs.js` | Cached references for slide root, HUD counters, and progress bar. |
+| `navigation.js` | Slide activation, overview mode, HUD progress/counters, preloading. |
+| `keyboard-nav.js` / `touch-nav.js` | Keyboard shortcuts and swipe/touch navigation. |
+| `slide-rendering.js` | DOM construction for slide types, badges, graph/image hooks, slide ARIA labels. |
+| `slide-actions.js` | Insert/replace/delete/reload/download deck operations. |
+| `edit-drawer.js` | Main editor UI, autosave, duplicate/delete, PDF/JSON export buttons, dictation fields. |
+| `edit-drawer-forms.js` | HTML builders for drawer sections and controls. |
+| `drawer-base.js` | Shared drawer lifecycle, focus trap, focus restore, `inert`/ARIA state. |
+| `theme-manager.js` | Theme load/apply/save, token normalization, contrast helpers. |
+| `theme-drawer.js` | Theme drawer/dropdown, random themes, AI theme prompts, saved theme library. |
+| `share-modal.js` | Client-side `?data=` share links and JSON backup action. |
+| `share-password-modal.js` | Legacy locked-share prompt. |
+| `voice-modes.js` | Gemini API key, mic recording, voice-to-slide/theme/edit, prompt dictation/transcription. |
+| `cheat-codes.js` | Numeric cheat unlocks (`666`, `696969`) and AI starter deck console. |
+| `image-render.js` | Slide images, placeholders, image preview modal, generated graph image rendering. |
+| `image-upload.js` | Drop/paste/compress/upload image pipeline. |
+| `image-ai.js` | Gemini image search/generation decisions and graph visualization prompts. |
+| `slide-image-ui.js` | Edit-drawer image list, alt fields, remove/replace/reorder/AI buttons. |
+| `onboarding.js` / `settings-modal.js` / `speaker-notes.js` / `slide-index.js` | Focused modal/overlay features. |
 
 ---
 
-#### `modules/theme-manager.js` (295 lines)
-**Purpose:** Theme loading, validation, and localStorage persistence
+## Data Model
 
-**Responsibilities:**
-- Fetch and parse theme JSON
-- Apply CSS custom properties to document root
-- Normalize theme tokens (fill missing with defaults)
-- Theme library (save/load/delete from localStorage)
-- WCAG contrast checking
-- Color parsing (hex, rgb, rgba via canvas)
+Decks are JSON arrays or objects with `{ slides, theme, meta }`.
 
-**Key exports:**
-```javascript
-loadTheme(path)                      // Fetch and normalize theme
-applyTheme(themeData)                // Apply tokens to DOM
-validateTheme(theme)                 // Check for required tokens
-saveThemeToLibrary(name, theme)      // Persist to localStorage
-loadThemeLibrary()                   // Get saved themes
-deleteThemeFromLibrary(name)         // Remove saved theme
-getCurrentTheme()                    // Get active theme object
-setCurrentTheme(theme, options)      // Set and persist theme
-getCurrentThemePath()                // Get theme source path
-checkContrast(fg, bg)                // WCAG contrast ratio
-normalizeThemeTokens(theme)          // Fill missing tokens
-LOCAL_THEME_SOURCE                   // Constant for local themes
-```
+Common slide types:
 
-**Required theme tokens:**
-```javascript
-color-bg, background-surface, background-overlay, background-opacity,
-slide-bg, slide-border-color, slide-border-width, slide-shadow,
-color-surface, color-surface-alt, color-accent,
-badge-bg, badge-color, color-ink, color-muted,
-border-width, gutter, radius,
-font-sans, font-mono,
-shadow-sm, shadow-md, shadow-lg, shadow-xl
-```
+- `title`
+- `standard`
+- `quote`
+- `split`
+- `grid`
+- `pillars`
+- `gallery`
+- `image`
+- `graph`
+- `typeface`
 
-**Dependencies:** None (self-contained)
+Important data files:
 
-**Used by:** `main.js`, `voice-modes.js`
+- `slides.json` - tiny default deck.
+- `guide.json` - v1 onboarding guide deck.
+- `design-resources.json` / `demo-deck.json` - richer demo/reference decks.
+- `theme.json`, `themes/*.json` - theme tokens.
+- `catalog.json`, `deck-collections.json` - launcher and collection metadata.
+- `autolinks.json` - optional phrase-to-link mappings.
+
+See `SCHEMA_EXAMPLE.json` for a deck-format reference.
 
 ---
 
-#### `modules/edit-drawer.js` (376 lines)
-**Purpose:** Slide editing UI and JSON synchronization
+## Persistence, Sharing, Export
 
-**Responsibilities:**
-- Build quick-edit form fields based on slide type
-- Sync quick-edit inputs → JSON textarea
-- Generate image manager UI (delegated to image-manager.js)
-- Save edited slide to deck
-- Duplicate current slide
-- Template insertion
-
-**Key exports:**
-```javascript
-renderEditForm(context) // Build and render edit drawer contents
-```
-
-**Quick-edit fields by slide type:**
-- `title` - eyebrow, title, subtitle
-- `quote` - quote, attribution
-- `standard/gallery/grid` - headline, body
-- All types - Image manager (if images present)
-
-**Dependencies:**
-- `drawer-base.js` (drawer lifecycle)
-- `edit-drawer-forms.js` (accordion/form HTML builders)
-- `slide-image-ui.js` (image manager UI + operations)
-- `base64-tokens.js` (prepare/restore slides)
-- `utils.js` (formatBytes, escapeHtml)
-
-**Used by:** `main.js`
+- **Autosave:** `localStorage` keys under `slideomatic_deck_overrides:*`.
+- **Last deck:** `slideomatic:last-deck`.
+- **Saved themes:** localStorage theme library managed by `theme-manager.js`.
+- **Client share:** `share-modal.js` compresses slides + theme into a `?data=` URL; opening it creates a local `#deck=` copy.
+- **Large inline images:** replaced with placeholders in URL shares to keep links usable. JSON backup keeps full fidelity.
+- **JSON export/import:** available from keyboard (`D`/`U`), edit drawer, Share modal, launcher upload, and launcher paste.
+- **PDF export:** edit drawer uses `html2canvas` + `jsPDF` through `pdf-export.js`.
+- **Legacy Blob share:** `netlify/functions/share.js` still exists for old `?share=` links and optional heavier asset flows.
 
 ---
 
-#### Image Modules
+## AI + Voice
 
-Image work is now split by concern:
-
-- `modules/image-render.js` — render images/placeholders, modal viewing, graph image trigger.
-- `modules/image-upload.js` — paste/drop upload, compression, optional Netlify asset upload, inline fallback.
-- `modules/image-utils.js` — image path collection/update helpers, search URLs, asset cleanup queue.
-- `modules/slide-image-ui.js` — edit drawer image list, remove/replace/reorder/add/AI buttons.
-- `modules/image-ai.js` — Gemini-powered image decisions, illustration generation, graph visualization.
-
-Older docs may mention `modules/image-manager.js`; that name is retired.
-
-<!-- Historical notes below kept for shape/reference. -->
-
-#### Historical: `modules/image-manager.js`
-**Purpose:** Image path collection, removal, and reordering
-
-**Responsibilities:**
-- Collect images from nested slide structures (media, items, pillars, split, etc.)
-- Build image list UI for edit drawer
-- Remove images by index (pure function, returns modified slide)
-- Reorder images via drag-drop (pure function, swaps images)
-- Setup remove button and drag-drop event handlers
-
-**Key exports:**
-```javascript
-collectSlideImages(slide)                          // Flat array of image objects
-collectImagePaths(slide)                           // Array of {path, image} entries
-removeImageByIndex(imageIndex, slide)              // Pure: returns new slide
-reorderSlideImages(fromIndex, toIndex, slide)      // Pure: returns new slide
-buildImageManager(slide)                           // HTML string for image list
-setupImageRemoveButtons({root, onRemove})          // Bind × button events
-setupImageDragReorder({container, onReorder})      // Bind drag events
-```
-
-**Image path handling:**
-Single source of truth via `collectImagePaths()`:
-- `slide.image`
-- `slide.media[].image`
-- `slide.items[].image`
-- `slide.left.image`, `slide.right.image`
-- `slide.pillars[].image`
-
-**Dependencies:**
-- `utils.js` (formatBytes, escapeHtml)
-
-**Used by:** `edit-drawer.js`, `main.js`
+- API key lives locally in browser storage and is sent only to Google Gemini API calls.
+- Slide/theme/edit generation uses `gemini-2.5-flash`.
+- Prompt/body dictation uses `gemini-2.5-flash-lite` to transcribe and clean filler words.
+- AI image and graph helpers use Gemini generation endpoints through `image-ai.js`.
+- The cheat console opens with `666` or `696969`, then can generate a single slide or an 8-slide starter deck.
 
 ---
 
-#### `modules/drawer-base.js` (163 lines)
-**Purpose:** Shared drawer behavior (open/close/focus management)
+## Accessibility + UX Contract
 
-**Responsibilities:**
-- Drawer factory (`createDrawer`)
-- Open/close animations
-- Focus trap (tab key management)
-- Focusable element detection
-- Keyboard accessibility (Escape to close)
+v1 expects these to stay true:
 
-**Key exports:**
-```javascript
-createDrawer(config)               // Factory: returns drawer instance
-openDrawer(drawer)                 // Open with animation + focus
-closeDrawer(drawer)                // Close and restore focus
-trapFocus(event, container)        // Handle Tab key in modal
-getFocusableElements(container)    // Query focusable elements
-focusFirstElement(container)       // Focus first interactive element
-```
+- Drawers/modals set `aria-hidden` and `inert` correctly when closed.
+- Open dialogs trap focus and restore focus on close.
+- HUD progress is keyboard-operable and exposes slider ARIA.
+- Slide images and image preview are keyboard-operable.
+- Status text that changes uses live regions.
+- Touch targets in core controls stay at least 44px.
 
-**Drawer config:**
-```javascript
-{
-  id: 'drawer-id',
-  side: 'left' | 'right',
-  onOpen: () => {},     // Callback after open
-  onClose: () => {},    // Callback after close
-  trapFocus: true       // Enable tab trapping
-}
-```
-
-**Dependencies:** None
-
-**Used by:** `main.js` (edit drawer, theme drawer)
+The current release was smoke-tested with axe across launcher, paste/about modals, guide deck, hints, share, and cheat console.
 
 ---
 
-### Utility Modules
+## Deployment Notes
 
-#### `modules/base64-tokens.js` (155 lines)
-**Purpose:** Convert base64 images ↔ readable tokens for JSON editing
+No bundling or transpilation. Deploy the repo root.
 
-**Responsibilities:**
-- Create human-readable tokens (`{{BASE64_IMAGE: filename, 576KB}}`)
-- Detect token strings in JSON
-- Replace all images in slide with tokens (for editing)
-- Restore base64 data from tokens (after editing)
-- Handle nested image locations
+Required host behavior:
 
-**Key exports:**
-```javascript
-createBase64Token(imageData)                      // Generate token string
-isBase64Token(str)                                // Check if string is token
-prepareSlideForEditing(slide)                     // Deep clone + replace images
-restoreBase64FromTokens(editedSlide, originalSlide) // Restore base64 data
-formatBytes(bytes)                                // File size formatting
-```
+- Serve JS modules with correct MIME type.
+- Serve JSON and `manifest.webmanifest`.
+- Serve `sw.js` from root with `Service-Worker-Allowed: /`.
+- Preserve hash/query URLs for `deck.html`.
 
-**Token format:**
-```javascript
-// Before: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAA..."
-// After:  "{{BASE64_IMAGE: screenshot.png, 576KB}}"
-```
-
-**Dependencies:** None
-
-**Used by:** `edit-drawer.js`, `main.js`
+`netlify.toml` already sets the static publish root, no-build command, service worker headers, crawler headers, and `/s/:slug` legacy redirects.
 
 ---
 
-#### `modules/utils.js` (68 lines)
-**Purpose:** Shared utility functions
+## Release Checklist
 
-**Key exports:**
-```javascript
-formatBytes(bytes)       // Format file sizes (KB, MB, etc)
-clamp(value, min, max)   // Constrain value to range
-escapeHtml(str)          // Escape HTML entities
+Before tagging a release:
+
+```bash
+npm run check
+npm run lint
+git diff --check
 ```
 
-**Dependencies:** None
+Recommended browser smoke:
 
-**Used by:** Multiple modules
-
----
-
-### Supporting Files
-
-#### `slide-index.js`
-**Purpose:** Slide navigation sidebar (mini overview)
-
-**Not part of refactor** - Existed before, imported by main.js
+- Launcher desktop/mobile.
+- Guide deck.
+- Blank deck -> edit -> save -> reload.
+- Share link + JSON backup.
+- PDF export.
+- Settings modal + Gemini key test when a real key is available.
+- Cheat console (`666`) starter deck when a real key is available.
+- Installed PWA on a real phone when shipping a production URL.
 
 ---
 
-#### `lazy-images.js`
-**Purpose:** Intersection Observer for lazy image loading
+## Related Docs
 
-**Not part of refactor** - Existed before, imported by main.js
+- `README.md` - product overview and user workflows.
+- `LAUNCH_AUDIT.md` - v1 release audit and verification.
+- `RELEASE_NOTES.md` - release notes.
+- `VOICE_TO_SLIDE.md` - Gemini and voice details.
+- `LOCAL_TESTING.md` - deeper local smoke scenarios.
+- `SHARING_OPTIMIZATIONS.md` - optional/legacy Blob share architecture.
 
----
-
-## 🔄 Data Flow
-
-### Slide Editing Flow
-```
-User presses E
-  → main.js calls openDrawer(editDrawerInstance)
-  → edit-drawer.js renderEditForm(context)
-    → base64-tokens.js prepareSlideForEditing(slide)
-    → image-manager.js buildImageManager(slide)
-    → image-manager.js setupImageRemoveButtons({root, onRemove})
-  → User edits fields, clicks Save
-  → edit-drawer.js syncQuickEditToJSON()
-  → base64-tokens.js restoreBase64FromTokens(edited, original)
-  → main.js replaceSlideAt(index)
-```
-
-### Voice-to-Slide Flow
-```
-User presses V (or clicks Add button)
-  → keyboard-nav.js dispatches to context.toggleVoiceRecording('add')
-  → voice-modes.js toggleVoiceRecording('add')
-  → MediaRecorder starts, updates UI
-  → User speaks, clicks Stop
-  → voice-modes.js processVoiceToSlide(audioBlob)
-    → Converts blob → base64
-    → Calls Gemini API with prompt
-    → Parses JSON response
-    → context.insertSlideAt(index, slideData)
-  → main.js renders new slide, updates HUD
-```
-
-### Theme Loading Flow
-```
-User selects theme from dropdown
-  → main.js calls loadTheme(path)
-  → theme-manager.js fetches JSON
-  → theme-manager.js normalizeThemeTokens(theme)
-  → theme-manager.js applyTheme(normalizedTheme)
-    → Sets CSS custom properties on document.documentElement
-  → theme-manager.js setCurrentTheme(theme, {source: path})
-    → Saves to localStorage
-```
-
----
-
-## 🧩 Context Pattern
-
-Modules don't directly manipulate DOM or global state. Instead, `main.js` passes **context objects** with callback functions:
-
-### Voice Context
-```javascript
-{
-  getCurrentIndex: () => number,
-  getSlides: () => Slide[],
-  insertSlideAt: (index, slide, options) => void,
-  replaceSlideAt: (index) => void,
-  updateSlide: (index, slide) => void,
-  validateSlides: (slides) => void,
-  showHudStatus: (message, type) => void,
-  hideHudStatus: () => void,
-  openSettingsModal: () => void,
-  downloadTheme: (theme) => void
-}
-```
-
-### Keyboard Context
-```javascript
-{
-  isOverview: () => boolean,
-  moveOverviewCursorBy: (dx, dy) => void,
-  exitOverview: (index?) => void,
-  toggleOverview: () => void,
-  toggleEditDrawer: () => void,
-  toggleVoiceRecording: (mode) => void,
-  toggleThemeDrawer: () => void,
-  setActiveSlide: (index) => void,
-  getCurrentIndex: () => number,
-  getSlideCount: () => number,
-  downloadDeck: () => void,
-  triggerDeckUpload: () => void,
-  openSettingsModal: () => void,
-  closeSettingsModal: () => void
-}
-```
-
-**Why context objects?**
-- No globals needed
-- Easy to test (mock the context)
-- Clear dependencies
-- Modules stay pure
-
----
-
-## 📊 Dependency Graph
-
-```
-main.js
-├── theme-manager.js (self-contained)
-├── utils.js (self-contained)
-├── base64-tokens.js (self-contained)
-├── keyboard-nav.js (self-contained)
-├── voice-modes.js
-│   └── theme-manager.js
-├── drawer-base.js (self-contained)
-├── image-manager.js
-│   └── utils.js
-└── edit-drawer.js
-    ├── drawer-base.js
-    ├── image-manager.js
-    ├── base64-tokens.js
-    └── utils.js
-```
-
-**No circular dependencies** ✅
-
----
-
-## 🎯 Adding New Features
-
-### Want to add a new slide type?
-1. Add renderer to `main.js` (e.g., `renderMySlideType()`)
-2. Register in `renderers` object
-3. Add template to `getSlideTemplate()` if needed
-4. Update `buildQuickEditFields()` in `edit-drawer.js` for custom fields
-5. Update `collectImagePaths()` in `image-manager.js` if it has images
-
-### Want to add a new keyboard shortcut?
-1. Edit `modules/keyboard-nav.js`
-2. Add key handler in `keydownHandler` function
-3. Add callback to context object in `main.js` (if new behavior needed)
-
-### Want to add a new voice feature?
-1. Edit `modules/voice-modes.js`
-2. Add prompt builder (e.g., `buildMyPrompt()`)
-3. Add processor (e.g., `processVoiceToX()`)
-4. Expose via exported function
-
-### Want to add theme validation rules?
-1. Edit `modules/theme-manager.js`
-2. Update `REQUIRED_THEME_TOKENS`
-3. Add logic to `validateTheme()` or `normalizeThemeTokens()`
-
----
-
-## 🧪 Testing Strategy
-
-**Current state:** No automated tests
-
-**Recommended approach:**
-1. **Integration testing** - Test main.js interactions (keyboard nav, slide creation)
-2. **Unit testing** - Test pure functions first:
-   - `collectImagePaths()` in image-manager.js
-   - `normalizeThemeTokens()` in theme-manager.js
-   - `prepareSlideForEditing()` in base64-tokens.js
-3. **E2E testing** - Playwright/Cypress for voice recording flows
-
-**Test when:**
-- Users find bugs (write test to prevent regression)
-- Adding complex features (test edge cases)
-- Before major refactors (ensure behavior preserved)
-
----
-
-## 📈 Codebase Metrics
-
-| Metric | Value |
-|--------|-------|
-| Total lines | 5,785 |
-| Main.js | 3,590 (62%) |
-| Modules | 2,195 (38%) |
-| Module count | 8 |
-| Avg module size | 274 lines |
-| Largest module | voice-modes.js (667 lines) |
-| Smallest module | utils.js (68 lines) |
-| Import statements | 9 |
-
-**Compared to pre-refactor:**
-- Main.js reduced by **32.8%** (5,344 → 3,590 lines)
-- Total codebase grew by **8.2%** (overhead from module headers + exports)
-
----
-
-## 🚀 Deployment Notes
-
-**Browser requirements:**
-- ES6 modules (import/export)
-- MediaRecorder API (for voice features)
-- IntersectionObserver (for lazy images)
-- CSS custom properties
-
-**Graceful degradation:**
-- Voice features require MediaRecorder (fallback: disable buttons)
-- Lazy images fallback to eager loading if IntersectionObserver missing
-
-**Build process:**
-None. Vanilla JS, no transpilation, no bundling. Deploy as-is.
-
----
-
-## 🔮 Future Improvements
-
-**Considered but deferred:**
-- **Boot functions** - Wrap init logic (e.g., `bootKeyboardNav()`)
-- **Unit tests** - Test pure functions in isolation
-- **Theme contrast validator** - CLI/UI tool using `checkContrast()`
-- **Module lazy loading** - Load voice-modes.js only when needed
-- **Service worker** - Offline support for presentation mode
-
-**Why deferred:** Ship first, optimize based on user feedback.
-
----
-
-## 📚 Related Documentation
-
-- `README.md` - User-facing features and setup
-- `TODO.md` - Feature roadmap and priorities
-- `REFACTOR_PROMPT.md` - Original refactor spec
-- `VOICE_TO_SLIDE.md` - Voice feature documentation
-- `SCHEMA_EXAMPLE.json` - Slide schema reference
-
----
-
-**Last updated:** January 2025
-**Contributors:** Pablo (pibulus) + Claude Code + Codex
-**Philosophy:** Make it work, make it right, make it fast — in that order.
+**Contributors:** Pablo + Claude Code + Codex.

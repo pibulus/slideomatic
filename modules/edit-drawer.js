@@ -33,7 +33,7 @@ import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
 import { loadThemeLibrary } from './theme-manager.js';
 import { exportDeckToPdf } from './pdf-export.js';
-import { CONFIG } from './constants.js';
+import { CONFIG, debug } from './constants.js';
 import {
   getLayoutMeta,
   buildMainSections,
@@ -452,7 +452,7 @@ function handleImageRemove(context, imageIndex) {
   renderEditForm(ctx);
   ctx.showHudStatus('🗑️ Image removed', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
-  console.log('✓ Image removed from slide');
+  debug('Image removed from slide');
 }
 
 /**
@@ -472,7 +472,7 @@ function handleImageReplace(context, imageIndex) {
   renderEditForm(ctx);
   ctx.showHudStatus('↻ Image cleared', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
-  console.log('✓ Image replaced - src cleared, title preserved');
+  debug('Image replaced - src cleared, title preserved');
 }
 
 /**
@@ -1154,7 +1154,7 @@ export function saveCurrentSlide(context) {
       saveBtn.style.animation = 'pulse 0.3s ease';
     }
 
-    console.log('✓ Slide saved');
+    debug('Slide saved');
   } catch (error) {
     alert(`Invalid JSON: ${error.message}`);
   }
@@ -1176,7 +1176,7 @@ export function duplicateCurrentSlide(context) {
   ctx.closeDrawer();
   ctx.showHudStatus('✨ Slide duplicated', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
-  console.log('✓ Slide duplicated');
+  debug('Slide duplicated');
 }
 
 /**
@@ -1201,6 +1201,6 @@ export function deleteCurrentSlide(context) {
     ctx.closeDrawer();
     ctx.showHudStatus('🗑️ Slide deleted', 'success');
     setTimeout(() => ctx.hideHudStatus(), 1600);
-    console.log('✓ Slide deleted');
+    debug('Slide deleted');
   }
 }

@@ -1,6 +1,6 @@
-# Voice-to-Slide Feature
+# Voice-to-Slide + Dictation
 
-Generate slides using voice commands powered by Gemini AI.
+Generate slides, edit with speech, and clean up spoken prompts using Gemini AI.
 
 ## Setup
 
@@ -15,10 +15,10 @@ Generate slides using voice commands powered by Gemini AI.
 ## Usage
 
 ### Keyboard Shortcut
-Press `V` to start/stop recording
+Press `V` to start/stop voice-to-slide recording.
 
-### Voice Button
-Use the voice controls exposed in the deck/edit UI when available.
+### Mic Buttons
+Use the mic buttons in the edit drawer and cheat console to dictate into prompt/body fields. The app sends the short recording to Gemini, removes filler/stumbles, and inserts clean text back into the active field.
 
 ### Recording Flow
 1. **Press V or click the voice button** - Mic icon turns to ⏹ (red, pulsing)
@@ -124,16 +124,15 @@ Use natural language: "Quote slide that says X by Y" or "Add a quote from..."
 
 **Privacy**: Audio is sent to Google's Gemini API for processing. Not stored anywhere.
 
-**Cost**: The app currently calls `gemini-2.5-flash`. Your API usage shows in Google AI Studio.
+**Cost**: Slide/theme/edit generation uses `gemini-2.5-flash`. Prompt/body transcription uses `gemini-2.5-flash-lite`. Your API usage shows in Google AI Studio.
 
-## Future Ideas
+## Post-v1 Ideas
 
-- [ ] Edit slide via voice ("change the headline to...")
 - [ ] Voice navigation ("go to slide 5")
-- [ ] Batch generation ("create 10 slides about X")
+- [ ] More explicit batch generation controls ("create 10 slides about X")
 - [ ] Custom voice shortcuts (saved phrases)
 - [ ] Offline mode with local whisper.cpp
 
 ---
 
-Built with Gemini 2.5 Flash multimodal API
+Built with Gemini 2.5 Flash and Flash Lite multimodal APIs.

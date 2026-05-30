@@ -13,6 +13,8 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { debug } from './constants.js';
+
 const THEME_LIBRARY_KEY = 'slideomatic_themes';
 const CURRENT_THEME_KEY = 'slideomatic_current_theme';
 const CURRENT_THEME_PATH_KEY = 'slideomatic_current_theme_path';
@@ -308,7 +310,7 @@ export function downloadTheme(themeData) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  console.log('✓ Theme downloaded as theme.json');
+  debug('Theme downloaded as theme.json');
 }
 
 export function hslToHex(h, s, l) {

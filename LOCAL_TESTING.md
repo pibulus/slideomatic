@@ -16,6 +16,26 @@ netlify dev
 
 Use `npm run dev` for normal launcher/deck/drawer/PWA testing. Use `netlify dev` only when testing the optional Netlify Blob endpoints for asset upload, legacy `?share=` links, cleanup, or global asset deduplication.
 
+## v1 Smoke
+
+Before shipping a normal release:
+
+```bash
+npm run check
+npm run lint
+git diff --check
+```
+
+Then smoke these in a browser:
+
+1. Launcher opens, guide deck launches, blank deck opens into edit mode.
+2. Edit title/body, duplicate/delete a slide, reload, and confirm local save.
+3. Export JSON and PDF from the edit drawer.
+4. Generate a Share link and open it in a fresh browser/profile.
+5. Open Settings, paste/test a real Gemini key when available.
+6. Type `666`, generate a starter deck when a real Gemini key is available.
+7. On production, install the PWA on a real phone and reload from the home-screen icon.
+
 ---
 
 ## ✅ **What Works Locally**
