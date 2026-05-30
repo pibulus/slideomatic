@@ -1127,8 +1127,8 @@
   }
 
   .slide--title .media-strip {
-    grid-template-columns: 1fr;
-    gap: clamp(12px, 3vw, 18px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 2.5vw, 12px);
   }
 }
 
@@ -1174,7 +1174,7 @@
   }
 
   .slide--title .media-strip {
-    gap: 12px;
+    gap: 8px;
   }
 
   .slide--standard h2 {
@@ -1398,4 +1398,3 @@
   font-size: 0.95rem;
   text-transform: uppercase;
 }
-

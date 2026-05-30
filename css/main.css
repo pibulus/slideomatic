@@ -39,6 +39,7 @@
 .cheat-console__panel {
   position: relative;
   width: min(520px, 90vw);
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   background: var(--slide-bg, #fffdf7);
   border: 3px solid var(--color-ink, #111);
   border-radius: 16px;
@@ -48,6 +49,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .cheat-console__header {
@@ -66,12 +68,20 @@
 }
 
 .cheat-console__close {
-  background: transparent;
-  border: none;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-alt, #ffdfe9);
+  border: 2px solid var(--color-ink, #111);
+  border-radius: 999px;
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
   color: var(--color-ink, #111);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.18);
 }
 
 .cheat-console__hint {
@@ -102,7 +112,7 @@
   top: 10px;
   right: 10px;
   min-width: 56px;
-  min-height: 40px;
+  min-height: 44px;
   border: 2px solid var(--color-ink, #111);
   border-radius: 999px;
   background: var(--color-surface, #ff9ff3);
@@ -182,4 +192,21 @@
 
 body.cheat-console-open {
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .cheat-console__panel {
+    width: calc(100vw - 24px);
+    padding: 18px;
+    gap: 14px;
+    box-shadow: 10px 12px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .cheat-console__actions {
+    flex-direction: column;
+  }
+
+  .cheat-console__btn {
+    width: 100%;
+  }
 }

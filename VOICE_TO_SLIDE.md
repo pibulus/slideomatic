@@ -4,7 +4,7 @@ Generate slides using voice commands powered by Gemini AI.
 
 ## Setup
 
-1. Get a Gemini API key from Google AI Studio: https://makersuite.google.com/app/apikey
+1. Get a Gemini API key from Google AI Studio: https://aistudio.google.com/app/apikey
 
 2. Open the deck (`deck.html`) and press `S` or click the settings button in the HUD.
 
