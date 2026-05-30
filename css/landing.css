@@ -920,6 +920,12 @@ a.button--secondary:hover {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  border-radius: 8px;
+}
+
+.deck-card__meta:focus-visible {
+  outline: 3px solid var(--riso-blue);
+  outline-offset: 4px;
 }
 
 .deck-card__name-row {
@@ -1248,6 +1254,10 @@ a.button--secondary:hover {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.6;
+}
+
+.about-modal__footer a {
+  color: #006ca8;
 }
 
 /* ===================================================================

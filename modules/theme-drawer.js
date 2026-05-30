@@ -132,6 +132,7 @@ function setupThemeSelectDropdown() {
 
   // Initialize custom select logic
   setupCustomSelect(container);
+  setupLegacyThemeSelect();
 
   // Listen for changes
   const themeSelect = document.getElementById('theme-select-wrapper');
@@ -155,6 +156,7 @@ function setupThemeSelectDropdown() {
           const normalizedTheme = applyTheme(theme);
           setCurrentTheme(normalizedTheme, { source: themePath });
         }
+        syncThemeSelectUI();
         showHudStatus('✨ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
@@ -165,6 +167,120 @@ function setupThemeSelectDropdown() {
     });
     themeSelect.dataset.listenerAttached = 'true';
   }
+}
+
+function setupLegacyThemeSelect() {
+  const themeSelect = document.getElementById('theme-select-wrapper');
+  const trigger = document.getElementById('theme-select-trigger');
+  const dropdown = document.getElementById('theme-select-dropdown');
+  if (!themeSelect || !trigger || !dropdown || trigger.dataset.listenerAttached === 'true') return;
+
+  const setOpenState = (isOpen) => {
+    trigger.classList.toggle('is-open', isOpen);
+    dropdown.classList.toggle('is-open', isOpen);
+    trigger.setAttribute('aria-expanded', String(isOpen));
+    dropdown.setAttribute('aria-hidden', String(!isOpen));
+    if (isOpen) {
+      dropdown.removeAttribute('inert');
+    } else {
+      dropdown.setAttribute('inert', '');
+    }
+  };
+
+  const closeDropdown = () => setOpenState(false);
+  const openDropdown = () => setOpenState(true);
+
+  const getOptions = () => Array.from(dropdown.querySelectorAll('.theme-select__option'));
+  const focusOption = (direction = 'current') => {
+    const options = getOptions();
+    if (!options.length) return;
+    const currentIndex = options.findIndex((option) => option.classList.contains('is-selected'));
+    const fallbackIndex = Math.max(0, currentIndex);
+    const index = direction === 'next'
+      ? (fallbackIndex + 1) % options.length
+      : direction === 'previous'
+        ? (fallbackIndex - 1 + options.length) % options.length
+        : fallbackIndex;
+    options[index].focus({ preventScroll: true });
+  };
+
+  const selectOption = (option) => {
+    const value = option?.dataset?.value;
+    if (!value) return;
+    const label = option.textContent?.trim() || value;
+    themeSelect.dataset.value = value;
+    closeDropdown();
+    themeSelect.dispatchEvent(new CustomEvent('customSelectChange', {
+      detail: { value, label },
+      bubbles: true,
+    }));
+    trigger.focus({ preventScroll: true });
+  };
+
+  trigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (dropdown.classList.contains('is-open')) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
+  });
+
+  trigger.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (dropdown.classList.contains('is-open')) {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      openDropdown();
+      queueMicrotask(() => focusOption(event.key === 'ArrowDown' ? 'next' : 'previous'));
+      return;
+    }
+    if (event.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+
+  dropdown.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const option = target?.closest('.theme-select__option');
+    if (option) selectOption(option);
+  });
+
+  dropdown.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const target = event.target instanceof Element ? event.target : null;
+      selectOption(target?.closest('.theme-select__option'));
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeDropdown();
+      trigger.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusOption(event.key === 'ArrowDown' ? 'next' : 'previous');
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!themeSelect.contains(event.target)) {
+      closeDropdown();
+    }
+  });
+
+  trigger.dataset.listenerAttached = 'true';
+  setOpenState(false);
 }
 
 function handleSaveTheme() {
@@ -262,6 +378,8 @@ export function populateThemeDropdown() {
     button.type = 'button';
     button.className = 'theme-select__option';
     button.dataset.value = `saved:${entry.name}`;
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-selected', 'false');
     button.textContent = `✨ ${entry.name}`;
     dropdown.appendChild(button);
   });
@@ -289,11 +407,16 @@ export function syncThemeSelectUI() {
     const optionLabel = matchingOption.textContent.trim();
     valueSpan.textContent = isRandom ? `🎲 ${optionLabel}` : matchingOption.textContent;
     options.forEach((opt) => {
-      opt.classList.toggle('is-selected', opt.dataset.value === basePath);
+      const isSelected = opt.dataset.value === basePath;
+      opt.classList.toggle('is-selected', isSelected);
+      opt.setAttribute('aria-selected', String(isSelected));
     });
   } else {
     valueSpan.textContent = isRandom ? '🎲 Custom Theme' : '🎨 Custom Theme';
-    options.forEach((opt) => opt.classList.remove('is-selected'));
+    options.forEach((opt) => {
+      opt.classList.remove('is-selected');
+      opt.setAttribute('aria-selected', 'false');
+    });
   }
 }
 

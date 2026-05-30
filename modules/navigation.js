@@ -371,9 +371,18 @@ export function updateTotalCounter(total) {
   if (totalCounter) {
     totalCounter.textContent = total;
   }
+
+  const progressEl = document.getElementById('hud-progress');
+  if (progressEl) {
+    const max = Math.max(1, total);
+    progressEl.setAttribute('aria-valuemax', String(max));
+    progressEl.setAttribute('aria-valuetext', `Slide ${Math.min(currentIndex + 1, max)} of ${max}`);
+  }
 }
 
 export function updateHud() {
+  const totalSlides = Math.max(1, slideElements.length);
+
   if (currentCounter) {
     const counterEl = currentCounter.parentElement;
     if (counterEl) {
@@ -384,8 +393,16 @@ export function updateHud() {
   }
 
   if (progressBar) {
-    const progress = ((currentIndex + 1) / slideElements.length) * 100;
+    const progress = ((currentIndex + 1) / totalSlides) * 100;
     progressBar.style.width = `${progress}%`;
+  }
+
+  const progressEl = document.getElementById('hud-progress');
+  if (progressEl) {
+    const currentSlideNumber = Math.min(currentIndex + 1, totalSlides);
+    progressEl.setAttribute('aria-valuemax', String(totalSlides));
+    progressEl.setAttribute('aria-valuenow', String(currentSlideNumber));
+    progressEl.setAttribute('aria-valuetext', `Slide ${currentSlideNumber} of ${totalSlides}`);
   }
 
   const notesIndicator = document.getElementById('notes-indicator');
@@ -394,9 +411,11 @@ export function updateHud() {
     const hasNotes = currentSlide?.notes || currentSlide?.speaker_notes;
     if (hasNotes) {
       notesIndicator.removeAttribute('hidden');
+      notesIndicator.setAttribute('aria-label', `Open speaker notes for slide ${currentIndex + 1}`);
       notesIndicator.onclick = toggleSpeakerNotesHook;
     } else {
       notesIndicator.setAttribute('hidden', '');
+      notesIndicator.onclick = null;
     }
   }
 }

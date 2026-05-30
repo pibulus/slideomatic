@@ -8,6 +8,7 @@ let cancelBtn;
 let statusText;
 let keydownHandler = null;
 let resolver = null;
+let previousFocus = null;
 
 export function initSharePasswordModal() {
   modal = document.getElementById('share-protect-modal');
@@ -48,6 +49,8 @@ export function requestSharePassword(options = {}) {
 
 function openModal(invalid) {
   if (!modal) return;
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  modal.removeAttribute('inert');
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
 
@@ -85,8 +88,15 @@ function openModal(invalid) {
 
 function closeModal() {
   if (!modal) return;
+  const target = previousFocus && typeof previousFocus.focus === 'function'
+    ? previousFocus
+    : null;
+  previousFocus = null;
+  target?.focus({ preventScroll: true });
+
   modal.classList.remove('is-open');
   modal.setAttribute('aria-hidden', 'true');
+  modal.setAttribute('inert', '');
   if (keydownHandler) {
     document.removeEventListener('keydown', keydownHandler);
     keydownHandler = null;

@@ -138,7 +138,7 @@ function buildImageManager(slide) {
 
       html += `
         <div class="edit-drawer__image-item" draggable="true" data-image-index="${index}">
-          <span class="edit-drawer__image-icon">${statusIcon}</span>
+          <span class="edit-drawer__image-icon" aria-hidden="true">${statusIcon}</span>
           <div class="edit-drawer__image-details">
             <input
               type="text"
@@ -147,12 +147,13 @@ function buildImageManager(slide) {
               value="${escapeHtml(altText)}"
               placeholder="${isEmpty ? 'Image title (for search)' : 'Image name'}"
               title="${isEmpty ? 'Image title used for Google search' : 'Image name/alt text'}"
+              aria-label="Image ${index + 1} ${isEmpty ? 'search title' : 'alt text'}"
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
-          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="AI Assist: Search or Generate">✨</button>` : ''}
-          ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image">↻</button>` : ''}
-          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot">×</button>
+          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="AI Assist: Search or Generate" aria-label="Search or generate image ${index + 1} with AI">✨</button>` : ''}
+          ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image" aria-label="Replace image ${index + 1}">↻</button>` : ''}
+          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot" aria-label="Remove image ${index + 1}">×</button>
         </div>
       `;
     });

@@ -20,6 +20,9 @@ export function openSettingsModal() {
   if (modal && input) {
     previousFocus = document.activeElement;
     input.value = getGeminiApiKey();
+    input.type = 'password';
+    syncApiKeyVisibilityToggle(false);
+    modal.removeAttribute('inert');
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     setupSettingsModalListeners();
@@ -44,12 +47,13 @@ export function closeSettingsModal() {
   if (modal) {
     // Restore focus BEFORE hiding the modal
     if (previousFocus && typeof previousFocus.focus === 'function') {
-      previousFocus.focus();
+      previousFocus.focus({ preventScroll: true });
       previousFocus = null;
     }
 
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
     
     if (keydownHandler) {
       document.removeEventListener('keydown', keydownHandler);
@@ -178,8 +182,17 @@ function clearApiKey() {
 function toggleApiKeyVisibility() {
   const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
   if (input) {
-    input.type = input.type === 'password' ? 'text' : 'password';
+    const willShow = input.type === 'password';
+    input.type = willShow ? 'text' : 'password';
+    syncApiKeyVisibilityToggle(willShow);
   }
+}
+
+function syncApiKeyVisibilityToggle(isVisible) {
+  const toggleBtn = /** @type {HTMLButtonElement} */ (document.getElementById('toggle-api-key-visibility'));
+  if (!toggleBtn) return;
+  toggleBtn.setAttribute('aria-pressed', String(isVisible));
+  toggleBtn.setAttribute('aria-label', isVisible ? 'Hide Gemini API key' : 'Show Gemini API key');
 }
 
 export function showApiKeyStatus(type, message) {

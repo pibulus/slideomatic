@@ -83,6 +83,9 @@ function createDrawer(config) {
   if (!element.hasAttribute('aria-hidden')) {
     element.setAttribute('aria-hidden', 'true');
   }
+  if (element.getAttribute('aria-hidden') !== 'false') {
+    element.setAttribute('inert', '');
+  }
 
   return {
     id: typeof id === 'string' ? id : element.id,
@@ -106,6 +109,7 @@ function openDrawer(drawer) {
   drawer.isOpen = true;
 
   element.classList.remove('is-closing');
+  element.removeAttribute('inert');
   element.classList.add('is-open', 'is-springing');
   element.setAttribute('aria-hidden', 'false');
   element.addEventListener('animationend', () => element.classList.remove('is-springing'), { once: true });
@@ -143,8 +147,12 @@ function closeDrawer(drawer, options = {}) {
   if (!drawer || !drawer.isOpen) return;
   const { element } = drawer;
   const { restoreFocus = true } = options;
+  const target = restoreFocus && drawer.previousFocus && typeof drawer.previousFocus.focus === 'function'
+    ? drawer.previousFocus
+    : null;
 
   drawer.isOpen = false;
+  target?.focus({ preventScroll: true });
   element.classList.remove('is-springing');
   element.classList.add('is-closing');
   element.setAttribute('aria-hidden', 'true');
@@ -159,17 +167,11 @@ function closeDrawer(drawer, options = {}) {
     drawer.clickOutsideHandler = null;
   }
 
-  const target = restoreFocus && drawer.previousFocus && typeof drawer.previousFocus.focus === 'function'
-    ? drawer.previousFocus
-    : null;
-
   // Wait for close animation to complete
   const onAnimationEnd = () => {
     element.removeEventListener('animationend', onAnimationEnd);
     element.classList.remove('is-open', 'is-closing');
-    if (target) {
-      requestAnimationFrame(() => target.focus());
-    }
+    element.setAttribute('inert', '');
     drawer.previousFocus = null;
     drawer.onClose?.(drawer);
   };
@@ -193,4 +195,3 @@ export {
   getFocusableElements,
   focusFirstElement,
 };
-

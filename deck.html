@@ -70,8 +70,8 @@
     <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
     
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay">
-      <div class="loading-spinner">
+    <div id="loading-overlay" class="loading-overlay" role="status" aria-live="polite" aria-label="Loading deck">
+      <div class="loading-spinner" aria-hidden="true">
         <div class="loading-dot"></div>
         <div class="loading-dot"></div>
         <div class="loading-dot"></div>
@@ -81,9 +81,9 @@
     <div class="app app-container" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
       <!-- Theme Editor Drawer (Right Side) -->
-      <aside class="theme-drawer" id="theme-drawer">
+      <aside class="theme-drawer" id="theme-drawer" role="dialog" aria-modal="true" aria-labelledby="theme-drawer-title" aria-hidden="true" inert>
         <div class="theme-drawer__header">
-          <h2>🎨 Theme Editor</h2>
+          <h2 id="theme-drawer-title">🎨 Theme Editor</h2>
           <button class="theme-drawer__close" aria-label="Close theme editor">×</button>
         </div>
         <div class="theme-drawer__content">
@@ -103,15 +103,15 @@
             <div class="theme-drawer__field">
               <label class="theme-drawer__label" for="theme-select">Current Theme</label>
               <div class="theme-select" id="theme-select-wrapper">
-                <button type="button" class="theme-select__trigger" id="theme-select-trigger">
+                <button type="button" class="theme-select__trigger" id="theme-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-select-dropdown">
                   <span class="theme-select__value">🎨 Default</span>
                   <span class="theme-select__arrow">▼</span>
                 </button>
-                <div class="theme-select__dropdown" id="theme-select-dropdown" role="listbox">
-                  <button type="button" class="theme-select__option" data-value="theme.json">🎨 Default</button>
-                  <button type="button" class="theme-select__option" data-value="themes/vaporwave.json">🌴 Vaporwave</button>
-                  <button type="button" class="theme-select__option" data-value="themes/slack.json">👽 Slack</button>
-                  <button type="button" class="theme-select__option" data-value="themes/gameboy.json">🎮 Gameboy</button>
+                <div class="theme-select__dropdown" id="theme-select-dropdown" role="listbox" aria-hidden="true" inert>
+                  <button type="button" class="theme-select__option" data-value="theme.json" role="option" aria-selected="true">🎨 Default</button>
+                  <button type="button" class="theme-select__option" data-value="themes/vaporwave.json" role="option" aria-selected="false">🌴 Vaporwave</button>
+                  <button type="button" class="theme-select__option" data-value="themes/slack.json" role="option" aria-selected="false">👽 Slack</button>
+                  <button type="button" class="theme-select__option" data-value="themes/gameboy.json" role="option" aria-selected="false">🎮 Gameboy</button>
                   <!-- User-saved themes will be appended here -->
                 </div>
               </div>
@@ -122,9 +122,9 @@
       </aside>
 
       <!-- Slide Editor Drawer (Right Side) -->
-      <aside class="edit-drawer" id="edit-drawer">
+      <aside class="edit-drawer" id="edit-drawer" role="dialog" aria-modal="true" aria-labelledby="edit-drawer-title" aria-hidden="true" inert>
         <div class="edit-drawer__header">
-          <h2>Edit Slide</h2>
+          <h2 id="edit-drawer-title">Edit Slide</h2>
           <button class="edit-drawer__close" aria-label="Close editor">×</button>
         </div>
         <div class="edit-drawer__content" id="edit-drawer-content">
@@ -133,11 +133,11 @@
       </aside>
 
       <!-- Speaker Notes Modal -->
-      <div class="notes-modal modal-base" id="notes-modal">
+      <div class="notes-modal modal-base" id="notes-modal" aria-hidden="true" inert>
         <div class="notes-modal__backdrop modal-backdrop"></div>
-        <div class="notes-modal__content modal-content">
+        <div class="notes-modal__content modal-content" role="dialog" aria-modal="true" aria-labelledby="notes-modal-title">
           <div class="notes-modal__header">
-            <h2>📝 Speaker Notes</h2>
+            <h2 id="notes-modal-title">📝 Speaker Notes</h2>
             <button class="notes-modal__close" aria-label="Close notes">×</button>
           </div>
           <div class="notes-modal__body">
@@ -150,11 +150,11 @@
       </div>
 
       <!-- Settings Modal -->
-      <div class="settings-modal modal-base" id="settings-modal">
+      <div class="settings-modal modal-base" id="settings-modal" aria-hidden="true" inert>
         <div class="settings-modal__backdrop modal-backdrop"></div>
-        <div class="settings-modal__content modal-content">
+        <div class="settings-modal__content modal-content" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
           <div class="settings-modal__header">
-            <h2>⚙️ Settings</h2>
+            <h2 id="settings-modal-title">⚙️ Settings</h2>
             <button class="settings-modal__close" aria-label="Close settings">×</button>
           </div>
           <div class="settings-modal__body">
@@ -172,8 +172,8 @@
                   autocomplete="off"
                   name="gemini-api-key"
                 />
-                <button type="button" class="settings-field__toggle" id="toggle-api-key-visibility" aria-label="Toggle visibility">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <button type="button" class="settings-field__toggle" id="toggle-api-key-visibility" aria-label="Show Gemini API key" aria-pressed="false">
+                  <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 7C8.34315 7 7 8.34315 7 10C7 11.6569 8.34315 13 10 13C11.6569 13 13 11.6569 13 10C13 8.34315 11.6569 7 10 7Z" fill="currentColor"/>
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M10 3C5.58172 3 2.73251 6.52344 1.46567 8.5C1.04096 9.1409 1.04096 9.8591 1.46567 10.5C2.73251 12.4766 5.58172 16 10 16C14.4183 16 17.2675 12.4766 18.5343 10.5C18.959 9.8591 18.959 9.1409 18.5343 8.5C17.2675 6.52344 14.4183 3 10 3ZM5 10C5 7.23858 7.23858 5 10 5C12.7614 5 15 7.23858 15 10C15 12.7614 12.7614 15 10 15C7.23858 15 5 12.7614 5 10Z" fill="currentColor"/>
                   </svg>
@@ -190,7 +190,7 @@
                   Clear Key
                 </button>
               </div>
-              <div class="settings-field__status" id="api-key-status"></div>
+              <div class="settings-field__status" id="api-key-status" role="status" aria-live="polite"></div>
             </form>
             <div class="settings-help">
               <p><strong>Don't have an API key?</strong></p>
@@ -211,7 +211,7 @@
       <!-- Intro Modal (Removed - consolidated into hints-modal) -->
 
       <!-- Keyboard Hints Modal -->
-      <div class="hints-modal modal-base" id="hints-modal" aria-hidden="true">
+      <div class="hints-modal modal-base" id="hints-modal" aria-hidden="true" inert>
         <div class="hints-modal__backdrop modal-backdrop"></div>
         <div class="hints-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="hints-modal-title">
           <button class="hints-modal__close" aria-label="Close hints" id="hints-modal-close">×</button>
@@ -248,12 +248,12 @@
       </div>
 
       <!-- Share Modal -->
-      <div class="share-modal modal-base" id="share-modal" aria-hidden="true">
+      <div class="share-modal modal-base" id="share-modal" aria-hidden="true" inert>
         <div class="share-modal__backdrop modal-backdrop"></div>
         <div class="share-modal__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
           <div class="share-modal__header">
             <h2 id="share-modal-title">Share this deck</h2>
-            <button class="share-modal__close" aria-label="Close" id="share-modal-close">&times;</button>
+            <button class="share-modal__close" aria-label="Close share dialog" id="share-modal-close">&times;</button>
           </div>
           <div class="share-modal__body">
             <p class="share-modal__intro">Generate a link that includes your slides and theme. Anyone who opens it gets a copy of the deck in their browser.</p>
@@ -269,11 +269,11 @@
                   value=""
                   placeholder="Click Generate link below"
                 />
-                <button class="share-modal__copy-btn" id="share-copy-btn" title="Copy to clipboard">
+                <button type="button" class="share-modal__copy-btn" id="share-copy-btn" title="Copy to clipboard" aria-label="Copy share link">
                   Copy
                 </button>
               </div>
-              <p class="share-modal__hint" id="share-details" hidden></p>
+              <p class="share-modal__hint" id="share-details" aria-live="polite" hidden></p>
             </div>
 
             <div class="share-modal__section share-modal__actions">
@@ -281,13 +281,13 @@
               <button type="button" class="button button--secondary" id="share-export-json-btn">Download JSON backup</button>
             </div>
 
-            <div class="share-modal__status" id="share-status"></div>
+            <div class="share-modal__status" id="share-status" role="status" aria-live="polite"></div>
           </div>
         </div>
       </div>
       
       <!-- Share password prompt -->
-      <div class="share-protect modal-base" id="share-protect-modal" aria-hidden="true">
+      <div class="share-protect modal-base" id="share-protect-modal" aria-hidden="true" inert>
         <div class="share-protect__backdrop modal-backdrop" data-share-protect-cancel></div>
         <div class="share-protect__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-protect-title">
           <div class="share-protect__header">
@@ -296,8 +296,8 @@
           </div>
           <div class="share-protect__body">
             <label for="share-protect-input" class="share-protect__label">Passphrase</label>
-            <input type="password" id="share-protect-input" class="share-protect__input" autocomplete="off" />
-            <p class="share-protect__status" id="share-protect-status"></p>
+            <input type="password" id="share-protect-input" class="share-protect__input" autocomplete="current-password" aria-describedby="share-protect-status" />
+            <p class="share-protect__status" id="share-protect-status" role="alert" aria-live="assertive"></p>
           </div>
           <div class="share-protect__actions">
             <button type="button" class="button button--primary" id="share-protect-submit">Unlock</button>
@@ -306,21 +306,21 @@
         </div>
       </div>
 
-      <main class="slides" id="slides" aria-live="polite"></main>
+      <main class="slides" id="slides" aria-live="polite" aria-label="Slide deck"></main>
       <footer class="hud" data-hidden="true">
         <div class="hud__nav">
           <button class="hud__nav-btn hud__nav-btn--prev" id="hud-prev-btn" aria-label="Previous slide" title="Previous slide">←</button>
           <button class="hud__nav-btn hud__nav-btn--next" id="hud-next-btn" aria-label="Next slide" title="Next slide">→</button>
-          <div class="hud__notes-indicator" id="notes-indicator" title="This slide has speaker notes (Press N to view)" hidden>
-            <span class="hud__notes-icon">📝</span>
-          </div>
+          <button type="button" class="hud__notes-indicator" id="notes-indicator" aria-label="Open speaker notes" title="This slide has speaker notes (Press N to view)" hidden>
+            <span class="hud__notes-icon" aria-hidden="true">📝</span>
+          </button>
         </div>
         <div class="hud__counter">
           <span data-counter-current>1</span>
           <span class="hud__divider">/</span>
           <span data-counter-total>1</span>
         </div>
-        <div class="hud__progress" id="hud-progress" title="Click to jump to slide">
+        <div class="hud__progress" id="hud-progress" role="slider" tabindex="0" aria-label="Slide progress" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1" aria-valuetext="Slide 1 of 1" title="Click or use arrow keys to jump to slide">
           <div class="hud__progress-bar" data-progress></div>
         </div>
         <div class="hud__actions">
@@ -341,17 +341,17 @@
     </div>
 
     <!-- Cheat Console -->
-    <div class="cheat-console" id="cheat-console" aria-hidden="true">
+    <div class="cheat-console" id="cheat-console" aria-hidden="true" inert>
       <div class="cheat-console__backdrop" data-cheat-close></div>
-      <div class="cheat-console__panel" role="dialog" aria-modal="true" aria-labelledby="cheat-console-unlocked">
+      <div class="cheat-console__panel" role="dialog" aria-modal="true" aria-labelledby="cheat-console-title" aria-describedby="cheat-console-hint">
         <div class="cheat-console__header">
           <div>
             <p class="cheat-console__eyebrow" id="cheat-console-unlocked">Cheat unlocked</p>
-            <h3>AI Cheat Console</h3>
+            <h2 id="cheat-console-title">AI Cheat Console</h2>
           </div>
           <button class="cheat-console__close" aria-label="Close cheat console" data-cheat-close>×</button>
         </div>
-        <p class="cheat-console__hint">
+        <p class="cheat-console__hint" id="cheat-console-hint">
           Describe the slide or deck you want. Gemini cooks it live. Need an API key?
           <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Grab one here</a>,
           then tap <strong>S</strong> to paste it into Settings.
@@ -362,6 +362,8 @@
             class="cheat-console__textarea"
             rows="5"
             placeholder="e.g. a presentation about brutalist architecture — who built it, why people hate it, and why it's having a comeback"
+            aria-label="AI slide prompt"
+            aria-describedby="cheat-console-hint cheat-console-status"
           ></textarea>
           <button
             type="button"
@@ -379,7 +381,7 @@
             Generate starter deck
           </button>
         </div>
-        <p class="cheat-console__status" id="cheat-console-status" data-state="info"></p>
+        <p class="cheat-console__status" id="cheat-console-status" data-state="info" role="status" aria-live="polite"></p>
         <p class="cheat-console__footer">Cheat codes: 666 · 696969</p>
       </div>
     </div>

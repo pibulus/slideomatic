@@ -1,4 +1,8 @@
 import { slides, currentIndex } from './state.js';
+import { trapFocus, focusFirstElement } from './utils.js';
+
+let previousFocus = null;
+let keydownHandler = null;
 
 export function toggleSpeakerNotes() {
   const modal = document.getElementById('notes-modal');
@@ -7,28 +11,66 @@ export function toggleSpeakerNotes() {
   const isOpen = modal.classList.contains('is-open');
 
   if (isOpen) {
-    modal.classList.remove('is-open');
+    closeSpeakerNotes(modal);
   } else {
-    // Update notes content for current slide
-    const currentSlide = slides[currentIndex];
-    const slideTitle = document.getElementById('notes-slide-title');
-    const notesText = document.getElementById('notes-text');
-
-    if (slideTitle) {
-      slideTitle.textContent = `Slide ${currentIndex + 1} of ${slides.length}`;
-    }
-
-    if (notesText) {
-      const notes = currentSlide?.notes || currentSlide?.speaker_notes;
-      if (notes) {
-        notesText.textContent = notes;
-      } else {
-        notesText.textContent = 'No speaker notes for this slide.';
-      }
-    }
-
-    modal.classList.add('is-open');
+    openSpeakerNotes(modal);
   }
+}
+
+function openSpeakerNotes(modal) {
+  // Update notes content for current slide
+  const currentSlide = slides[currentIndex];
+  const slideTitle = document.getElementById('notes-slide-title');
+  const notesText = document.getElementById('notes-text');
+
+  if (slideTitle) {
+    slideTitle.textContent = `Slide ${currentIndex + 1} of ${slides.length}`;
+  }
+
+  if (notesText) {
+    const notes = currentSlide?.notes || currentSlide?.speaker_notes;
+    notesText.textContent = notes || 'No speaker notes for this slide.';
+  }
+
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  modal.removeAttribute('inert');
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  focusFirstElement(modal);
+
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler, true);
+  }
+  keydownHandler = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeSpeakerNotes(modal);
+      return;
+    }
+    if (event.key === 'Tab') {
+      trapFocus(event, modal);
+    }
+  };
+  document.addEventListener('keydown', keydownHandler, true);
+}
+
+function closeSpeakerNotes(modal) {
+  if (!modal.classList.contains('is-open')) return;
+
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler, true);
+    keydownHandler = null;
+  }
+
+  const target = previousFocus && typeof previousFocus.focus === 'function'
+    ? previousFocus
+    : null;
+  previousFocus = null;
+  target?.focus({ preventScroll: true });
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.setAttribute('inert', '');
 }
 
 export function initSpeakerNotes() {
@@ -39,21 +81,14 @@ export function initSpeakerNotes() {
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        notesModal.classList.remove('is-open');
+        closeSpeakerNotes(notesModal);
       });
     }
 
     if (backdrop) {
       backdrop.addEventListener('click', () => {
-        notesModal.classList.remove('is-open');
+        closeSpeakerNotes(notesModal);
       });
     }
-
-    // Close on Escape
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && notesModal.classList.contains('is-open')) {
-        notesModal.classList.remove('is-open');
-      }
-    });
   }
 }

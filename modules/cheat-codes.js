@@ -8,6 +8,7 @@ import {
 } from './voice-modes.js';
 import { generateAIImage } from './image-ai.js';
 import { collectImagePaths } from './image-utils.js';
+import { trapFocus } from './utils.js';
 
 const CHEAT_CODES = ['666', '696969'];
 const MAX_BUFFER = Math.max(...CHEAT_CODES.map(code => code.length));
@@ -35,13 +36,12 @@ export function initCheatConsole() {
   deckBtn = /** @type {HTMLButtonElement|null} */ (root.querySelector('#cheat-console-deck'));
   dictateBtn = /** @type {HTMLButtonElement|null} */ (root.querySelector('#cheat-console-dictate'));
   unlockedLabel = root.querySelector('#cheat-console-unlocked');
-  const closeBtn = root.querySelector('[data-cheat-close]');
+  const closeButtons = root.querySelectorAll('[data-cheat-close]');
 
-  if (!promptInput || !slideBtn || !deckBtn || !dictateBtn || !closeBtn) return;
+  if (!promptInput || !slideBtn || !deckBtn || !dictateBtn || closeButtons.length === 0) return;
 
   document.addEventListener('keydown', handleGlobalKey, true);
-  closeBtn.addEventListener('click', hideConsole);
-  root.querySelector('.cheat-console__backdrop')?.addEventListener('click', hideConsole);
+  closeButtons.forEach((button) => button.addEventListener('click', hideConsole));
 
   slideBtn.addEventListener('click', () => handleCheatAction('slide'));
   deckBtn.addEventListener('click', () => handleCheatAction('deck'));
@@ -55,6 +55,11 @@ function handleGlobalKey(event) {
     event.preventDefault();
     event.stopPropagation();
     hideConsole();
+    return;
+  }
+
+  if (event.key === 'Tab' && root?.classList.contains('is-open')) {
+    trapFocus(event, root);
     return;
   }
 
@@ -103,6 +108,7 @@ function hasBlockingModal() {
 function showConsole(code) {
   if (!root || !promptInput) return;
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  root.removeAttribute('inert');
   root.classList.add('is-open');
   root.setAttribute('aria-hidden', 'false');
   document.body.classList.add('cheat-console-open');
@@ -118,6 +124,7 @@ function hideConsole() {
   stopDictationSession();
   root.classList.remove('is-open');
   root.setAttribute('aria-hidden', 'true');
+  root.setAttribute('inert', '');
   document.body.classList.remove('cheat-console-open');
   if (document.activeElement === promptInput) {
     promptInput.blur();

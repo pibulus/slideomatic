@@ -63,6 +63,7 @@ export function openKeyboardHelp() {
   if (!modal) return;
 
   previousFocus = document.activeElement;
+  modal.removeAttribute('inert');
   modal.setAttribute('aria-hidden', 'false');
   modal.classList.add('is-open');
 
@@ -89,11 +90,12 @@ export function closeKeyboardHelp() {
 
   // Restore focus BEFORE hiding the modal to avoid "aria-hidden" blocks
   if (previousFocus && typeof previousFocus.focus === 'function') {
-    previousFocus.focus();
+    previousFocus.focus({ preventScroll: true });
     previousFocus = null;
   }
 
   modal.setAttribute('aria-hidden', 'true');
+  modal.setAttribute('inert', '');
   modal.classList.remove('is-open');
 
   if (keydownHandler) {

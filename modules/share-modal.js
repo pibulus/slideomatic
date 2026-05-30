@@ -75,6 +75,7 @@ export function initShareModal() {
 
   async function openShareModal() {
     previousFocus = document.activeElement;
+    shareModal.removeAttribute('inert');
     shareModal.classList.add('is-open');
     shareModal.setAttribute('aria-hidden', 'false');
 
@@ -97,12 +98,13 @@ export function initShareModal() {
 
   function closeShareModal() {
     if (previousFocus && typeof previousFocus.focus === 'function') {
-      previousFocus.focus();
+      previousFocus.focus({ preventScroll: true });
       previousFocus = null;
     }
 
     shareModal.classList.remove('is-open');
     shareModal.setAttribute('aria-hidden', 'true');
+    shareModal.setAttribute('inert', '');
     hideShareStatus();
 
     if (keydownHandler) {

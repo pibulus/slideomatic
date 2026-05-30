@@ -703,10 +703,49 @@ function initHudControls() {
   // Clickable progress bar - jump to slide by clicking position
   const progressEl = document.getElementById('hud-progress');
   if (progressEl) {
-    progressEl.addEventListener('click', (e) => {
+    const jumpToProgressPosition = (clientX) => {
+      if (!slideElements.length) return;
       const rect = progressEl.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       const targetIndex = Math.round(ratio * (slideElements.length - 1));
+      setActiveSlide(targetIndex);
+      revealHud();
+    };
+
+    progressEl.addEventListener('click', (e) => {
+      jumpToProgressPosition(e.clientX);
+    });
+
+    progressEl.addEventListener('keydown', (event) => {
+      if (!slideElements.length) return;
+
+      let targetIndex = currentIndex;
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowDown':
+          targetIndex = currentIndex - 1;
+          break;
+        case 'ArrowRight':
+        case 'ArrowUp':
+          targetIndex = currentIndex + 1;
+          break;
+        case 'PageUp':
+          targetIndex = currentIndex - 5;
+          break;
+        case 'PageDown':
+          targetIndex = currentIndex + 5;
+          break;
+        case 'Home':
+          targetIndex = 0;
+          break;
+        case 'End':
+          targetIndex = slideElements.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      event.preventDefault();
       setActiveSlide(targetIndex);
       revealHud();
     });

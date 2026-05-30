@@ -4,6 +4,7 @@ import { registerLazyImage } from './lazy-images.js';
 import { askAIForImage, generateGraphVisualization } from './image-ai.js';
 import { handleImageUpload } from './image-upload.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
+import { trapFocus } from './utils.js';
 import {
     buildImageSearchUrl,
     normalizeOrientation,
@@ -101,6 +102,17 @@ export function createImage(image, className = 'slide__image', options = {}) {
     }
     // Make images clickable to view full size
     img.style.cursor = 'pointer';
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.setAttribute(
+        'aria-label',
+        image.alt ? `Open image preview: ${image.alt}` : 'Open image preview'
+    );
+    img.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        img.click();
+    });
     return img;
 }
 
@@ -147,6 +159,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
 
     const progressBar = document.createElement('div');
     progressBar.className = 'image-placeholder__progress';
+    progressBar.setAttribute('aria-hidden', 'true');
     const progressFill = document.createElement('div');
     progressFill.className = 'image-placeholder__progress-fill';
     progressBar.appendChild(progressFill);
@@ -285,22 +298,35 @@ export function handleImageModalTrigger(event) {
     event.stopPropagation();
 
     // Create modal
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const modal = document.createElement('div');
     modal.className = 'image-modal';
-    modal.innerHTML = `
-        <div class="image-modal__content">
-            <img src="${src}" alt="${alt}" class="image-modal__image">
-            <button class="image-modal__close" aria-label="Close">×</button>
-        </div>
-    `;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', alt ? `Image preview: ${alt}` : 'Image preview');
+
+    const content = document.createElement('div');
+    content.className = 'image-modal__content';
+
+    const modalImg = document.createElement('img');
+    modalImg.src = src;
+    modalImg.alt = alt;
+    modalImg.className = 'image-modal__image';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'image-modal__close';
+    closeBtn.setAttribute('aria-label', 'Close image preview');
+    closeBtn.textContent = '×';
+
+    content.append(modalImg, closeBtn);
+    modal.appendChild(content);
 
     document.body.appendChild(modal);
-
-    const modalImg = modal.querySelector('.image-modal__image');
-    const closeBtn = modal.querySelector('.image-modal__close');
     
     requestAnimationFrame(() => {
         modal.classList.add('is-active');
+        closeBtn.focus({ preventScroll: true });
         
         // Tactile "Pop" Animation (Expand)
         modalImg.animate([
@@ -360,12 +386,17 @@ export function handleImageModalTrigger(event) {
         animation.onfinish = () => {
             modal.remove();
             document.removeEventListener('keydown', escHandler);
+            previousFocus?.focus({ preventScroll: true });
         };
     };
 
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             handleClose();
+            return;
+        }
+        if (e.key === 'Tab') {
+            trapFocus(e, modal);
         }
     };
     document.addEventListener('keydown', escHandler);

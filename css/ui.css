@@ -140,6 +140,11 @@
   box-shadow: 0 0 0 2px var(--color-accent);
 }
 
+.hud__progress:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
 .hud__progress-bar {
   height: 100%;
   background: linear-gradient(90deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);
@@ -414,9 +419,18 @@
    ================================================================ */
 
 .hud__notes-indicator {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
   font-size: 0.9rem;
   opacity: 0.8;
   cursor: pointer;
@@ -426,6 +440,11 @@
 
 .hud__notes-indicator:hover {
   opacity: 1;
+}
+
+.hud__notes-indicator:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 .hud__notes-indicator[hidden] {

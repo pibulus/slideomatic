@@ -78,6 +78,9 @@ export function createSlide(slide, index, rendererMap = renderers) {
     section.className = `slide slide--${type}`;
     section.dataset.index = index;
     section.setAttribute('aria-hidden', 'true');
+    section.setAttribute('role', 'group');
+    section.setAttribute('aria-roledescription', 'slide');
+    section.setAttribute('aria-label', getSlideAriaLabel(slide, index));
 
     if (slide.image) {
         debug('createSlide - Slide has image:', {
@@ -148,6 +151,27 @@ export function createSlide(slide, index, rendererMap = renderers) {
     }
 
     return section;
+}
+
+function getSlideAriaLabel(slide, index) {
+    const title = getPlainSlideText(
+        slide.title ??
+        slide.headline ??
+        slide.quote ??
+        slide.eyebrow ??
+        slide.badge
+    );
+    return title ? `Slide ${index + 1}: ${title}` : `Slide ${index + 1}`;
+}
+
+function getPlainSlideText(value) {
+    if (Array.isArray(value)) {
+        return value.map(getPlainSlideText).filter(Boolean).join(' ');
+    }
+    if (value === null || value === undefined || value === false) {
+        return '';
+    }
+    return String(value).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function resolveFontFamily(font) {
