@@ -2,7 +2,7 @@ import { generateSlideFromPrompt, generateDeckFromPrompt, getVoiceAssistantConte
 import { generateAIImage } from './image-ai.js';
 import { collectImagePaths } from './image-utils.js';
 
-const CHEAT_CODES = ['iddqd', 'idkfa', 'abracadabra'];
+const CHEAT_CODES = ['xyzzy'];
 const MAX_BUFFER = Math.max(...CHEAT_CODES.map(code => code.length));
 
 let buffer = '';
@@ -28,7 +28,7 @@ export function initCheatConsole() {
 
   if (!promptInput || !slideBtn || !deckBtn || !closeBtn) return;
 
-  document.addEventListener('keydown', handleGlobalKey);
+  document.addEventListener('keydown', handleGlobalKey, true);
   closeBtn.addEventListener('click', hideConsole);
   root.querySelector('.cheat-console__backdrop')?.addEventListener('click', hideConsole);
 
@@ -40,16 +40,13 @@ export function initCheatConsole() {
 
 function handleGlobalKey(event) {
   if (event.key === 'Escape' && root?.classList.contains('is-open')) {
+    event.preventDefault();
+    event.stopPropagation();
     hideConsole();
     return;
   }
 
-  if (
-    event.target &&
-    (event.target instanceof HTMLInputElement ||
-      event.target instanceof HTMLTextAreaElement ||
-      event.target.isContentEditable)
-  ) {
+  if (isEditableTarget(event.target) || hasBlockingModal()) {
     return;
   }
 
@@ -57,12 +54,38 @@ function handleGlobalKey(event) {
     return;
   }
 
-  buffer = (buffer + event.key.toLowerCase()).slice(-MAX_BUFFER);
+  const candidate = (buffer + event.key.toLowerCase()).slice(-MAX_BUFFER);
+  const isPrefix = CHEAT_CODES.some(code => code.startsWith(candidate));
+  if (isPrefix) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  buffer = candidate;
   const hit = CHEAT_CODES.find(code => buffer.endsWith(code));
   if (hit) {
     showConsole(hit);
     buffer = '';
+    event.preventDefault();
+    event.stopPropagation();
+    return;
   }
+
+  if (!isPrefix) buffer = '';
+}
+
+function isEditableTarget(target) {
+  return Boolean(
+    target &&
+      (target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target.isContentEditable)
+  );
+}
+
+function hasBlockingModal() {
+  return Boolean(!root?.classList.contains('is-open') && document.querySelector('.modal-base.is-open'));
 }
 
 function showConsole(code) {

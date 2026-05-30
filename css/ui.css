@@ -34,7 +34,7 @@
 /* --- HUD --- */
 .hud {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: min(760px, calc(100vw - 32px));
@@ -246,9 +246,10 @@
     gap: 8px;
     text-align: center;
     padding: 10px 12px;
-    bottom: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
     width: calc(100vw - 20px);
     border-radius: 16px;
+    animation: none;
   }
 
   .hud__nav {
@@ -257,8 +258,10 @@
 
   .hud__actions {
     grid-column: 1 / -1;
-    justify-content: center;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
     font-size: 0.72rem;
   }
 
@@ -269,6 +272,9 @@
     align-items: center;
     justify-content: center;
     font-size: 0.75rem;
+    min-width: 0;
+    padding: 0 6px;
+    overflow-wrap: anywhere;
   }
 
   .hud__counter {
@@ -301,7 +307,7 @@
   }
 
   .toast-container {
-    bottom: 140px; /* Make room for larger HUD */
+    bottom: calc(140px + env(safe-area-inset-bottom)); /* Make room for larger HUD */
     right: 16px;
     left: 16px;
     align-items: center;
@@ -326,7 +332,7 @@
   }
 
   .hud__actions {
-    gap: 8px;
+    gap: 6px;
     font-size: 0.68rem;
   }
 

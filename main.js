@@ -724,7 +724,20 @@ function initHudControls() {
   attachScrollListener(window);
   attachScrollListener(document);
   attachScrollListener(slidesRoot);
+  window.addEventListener('pointerdown', handleInteraction, { passive: true });
+  window.addEventListener('touchstart', handleInteraction, { passive: true });
   window.addEventListener('keydown', handleInteraction);
+
+  const handleAutoHideChange = () => {
+    clearTimeout(hideTimeout);
+    hud.dataset.hidden = 'false';
+    if (autoHideQuery.matches) scheduleHide();
+  };
+  if (typeof autoHideQuery.addEventListener === 'function') {
+    autoHideQuery.addEventListener('change', handleAutoHideChange);
+  } else if (typeof autoHideQuery.addListener === 'function') {
+    autoHideQuery.addListener(handleAutoHideChange);
+  }
 
   hud.addEventListener('mouseenter', () => {
     if (!autoHideQuery.matches) return;

@@ -44,6 +44,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--cream);
@@ -206,7 +207,7 @@ main {
   font-weight: 900;
   line-height: 0.95;
   text-transform: uppercase;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: var(--ink);
   text-shadow:
     3px 3px 0 var(--riso-pink),
@@ -309,7 +310,7 @@ main {
   margin: 0;
   font-size: clamp(1.5rem, 2.8vw, 1.85rem);
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-transform: uppercase;
   line-height: 1.1;
 }
@@ -582,7 +583,7 @@ a.button--secondary:hover {
   margin: 0;
   font-size: clamp(2.2rem, 5.5vw, 3.2rem);
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   text-transform: uppercase;
   line-height: 1;
 }
@@ -1050,6 +1051,7 @@ a.button--secondary:hover {
   border: 2px solid var(--ink);
   background: var(--paper);
   color: var(--ink);
+  min-height: 44px;
   padding: 9px 18px;
   border-radius: var(--radius-round);
   font-weight: 800;
@@ -1066,6 +1068,7 @@ a.button--secondary:hover {
   box-shadow: 3px 3px 0 rgba(26, 21, 34, 0.15);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 
@@ -1163,8 +1166,8 @@ a.button--secondary:hover {
   background: var(--riso-pink);
   font-size: 1.4rem;
   line-height: 1;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   cursor: pointer;
   font-family: inherit;
@@ -1189,7 +1192,7 @@ a.button--secondary:hover {
   font-size: clamp(1.8rem, 4.5vw, 2.5rem);
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.1;
 }
 
@@ -1288,9 +1291,60 @@ a.button--secondary:hover {
    ================================================================ */
 
 @media (max-width: 640px) {
+  .landing__hero {
+    width: calc(100vw - 20px);
+    margin-top: 12px;
+    padding: 28px 18px;
+    border-width: 3px;
+    border-radius: 18px;
+    box-shadow: 6px 6px 0 rgba(26, 21, 34, 0.24);
+    gap: 24px;
+  }
+
+  .landing__hero::after {
+    width: 180px;
+    height: 180px;
+    top: -70px;
+    right: -70px;
+  }
+
+  .landing__eyebrow {
+    border-width: 3px;
+    box-shadow: 3px 3px 0 rgba(26, 21, 34, 0.24);
+    font-size: 0.78rem;
+  }
+
+  .landing__title {
+    text-shadow:
+      2px 2px 0 var(--riso-pink),
+      4px 4px 0 var(--riso-blue);
+  }
+
+  .landing__title--main {
+    font-size: 3.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  .landing__title--sub {
+    font-size: 2rem;
+    text-shadow:
+      2px 2px 0 var(--riso-blue),
+      3px 3px 0 var(--riso-green);
+  }
+
+  .cta-panel,
+  .landing__card,
+  .collection-promo {
+    border-width: 3px;
+    border-radius: 18px;
+    box-shadow: 4px 4px 0 rgba(26, 21, 34, 0.18);
+  }
+
   .button {
     width: 100%;
     justify-content: center;
+    min-height: 48px;
+    padding: 12px 18px;
   }
 
   .landing__footer {

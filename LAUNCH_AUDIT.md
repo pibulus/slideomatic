@@ -30,12 +30,12 @@ Browser smoke, using system Chrome through Puppeteer:
 - Edit drawer opens on desktop/mobile with Theme and Content expanded.
 - Mobile visible HUD/drawer controls are at least `44x44`.
 - Share modal opens from the HUD and generates from the current deck state.
-- Cheat console opens with `IDDQD`.
+- Cheat console opens with `XYZZY`.
 - Manifest and service worker resolve and register on localhost.
 
 ## Residual Risks
 
-- Live Gemini flows still need a real API-key pass: Settings test, `IDDQD` starter deck, auto image generation, graph generation, and voice recording.
+- Live Gemini flows still need a real API-key pass: Settings test, `XYZZY` starter deck, auto image generation, graph generation, and voice recording.
 - Real iPhone PWA install still needs a physical-device pass after deployment.
 - Netlify Blob share functions remain in the repo for legacy/optional asset/share flows, while the default Share UI now generates compressed client-side `?data=` links.
 - Root docs were refreshed, but `REFACTOR_PROMPT.md` is historical and should not be treated as current architecture.
@@ -46,5 +46,5 @@ Browser smoke, using system Chrome through Puppeteer:
 2. Open `https://slideomatic.app` on desktop and iPhone.
 3. Install to home screen on iPhone.
 4. Open a blank deck, edit title/body, navigate, export JSON, and generate a Share link.
-5. Add Gemini key, test connection, type `IDDQD`, generate an 8-slide starter deck, and confirm images fill in.
+5. Add Gemini key, test connection, type `XYZZY`, generate an 8-slide starter deck, and confirm images fill in.
 6. Reload installed PWA and confirm the deck still loads.

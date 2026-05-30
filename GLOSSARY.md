@@ -38,7 +38,7 @@
 - **Edit Drawer** – Toggles with `E`. Houses content inputs, layout switcher, media manager, duplicate/delete controls, and the PDF exporter.
 - **Theme Drawer** – Toggles with `T`. Randomize palettes, tweak layers, save presets, stream SomaFM, and run the AI theme helper (Gemini).
 - **Deck Autosaves** – Stored in `localStorage` under `slideomatic_deck_overrides:*`. Clear keys when you need a blank state.
-- **Cheat Console** – Type IDDQD, IDKFA, or ABRACADABRA to open. Generate single slides or full 8-slide starter decks with AI. Starter decks include working links, discussion questions, and auto-generated images — designed as research springboards, not finished presentations.
+- **Cheat Console** – Type XYZZY to open. Generate single slides or full 8-slide starter decks with AI. Starter decks include working links, discussion questions, and auto-generated images — designed as research springboards, not finished presentations.
 - **AI Image Generation** – Empty image slots show a `✨` button in the edit drawer. Gemini decides: search for a photo or generate a risograph-style illustration matched to the current theme. Also runs automatically after starter deck generation.
 - **Client-side Share Links** – HUD Share encodes slides + theme into a compressed `?data=` URL. Good for text/light decks; use JSON export for heavy image decks.
 - **SomaFM Toggle** – Drawer-only switch that pipes curated radio while editing—purely for vibe control.

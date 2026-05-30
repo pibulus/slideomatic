@@ -4,6 +4,7 @@
   right: 0;
   width: min(480px, 90vw);
   height: 100vh;
+  height: 100dvh;
   background-color: #fff;
   background: linear-gradient(180deg, #fffdf9 0%, #fff1e6 100%);
   border-left: var(--border-width) solid var(--color-ink);
@@ -90,6 +91,7 @@
   right: 0;
   width: min(480px, 90vw);
   height: 100vh;
+  height: 100dvh;
   background-color: #fff;
   background: linear-gradient(180deg, #fefbff 0%, #f7ecff 100%);
   border-left: var(--border-width) solid var(--color-ink);
@@ -721,6 +723,33 @@
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
+.edit-drawer__image-ai,
+.edit-drawer__image-replace {
+  appearance: none;
+  background: var(--color-surface);
+  border: 2px solid var(--color-ink);
+  color: var(--color-ink);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 140ms cubic-bezier(0.2, 2, 0.4, 1),
+              background 140ms ease;
+}
+
+.edit-drawer__image-ai:hover,
+.edit-drawer__image-replace:hover {
+  background: var(--color-accent);
+  transform: scale(1.08);
+}
+
 .edit-drawer__image-alt-input:focus {
   outline: none;
   border-color: var(--color-accent);
@@ -776,4 +805,72 @@
 
 .edit-drawer__image-item[draggable="true"]:active {
   cursor: grabbing;
+}
+
+@media (max-width: 640px) {
+  .edit-drawer {
+    width: 100vw;
+    max-width: 100vw;
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  .edit-drawer__header {
+    padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+  }
+
+  .edit-drawer__header h2 {
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+  }
+
+  .edit-drawer__content {
+    padding: 16px 14px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .edit-drawer__form {
+    gap: 18px;
+  }
+
+  .edit-drawer__section {
+    padding: 14px;
+    border-width: 3px;
+    border-radius: 18px;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.14);
+  }
+
+  .edit-drawer__input,
+  .edit-drawer__textarea,
+  .edit-drawer__select,
+  .edit-drawer__image-alt-input,
+  .edit-drawer__button {
+    min-height: 46px;
+  }
+
+  .edit-drawer__button {
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+  }
+
+  .edit-drawer__image-item {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .edit-drawer__checkbox-label {
+    min-height: 46px;
+  }
+
+  .edit-drawer__checkbox-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  .edit-drawer__image-ai,
+  .edit-drawer__image-replace,
+  .edit-drawer__image-remove {
+    width: 46px;
+    height: 46px;
+  }
 }

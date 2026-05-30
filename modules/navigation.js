@@ -183,6 +183,7 @@ export function enterOverview() {
     slide.setAttribute('aria-hidden', 'false');
     slide.tabIndex = 0;
   });
+  hydrateOverviewSlides();
   setOverview(true);
   setOverviewCursor(clamp(currentIndex, 0, slideElements.length - 1));
   highlightOverviewSlide(overviewCursor);
@@ -402,6 +403,8 @@ export function updateHud() {
 
 export function handleSlideClick(event) {
   if (!isOverview) return;
+  event.preventDefault?.();
+  event.stopPropagation?.();
   const targetSlide = event.target.closest('.slide');
   if (!targetSlide) return;
   const targetIndex = Number.parseInt(targetSlide.dataset.index, 10);
@@ -428,6 +431,43 @@ function preloadSlideImages(index) {
     const src = img.dataset.modalSrc || img.currentSrc || img.src;
     preloadImage(src);
   });
+}
+
+function hydrateOverviewSlides() {
+  const totalSlides = slideElements.length;
+  if (!totalSlides) return;
+  let index = 0;
+  const chunkSize = 4;
+
+  const schedule = (fn) => {
+    if (typeof window === 'undefined') {
+      setTimeout(fn, 0);
+      return;
+    }
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(fn, { timeout: 200 });
+      return;
+    }
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(fn);
+      return;
+    }
+    setTimeout(fn, 16);
+  };
+
+  const loadChunk = () => {
+    if (!isOverview) return;
+    const end = Math.min(index + chunkSize, totalSlides);
+    for (; index < end; index += 1) {
+      preloadSlideImages(index);
+      const slide = slideElements[index];
+      if (!slide) continue;
+      slide.querySelectorAll('img[data-src]').forEach((img) => loadLazyImage(img));
+    }
+    if (index < totalSlides) schedule(loadChunk);
+  };
+
+  loadChunk();
 }
 
 export function navigateToDeckHome() {

@@ -30,6 +30,19 @@ export function initShareModal() {
 
   copyBtn?.addEventListener('click', () => {
     if (urlInput?.value) {
+      if (navigator.share) {
+        navigator.share({
+          title: deriveDeckName(slides),
+          text: 'Slide-o-Matic deck',
+          url: urlInput.value,
+        }).catch((error) => {
+          if (error?.name !== 'AbortError') {
+            showShareStatus('Sharing failed. Try copying the link manually.', 'error');
+          }
+        });
+        return;
+      }
+
       navigator.clipboard.writeText(urlInput.value).then(() => {
         showShareStatus('\u2713 Link copied to clipboard!', 'success');
         setTimeout(() => hideShareStatus(), 2000);
@@ -56,10 +69,10 @@ export function initShareModal() {
     shareModal.setAttribute('aria-hidden', 'false');
 
     resetShareModalState();
-    hideShareStatus();
-    showShareStatus('Hit Generate link to create a shareable URL.', 'loading');
+    showShareStatus('Generating share link...', 'loading');
 
     focusFirstElement(shareModal);
+    await generateLink();
 
     if (keydownHandler) document.removeEventListener('keydown', keydownHandler);
     keydownHandler = (e) => {
@@ -91,6 +104,13 @@ export function initShareModal() {
 
   function resetShareModalState() {
     if (urlInput) urlInput.value = '';
+    if (copyBtn) {
+      copyBtn.textContent = navigator.share ? 'Share' : 'Copy';
+      copyBtn.disabled = true;
+    }
+    if (generateBtn) {
+      generateBtn.textContent = 'Generate link';
+    }
   }
 
   async function generateLink() {
@@ -100,6 +120,8 @@ export function initShareModal() {
     try {
       const shareUrl = await buildShareUrl();
       if (urlInput) urlInput.value = shareUrl;
+      if (copyBtn) copyBtn.disabled = false;
+      if (generateBtn) generateBtn.textContent = 'Regenerate link';
       showShareStatus('\u2713 Ready to share!', 'success');
       setTimeout(() => hideShareStatus(), 3000);
     } catch (error) {

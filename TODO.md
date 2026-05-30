@@ -172,7 +172,7 @@
 
 ## Completed (Post-Sprint)
 
-- ✅ **AI Starter Deck Generation** — Cheat console (IDDQD/IDKFA/ABRACADABRA) generates 8-slide research springboard decks with real links, discussion questions, and presenter notes
+- ✅ **AI Starter Deck Generation** — Cheat console (XYZZY) generates 8-slide research springboard decks with real links, discussion questions, and presenter notes
 - ✅ **Auto Image Generation for Decks** — After starter deck creation, AI generates images for all slides with empty image slots
 - ✅ **AI Image Generation in Edit Drawer** — `✨` button on empty image slots triggers Gemini to search or generate illustrations
 - ✅ **Landing Page Tightened** — Removed 100vh hero, compressed spacing so demo decks are visible faster
@@ -183,7 +183,7 @@
 1. ✅ **PWA setup** — manifest, service worker, icons, and Apple install meta tags are wired.
 2. ✅ **Git consolidation** — latest Claude branch has been merged into `main`.
 3. ✅ **Baseline QA** — `npm run check`, `npm run lint`, local browser smoke, drawer/hit-target/share/PWA checks passed.
-4. **Live Gemini pass** — verify Settings test, IDDQD starter deck, auto image generation, graph generation, and voice generation with a real key.
+4. **Live Gemini pass** — verify Settings test, XYZZY starter deck, auto image generation, graph generation, and voice generation with a real key.
 5. **Real iPhone PWA pass** — install from production, open blank deck, edit, share, reload, and confirm offline-ish cached shell behavior.
 6. **Deploy/push** — push `main`, deploy, and do the production smoke at `https://slideomatic.app`.
 
