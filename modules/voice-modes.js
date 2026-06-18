@@ -16,7 +16,9 @@ import { debug } from './constants.js';
 import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
-export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-2.5-flash-lite';
+export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-flash-lite-latest';
+// Generation/edit/theme model (kept light per Pablo's call — newest flash-lite).
+export const GEMINI_GENERATION_MODEL = 'gemini-flash-lite-latest';
 
 const defaultContext = {
   getCurrentIndex: () => 0,
@@ -59,6 +61,20 @@ function getVoiceContext() {
 
 export function getGeminiApiKey() {
   return localStorage.getItem(STORAGE_KEY_API) || '';
+}
+
+// Route Gemini calls through our Netlify proxy so the SHARED app key stays
+// server-side. If the visitor pasted their own key, it's sent as `userKey` and
+// the proxy uses theirs instead. Returns the raw fetch Response so existing
+// callers keep using response.ok / response.json() unchanged.
+const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
+function callGemini(model, payload, { signal } = {}) {
+  return fetch(GEMINI_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
+  });
 }
 
 export function getVoiceAssistantContext() {
@@ -136,37 +152,33 @@ export async function startSpeechCapture({ onStop, onError } = {}) {
 
 export async function transcribeSpeechToText(audioBlob, options = {}) {
   const context = getVoiceContext();
-  const apiKey = ensureApiKeyOrThrow(context);
+  ensureApiKeyOrThrow(context);
   const base64Audio = await blobToBase64(audioBlob);
   const audioData = base64Audio.split(',')[1];
   const prompt = options.prompt || buildCleanTranscriptionPrompt();
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TRANSCRIPTION_MODEL}:generateContent`,
+  const response = await callGemini(
+    GEMINI_TRANSCRIPTION_MODEL,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      signal: AbortSignal.timeout(options.timeout || 30_000),
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                },
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: audioBlob.type || 'audio/webm',
+                data: audioData,
               },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 512,
+            },
+          ],
         },
-      }),
-    }
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 512,
+      },
+    },
+    { signal: AbortSignal.timeout(options.timeout || 30_000) }
   );
 
   if (!response.ok) {
@@ -240,12 +252,6 @@ function disableVoiceButtons() {
 
 export function toggleVoiceRecording(mode = 'add') {
   const context = getVoiceContext();
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    context.openSettingsModal();
-    context.showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
-    return;
-  }
 
   if (mode === 'edit') {
     const slides = context.getSlides();
@@ -398,40 +404,29 @@ export async function processVoiceToSlide(audioBlob) {
     const audioData = base64Audio.split(',')[1];
 
     const prompt = buildSlideDesignPrompt();
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
 
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    const response = await callGemini(
+      GEMINI_GENERATION_MODEL,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: AbortSignal.timeout(45_000),
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: audioBlob.type || 'audio/webm',
-                    data: audioData,
-                  },
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData,
                 },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
+              },
+            ],
           },
-        }),
-      }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        },
+      },
+      { signal: AbortSignal.timeout(45_000) }
     );
 
     if (!response.ok) {
@@ -482,40 +477,29 @@ async function processVoiceEditSlide(audioBlob) {
     const base64Audio = await blobToBase64(audioBlob);
     const audioData = base64Audio.split(',')[1];
     const prompt = buildSlideEditPrompt(slideToEdit);
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
 
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    const response = await callGemini(
+      GEMINI_GENERATION_MODEL,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: AbortSignal.timeout(45_000),
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: audioBlob.type || 'audio/webm',
-                    data: audioData,
-                  },
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData,
                 },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 2048,
+              },
+            ],
           },
-        }),
-      }
+        ],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 2048,
+        },
+      },
+      { signal: AbortSignal.timeout(45_000) }
     );
 
     if (!response.ok) {
@@ -561,40 +545,28 @@ export async function processVoiceToTheme(audioBlob) {
 
     const prompt = buildThemeDesignPrompt();
 
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-    }
-
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    const response = await callGemini(
+      GEMINI_GENERATION_MODEL,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: AbortSignal.timeout(45_000),
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: audioBlob.type || 'audio/webm',
-                    data: audioData,
-                  },
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: audioData,
                 },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 1.0,
-            maxOutputTokens: 2048,
+              },
+            ],
           },
-        }),
-      }
+        ],
+        generationConfig: {
+          temperature: 1.0,
+          maxOutputTokens: 2048,
+        },
+      },
+      { signal: AbortSignal.timeout(45_000) }
     );
 
     if (!response.ok) {
@@ -632,14 +604,6 @@ export async function processVoiceToTheme(audioBlob) {
 }
 
 export function toggleVoiceTheme() {
-  const context = getVoiceContext();
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    context.openSettingsModal();
-    context.showApiKeyStatus('error', 'Please add your Gemini API key to use voice features');
-    return;
-  }
-
   if (isRecordingTheme) {
     stopVoiceThemeRecording();
   } else {
@@ -907,14 +871,11 @@ OUTPUT:
 - Return ONLY a JSON array of slide objects, or an object with a "slides" array. No markdown wrapper, no \`\`\`json fences.`;
 }
 
-function ensureApiKeyOrThrow(context) {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    context.openSettingsModal?.();
-    context.showApiKeyStatus?.('error', 'Add your Gemini API key to unlock AI cheats');
-    throw new Error('Gemini API key required. Press S to add it.');
-  }
-  return apiKey;
+// Kept for signature/call-site compatibility. The Netlify proxy supplies a
+// shared server-side key when the visitor hasn't pasted their own, so an empty
+// key is fine here — never throw or force-open settings.
+function ensureApiKeyOrThrow(_context) {
+  return getGeminiApiKey();
 }
 
 function buildCleanTranscriptionPrompt() {
@@ -938,21 +899,19 @@ function cleanupTranscript(text) {
 }
 
 async function requestGeminiJson(apiKey, prompt, generationConfig = {}, { timeout = 30_000 } = {}) {
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+  // apiKey arg kept for signature compatibility; callGemini sources the key
+  // (user's own if set, else the server-side app key via the proxy).
+  const response = await callGemini(
+    GEMINI_GENERATION_MODEL,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      signal: AbortSignal.timeout(timeout),
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 2048,
-          ...generationConfig,
-        },
-      }),
-    }
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.6,
+        maxOutputTokens: 2048,
+        ...generationConfig,
+      },
+    },
+    { signal: AbortSignal.timeout(timeout) }
   );
 
   if (!response.ok) {

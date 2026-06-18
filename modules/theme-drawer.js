@@ -38,6 +38,19 @@ import { showHudStatus, hideHudStatus } from './hud.js';
 import { clamp } from './utils.js';
 import { getGeminiApiKey } from './voice-modes.js';
 
+// Route Gemini calls through our Netlify proxy so the SHARED app key stays
+// server-side. If the visitor pasted their own key, it's sent as `userKey` and
+// the proxy uses theirs instead. Returns the raw fetch Response.
+const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
+function callGemini(model, payload, { signal } = {}) {
+  return fetch(GEMINI_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
+  });
+}
+
 function ensureThemeDrawerInstance() {
   if (!themeDrawerInstance) {
     const instance = createDrawer({
@@ -421,38 +434,27 @@ export function syncThemeSelectUI() {
 }
 
 async function generateThemeWithAI(description) {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('No API key set. Press S to open settings and add your Gemini API key.');
-  }
-
+  // Proxy supplies a shared server key fallback, so no early throw on empty.
   const sanitizedDescription = typeof description === 'string'
     ? description.replace(/`/g, "'")
     : '';
 
   const prompt = `You are a theme designer for a presentation app called Slide-O-Matic.\n\nUser description:\n${sanitizedDescription || '(no additional description provided)'}\n\nProvide a JSON object with theme tokens.`;
 
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+  const response = await callGemini(
+    'gemini-flash-lite-latest',
     {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      signal: AbortSignal.timeout(30_000),
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.9,
-          maxOutputTokens: 2048,
+      contents: [
+        {
+          parts: [{ text: prompt }],
         },
-      }),
-    }
+      ],
+      generationConfig: {
+        temperature: 0.9,
+        maxOutputTokens: 2048,
+      },
+    },
+    { signal: AbortSignal.timeout(30_000) }
   );
 
   if (!response.ok) {

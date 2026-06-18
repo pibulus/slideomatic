@@ -1,6 +1,5 @@
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { STORAGE_KEY_API } from './voice-modes.js';
-import { openSettingsModal } from './settings-modal.js';
 import { getCurrentThemePath, getCurrentTheme } from './theme-manager.js';
 import { isOverview } from './state.js';
 import { replaceSlideAt } from './slide-actions.js';
@@ -16,21 +15,29 @@ import {
 // Image AI Module
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Route Gemini calls through our Netlify proxy so the SHARED app key stays
+// server-side. If the visitor pasted their own key, it's sent as `userKey` and
+// the proxy uses theirs instead. Returns the raw fetch Response so existing
+// callers keep using response.ok / response.json() unchanged.
+const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
+function callGemini(model, payload, { signal } = {}) {
+    const userKey = localStorage.getItem(STORAGE_KEY_API) || undefined;
+    return fetch(GEMINI_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({ model, payload, userKey }),
+    });
+}
+
+// Kept for callers that prompt the user to add a key, but no longer blocks:
+// the proxy provides a shared server key fallback when the user has none.
 export function requireGeminiApiKey() {
-    const apiKey = localStorage.getItem(STORAGE_KEY_API);
-    if (!apiKey) {
-        showHudStatus('⚠️ Please set your Gemini API key in Settings (S key)', 'error');
-        openSettingsModal();
-        setTimeout(() => hideHudStatus(), 2000);
-        return null;
-    }
-    return apiKey;
+    return localStorage.getItem(STORAGE_KEY_API) || '';
 }
 
 export async function askAIForImage(placeholderElement, imageConfig = {}) {
-    const apiKey = requireGeminiApiKey();
-    if (!apiKey) return;
-
+    // Proxy supplies a shared server key fallback, so no early bail on empty.
     let context;
     if (imageConfig.context) {
         context = imageConfig.context;
@@ -66,20 +73,16 @@ SEARCH: [your refined query here]
 or
 GENERATE`;
 
-        const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        const response = await callGemini(
+            'gemini-flash-lite-latest',
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-                signal: AbortSignal.timeout(30_000),
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: decisionPrompt }] }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 100,
-                    },
-                }),
-            }
+                contents: [{ parts: [{ text: decisionPrompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 100,
+                },
+            },
+            { signal: AbortSignal.timeout(30_000) }
         );
 
         if (!response.ok) {
@@ -118,9 +121,7 @@ GENERATE`;
 }
 
 export async function generateAIImage(placeholderElement, imageConfig = {}) {
-    const apiKey = requireGeminiApiKey();
-    if (!apiKey) return;
-
+    // Proxy supplies a shared server key fallback, so no early bail on empty.
     let context;
     if (imageConfig.context) {
         context = imageConfig.context;
@@ -169,25 +170,18 @@ Style requirements:
 
 The image should be visually striking and support the slide content.`;
 
-        const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        const response = await callGemini(
+            'gemini-2.5-flash-image',
             {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey,
-                },
-                signal: AbortSignal.timeout(60_000),
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseModalities: ['Image'],
-                        imageConfig: {
-                            aspectRatio: '16:9'
-                        }
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseModalities: ['Image'],
+                    imageConfig: {
+                        aspectRatio: '16:9'
                     }
-                })
-            }
+                }
+            },
+            { signal: AbortSignal.timeout(60_000) }
         );
 
         if (!response.ok) {
@@ -243,9 +237,7 @@ The image should be visually striking and support the slide content.`;
 }
 
 export async function generateGraphVisualization(slide = {}, options = {}) {
-    const apiKey = requireGeminiApiKey();
-    if (!apiKey) return null;
-
+    // Proxy supplies a shared server key fallback, so no early bail on empty.
     const theme = typeof getCurrentTheme === 'function' ? getCurrentTheme() : null;
     const palette = theme
         ? [
@@ -277,26 +269,19 @@ ${paletteLine}
 Use chunky ink lines, halftone fills, and grain. Choose an appropriate chart style (bar, line, radial, stacked, comparison cards, etc.) that best communicates the data/story. Label axes or segments minimally, keep typography clean (Inter / Space Mono inspiration). Avoid realistic photos or UI chrome. Include the title within the graphic. Output only an image.
 `.trim();
 
-    const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    const response = await callGemini(
+        'gemini-2.5-flash-image',
         {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
-            },
-            signal: AbortSignal.timeout(60_000),
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: options.temperature ?? 0.65,
-                    responseModalities: ['Image'],
-                    imageConfig: {
-                        aspectRatio: options.aspectRatio ?? '16:9',
-                    },
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: options.temperature ?? 0.65,
+                responseModalities: ['Image'],
+                imageConfig: {
+                    aspectRatio: options.aspectRatio ?? '16:9',
                 },
-            }),
-        }
+            },
+        },
+        { signal: AbortSignal.timeout(60_000) }
     );
 
     if (!response.ok) {

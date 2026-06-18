@@ -1,0 +1,103 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Gemini proxy function
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Proxies generateContent calls to Google's Gemini API so the SHARED app key
+// (process.env.GEMINI_API_KEY) lives server-side and never ships in the client
+// bundle. The client posts { model, payload, userKey? }:
+//   - userKey present  → use the visitor's own pasted key (their quota, their risk)
+//   - userKey absent   → fall back to the app's server-side key (works out of box)
+//
+// Mirrors the request shape the client used to send directly to Google, so the
+// model output is returned verbatim for the existing parsers to consume.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const ALLOWED_MODELS = new Set([
+  'gemini-flash-lite-latest', // text: voice, decisions, edit, theme
+  'gemini-2.5-flash-image',   // image generation (responseModalities:['Image'])
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+]);
+
+function cors(headers = {}) {
+  const origin = headers.origin || headers.Origin || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+}
+
+// transient 503/429 backoff so a busy model degrades to a slight delay
+async function withRetry(fn, tries = 3, baseMs = 600) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fn();
+      if (res.status === 503 || res.status === 429) {
+        if (i === tries - 1) return res;
+        await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (i === tries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+    }
+  }
+  throw lastErr;
+}
+
+export async function handler(event) {
+  const headers = cors(event.headers || {});
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers };
+  }
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) };
+  }
+
+  const { model, payload, userKey } = body;
+  if (!model || !ALLOWED_MODELS.has(model)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unsupported or missing model' }) };
+  }
+  if (!payload || typeof payload !== 'object') {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing payload' }) };
+  }
+
+  // visitor key wins; otherwise the app's server-side key
+  const apiKey = (typeof userKey === 'string' && userKey.trim()) || process.env.GEMINI_API_KEY || '';
+  if (!apiKey) {
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({ error: 'No API key available — add your own Gemini key in Settings.' }),
+    };
+  }
+
+  try {
+    const res = await withRetry(() =>
+      fetch(`${GEMINI_BASE}/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify(payload),
+      })
+    );
+    const text = await res.text();
+    // pass Gemini's response (and status) straight through to the client parser
+    return { statusCode: res.status, headers, body: text };
+  } catch (err) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Proxy failed: ' + String(err?.message || err) }) };
+  }
+}

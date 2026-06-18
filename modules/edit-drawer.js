@@ -853,12 +853,15 @@ export function renderEditForm(context) {
     const { getGeminiApiKey } = await import('./voice-modes.js');
     const { getCurrentTheme, applyTheme, setCurrentTheme } = await import('./theme-manager.js');
 
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      showHudStatus('⚠️ Set your Gemini API key in Settings (S) first', 'warning');
-      setTimeout(hideHudStatus, 3000);
-      return;
-    }
+    // Route through the Netlify proxy so the shared server key is used as a
+    // fallback when the visitor hasn't pasted their own key. No early bail.
+    const callGemini = (model, payload, { signal } = {}) =>
+      fetch('/.netlify/functions/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
+      });
 
     const prompt = window.prompt('Describe the theme vibe you want:', 'pastel punk with neon accents');
     if (!prompt || !prompt.trim()) return;
@@ -887,16 +890,12 @@ Return ONLY a JSON object with these exact fields (no markdown, no explanation):
 
 Make the colors harmonious and ensure good contrast for readability.`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      const response = await callGemini(
+        'gemini-flash-lite-latest',
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          signal: AbortSignal.timeout(30_000),
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: themePrompt }] }],
-          }),
-        }
+          contents: [{ parts: [{ text: themePrompt }] }],
+        },
+        { signal: AbortSignal.timeout(30_000) }
       );
 
       if (!response.ok) {
