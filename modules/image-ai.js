@@ -74,7 +74,7 @@ or
 GENERATE`;
 
         const response = await callGemini(
-            'gemini-flash-lite-latest',
+            'gemini-flash-latest',
             {
                 contents: [{ parts: [{ text: decisionPrompt }] }],
                 generationConfig: {
@@ -171,7 +171,7 @@ Style requirements:
 The image should be visually striking and support the slide content.`;
 
         const response = await callGemini(
-            'gemini-2.5-flash-image',
+            'gemini-3.1-flash-image',
             {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
@@ -270,7 +270,7 @@ Use chunky ink lines, halftone fills, and grain. Choose an appropriate chart sty
 `.trim();
 
     const response = await callGemini(
-        'gemini-2.5-flash-image',
+        'gemini-3.1-flash-image',
         {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {

@@ -16,9 +16,9 @@ import { debug } from './constants.js';
 import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
-export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-flash-lite-latest';
+export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-flash-latest';
 // Generation/edit/theme model (kept light per Pablo's call — newest flash-lite).
-export const GEMINI_GENERATION_MODEL = 'gemini-flash-lite-latest';
+export const GEMINI_GENERATION_MODEL = 'gemini-flash-latest';
 
 const defaultContext = {
   getCurrentIndex: () => 0,

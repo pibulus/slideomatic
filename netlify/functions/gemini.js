@@ -14,8 +14,11 @@
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const ALLOWED_MODELS = new Set([
-  'gemini-flash-lite-latest', // text: voice, decisions, edit, theme
-  'gemini-2.5-flash-image',   // image generation (responseModalities:['Image'])
+  'gemini-flash-latest',      // text: voice, decisions, edit, theme
+  'gemini-3.1-flash-image',   // image generation (responseModalities:['Image'])
+  // legacy/fallback names kept allowed in case an older client or pasted config uses them
+  'gemini-flash-lite-latest',
+  'gemini-2.5-flash-image',
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
 ]);
