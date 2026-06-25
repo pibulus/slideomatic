@@ -110,11 +110,13 @@ export async function handler(event) {
     let message = text;
     try {
       const parsed = JSON.parse(text);
-      message = parsed?.error?.message || parsed?.error || text;
+      const detail = parsed?.error?.message || parsed?.error || text;
+      message = typeof detail === 'string' ? detail : JSON.stringify(detail);
     } catch {
-      // non-JSON (e.g. HTML) — keep the raw text, trimmed for sanity
-      message = text.slice(0, 500);
+      // non-JSON (e.g. HTML) — keep the raw text
+      message = text;
     }
+    message = String(message).slice(0, 500);
     // Nest under error.message so existing clients that read
     // `error.error?.message` surface the real reason instead of a generic fallback.
     return {
@@ -125,6 +127,12 @@ export async function handler(event) {
       }),
     };
   } catch (err) {
-    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Proxy failed: ' + String(err?.message || err) }) };
+    // Same nested shape as the failure path above so clients reading
+    // error.error?.message get a real reason on a 502 too.
+    return {
+      statusCode: 502,
+      headers,
+      body: JSON.stringify({ error: { message: 'Proxy failed: ' + String(err?.message || err) } }),
+    };
   }
 }
