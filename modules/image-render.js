@@ -4,7 +4,7 @@ import { registerLazyImage } from './lazy-images.js';
 import { askAIForImage, generateGraphVisualization } from './image-ai.js';
 import { handleImageUpload } from './image-upload.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
-import { trapFocus } from './utils.js';
+import { trapFocus, escapeHtml } from './utils.js';
 import {
     buildImageSearchUrl,
     normalizeOrientation,
@@ -450,7 +450,7 @@ export async function generateGraphImage(slide, container) {
         setTimeout(hideHudStatus, 3500);
         container.innerHTML = `
             <div class="graph-error">
-                <p>${message}. Try again?</p>
+                <p>${escapeHtml(message)}. Try again?</p>
                 <button type="button" class="graph-regenerate-btn">Retry</button>
             </div>
         `;

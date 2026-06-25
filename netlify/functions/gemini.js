@@ -98,8 +98,32 @@ export async function handler(event) {
       })
     );
     const text = await res.text();
-    // pass Gemini's response (and status) straight through to the client parser
-    return { statusCode: res.status, headers, body: text };
+
+    // On success, pass Gemini's native JSON straight through to the client parser.
+    if (res.ok) {
+      return { statusCode: res.status, headers, body: text };
+    }
+
+    // On failure Google sometimes returns an HTML error page. The client does
+    // response.json().catch(() => null), so raw HTML becomes a silent null and
+    // masks the real error. Guarantee a consistent JSON error shape instead.
+    let message = text;
+    try {
+      const parsed = JSON.parse(text);
+      message = parsed?.error?.message || parsed?.error || text;
+    } catch {
+      // non-JSON (e.g. HTML) — keep the raw text, trimmed for sanity
+      message = text.slice(0, 500);
+    }
+    // Nest under error.message so existing clients that read
+    // `error.error?.message` surface the real reason instead of a generic fallback.
+    return {
+      statusCode: res.status,
+      headers,
+      body: JSON.stringify({
+        error: { message: `Gemini request failed (${res.status}): ${message}` },
+      }),
+    };
   } catch (err) {
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'Proxy failed: ' + String(err?.message || err) }) };
   }
