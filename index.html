@@ -86,56 +86,50 @@
             </p>
           </div>
 
-          <div class="landing__cta-grid">
-            <article class="cta-panel cta-panel--primary">
-              <div class="cta-panel__header">
-                <p class="cta-panel__eyebrow">Start here</p>
-              </div>
-              <div class="cta-panel__actions">
-                <button class="button button--primary" type="button" data-action="open-demo">Tour the guide</button>
-                <p class="cta-panel__meta">A quick walkthrough of editing, themes, sharing, and shortcuts.</p>
-              </div>
-            </article>
+          <div class="start-deck">
+            <div class="start-deck__head">
+              <p class="start-deck__eyebrow">Start a deck</p>
+              <p class="start-deck__hint">Take the tour, start blank, or grab a template — all open straight in the editor.</p>
+            </div>
 
-            <article class="cta-panel cta-panel--secondary">
-              <div class="cta-panel__header">
-                <p class="cta-panel__eyebrow">Make one</p>
-              </div>
-              <div class="cta-panel__actions">
-                <a class="button button--secondary" href="deck.html#deck=new&open=edit">
-                  Start blank deck
-                </a>
-                <p class="cta-panel__meta">Opens straight into the editor with local saves on. Build from scratch.</p>
-              </div>
-              <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
-            </article>
+            <div class="start-deck__grid">
+              <button class="start-card start-card--guide" type="button" data-action="open-demo">
+                <span class="start-card__kicker">Start here</span>
+                <span class="start-card__name">Tour the guide</span>
+                <span class="start-card__desc">A quick walkthrough of editing, themes, sharing, and shortcuts.</span>
+              </button>
 
-            <article class="cta-panel cta-panel--templates">
-              <div class="cta-panel__header">
-                <p class="cta-panel__eyebrow">Start from a template</p>
-              </div>
-              <div class="cta-panel__actions">
-                <div class="template-grid">
-                  <a class="button button--ghost template-btn" href="deck.html#slides=templates/the-pitch&open=edit">
-                    <span class="template-btn__name">The Pitch</span>
-                    <span class="template-btn__desc">Hook → problem → ask, in six slides</span>
-                  </a>
-                  <a class="button button--ghost template-btn" href="deck.html#slides=templates/the-talk&open=edit">
-                    <span class="template-btn__name">The Talk</span>
-                    <span class="template-btn__desc">Lightning-talk skeleton, big type</span>
-                  </a>
-                  <a class="button button--ghost template-btn" href="deck.html#slides=templates/show-and-tell&open=edit">
-                    <span class="template-btn__name">Show &amp; Tell</span>
-                    <span class="template-btn__desc">Image-forward, show your work</span>
-                  </a>
-                  <a class="button button--ghost template-btn" href="deck.html#slides=templates/the-weird-one&open=edit">
-                    <span class="template-btn__name">The Weird One</span>
-                    <span class="template-btn__desc">A manifesto. Pure pastel-punk.</span>
-                  </a>
-                </div>
-                <p class="cta-panel__meta">Each opens in the editor, prefilled and ready to rewrite. Make it yours.</p>
-              </div>
-            </article>
+              <a class="start-card start-card--blank" href="deck.html#deck=new&open=edit">
+                <span class="start-card__kicker">Make one</span>
+                <span class="start-card__name">Start blank</span>
+                <span class="start-card__desc">Opens straight into the editor with local saves on.</span>
+              </a>
+
+              <a class="start-card start-card--pitch" href="deck.html#slides=templates/the-pitch&open=edit">
+                <span class="start-card__kicker">Template</span>
+                <span class="start-card__name">The Pitch</span>
+                <span class="start-card__desc">Hook → problem → ask, in six slides.</span>
+              </a>
+
+              <a class="start-card start-card--talk" href="deck.html#slides=templates/the-talk&open=edit">
+                <span class="start-card__kicker">Template</span>
+                <span class="start-card__name">The Talk</span>
+                <span class="start-card__desc">Lightning-talk skeleton, big type.</span>
+              </a>
+
+              <a class="start-card start-card--show" href="deck.html#slides=templates/show-and-tell&open=edit">
+                <span class="start-card__kicker">Template</span>
+                <span class="start-card__name">Show &amp; Tell</span>
+                <span class="start-card__desc">Image-forward, show your work.</span>
+              </a>
+
+              <a class="start-card start-card--weird" href="deck.html#slides=templates/the-weird-one&open=edit">
+                <span class="start-card__kicker">Template</span>
+                <span class="start-card__name">The Weird One</span>
+                <span class="start-card__desc">A manifesto. Pure pastel-punk.</span>
+              </a>
+            </div>
+            <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
           </div>
         </section>
       </div>
