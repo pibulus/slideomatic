@@ -68,7 +68,7 @@ export function getGeminiApiKey() {
 // the proxy uses theirs instead. Returns the raw fetch Response so existing
 // callers keep using response.ok / response.json() unchanged.
 const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
-function callGemini(model, payload, { signal } = {}) {
+export function callGemini(model, payload, { signal } = {}) {
   return fetch(GEMINI_PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
