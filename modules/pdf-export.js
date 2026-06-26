@@ -117,27 +117,43 @@ export async function exportDeckToPdf(filename) {
   tempHost.style.opacity = '0';
   document.body.appendChild(tempHost);
 
+  let rendered = 0;
+  const failedSlides = [];
   try {
     for (let i = 0; i < slides.length; i += 1) {
       const slide = slides[i];
-      const rect = slide.getBoundingClientRect();
-      const clone = slide.cloneNode(true);
-      prepareClone(clone, rect.width || 1920, rect.height || 1080);
-      tempHost.appendChild(clone);
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
-      tempHost.removeChild(clone);
+      // Render each slide in isolation: one bad slide (CORS image, OOM in
+      // html2canvas) should skip that page, not abort the whole export.
+      try {
+        const rect = slide.getBoundingClientRect();
+        const clone = slide.cloneNode(true);
+        prepareClone(clone, rect.width || 1920, rect.height || 1080);
+        tempHost.appendChild(clone);
+        try {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
 
-      const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-      const imgWidth = canvas.width * ratio;
-      const imgHeight = canvas.height * ratio;
-      const x = (pageWidth - imgWidth) / 2;
-      const y = (pageHeight - imgHeight) / 2;
+          const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+          const imgWidth = canvas.width * ratio;
+          const imgHeight = canvas.height * ratio;
+          const x = (pageWidth - imgWidth) / 2;
+          const y = (pageHeight - imgHeight) / 2;
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
-      if (i < slides.length - 1) {
-        pdf.addPage();
+          if (rendered > 0) {
+            pdf.addPage();
+          }
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
+          rendered += 1;
+        } finally {
+          // Always remove the clone, even if html2canvas threw mid-render.
+          if (clone.parentNode === tempHost) {
+            tempHost.removeChild(clone);
+          }
+        }
+      } catch (slideError) {
+        console.warn(`PDF export: skipping slide ${i + 1}`, slideError);
+        failedSlides.push(i + 1);
       }
     }
   } finally {
@@ -145,7 +161,12 @@ export async function exportDeckToPdf(filename) {
       tempHost.parentNode.removeChild(tempHost);
     }
   }
+
+  if (rendered === 0) {
+    throw new Error('PDF export failed: no slides could be rendered.');
+  }
+
   const finalName = `${sanitizeFileName(filename || getDeckName())}.pdf`;
   pdf.save(finalName);
-  return finalName;
+  return { name: finalName, rendered, total: slides.length, failedSlides };
 }

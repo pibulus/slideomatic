@@ -141,7 +141,6 @@ function hydrateAccordionA11y(accordion, header, body, { startOpen }) {
 
   header.setAttribute('aria-controls', body.id);
   header.setAttribute('aria-expanded', initiallyOpen ? 'true' : 'false');
-  header.setAttribute('aria-disabled', 'false');
   body.setAttribute('role', 'region');
   body.setAttribute('aria-labelledby', header.id);
   body.setAttribute('aria-hidden', initiallyOpen ? 'false' : 'true');

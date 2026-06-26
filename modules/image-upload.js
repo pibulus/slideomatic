@@ -14,8 +14,10 @@ import {
 // Image Upload Module
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** @type {any} */
-var imageCompression;
+// browser-image-compression is loaded as a UMD <script> and attaches itself to
+// window.imageCompression. This module reads that global directly — a bare
+// `var imageCompression;` here would create a module-scoped binding that
+// shadows the global and is always undefined, silently disabling compression.
 
 const MAX_IMAGE_BYTES = CONFIG.IMAGE.MAX_BYTES;
 const TARGET_IMAGE_BYTES = CONFIG.IMAGE.TARGET_BYTES;
@@ -128,7 +130,8 @@ export async function handleImageUpload(file, placeholderElement, imageConfig = 
 }
 
 export async function compressImage(file) {
-    if (typeof imageCompression === 'undefined') {
+    const imageCompression = window.imageCompression;
+    if (typeof imageCompression !== 'function') {
         console.warn('Image compression library missing. Using original file.');
         if (file.size > MAX_IMAGE_BYTES) {
             throw new Error('Compression library unavailable and image is too large (>500KB).');

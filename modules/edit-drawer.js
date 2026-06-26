@@ -424,8 +424,15 @@ async function handleDownloadPdf(context) {
   try {
     if (downloadBtn) downloadBtn.disabled = true;
     ctx.showHudStatus('📄 Rendering PDF…', 'info');
-    await exportDeckToPdf(deckName);
-    ctx.showHudStatus('✅ PDF ready', 'success');
+    const result = await exportDeckToPdf(deckName);
+    if (result?.failedSlides?.length) {
+      ctx.showHudStatus(
+        `⚠️ PDF ready — ${result.rendered}/${result.total} slides (skipped ${result.failedSlides.join(', ')})`,
+        'warning'
+      );
+    } else {
+      ctx.showHudStatus('✅ PDF ready', 'success');
+    }
   } catch (error) {
     console.error('PDF export failed:', error);
     ctx.showHudStatus('❌ PDF export failed', 'error');
