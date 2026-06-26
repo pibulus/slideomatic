@@ -172,22 +172,33 @@ export function generateShareSlug() {
   return `${adjective}${noun}${tail}`;
 }
 
-export function hashSharePassword(password) {
+// Promisified scrypt so password hashing/verification never blocks the
+// single-threaded Lambda event loop (scryptSync stalls every concurrent
+// request on the same instance until it returns).
+function scryptAsync(password, salt, keylen) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, keylen, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(derivedKey);
+    });
+  });
+}
+
+export async function hashSharePassword(password) {
   const salt = crypto.randomBytes(16);
-  const hash = crypto.scryptSync(password, salt, 32);
+  const hash = await scryptAsync(password, salt, 32);
   return {
     salt: salt.toString('hex'),
     hash: hash.toString('hex'),
   };
 }
 
-export function verifySharePassword(password, saltHex, hashHex) {
+export async function verifySharePassword(password, saltHex, hashHex) {
   if (!saltHex || !hashHex) return false;
   const salt = Buffer.from(saltHex, 'hex');
   const stored = Buffer.from(hashHex, 'hex');
-  const derived = crypto.scryptSync(password, salt, stored.length);
-  if (derived.length !== stored.length) {
-    return false;
-  }
+  // scrypt always returns exactly `stored.length` bytes, so timingSafeEqual
+  // (which throws on length mismatch) is safe here.
+  const derived = await scryptAsync(password, salt, stored.length);
   return crypto.timingSafeEqual(derived, stored);
 }

@@ -90,7 +90,7 @@ async function handlePost(event) {
 
   const passphrase = (payload.meta?.password || payload.password || '').trim();
   if (passphrase) {
-    const hashed = hashSharePassword(passphrase);
+    const hashed = await hashSharePassword(passphrase);
     shareRecord.meta.passwordProtected = true;
     shareRecord.meta.passwordHash = hashed.hash;
     shareRecord.meta.passwordSalt = hashed.salt;
@@ -167,7 +167,7 @@ async function handleGet(event) {
       };
     }
 
-    const valid = verifySharePassword(password, record.meta.passwordSalt, record.meta.passwordHash);
+    const valid = await verifySharePassword(password, record.meta.passwordSalt, record.meta.passwordHash);
     if (!valid) {
       return {
         statusCode: 401,
