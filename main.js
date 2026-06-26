@@ -167,6 +167,10 @@ registerSlideActionHooks({
 
 function applySharedThemeFromShare(themeData) {
   if (!themeData || typeof themeData !== 'object') return;
+  // Precedence: an explicit ?theme= URL param always wins over a deck's
+  // bundled theme. loadAndApplyTheme() already applied the URL theme, so a
+  // deck loaded afterwards must not clobber it.
+  if (new URLSearchParams(window.location.search).has('theme')) return;
   try {
     setCurrentTheme(themeData, { source: LOCAL_THEME_SOURCE });
     applyTheme(themeData);
