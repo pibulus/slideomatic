@@ -10,6 +10,12 @@
   # Individual function timeouts are set in-code or via UI
   # Local dev will use defaults
 
+# Sweep expired shares + orphaned assets once a day. Without this the expiry
+# metadata cleanup-shares.js writes is never acted on — the function existed
+# but nothing ever triggered it.
+[functions."cleanup-shares"]
+  schedule = "@daily"
+
 [[redirects]]
   from = "/s/:slug"
   to = "/deck.html?share=:slug"

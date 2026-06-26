@@ -12,8 +12,11 @@ export async function handler(event) {
   connectLambda(event);
 
   try {
-    // Only allow GET requests or scheduled invocations
-    if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
+    // Allow manual GET/POST invocations and scheduled runs. A scheduled
+    // invocation arrives with no httpMethod, so only reject real HTTP calls
+    // that use some other method.
+    const isScheduled = !event.httpMethod;
+    if (!isScheduled && event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
       return {
         statusCode: 405,
         headers: BASE_HEADERS,
