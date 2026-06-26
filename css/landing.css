@@ -240,32 +240,6 @@ main {
 .start-deck {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(14px, 2.5vw, 20px);
-}
-
-.start-deck__head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.start-deck__eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.15em;
-  color: var(--ink);
-  font-weight: 900;
-}
-
-.start-deck__hint {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  max-width: 52ch;
 }
 
 /* ===================================================================
@@ -552,168 +526,6 @@ a.button--secondary:hover {
   color: white;
 }
 
-/* ===================================================================
-   FEATURES SECTION - TIGHTER, MORE COLOR
-   ================================================================ */
-
-.landing__features {
-  width: 100%;
-  padding: clamp(48px, 7vw, 88px) clamp(24px, 5vw, 48px) clamp(40px, 6vw, 64px);
-  margin-top: clamp(40px, 6vw, 72px);
-  display: grid;
-  gap: clamp(24px, 4vw, 40px);
-  position: relative;
-  background:
-    linear-gradient(135deg,
-      rgba(0, 120, 191, 0.15) 0%,
-      rgba(0, 169, 92, 0.12) 100%
-    );
-  overflow: visible;
-}
-
-/* Large fluorescent rounded rectangle - left side */
-.landing__features::before {
-  content: "";
-  position: absolute;
-  width: clamp(200px, 25vw, 300px);
-  height: clamp(280px, 35vw, 420px);
-  top: clamp(-60px, -5vw, -40px);
-  left: clamp(-80px, -6vw, -50px);
-  border-radius: 40px;
-  background: var(--riso-green);
-  border: 4px solid var(--ink);
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.7;
-  box-shadow: var(--shadow-brutal);
-  transform: rotate(-8deg);
-}
-
-/* Halftone pattern overlay */
-.landing__features::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, var(--ink) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
-  opacity: 0.06;
-  pointer-events: none;
-}
-
-.landing__features-intro {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  gap: clamp(16px, 3vw, 24px);
-  text-align: center;
-  position: relative;
-  z-index: 1;
-}
-
-.landing__features-intro h2 {
-  margin: 0;
-  font-size: clamp(2.2rem, 5.5vw, 3.2rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.landing__features-intro p {
-  margin: 0;
-  font-size: clamp(1rem, 2vw, 1.2rem);
-  line-height: 1.5;
-  color: var(--ink);
-  max-width: 48ch;
-  margin: 0 auto;
-  font-weight: 600;
-}
-
-.landing__cards {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  gap: clamp(16px, 3vw, 28px);
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  position: relative;
-  z-index: 1;
-}
-
-@media (max-width: 640px) {
-  .landing__cards {
-    grid-template-columns: 1fr;
-  }
-}
-
-.landing__card {
-  background: var(--paper);
-  border: 4px solid var(--ink);
-  border-radius: var(--radius-soft);
-  box-shadow: var(--shadow-card);
-  padding: clamp(20px, 3.5vw, 32px);
-  display: grid;
-  gap: 12px;
-  transition:
-    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 180ms ease;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Fluorescent accent bar on hover */
-.landing__card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: var(--riso-pink);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.landing__card:nth-child(2)::before {
-  background: var(--riso-yellow);
-}
-
-.landing__card:nth-child(3)::before {
-  background: var(--riso-blue);
-}
-
-.landing__card:hover::before {
-  transform: scaleX(1);
-}
-
-.landing__card:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 8px 8px 0 rgba(26, 21, 34, 0.25);
-}
-
-.landing__card-icon {
-  font-size: 2.2rem;
-  line-height: 1;
-}
-
-.landing__card h3 {
-  margin: 0;
-  font-size: clamp(1.2rem, 2.3vw, 1.5rem);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-}
-
-.landing__card p {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--ink);
-  font-weight: 500;
-}
 
 /* ===================================================================
    COLLECTION PROMO
@@ -1375,7 +1187,6 @@ a.button--secondary:hover {
   }
 
   .start-card,
-  .landing__card,
   .collection-promo {
     border-width: 3px;
     border-radius: 18px;
@@ -1457,8 +1268,6 @@ a.button--secondary:hover {
   body::before,
   .landing__hero::after,
   .landing__hero::before,
-  .landing__features::before,
-  .landing__features::after,
   .deck-shelf::before {
     display: none;
   }
