@@ -23,6 +23,9 @@ let deckBtn;
 let dictateBtn;
 let unlockedLabel;
 let previousFocus = null;
+// Set when the console closes so a background image-gen loop stops making
+// Gemini calls for a deck the user has already dismissed.
+let imageGenAborted = false;
 let dictationSession = null;
 
 export function initCheatConsole() {
@@ -121,6 +124,7 @@ function showConsole(code) {
 
 function hideConsole() {
   if (!root) return;
+  imageGenAborted = true;
   stopDictationSession();
   root.classList.remove('is-open');
   root.setAttribute('aria-hidden', 'true');
@@ -287,8 +291,13 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
     return;
   }
 
+  imageGenAborted = false;
   let completed = 0;
   for (const task of tasks) {
+    if (imageGenAborted) {
+      console.warn('Image generation aborted — console was closed.');
+      return;
+    }
     try {
       setStatus(`🎨 Generating image ${completed + 1}/${tasks.length}...`, 'info');
       await generateAIImage(null, {
