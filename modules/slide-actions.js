@@ -308,19 +308,24 @@ export function downloadDeck(filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  
+
   // Use provided filename or derive from deck name
   let finalFilename = filename;
   if (!finalFilename) {
     const safeName = deckName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     finalFilename = `${safeName || 'slides'}.json`;
   }
-  
+
   link.download = finalFilename;
   document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  try {
+    link.click();
+  } finally {
+    // Always clean up, even if the click/navigation throws — otherwise the
+    // blob URL leaks and compounds across repeated downloads.
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
   showHudStatusHook('💾 Deck downloaded', 'success');
   setTimeout(hideHudStatusHook, 1600);
 }

@@ -522,6 +522,10 @@ function markDeckAsRecent() {
  *   - `gz.<base64url>` — gzip-compressed via CompressionStream
  *   - plain base64 (legacy)
  */
+// Cap decompressed `?data=` payloads so a gzip bomb can't exhaust memory.
+// Decks are <500KB compressed; 8MB decompressed leaves generous headroom.
+const MAX_DECODED_DATA_BYTES = 8 * 1024 * 1024;
+
 async function decodeDataParam(param) {
   if (param.startsWith('gz.')) {
     const b64 = param.slice(3).replace(/-/g, '+').replace(/_/g, '/');
@@ -531,10 +535,37 @@ async function decodeDataParam(param) {
       bytes[i] = binary.charCodeAt(i);
     }
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    const decompressed = await new Response(stream).text();
-    return decompressed;
+
+    // Read chunk-by-chunk and bail before a decompression bomb blows past the cap.
+    const reader = stream.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > MAX_DECODED_DATA_BYTES) {
+          throw new Error('Decoded deck data exceeds the size limit.');
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    return new TextDecoder().decode(concatUint8(chunks, total));
   }
 
   // Legacy plain base64
   return decodeURIComponent(escape(atob(param)));
+}
+
+function concatUint8(chunks, total) {
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
 }
