@@ -1,0 +1,58 @@
+[
+  {
+    "type": "typeface",
+    "badge": "Manifesto",
+    "headline": "A MANIFESTO ABOUT SOMETHING",
+    "body": "Replace this with the thing you actually believe. Decks don't have to be polite. This one definitely isn't.",
+    "font": "grotesk",
+    "samples": [
+      { "font": "Space Grotesk, Inter, sans-serif", "text": "We hold these truths to be self-evident" }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "The thesis",
+    "quote": "Put your boldest sentence here and make it enormous. No hedging. No 'I think maybe'.",
+    "attribution": "The Management"
+  },
+  {
+    "type": "standard",
+    "badge": "The rules",
+    "headline": "Five rules, delivered deadpan",
+    "body": [
+      "1. The first rule, stated like it's obvious.",
+      "2. The second rule, slightly unhinged.",
+      "3. The third rule, suspiciously specific.",
+      "4. The fourth rule, contradicts rule one on purpose.",
+      "5. There is no fifth rule. (There is.)"
+    ],
+    "font": "mono"
+  },
+  {
+    "type": "grid",
+    "badge": "The vibe matrix",
+    "headline": "Chaos, order, and whatever this is",
+    "items": [
+      { "color": "#F472B6", "label": "Chaos" },
+      { "color": "#34D399", "label": "Order" },
+      { "color": "#FBBF24", "label": "Both" },
+      { "color": "#818CF8", "label": "Neither" }
+    ]
+  },
+  {
+    "type": "typeface",
+    "badge": "Fin",
+    "headline": "THE END (OR IS IT)",
+    "body": "Pixel font, full volume, zero shame. End on the wink.",
+    "font": "pixel",
+    "samples": [
+      { "font": "Press Start 2P, monospace", "text": "GAME OVER? CONTINUE?" }
+    ]
+  },
+  {
+    "type": "title",
+    "eyebrow": "One of us",
+    "title": "Join the cult",
+    "subtitle": "Your link goes here. No refunds. No regrets. Bring snacks."
+  }
+]

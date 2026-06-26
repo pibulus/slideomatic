@@ -1,0 +1,49 @@
+[
+  {
+    "type": "typeface",
+    "badge": "Lightning talk",
+    "headline": "BIG TITLE, ONE BREATH",
+    "body": "Open with the title slammed across the screen. Say it out loud — if it sounds good spoken, it's a good title.",
+    "samples": [
+      { "font": "Space Grotesk, Inter, sans-serif", "text": "Your talk title, oversized" }
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "One idea",
+    "headline": "Every slide earns its place",
+    "body": "One idea per slide. If a slide has two ideas, it's two slides. Lightning talks live or die on pace."
+  },
+  {
+    "type": "typeface",
+    "badge": "Pivot",
+    "headline": "THE TURN",
+    "body": "A single big word to mark the moment the talk changes direction. Let the room catch up.",
+    "samples": [
+      { "font": "Press Start 2P, monospace", "text": "BUT WAIT" }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "Borrowed wisdom",
+    "quote": "Drop in a line that isn't yours — it buys you authority and a breath.",
+    "attribution": "Someone smarter, cited honestly"
+  },
+  {
+    "type": "grid",
+    "badge": "The takeaways",
+    "headline": "Four things, then you're done",
+    "items": [
+      { "color": "#F472B6", "label": "One" },
+      { "color": "#818CF8", "label": "Two" },
+      { "color": "#34D399", "label": "Three" },
+      { "color": "#FBBF24", "label": "Four" }
+    ]
+  },
+  {
+    "type": "title",
+    "eyebrow": "Thanks",
+    "title": "That's the talk",
+    "subtitle": "Your @handle. Where to find the slides. A reason to come say hi."
+  }
+]

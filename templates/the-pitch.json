@@ -1,0 +1,52 @@
+[
+  {
+    "type": "title",
+    "eyebrow": "A pitch in six slides",
+    "title": "Replace this with your one-line hook",
+    "subtitle": "The sentence that makes someone lean in. Specific beats clever."
+  },
+  {
+    "type": "standard",
+    "badge": "The problem",
+    "headline": "Name the pain — make it felt, not abstract",
+    "body": [
+      "Describe the moment it goes wrong, the way the person living it would describe it.",
+      "If they nod before you finish the sentence, you've got the right problem."
+    ]
+  },
+  {
+    "type": "split",
+    "badge": "The shift",
+    "headline": "Before and after, side by side",
+    "left": {
+      "headline": "Today",
+      "body": "How it works now — the friction, the workaround, the thing everyone quietly tolerates."
+    },
+    "right": {
+      "headline": "With this",
+      "body": "The same moment, but easier. Keep it concrete. One vivid 'after' beats five features."
+    }
+  },
+  {
+    "type": "pillars",
+    "badge": "How it works",
+    "headline": "Three beats, no jargon",
+    "pillars": [
+      { "title": "Step one", "text": "The first thing that happens. Plain words." },
+      { "title": "Step two", "text": "Where the magic is. Say it like you'd say it to a friend." },
+      { "title": "Step three", "text": "The payoff. What they walk away with." }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "The line",
+    "quote": "End on the sentence you want them to repeat to someone else.",
+    "attribution": "You, on stage, nailing it"
+  },
+  {
+    "type": "title",
+    "eyebrow": "The ask",
+    "title": "Here's what I want from you",
+    "subtitle": "One clear next step. Your name, your link, the thing to do now."
+  }
+]
