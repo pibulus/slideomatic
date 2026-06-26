@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,7 +27,8 @@ try {
   validateTheme('theme.json');
   validateCatalog('catalog.json');
   validateOptional('autolinks.json', validateAutolinks);
-  console.log('✔ Validation passed for slides, themes, and catalog.');
+  validateTemplates();
+  console.log('✔ Validation passed for slides, themes, catalog, and templates.');
 } catch (error) {
   console.error('✖ Validation failed:', error.message);
   process.exitCode = 1;
@@ -49,6 +50,14 @@ function assertFileExists(relativePath) {
   } catch {
     throw new Error(`Required file missing: ${relativePath}`);
   }
+}
+
+// Validate every starter template deck so they can't silently break.
+function validateTemplates() {
+  const dir = join(root, 'templates');
+  if (!existsSync(dir)) return;
+  const files = readdirSync(dir).filter((name) => name.endsWith('.json'));
+  files.forEach((name) => validateSlides(join('templates', name)));
 }
 
 function validateSlides(relativePath) {
