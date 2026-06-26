@@ -7,7 +7,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { STORAGE_KEY_API, getGeminiApiKey } from './voice-modes.js';
+import { STORAGE_KEY_API, getGeminiApiKey, callGemini } from './voice-modes.js';
 
 import { trapFocus, focusFirstElement } from './utils.js';
 
@@ -130,14 +130,15 @@ async function testApiKey() {
   showApiKeyStatus('info', '⏳ Testing connection...');
 
   try {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({ contents: [{ parts: [{ text: 'test' }] }] }),
-      }
+    // Route through our proxy like every other Gemini call — keeps the key off
+    // the URL bar / direct-request path, honors the model allow-list, and uses
+    // the rolling alias instead of a pinned model (anti-drift). The proxy uses
+    // the visitor's pasted key (sent as userKey) since we only reach here when
+    // getGeminiApiKey() is non-empty.
+    const response = await callGemini(
+      'gemini-flash-lite-latest',
+      { contents: [{ parts: [{ text: 'test' }] }] },
+      { signal: AbortSignal.timeout(15_000) }
     );
 
     if (response.ok) {
