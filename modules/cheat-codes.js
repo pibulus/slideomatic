@@ -1,7 +1,6 @@
 import {
   generateSlideFromPrompt,
   generateDeckFromPrompt,
-  getGeminiApiKey,
   getVoiceAssistantContext,
   startSpeechCapture,
   transcribeSpeechToText,
@@ -152,14 +151,8 @@ async function handleDictationToggle() {
     return;
   }
 
-  if (!getGeminiApiKey()) {
-    const context = getVoiceAssistantContext();
-    context.openSettingsModal?.();
-    context.showApiKeyStatus?.('error', 'Add your Gemini API key to dictate prompts');
-    setStatus('Add a Gemini API key first.', 'error');
-    return;
-  }
-
+  // No key gate: the Gemini proxy falls back to the shared server key, so
+  // dictation works out of the box just like deck/slide generation.
   try {
     const token = { cancelled: false };
     setDictationButtonState('recording');
@@ -247,13 +240,16 @@ async function handleCheatAction(mode) {
       await generateSlideFromPrompt(prompt, { insert: true });
       setStatus('✨ Slide injected after the current one.', 'success');
     } else {
-      const context = getVoiceAssistantContext();
-      const insertAfter = context.getCurrentIndex();
-      const slides = await generateDeckFromPrompt(prompt, { insert: true, slideCount: 8 });
+      // generateDeckFromPrompt reports where it actually inserted — reading
+      // getCurrentIndex() before the long await pointed image generation at
+      // the wrong slides whenever the user navigated during generation.
+      const { slides, firstIndex } = await generateDeckFromPrompt(prompt, { insert: true, slideCount: 8 });
       setStatus('✨ Mini deck added! Generating images...', 'success');
 
       // Fire off image generation in the background for slides with empty image slots
-      generateImagesForNewSlides(slides, insertAfter + 1);
+      if (firstIndex != null) {
+        generateImagesForNewSlides(slides, firstIndex);
+      }
     }
   } catch (error) {
     setStatus(error?.message || 'Something went wrong.', 'error');
@@ -292,15 +288,16 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
   }
 
   imageGenAborted = false;
-  let completed = 0;
+  let attempted = 0;
+  let generated = 0;
   for (const task of tasks) {
     if (imageGenAborted) {
       console.warn('Image generation aborted — console was closed.');
       return;
     }
     try {
-      setStatus(`🎨 Generating image ${completed + 1}/${tasks.length}...`, 'info');
-      await generateAIImage(null, {
+      setStatus(`🎨 Generating image ${attempted + 1}/${tasks.length}...`, 'info');
+      const ok = await generateAIImage(null, {
         slideIndex: task.slideIndex,
         imageIndex: task.imageIndex,
         context: {
@@ -311,14 +308,20 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
         },
         alt: task.image.alt || task.image.search || '',
       });
-      completed++;
+      if (ok) generated++;
     } catch (error) {
       console.warn(`Image generation failed for slide ${task.slideIndex}:`, error.message);
-      completed++;
     }
+    attempted++;
   }
 
-  setStatus(`✨ Done! ${completed} image${completed !== 1 ? 's' : ''} generated.`, 'success');
+  if (generated === tasks.length) {
+    setStatus(`✨ Done! ${generated} image${generated !== 1 ? 's' : ''} generated.`, 'success');
+  } else if (generated > 0) {
+    setStatus(`✨ ${generated}/${tasks.length} images generated — retry the rest from the edit drawer.`, 'info');
+  } else {
+    setStatus('⚠️ Images didn\'t generate — use the ✨ button in the edit drawer to retry.', 'error');
+  }
 }
 
 function setStatus(message, type) {

@@ -88,6 +88,15 @@ export function hideHudStatus() {
   }
 }
 
+// Dismiss a specific toast (by the id showHudStatus returned) — hideHudStatus
+// pops whichever toast is newest, which is the wrong one for long-lived
+// 'processing' toasts that outlive later notifications.
+export function hideToastById(toastId) {
+  if (toastId != null) {
+    hideToast(toastId);
+  }
+}
+
 function hideToast(toastId) {
   const toast = activeToasts.get(toastId);
   if (!toast) return;

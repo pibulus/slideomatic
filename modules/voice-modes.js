@@ -3,21 +3,19 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Encapsulates all voice-driven features for Slide-o-Matic.
-// - Handles recording controls and button state
-// - Integrates with Gemini APIs for slide/theme generation
-// - Manages transcription flows and result application
+// - Voice-to-slide recording (V key) with toast feedback
+// - Gemini proxy plumbing shared by slide/deck/dictation features
+// - Speech capture + cleaned transcription for prompt mic buttons
 //
-// Dependencies: theme-manager.js (for applying generated themes)
-// Used by: main.js
+// Used by: main.js, cheat-codes.js, edit-drawer.js, settings-modal.js
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { debug } from './constants.js';
-import { applyTheme, setCurrentTheme, downloadTheme } from './theme-manager.js';
+import { hideToastById } from './hud.js';
 
 export const STORAGE_KEY_API = 'slideomatic_gemini_api_key';
 export const GEMINI_TRANSCRIPTION_MODEL = 'gemini-flash-latest';
-// Generation/edit/theme model (kept light per Pablo's call — newest flash-lite).
 export const GEMINI_GENERATION_MODEL = 'gemini-flash-latest';
 
 const defaultContext = {
@@ -40,16 +38,21 @@ let voiceContext = { ...defaultContext };
 const voiceButtons = {};
 
 let isRecording = false;
+// Set synchronously before the getUserMedia await — isRecording alone left a
+// window where a double-press spawned two recorders sharing module state and
+// leaked a hot mic.
+let isStartingRecording = false;
 let mediaRecorder = null;
 let audioChunks = [];
 let mediaStream = null;
 let activeVoiceMode = null;
 let voiceProcessing = false;
+let recordingCapTimer = null;
+let voiceFallbackToastId = null;
 
-let isRecordingTheme = false;
-let themeMediaRecorder = null;
-let themeAudioChunks = [];
-let themeMediaStream = null;
+// Netlify function payloads cap at 6MB; ~5 minutes of Opus stays safely under.
+const MAX_RECORDING_MS = 5 * 60 * 1000;
+const MIN_RECORDING_BYTES = 1024;
 
 function setVoiceContext(partialContext = {}) {
   voiceContext = { ...defaultContext, ...partialContext };
@@ -216,22 +219,14 @@ export function initVoiceButtons(partialContext = {}) {
     return;
   }
 
+  // The current HUD has no dedicated voice buttons — the V key is the entry
+  // point and updateVoiceUI falls back to toasts. If a voice button returns
+  // to the shell markup, this wires it up again.
   const addBtn = document.getElementById('add-btn');
   if (addBtn) {
     voiceButtons.add = addBtn;
     ensureButtonInitialized(addBtn, () => toggleVoiceRecording('add'));
     updateVoiceUI('add', 'idle');
-  }
-
-  const editBtn = document.getElementById('edit-btn');
-  if (editBtn) {
-    voiceButtons.edit = editBtn;
-    ensureButtonInitialized(editBtn, () => toggleVoiceRecording('edit'));
-  }
-
-  const themeVoiceBtn = document.getElementById('theme-voice-btn');
-  if (themeVoiceBtn) {
-    ensureButtonInitialized(themeVoiceBtn, toggleVoiceTheme);
   }
 }
 
@@ -251,18 +246,7 @@ function disableVoiceButtons() {
 }
 
 export function toggleVoiceRecording(mode = 'add') {
-  const context = getVoiceContext();
-
-  if (mode === 'edit') {
-    const slides = context.getSlides();
-    const slide = slides[context.getCurrentIndex()];
-    if (!slide) {
-      alert('No slide selected to edit.');
-      return;
-    }
-  }
-
-  if (voiceProcessing) {
+  if (voiceProcessing || isStartingRecording) {
     return;
   }
 
@@ -277,6 +261,8 @@ export function toggleVoiceRecording(mode = 'add') {
 }
 
 export async function startVoiceRecording(mode) {
+  if (isStartingRecording || isRecording) return;
+  isStartingRecording = true;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -304,7 +290,13 @@ export async function startVoiceRecording(mode) {
       const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
       voiceProcessing = true;
       try {
-        await processVoiceAction(currentMode, audioBlob);
+        if (audioBlob.size < MIN_RECORDING_BYTES) {
+          // Insta-taps produce empty blobs — don't burn an API call on them.
+          const context = getVoiceContext();
+          context.showHudStatus('🤏 Nothing recorded — try holding V a little longer', 'warning');
+        } else {
+          await processVoiceToSlide(audioBlob);
+        }
       } finally {
         cleanupVoiceRecording({ resetButton: false });
         updateVoiceUI(currentMode, 'idle');
@@ -315,14 +307,26 @@ export async function startVoiceRecording(mode) {
 
     mediaRecorder.start(1000);
     isRecording = true;
+    // Hard cap: a forgotten hot mic would eventually exceed the function
+    // payload limit anyway — stop and process what we have.
+    recordingCapTimer = setTimeout(() => {
+      if (isRecording) {
+        getVoiceContext().showHudStatus('⏱️ Recording capped at 5 minutes — processing…', 'warning');
+        stopVoiceRecording();
+      }
+    }, MAX_RECORDING_MS);
     updateVoiceUI(mode, 'recording');
     debug('Recording started');
   } catch (error) {
     console.error('❌ Error starting recording:', error);
-    alert('Failed to access microphone. Please check permissions.');
+    const context = getVoiceContext();
+    context.showHudStatus('🎙 Mic unavailable — check browser permissions', 'error');
+    setTimeout(context.hideHudStatus, 3000);
     cleanupVoiceRecording({ resetButton: false });
     updateVoiceUI(mode, 'idle');
     activeVoiceMode = null;
+  } finally {
+    isStartingRecording = false;
   }
 }
 
@@ -340,6 +344,10 @@ export function stopVoiceRecording() {
 }
 
 function cleanupVoiceRecording({ resetButton = true } = {}) {
+  if (recordingCapTimer) {
+    clearTimeout(recordingCapTimer);
+    recordingCapTimer = null;
+  }
   if (mediaStream) {
     mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
@@ -355,7 +363,23 @@ function cleanupVoiceRecording({ resetButton = true } = {}) {
 function updateVoiceUI(mode, state) {
   const button = voiceButtons[mode];
   const hudStatus = document.getElementById('hud-status');
-  if (!button) return;
+  if (!button) {
+    // No voice button in the current HUD (the V-key flow): fall back to
+    // sticky toasts so recording is never an invisible hot mic. Dismiss by
+    // id — hideHudStatus() pops the newest toast, which by idle time is the
+    // success/error message the user actually needs to see.
+    const context = getVoiceContext();
+    if (state === 'recording') {
+      voiceFallbackToastId = context.showHudStatus('🎙 Recording… press V to finish', 'processing');
+    } else if (state === 'processing') {
+      hideToastById(voiceFallbackToastId);
+      voiceFallbackToastId = context.showHudStatus('🤖 Turning speech into a slide…', 'processing');
+    } else if (voiceFallbackToastId != null) {
+      hideToastById(voiceFallbackToastId);
+      voiceFallbackToastId = null;
+    }
+    return;
+  }
 
   const baseLabel = mode === 'edit' ? 'Edit' : 'Add';
   const shortcutHint = mode === 'add' ? ' (shortcut V)' : '';
@@ -387,11 +411,6 @@ function updateVoiceUI(mode, state) {
   button.classList.remove('is-recording', 'is-processing');
   button.textContent = baseLabel;
   button.setAttribute('aria-label', `${baseLabel} slide from voice${shortcutHint}`);
-}
-
-async function processVoiceAction(mode, audioBlob) {
-  const action = mode === 'edit' ? processVoiceEditSlide : processVoiceToSlide;
-  await action(audioBlob);
 }
 
 export async function processVoiceToSlide(audioBlob) {
@@ -430,12 +449,15 @@ export async function processVoiceToSlide(audioBlob) {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
+      // Non-JSON error bodies (e.g. a 404 from `npm run dev`, which has no
+      // functions) shouldn't surface as "Unexpected token '<'".
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.error?.message || `Gemini request failed (${response.status})`);
     }
 
     const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
+    // Safety-blocked responses come back with no candidates at all.
+    const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!generatedText) {
       throw new Error('No response from Gemini');
     }
@@ -459,212 +481,6 @@ export async function processVoiceToSlide(audioBlob) {
     context.showHudStatus(`❌ Failed: ${error.message}`, 'error');
     setTimeout(context.hideHudStatus, 4000);
   }
-}
-
-async function processVoiceEditSlide(audioBlob) {
-  const context = getVoiceContext();
-  try {
-    const targetIndex = context.getCurrentIndex();
-    const slides = context.getSlides();
-    const slideToEdit = slides[targetIndex];
-    if (!slideToEdit) {
-      throw new Error('No slide selected to edit.');
-    }
-
-    debug('Updating slide with Gemini');
-    const uiStart = performance.now();
-
-    const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1];
-    const prompt = buildSlideEditPrompt(slideToEdit);
-
-    const response = await callGemini(
-      GEMINI_GENERATION_MODEL,
-      {
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                },
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 2048,
-        },
-      },
-      { signal: AbortSignal.timeout(45_000) }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
-    }
-
-    const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-    if (!generatedText) {
-      throw new Error('No response from Gemini');
-    }
-
-    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                      generatedText.match(/\{[\s\S]*\}/);
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const updatedSlide = JSON.parse(jsonText);
-    context.validateSlides([updatedSlide]);
-
-    context.updateSlide(targetIndex, updatedSlide);
-    context.replaceSlideAt(targetIndex);
-    context.setOverviewCursor(targetIndex);
-
-    await ensureMinimumDelay(uiStart, 1300);
-    context.showHudStatus('✨ Slide updated — Save Deck to export', 'success');
-    setTimeout(context.hideHudStatus, 2000);
-    debug('Slide updated via Gemini');
-  } catch (error) {
-    console.error('❌ Error updating slide:', error);
-    context.showHudStatus(`❌ Update failed: ${error.message}`, 'error');
-    setTimeout(context.hideHudStatus, 4000);
-  }
-}
-
-export async function processVoiceToTheme(audioBlob) {
-  const context = getVoiceContext();
-  try {
-    debug('Generating theme with Gemini');
-    const uiStart = performance.now();
-
-    const base64Audio = await blobToBase64(audioBlob);
-    const audioData = base64Audio.split(',')[1];
-
-    const prompt = buildThemeDesignPrompt();
-
-    const response = await callGemini(
-      GEMINI_GENERATION_MODEL,
-      {
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: audioBlob.type || 'audio/webm',
-                  data: audioData,
-                },
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 1.0,
-          maxOutputTokens: 2048,
-        },
-      },
-      { signal: AbortSignal.timeout(45_000) }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API call failed');
-    }
-
-    const result = await response.json();
-    const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-
-    if (!generatedText) {
-      throw new Error('No response from Gemini');
-    }
-
-    const jsonMatch = generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-                      generatedText.match(/\{[\s\S]*\}/);
-
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const themeData = JSON.parse(jsonText);
-
-    const normalizedTheme = applyTheme(themeData);
-
-    downloadTheme(normalizedTheme);
-    setCurrentTheme(normalizedTheme, { source: '__ai__' });
-
-    await ensureMinimumDelay(uiStart, 1500);
-    context.showHudStatus('🎨 Theme created!', 'success');
-    setTimeout(context.hideHudStatus, 2200);
-    debug('Theme applied and downloaded');
-  } catch (error) {
-    console.error('❌ Error processing theme:', error);
-    context.showHudStatus(`❌ Failed to create theme: ${error.message}`, 'error');
-    setTimeout(context.hideHudStatus, 4000);
-  }
-}
-
-export function toggleVoiceTheme() {
-  if (isRecordingTheme) {
-    stopVoiceThemeRecording();
-  } else {
-    startVoiceThemeRecording();
-  }
-}
-
-async function startVoiceThemeRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      }
-    });
-
-    const mimeType = getPreferredAudioMimeType();
-    themeMediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    themeAudioChunks = [];
-    themeMediaStream = stream;
-
-    themeMediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        themeAudioChunks.push(event.data);
-      }
-    };
-
-    themeMediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(themeAudioChunks, { type: mimeType || 'audio/webm' });
-      await processVoiceToTheme(audioBlob);
-      cleanupVoiceThemeRecording();
-    };
-
-    themeMediaRecorder.start(1000);
-    isRecordingTheme = true;
-    debug('Recording theme instructions');
-  } catch (error) {
-    console.error('❌ Error starting theme recording:', error);
-    alert('Failed to access microphone. Please check permissions.');
-    cleanupVoiceThemeRecording();
-  }
-}
-
-function stopVoiceThemeRecording() {
-  if (!themeMediaRecorder || !isRecordingTheme) return;
-
-  isRecordingTheme = false;
-  if (themeMediaRecorder.state !== 'inactive') {
-    themeMediaRecorder.stop();
-  }
-}
-
-function cleanupVoiceThemeRecording() {
-  if (themeMediaStream) {
-    themeMediaStream.getTracks().forEach((track) => track.stop());
-    themeMediaStream = null;
-  }
-  themeMediaRecorder = null;
-  themeAudioChunks = [];
-  isRecordingTheme = false;
 }
 
 export async function generateSlideFromPrompt(promptText, { insert = false } = {}) {
@@ -727,6 +543,10 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
 
     context.validateSlides(slidesArray);
 
+    // The current index is read here, AFTER the long generation await — the
+    // caller can't know it in advance (the user may have navigated while the
+    // model worked), so the actual insert position is returned alongside.
+    let firstInserted = null;
     if (insert) {
       let insertIndex = context.getCurrentIndex();
       slidesArray.forEach((slide, idx) => {
@@ -734,14 +554,14 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
         const shouldActivate = idx === slidesArray.length - 1;
         context.insertSlideAt(insertIndex, slide, { activate: shouldActivate });
       });
-      const firstInserted = insertIndex - slidesArray.length + 1;
+      firstInserted = insertIndex - slidesArray.length + 1;
       context.setActiveSlide(firstInserted);
       context.setOverviewCursor(firstInserted);
     }
 
     context.showHudStatus(`✨ Added ${slidesArray.length} slides`, 'success');
     setTimeout(context.hideHudStatus, 2200);
-    return slidesArray;
+    return { slides: slidesArray, firstIndex: firstInserted };
   } catch (error) {
     console.error('Gemini deck prompt failed:', error);
     context.showHudStatus(`❌ ${error.message}`, 'error');
@@ -947,63 +767,4 @@ function extractSlidesArray(payload) {
   throw new Error('Expected an array of slides from Gemini');
 }
 
-function buildSlideEditPrompt(slide) {
-  const slideJson = JSON.stringify(slide, null, 2);
-  return `You are an expert Slideomatic editor. Update the existing slide JSON based on the user's voice instructions.
 
-CURRENT SLIDE JSON:
-
-\`\`\`json
-${slideJson}
-\`\`\`
-
-RULES:
-- Preserve the slide's "type" and required keys for that type.
-- If the user requests additions or removals, update the relevant arrays (items, pillars, etc.).
-- Keep badge/headline/body values unless the user explicitly changes them.
-- Return ONLY a single valid JSON object with no commentary or markdown fences.
-- If the request is unclear, make a best effort improvement while keeping the structure consistent.`;
-}
-
-function buildThemeDesignPrompt() {
-  return `You are a theme designer for Slideomatic. Create a complete theme.json based on the user's voice description.
-
-THEME SCHEMA - ALL fields required:
-{
-  "color-bg": "#fffbf3",
-  "background-surface": "radial-gradient(...)",
-  "background-overlay": "radial-gradient(...)",
-  "background-opacity": "0.5",
-  "slide-bg": "rgba(255, 251, 243, 0.88)",
-  "slide-border-color": "#1b1b1b",
-  "slide-border-width": "5px",
-  "slide-shadow": "10px 10px 0 rgba(0, 0, 0, 0.3)",
-  "color-surface": "#ff9ff3",
-  "color-surface-alt": "#88d4ff",
-  "color-accent": "#feca57",
-  "badge-bg": "#feca57",
-  "badge-color": "#1b1b1b",
-  "color-ink": "#000000",
-  "color-muted": "#2b2b2b",
-  "border-width": "5px",
-  "gutter": "clamp(32px, 5vw, 72px)",
-  "radius": "12px",
-  "font-sans": '"Inter", sans-serif',
-  "font-mono": '"Space Mono", monospace',
-  "shadow-sm": "6px 6px 0 rgba(0, 0, 0, 0.25)",
-  "shadow-md": "10px 10px 0 rgba(0, 0, 0, 0.3)",
-  "shadow-lg": "16px 16px 0 rgba(0, 0, 0, 0.35)",
-  "shadow-xl": "24px 24px 0 rgba(0, 0, 0, 0.4)"
-}
-
-DESIGN GUIDELINES:
-1. **Color Harmony** - Choose a cohesive palette based on the user's vibe
-2. **Gradients** - Use for depth; solids acceptable for minimal styles
-3. **Shadows** - Choose between neo-brutalist offsets or soft glows
-4. **Borders** - Thick (5px+), thin (1-2px), or none (0px)
-5. **Typography** - Suggest real font stacks
-6. **Contrast** - Ensure readability (4.5:1)
-7. **Vibe** - Match the user's description (playful, serious, retro, modern, etc.)
-
-Return ONLY valid JSON. No markdown, no explanations.`;
-}

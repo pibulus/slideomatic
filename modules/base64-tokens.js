@@ -142,7 +142,41 @@ function restoreBase64FromTokens(editedSlide, originalSlide) {
     });
   }
 
+  // The positional restore above misses reordered arrays (e.g. gallery items
+  // swapped in the JSON editor). Rescue leftover tokens by matching against
+  // ALL of the original slide's images — the token text embeds filename +
+  // size — and never let a literal {{BASE64_IMAGE:…}} string persist as src.
+  const tokenMap = new Map();
+  collectImages(originalSlide).forEach((img) => {
+    if (typeof img?.src === 'string' && img.src.startsWith('data:image')) {
+      tokenMap.set(createBase64Token(img), img.src);
+    }
+  });
+  collectImages(result).forEach((img) => {
+    if (img && isBase64Token(img.src)) {
+      const restored = tokenMap.get(img.src);
+      if (restored) {
+        img.src = restored;
+      } else {
+        console.warn('Base64 token had no matching original image — blanking src');
+        img.src = '';
+      }
+    }
+  });
+
   return result;
+}
+
+function collectImages(slide) {
+  if (!slide || typeof slide !== 'object') return [];
+  const images = [];
+  if (slide.image) images.push(slide.image);
+  if (Array.isArray(slide.media)) slide.media.forEach((m) => m?.image && images.push(m.image));
+  if (Array.isArray(slide.items)) slide.items.forEach((i) => i?.image && images.push(i.image));
+  if (slide.left?.image) images.push(slide.left.image);
+  if (slide.right?.image) images.push(slide.right.image);
+  if (Array.isArray(slide.pillars)) slide.pillars.forEach((p) => p?.image && images.push(p.image));
+  return images;
 }
 
 export {

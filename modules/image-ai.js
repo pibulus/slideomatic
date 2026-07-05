@@ -1,4 +1,4 @@
-import { showHudStatus, hideHudStatus } from './hud.js';
+import { showHudStatus, hideHudStatus, hideToastById } from './hud.js';
 import { STORAGE_KEY_API } from './voice-modes.js';
 import { getCurrentThemePath, getCurrentTheme } from './theme-manager.js';
 import { isOverview } from './state.js';
@@ -28,12 +28,6 @@ function callGemini(model, payload, { signal } = {}) {
         signal,
         body: JSON.stringify({ model, payload, userKey }),
     });
-}
-
-// Kept for callers that prompt the user to add a key, but no longer blocks:
-// the proxy provides a shared server key fallback when the user has none.
-export function requireGeminiApiKey() {
-    return localStorage.getItem(STORAGE_KEY_API) || '';
 }
 
 export async function askAIForImage(placeholderElement, imageConfig = {}) {
@@ -86,8 +80,8 @@ GENERATE`;
         );
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || `API error: ${response.status}`);
+            const error = await response.json().catch(() => null);
+            throw new Error(error?.error?.message || `API error: ${response.status}`);
         }
 
         const result = await response.json();
@@ -101,12 +95,25 @@ GENERATE`;
             const query = decision.replace(/^SEARCH:\s*/i, '').trim();
             hideHudStatus();
             const url = buildImageSearchUrl(query);
-            window.open(url, '_blank', 'noopener');
-            showHudStatus(`🔍 Searching: "${query}"`, 'success');
-            setTimeout(hideHudStatus, 3000);
+            // Two awaits separate this from the click gesture, so popup
+            // blockers commonly return null — don't claim success when the
+            // tab never opened.
+            const opened = window.open(url, '_blank', 'noopener');
+            if (opened) {
+                showHudStatus(`🔍 Searching: "${query}"`, 'success');
+                setTimeout(hideHudStatus, 3000);
+            } else {
+                showHudStatus('🔍 Popup blocked — search copied to clipboard', 'warning');
+                navigator.clipboard?.writeText(url).catch(() => {});
+                setTimeout(hideHudStatus, 3500);
+            }
         } else if (decision.toUpperCase().includes('GENERATE')) {
-            showHudStatus('🎨 Generating image...', 'processing');
-            await generateAIImage(placeholderElement, imageConfig);
+            const genToastId = showHudStatus('🎨 Generating image...', 'processing');
+            try {
+                await generateAIImage(placeholderElement, imageConfig);
+            } finally {
+                hideToastById(genToastId);
+            }
         } else {
             throw new Error('AI returned unclear decision');
         }
@@ -228,11 +235,13 @@ The image should be visually striking and support the slide content.`;
 
         showHudStatus('✨ Image generated!', 'success');
         setTimeout(hideHudStatus, 2000);
+        return true;
 
     } catch (error) {
         console.error('AI image generation failed:', error);
         showHudStatus(`❌ ${error.message}`, 'error');
         setTimeout(hideHudStatus, 3000);
+        return false;
     }
 }
 

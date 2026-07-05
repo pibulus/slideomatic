@@ -677,17 +677,12 @@ async function handleDrawerDictation(button, context) {
 
   stopDrawerDictation();
 
+  // No key gate: the Gemini proxy falls back to the shared server key, so
+  // dictation works out of the box just like deck/slide generation.
   const {
-    getGeminiApiKey,
     startSpeechCapture,
     transcribeSpeechToText,
   } = await import('./voice-modes.js');
-
-  if (!getGeminiApiKey()) {
-    ctx.showHudStatus('Add a Gemini API key to dictate text', 'warning');
-    setTimeout(() => ctx.hideHudStatus(), 2200);
-    return;
-  }
 
   try {
     const token = { cancelled: false };
