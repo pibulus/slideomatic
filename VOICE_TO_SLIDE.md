@@ -124,7 +124,7 @@ Use natural language: "Quote slide that says X by Y" or "Add a quote from..."
 
 **Privacy**: Audio is sent to Google's Gemini API for processing. Not stored anywhere.
 
-**Cost**: Slide/theme/edit generation uses `gemini-2.5-flash`. Prompt/body transcription uses `gemini-2.5-flash-lite`. Your API usage shows in Google AI Studio.
+**Cost**: Generation and transcription use the rolling `gemini-flash-latest` alias via the server-side proxy. Without a personal key the shared app key covers usage; with your own key (Settings), your API usage shows in Google AI Studio.
 
 ## Post-v1 Ideas
 

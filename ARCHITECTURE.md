@@ -54,7 +54,7 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `theme-drawer.js` | Theme drawer/dropdown, random themes, AI theme prompts, saved theme library. |
 | `share-modal.js` | Netlify hosted `/s/...` share links, compressed `?data=` fallback links, and JSON backup action. |
 | `share-password-modal.js` | Legacy locked-share prompt. |
-| `voice-modes.js` | Gemini API key, mic recording, voice-to-slide/theme/edit, prompt dictation/transcription. |
+| `voice-modes.js` | Gemini proxy plumbing, API key storage, voice-to-slide recording (V key), prompt dictation/transcription. |
 | `cheat-codes.js` | Numeric cheat unlocks (`666`, `696969`) and AI starter deck console. |
 | `image-render.js` | Slide images, placeholders, image preview modal, generated graph image rendering. |
 | `image-upload.js` | Drop/paste/compress/upload image pipeline. |
@@ -99,7 +99,7 @@ See `SCHEMA_EXAMPLE.json` for a deck-format reference.
 - **Autosave:** `localStorage` keys under `slideomatic_deck_overrides:*`.
 - **Last deck:** `slideomatic:last-deck`.
 - **Saved themes:** localStorage theme library managed by `theme-manager.js`.
-- **Hosted share:** `share-modal.js` posts slides + theme to `netlify/functions/share.js`, which stores a share record in Netlify Blobs and returns `/s/:slug`.
+- **Hosted share:** `share-modal.js` posts slides + theme to `netlify/functions/share.js`, which stores a share record in Netlify Blobs and returns `/s/:slug`. Shares (and their externalized image assets) expire 90 days after their last view; loading a share refreshes both. The daily `cleanup-shares` cron sweeps expired records.
 - **Fallback share:** if functions are unavailable, `share-modal.js` compresses slides + theme into a `?data=` URL; opening it creates a local `#deck=` copy.
 - **Large inline images:** hosted shares externalize/recompress them where possible. Fallback URL shares replace inline `data:` images with placeholders to keep links usable. JSON backup keeps full fidelity.
 - **JSON export/import:** available from keyboard (`D`/`U`), edit drawer, Share modal, launcher upload, and launcher paste.
@@ -110,11 +110,12 @@ See `SCHEMA_EXAMPLE.json` for a deck-format reference.
 
 ## AI + Voice
 
-- API key lives locally in browser storage and is sent only to Google Gemini API calls.
-- Slide/theme/edit generation uses `gemini-2.5-flash`.
-- Prompt/body dictation uses `gemini-2.5-flash-lite` to transcribe and clean filler words.
+- All Gemini calls route through the server-side proxy (`netlify/functions/gemini.js`), which falls back to the shared app key (`GEMINI_API_KEY` env var) so AI features work without any setup.
+- A visitor's own key (Settings, stored in browser localStorage) is passed through as `userKey` and takes precedence — their quota, their risk.
+- Text generation and transcription use the rolling `gemini-flash-latest` alias; image generation uses `gemini-3.1-flash-image` (allow-listed in the proxy).
 - AI image and graph helpers use Gemini generation endpoints through `image-ai.js`.
 - The cheat console opens with `666` or `696969`, then can generate a single slide or an 8-slide starter deck.
+- Voice-to-slide is the V key; recording state surfaces as sticky toasts. Recordings cap at 5 minutes.
 
 ---
 

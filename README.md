@@ -68,8 +68,8 @@ For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE
 - **JSON:** Press `D`, use **Download JSON** in the edit drawer, or use **Download JSON backup** in the Share modal. JSON exports include slides and the current theme. Press `U`, use launcher upload, or paste JSON on the launcher to import a deck.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
 - **Voice & Notes:** Gemini voice tools can generate slides/themes from recordings, and prompt mic buttons clean up speech into text by removing filler words before insertion. Great for quick reviews and rough ideas.
-- **Sharing:** The HUD Share button tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks.
-- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache is versioned at `slideomatic-v1.0.1`.
+- **Sharing:** The HUD Share button tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks. Hosted links live 90 days from their last view — any visit refreshes the clock, so links in active use never expire.
+- **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache version lives at the top of `sw.js` — **bump it on every deploy** (no build step means it's the only cache-buster).
 
 Old `?url=`, fallback `?data=`, and hosted `?share=`/`/s/...` parameters still load decks if you need to sideload JSON manually or maintain old links.
 
@@ -98,6 +98,8 @@ You can add a `_schema` slide at the top of `slides.json` to document your forma
 
 See `SCHEMA_EXAMPLE.json` for a complete documentation template.
 
+Note: `_schema` slides are for hand-maintained JSON files. The app strips them when it loads a deck (they'd desync editing otherwise), so decks saved or re-exported from the app won't carry them forward.
+
 ---
 
 ## Editing Slides
@@ -105,7 +107,7 @@ See `SCHEMA_EXAMPLE.json` for a complete documentation template.
 ### Option A – In-browser editor (recommended)
 
 1. Visit `/admin.html` while the local server is running.
-2. Enter the password (default `bonesoup`). Change it in `admin.js > ADMIN_PASSWORD` and redeploy if needed.
+2. Enter the password (a default hash ships in `admin.js > ADMIN_PASSWORD_HASH` — change it per [Changing the Admin Password](#changing-the-admin-password) before treating it as any kind of lock).
 3. Expand a slide card, edit text, colors, image paths, or arrays. Fields update live in memory.
 4. Click **Download slides.json** to export your changes. Replace the existing `slides.json` with the downloaded file.
 
