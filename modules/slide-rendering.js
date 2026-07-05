@@ -73,6 +73,34 @@ export const renderers = {
 };
 
 export function createSlide(slide, index, rendererMap = renderers) {
+    try {
+        return buildSlide(slide, index, rendererMap);
+    } catch (error) {
+        // Decks arrive from share links and hand-edited JSON; one bad slide
+        // must not take down the whole deck (or strand the loading overlay).
+        console.warn(`Slide ${index + 1} failed to render:`, error);
+        return createBrokenSlide(index, error);
+    }
+}
+
+function createBrokenSlide(index, error) {
+    const section = document.createElement('section');
+    section.className = 'slide slide--error';
+    section.dataset.index = index;
+    section.setAttribute('aria-hidden', 'true');
+    section.setAttribute('role', 'group');
+    section.setAttribute('aria-roledescription', 'slide');
+    section.setAttribute('aria-label', `Slide ${index + 1}: failed to render`);
+    const detail = error ? `<pre>${escapeHtml(String(error.message || error))}</pre>` : '';
+    section.innerHTML = `
+    <h2>This slide couldn't be rendered</h2>
+    <p>Its data has a problem — press <kbd>E</kbd> to inspect and fix it.</p>
+    ${detail}
+  `;
+    return section;
+}
+
+function buildSlide(slide, index, rendererMap = renderers) {
     const type = slide.type ?? 'standard';
     const section = document.createElement('section');
     section.className = `slide slide--${type}`;

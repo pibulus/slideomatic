@@ -52,7 +52,14 @@ export let isEditDrawerOpen = false;
 export let editDrawerInstance = null;
 
 export function setSlides(newSlides) {
-  slides = newSlides;
+  // `_schema` documentation slides and non-object junk must never reach the
+  // slides array: renderers skip them but editing/navigation index the raw
+  // array, so a surviving entry desyncs every slide from its DOM element
+  // (editing slide 1 would edit the _schema blob, deletes hit the wrong
+  // slide). Strip them at the single choke point instead.
+  slides = Array.isArray(newSlides)
+    ? newSlides.filter((slide) => slide && typeof slide === 'object' && slide.type !== '_schema')
+    : newSlides;
 }
 
 export function setSlideElements(newElements) {

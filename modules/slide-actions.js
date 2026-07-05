@@ -376,6 +376,11 @@ export function handleDeckUpload(event) {
     }
   };
 
+  reader.onerror = () => {
+    showHudStatusHook('❌ Could not read that file — try again', 'error');
+    setTimeout(hideHudStatusHook, 3000);
+  };
+
   reader.readAsText(file);
   event.target.value = '';
 }
@@ -385,16 +390,16 @@ export function reloadDeck(options = {}) {
   slidesRoot.innerHTML = '';
   slideScrollPositions.clear();
 
-  const renderableSlides = slides.filter((slide) => slide.type !== '_schema');
+  // _schema and junk entries are stripped in setSlides(), so slides ↔ DOM
+  // elements stay index-aligned for editing and navigation.
+  updateTotalCounter(slides.length);
 
-  updateTotalCounter(renderableSlides.length);
-
-  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
+  if (!Array.isArray(slides) || slides.length === 0) {
     renderEmptyStateHook();
     return;
   }
 
-  const renderedElements = renderableSlides.map((slide, index) =>
+  const renderedElements = slides.map((slide, index) =>
     createSlideHook(slide, index)
   );
   setSlideElements(renderedElements);
@@ -412,7 +417,7 @@ export function reloadDeck(options = {}) {
   const clampedIndex = clamp(
     typeof targetIndex === 'number' ? targetIndex : 0,
     0,
-    renderableSlides.length - 1
+    slides.length - 1
   );
 
   if (focus) {

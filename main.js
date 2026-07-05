@@ -216,15 +216,19 @@ if (requestedDeck) {
 // Main entry point and deck setup orchestration
 // ═══════════════════════════════════════════════════════════════════════════
 
-let isInitializing = false;
-let isInitialized = false;
-
-if (!isInitializing && !isInitialized) {
-  isInitializing = true;
-  initDeckWithTheme();
-} else {
-  console.warn('[Init] Attempted double initialization - BLOCKED');
-}
+initDeckWithTheme()
+  .catch((error) => {
+    // Anything that escapes deck init (bad slide data from a share link,
+    // fetch failures, renderer bugs) must surface as a message, not a
+    // forever-spinner.
+    console.error('Deck initialization failed', error);
+    try {
+      renderLoadError(error);
+    } catch {
+      // slidesRoot unavailable — nothing more we can do visually.
+    }
+  })
+  .finally(hideLoadingOverlay);
 
 // Note: Main initialization logic is in initDeckWithTheme() at bottom of file
 // (old initDeck() removed to avoid duplication)
@@ -536,15 +540,16 @@ async function initDeckWithTheme() {
     return;
   }
 
-  const renderableSlides = slides.filter(slide => slide.type !== '_schema');
-  updateTotalCounter(renderableSlides.length);
+  // _schema and junk entries are stripped in setSlides(), so slides ↔ DOM
+  // elements stay index-aligned for editing and navigation.
+  updateTotalCounter(slides.length);
 
-  if (!Array.isArray(renderableSlides) || renderableSlides.length === 0) {
+  if (slides.length === 0) {
     renderEmptyState();
     return;
   }
 
-  const renderedElements = renderableSlides.map((slide, index) =>
+  const renderedElements = slides.map((slide, index) =>
     createSlide(slide, index, renderers)
   );
   setSlideElements(renderedElements);
@@ -641,11 +646,11 @@ initSharePasswordModal();
   initBrowserHistory();
   handleInitialIntent();
 
-  // Mark initialization as complete
-  isInitializing = false;
-  isInitialized = true;
+}
 
-  // Hide loading overlay
+// The overlay is opaque and z-indexed over everything, so every exit path —
+// success, load error, empty deck, thrown exception — must end up here.
+function hideLoadingOverlay() {
   const loadingOverlay = document.getElementById('loading-overlay');
   if (loadingOverlay) {
     loadingOverlay.classList.add('is-loaded');
