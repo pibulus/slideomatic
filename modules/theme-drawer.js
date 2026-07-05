@@ -309,7 +309,12 @@ function handleSaveTheme() {
     const name = prompt('Name your theme:', defaultName);
     if (!name || !name.trim()) return;
 
-    saveThemeToLibrary(name.trim(), theme);
+    const saved = saveThemeToLibrary(name.trim(), theme);
+    if (!saved) {
+      showHudStatus('⚠️ Could not save theme — storage may be full', 'error');
+      setTimeout(hideHudStatus, 2400);
+      return;
+    }
     setCurrentTheme(theme, { source: `saved:${name.trim()}` });
     populateThemeDropdown();
     syncThemeSelectUI();
@@ -615,6 +620,43 @@ function randomizeDefaultTheme(theme, context = {}) {
     'shadow-md': shadows.md,
     'shadow-lg': shadows.lg,
     'shadow-xl': shadows.xl,
+  };
+}
+
+// Maps the simple color palette the AI theme prompt returns ({primary,
+// secondary, accent, background, surface, text}) onto the real theme tokens.
+// Nothing in the CSS reads keys like "primary" — merging them in unmapped
+// left the AI theme button a silent no-op.
+export function themeFromAiPalette(colors = {}, baseTheme = {}) {
+  const hex = (value, fallback) =>
+    typeof value === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim())
+      ? value.trim()
+      : fallback;
+
+  const colorBg = hex(colors.background, baseTheme['color-bg'] || '#fdf6ec');
+  const primary = hex(colors.primary, baseTheme['color-surface'] || '#ffd9fa');
+  const secondary = hex(colors.secondary, baseTheme['color-surface-alt'] || primary);
+  const accent = hex(colors.accent, baseTheme['color-accent'] || secondary);
+  const colorInk = hex(colors.text, getAccessibleTextColor(colorBg));
+  const slideBg = hex(colors.surface, null);
+  const colorMuted =
+    colorInk === '#000000' || colorInk.toLowerCase() === '#1b1b1b'
+      ? mixHexColors('#000000', '#555555', 0.55)
+      : mixHexColors(colorInk, colorBg, 0.4);
+
+  return {
+    ...baseTheme,
+    'color-bg': colorBg,
+    'background-surface': `radial-gradient(circle at 18% 22%, ${applyAlpha(primary, 0.5)}, transparent 60%), radial-gradient(circle at 78% 32%, ${applyAlpha(secondary, 0.5)}, transparent 60%), radial-gradient(circle at 48% 74%, ${applyAlpha(accent, 0.35)}, transparent 62%), ${colorBg}`,
+    'slide-bg': slideBg ? hexToRgbaString(slideBg, 0.92) : hexToRgbaString(colorBg, 0.85),
+    'slide-border-color': colorInk,
+    'color-surface': primary,
+    'color-surface-alt': secondary,
+    'color-accent': accent,
+    'badge-bg': accent,
+    'badge-color': getAccessibleTextColor(accent),
+    'color-ink': colorInk,
+    'color-muted': colorMuted,
   };
 }
 

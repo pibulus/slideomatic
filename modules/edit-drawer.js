@@ -75,6 +75,25 @@ function cleanupFormListeners() {
 }
 
 /**
+ * Called when the drawer closes: flush any pending debounced autosave now
+ * (while the form + current index still match the edited slide) instead of
+ * letting the timer fire later against whatever slide is then current, then
+ * drop listeners and stop dictation.
+ */
+export function flushPendingEditDrawerWork(context) {
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+    try {
+      autoSaveSlide(context);
+    } catch (error) {
+      console.warn('Failed to flush pending edit on drawer close:', error);
+    }
+  }
+  cleanupFormListeners();
+}
+
+/**
  * Register an event listener for cleanup tracking
  */
 function addTrackedListener(element, event, handler) {
@@ -95,6 +114,7 @@ function ensureContext(context) {
     'updateSlide',
     'replaceSlideAt',
     'insertSlideAt',
+    'deleteSlideAt',
     'downloadDeck',
     'getSlideTemplate',
     'showHudStatus',
@@ -106,22 +126,6 @@ function ensureContext(context) {
       throw new Error(`Edit drawer context is missing required function "${key}"`);
     }
   });
-
-  // Add deleteSlideAt if not present
-  if (!context.deleteSlideAt) {
-    context.deleteSlideAt = (index) => {
-      const slides = context.getSlides();
-      if (slides.length <= 1) {
-        alert('Cannot delete the last slide!');
-        return false;
-      }
-      slides.splice(index, 1);
-      if (index >= slides.length) {
-        context.currentIndex = slides.length - 1;
-      }
-      return true;
-    };
-  }
 
   return context;
 }
@@ -838,7 +842,12 @@ export function renderEditForm(context) {
       const name = prompt('Name your theme:', '');
       if (!name || !name.trim()) return;
 
-      saveThemeToLibrary(name.trim(), theme);
+      const saved = saveThemeToLibrary(name.trim(), theme);
+      if (!saved) {
+        showHudStatus('⚠️ Could not save theme — storage may be full', 'error');
+        setTimeout(hideHudStatus, 2400);
+        return;
+      }
       setCurrentTheme(theme, { source: `saved:${name.trim()}` });
       showHudStatus('💾 Theme saved', 'success');
       setTimeout(hideHudStatus, 1600);
@@ -922,7 +931,10 @@ Make the colors harmonious and ensure good contrast for readability.`;
       }
 
       const aiTheme = JSON.parse(jsonMatch[0]);
-      const mergedTheme = { ...currentTheme, ...aiTheme };
+      // Map the AI's simple palette onto real theme tokens — spreading the
+      // raw keys over the theme was a visual no-op (nothing reads "primary").
+      const { themeFromAiPalette } = await import('./theme-drawer.js');
+      const mergedTheme = themeFromAiPalette(aiTheme, currentTheme);
       const normalizedTheme = applyTheme(mergedTheme);
 
       setCurrentTheme(normalizedTheme, { source: `ai:${prompt.slice(0, 30)}` });
@@ -1201,9 +1213,10 @@ export function deleteCurrentSlide(context) {
   const confirmed = confirm('Delete this slide? This cannot be undone.');
   if (!confirmed) return;
 
+  // removeSlideAt (via deleteSlideAt) already re-renders, re-indexes, and
+  // persists the deck — no extra replaceSlideAt needed here.
   const success = ctx.deleteSlideAt(currentIndex);
   if (success) {
-    ctx.replaceSlideAt(ctx.getCurrentIndex());
     ctx.closeDrawer();
     ctx.showHudStatus('🗑️ Slide deleted', 'success');
     setTimeout(() => ctx.hideHudStatus(), 1600);

@@ -98,6 +98,7 @@ function createDrawer(config) {
     previousFocus: null,
     keydownHandler: null,
     clickOutsideHandler: null,
+    clickOutsideTimeout: null,
   };
 }
 
@@ -118,6 +119,17 @@ function openDrawer(drawer) {
     drawer.keydownHandler = (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        // Escape while typing exits the field, not the whole drawer —
+        // closing mid-edit can discard the last few seconds of typing.
+        const active = document.activeElement;
+        if (
+          active &&
+          element.contains(active) &&
+          active.matches('input, textarea, select, [contenteditable="true"]')
+        ) {
+          active.blur();
+          return;
+        }
         closeDrawer(drawer, { restoreFocus: true });
         return;
       }
@@ -134,9 +146,13 @@ function openDrawer(drawer) {
       closeDrawer(drawer, { restoreFocus: true });
     }
   };
-  // Use a slight delay to prevent the opening click from immediately closing the drawer
-  setTimeout(() => {
-    document.addEventListener('click', drawer.clickOutsideHandler, true);
+  // Use a slight delay to prevent the opening click from immediately closing
+  // the drawer; tracked so a close within that window can cancel it.
+  drawer.clickOutsideTimeout = setTimeout(() => {
+    drawer.clickOutsideTimeout = null;
+    if (drawer.isOpen && drawer.clickOutsideHandler) {
+      document.addEventListener('click', drawer.clickOutsideHandler, true);
+    }
   }, 100);
 
   focusFirstElement(element);
@@ -162,6 +178,10 @@ function closeDrawer(drawer, options = {}) {
     drawer.keydownHandler = null;
   }
 
+  if (drawer.clickOutsideTimeout) {
+    clearTimeout(drawer.clickOutsideTimeout);
+    drawer.clickOutsideTimeout = null;
+  }
   if (drawer.clickOutsideHandler) {
     document.removeEventListener('click', drawer.clickOutsideHandler, true);
     drawer.clickOutsideHandler = null;

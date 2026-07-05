@@ -294,7 +294,7 @@ function buildLayoutControl(currentType, currentLayout) {
     layoutSelector = `
       <div class="accordion__group">
         <label class="edit-drawer__label">Layout Variant</label>
-        <div class="custom-select" id="standard-layout-select-wrapper" data-value="${currentLayout || 'default'}">
+        <div class="custom-select" id="standard-layout-select-wrapper" data-value="${escapeHtml(currentLayout || 'default')}">
           <button type="button" class="custom-select__trigger">
             <span class="custom-select__value">${escapeHtml(currentStandardLabel)}</span>
             <span class="custom-select__arrow">▼</span>
@@ -321,7 +321,7 @@ function buildLayoutControl(currentType, currentLayout) {
     layoutSelector = `
       <div class="accordion__group">
         <label class="edit-drawer__label">Split Style</label>
-        <div class="custom-select" id="split-layout-select-wrapper" data-value="${currentVariant || 'default'}">
+        <div class="custom-select" id="split-layout-select-wrapper" data-value="${escapeHtml(currentVariant || 'default')}">
           <button type="button" class="custom-select__trigger">
             <span class="custom-select__value">${escapeHtml(currentSplitLabel)}</span>
             <span class="custom-select__arrow">▼</span>
@@ -348,7 +348,7 @@ function buildLayoutControl(currentType, currentLayout) {
     layoutSelector = `
       <div class="accordion__group">
         <label class="edit-drawer__label">Quote Style</label>
-        <div class="custom-select" id="quote-layout-select-wrapper" data-value="${currentVariant || 'simple'}">
+        <div class="custom-select" id="quote-layout-select-wrapper" data-value="${escapeHtml(currentVariant || 'simple')}">
           <button type="button" class="custom-select__trigger">
             <span class="custom-select__value">${escapeHtml(currentQuoteLabel)}</span>
             <span class="custom-select__arrow">▼</span>
@@ -438,7 +438,7 @@ function buildThemeSection() {
   const themeOptions = allThemes.map(({ value, label }) => {
     const isSelected = currentTheme.value === value ? 'is-selected' : '';
     return `
-      <button type="button" class="custom-select__option ${isSelected}" data-value="${value}">
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${escapeHtml(value)}">
         <span class="custom-select__option-label">${escapeHtml(label)}</span>
       </button>
     `;
@@ -446,7 +446,7 @@ function buildThemeSection() {
 
   const content = `
     <div class="accordion__group">
-      <div class="custom-select" id="edit-theme-select" data-value="${currentTheme.value}">
+      <div class="custom-select" id="edit-theme-select" data-value="${escapeHtml(currentTheme.value)}">
         <button type="button" class="custom-select__trigger">
           <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
           <span class="custom-select__arrow">\u25bc</span>
@@ -605,7 +605,9 @@ export function setupThemeRadioControls(addTrackedListener) {
 }
 
 export function buildAdvancedSection(slide) {
-  const jsonString = JSON.stringify(slide, null, 2);
+  // Slide data can come from strangers via share links — unescaped, a string
+  // field containing </textarea><img onerror=...> would execute on drawer open.
+  const jsonString = escapeHtml(JSON.stringify(slide, null, 2));
   const content = `
     <textarea
       class="edit-drawer__textarea"

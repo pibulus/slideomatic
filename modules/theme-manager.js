@@ -109,7 +109,16 @@ function validateTheme(theme) {
 function loadThemeLibrary() {
   try {
     const stored = localStorage.getItem(THEME_LIBRARY_KEY);
-    return stored ? JSON.parse(stored) : [];
+    const parsed = stored ? JSON.parse(stored) : [];
+    // Callers .map/.find over entries and read entry.name/entry.theme —
+    // a corrupt (valid-JSON-but-wrong-shape) value would break the whole
+    // edit drawer, so keep only well-formed entries.
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (entry) => entry && typeof entry === 'object' &&
+        typeof entry.name === 'string' &&
+        entry.theme && typeof entry.theme === 'object'
+    );
   } catch (error) {
     console.warn('Failed to load theme library:', error);
     return [];
@@ -138,7 +147,9 @@ function saveThemeToLibrary(name, theme) {
   try {
     localStorage.setItem(THEME_LIBRARY_KEY, JSON.stringify(library));
   } catch (error) {
+    // Callers toast "Theme saved" on a truthy return — don't lie on quota.
     console.warn('Failed to save theme library entry:', error);
+    return null;
   }
 
   return themeEntry;

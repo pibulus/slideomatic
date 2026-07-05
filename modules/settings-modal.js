@@ -105,8 +105,13 @@ function saveApiKey() {
   const key = input.value.trim();
 
   if (key) {
-    localStorage.setItem(STORAGE_KEY_API, key);
-    showApiKeyStatus('success', '✓ API key saved successfully!');
+    try {
+      localStorage.setItem(STORAGE_KEY_API, key);
+      showApiKeyStatus('success', '✓ API key saved successfully!');
+    } catch (error) {
+      console.warn('Failed to store API key:', error);
+      showApiKeyStatus('error', 'Could not save the key — storage is full or blocked (private mode?)');
+    }
   } else {
     showApiKeyStatus('error', 'Please enter a valid API key');
   }

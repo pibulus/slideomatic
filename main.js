@@ -25,7 +25,7 @@ import { validateSlides } from './modules/validation.js';
 import { showHudStatus, hideHudStatus } from './modules/hud.js';
 
 
-import { renderEditForm } from './modules/edit-drawer.js';
+import { renderEditForm, flushPendingEditDrawerWork } from './modules/edit-drawer.js';
 import {
   createDrawer,
   openDrawer,
@@ -54,6 +54,7 @@ import {
 import { slidesRoot, initDomRefs } from './modules/dom-refs.js';
 import {
   insertSlideAt,
+  removeSlideAt,
   replaceSlideAt,
   downloadDeck,
   handleDeckUpload,
@@ -451,6 +452,10 @@ function getEditDrawerContext() {
     },
     replaceSlideAt: (index, options) => replaceSlideAt(index, options),
     insertSlideAt: (index, slideData, options) => insertSlideAt(index, slideData, options),
+    deleteSlideAt: (index) => {
+      removeSlideAt(index, { focus: true });
+      return true;
+    },
     downloadDeck,
     getSlideTemplate,
     showHudStatus,
@@ -497,6 +502,7 @@ const createdEditDrawer = createDrawer({
   },
   onClose: () => {
     setEditDrawerOpen(false);
+    flushPendingEditDrawerWork(getEditDrawerContext());
   },
 });
 setEditDrawerInstance(createdEditDrawer);
