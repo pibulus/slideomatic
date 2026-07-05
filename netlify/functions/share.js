@@ -455,21 +455,25 @@ async function extendAssetExpiry(assetStore, assetId) {
     const asset = await assetStore.get(assetId, { type: 'arrayBuffer' });
     if (!asset) return;
 
-    const metadata = await assetStore.getMetadata(assetId);
-    if (!metadata) return;
+    // getMetadata returns { etag, metadata } — spreading the wrapper used to
+    // nest the real metadata one level down, wiping mimeType/hash/bytes and
+    // breaking dedup + content-type on every reuse.
+    const wrapper = await assetStore.getMetadata(assetId);
+    if (!wrapper) return;
+    const meta = wrapper.metadata || {};
 
     const newExpiry = Date.now() + TTL.ASSET_MS;
 
     await assetStore.set(assetId, asset, {
       metadata: {
-        ...metadata,
+        ...meta,
         expiresAt: newExpiry,
         lastReused: Date.now(),
-        reuseCount: (metadata.reuseCount || 0) + 1
+        reuseCount: (meta.reuseCount || 0) + 1
       }
     });
 
-    console.log(`Extended expiry for ${assetId} (reuse count: ${metadata.reuseCount || 0})`);
+    console.log(`Extended expiry for ${assetId} (reuse count: ${meta.reuseCount || 0})`);
   } catch (error) {
     console.warn(`Failed to extend expiry for ${assetId}:`, error);
   }

@@ -56,8 +56,13 @@ export function validateSlides(data) {
     }
 
     if (slide.type === 'image') {
-      if (!slide.image || typeof slide.image !== 'object' || !slide.image.src) {
-        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? 'Image slide'}) requires an image.src value.`);
+      // A missing/empty src is fine — the renderer shows a placeholder with
+      // a search button, and AI deck generation intentionally leaves src
+      // empty for later image generation. Throwing here used to reject whole
+      // decks: hosted shares whose oversized images were blanked server-side,
+      // and AI starter decks that followed the prompt's own instructions.
+      if (slide.image != null && typeof slide.image !== 'object') {
+        throw new Error(`Slide ${index} (${slide.badge ?? slide.headline ?? 'Image slide'}) has a malformed image value.`);
       }
     }
   });

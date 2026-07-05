@@ -254,8 +254,32 @@ async function requestPassphrase(isInvalid) {
   return response ? response.trim() : null;
 }
 
+// The recipient's local copy must not carry assetId/storage refs: slide
+// deletes and JSON imports queue those ids against the unauthenticated
+// delete-asset endpoint, which would break the original share (and, via
+// global dedup, other people's shares) for everyone. The image URLs still
+// load; only the "I own this blob" markers are dropped.
+function detachSharedAssetRefs(slideArray) {
+  const detach = (image) => {
+    if (image && typeof image === 'object' && image.assetId) {
+      delete image.assetId;
+      delete image.storage;
+    }
+  };
+  slideArray.forEach((slide) => {
+    if (!slide || typeof slide !== 'object') return;
+    detach(slide.image);
+    if (Array.isArray(slide.media)) slide.media.forEach((m) => detach(m?.image));
+    if (Array.isArray(slide.items)) slide.items.forEach((i) => detach(i?.image));
+    detach(slide.left?.image);
+    detach(slide.right?.image);
+    if (Array.isArray(slide.pillars)) slide.pillars.forEach((p) => detach(p?.image));
+  });
+}
+
 function materializeSharedDeck(slideArray, options = {}) {
   const sharedSlides = JSON.parse(JSON.stringify(slideArray));
+  detachSharedAssetRefs(sharedSlides);
   validateSlides(sharedSlides);
 
   const deckId = generateDeckId();

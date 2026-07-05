@@ -56,9 +56,20 @@ export async function handler(event) {
 
     const store = getStore(STORE_NAMES.ASSETS);
     let deleted = 0;
+    let skipped = 0;
 
     for (const id of ids) {
       try {
+        // Share-externalized assets are referenced by hosted share records —
+        // possibly several, via global dedup — and this endpoint has no auth,
+        // so honoring a delete here would let any recipient silently break
+        // other people's share links. Their lifecycle is expiry-based; only
+        // user-uploaded assets are deletable.
+        const wrapper = await store.getMetadata(id);
+        if (wrapper?.metadata?.source === 'share-inline') {
+          skipped += 1;
+          continue;
+        }
         await store.delete(id);
         deleted += 1;
       } catch (error) {
@@ -69,7 +80,7 @@ export async function handler(event) {
     return {
       statusCode: 200,
       headers: BASE_HEADERS,
-      body: JSON.stringify({ deleted }),
+      body: JSON.stringify({ deleted, skipped }),
     };
   } catch (error) {
     console.error('Asset delete failed', error);
