@@ -319,6 +319,13 @@ export const handleResize = () => {
 
 export function setActiveSlide(nextIndex) {
   const clamped = clamp(nextIndex, 0, slideElements.length - 1);
+  // Navigating while the overview grid is up (HUD arrows, slider, Home/End)
+  // must go through the overview teardown — activating a slide mid-grid
+  // left the deck as a dead thumbnail layout with pointer-events off.
+  if (isOverview) {
+    exitOverview(clamped);
+    return;
+  }
   if (!isOverview && clamped === currentIndex && slideElements[currentIndex].classList.contains('is-active')) {
     updateHud();
     return;

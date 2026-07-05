@@ -200,3 +200,22 @@ persistence, broken-slide rendering, dead-link handling, and the XSS probes.
 | `358e1b8` | Voice/AI — visible recording, races, honest statuses, dead code |
 | `5ee36c6` | PWA cache correctness + launcher import restored |
 | *(this)* | Docs truth pass + this report |
+
+---
+
+## Addendum — second pass (2026-07-06)
+
+- **"Slideshow showing HTML code"**: what Pablo saw was the leftover XSS
+  test tab (a slide deliberately titled with markup, rendering inert —
+  correct behavior). No bundled deck contains raw HTML.
+- **Fixed: overview-mode brick.** Pressing Home/End — or any HUD nav
+  button/slider — while the overview grid was open tore the deck into a
+  dead thumbnail layout (tiny slide, pointer-events off). Home/End now move
+  the grid cursor; `setActiveSlide()` routes through `exitOverview()` when
+  the grid is up. Browser-verified both paths.
+- **Docs: README no longer claims "basic HTML" in slides** — the renderer
+  escapes HTML by design (share links = stranger content); markdown
+  bold/italic/code/links are the supported rich text.
+- Visual pass: guide deck, markdown rendering, mobile (390×844) deck
+  layout, overview enter/exit — all clean, zero console errors.
+- Remaining work handed off in `docs/NEXT-STEPS.md`.

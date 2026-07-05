@@ -153,7 +153,7 @@ Options:
 - `"image": { "orientation": "portrait" }` – overrides automatic orientation detection (`portrait`, `landscape`, or `square`).
 - `"autoBadge": false` – hide the default badge entirely.
 
-Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). The renderer handles rich text (basic HTML) and auto-links.
+Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). Text supports markdown-style formatting — `**bold**`, `*italic*`, `` `code` ``, `[links](https://…)` — plus auto-links. Raw HTML in slide content is escaped and shown as text (decks arrive from strangers via share links, so HTML never executes).
 
 ### Missing Image Helpers
 
@@ -214,7 +214,7 @@ Add recurring terms to `autolinks.json` to automatically wrap them with links. E
 
 - Omitting `urlTemplate` or `url` defaults to a Google Image search for the `search` value (or the term itself if `search` is absent).
 - Set `"openInNewTab": false` to keep navigation in the same tab.
-- Manual HTML links in `slides.json` still work if you prefer full control.
+- Markdown links (`[text](url)`) in `slides.json` work if you prefer full control; raw HTML is escaped.
 
 ---
 

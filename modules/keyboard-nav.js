@@ -103,6 +103,14 @@ export function initKeyboardNav(partialContext = {}) {
         context.exitOverview();
         return;
       }
+      if (key === 'Home' || key === 'End') {
+        // Jump the grid cursor instead of falling through to setActiveSlide,
+        // which would tear the deck out of overview mid-layout.
+        event.preventDefault();
+        flashKeyFeedback(key === 'Home' ? '⇤' : '⇥');
+        context.moveOverviewCursorBy(key === 'Home' ? -9999 : 9999, 0);
+        return;
+      }
     }
 
     if (key === 'ArrowRight' || key === ' ') {
