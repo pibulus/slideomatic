@@ -17,6 +17,7 @@ const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
 
 let touchStartX = 0;
 let touchStartY = 0;
+let multiTouchGesture = false;
 let touchContext = {
   setActiveSlide: (_) => {},
   getCurrentIndex: () => 0,
@@ -39,16 +40,30 @@ export function initTouchNav(partialContext = {}, targetElement = document.body)
 
 function handleTouchStart(event) {
   if (touchContext.isOverview()) return;
-  
-  // Ignore multi-touch gestures
-  if (event.touches.length > 1) return;
 
+  // A pinch starts as a single touch before the second finger lands — flag
+  // the whole gesture as multi-touch so lifting spread fingers doesn't
+  // register as a phantom swipe.
+  if (event.touches.length > 1) {
+    multiTouchGesture = true;
+    return;
+  }
+
+  multiTouchGesture = false;
   touchStartX = event.changedTouches[0].screenX;
   touchStartY = event.changedTouches[0].screenY;
 }
 
 function handleTouchEnd(event) {
   if (touchContext.isOverview()) return;
+
+  if (multiTouchGesture) {
+    // Gesture is over once the last finger lifts; until then stay flagged.
+    if (event.touches.length === 0) {
+      multiTouchGesture = false;
+    }
+    return;
+  }
 
   const touchEndX = event.changedTouches[0].screenX;
   const touchEndY = event.changedTouches[0].screenY;

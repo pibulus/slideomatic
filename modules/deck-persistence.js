@@ -87,11 +87,23 @@ export async function loadSlides() {
         throw new Error(`Failed to fetch from URL: ${urlParam}`);
       }
       const data = await response.json();
-      if (Array.isArray(data)) {
+      // Accept both bare arrays and the app's own export shape
+      // ({version, meta, theme, slides}) — a hosted JSON backup used to be
+      // rejected silently and fall through to the default deck.
+      const urlSlides = Array.isArray(data)
+        ? data
+        : data && typeof data === 'object' && Array.isArray(data.slides)
+          ? data.slides
+          : null;
+      if (urlSlides) {
+        if (!Array.isArray(data) && data.theme) {
+          applySharedThemeHook(data.theme);
+        }
         showHudStatusHook('✓ Loaded deck from URL', 'success');
         setTimeout(hideHudStatusHook, 2000);
-        return data;
+        return urlSlides;
       }
+      throw new Error('URL did not contain a deck (expected a slides array)');
     } catch (error) {
       console.error('Failed to load deck from URL', error);
       showHudStatusHook('⚠️ Failed to load deck from URL', 'error');
@@ -158,8 +170,15 @@ export async function loadSlides() {
         return data;
       }
     }
+    throw new Error(`Slides file ${slidesPath} is missing or not a slides array`);
   } catch (error) {
     console.warn(`Unable to load slides from ${slidesPath}, starting with blank deck`, error);
+    // Only toast when a specific deck was requested — a bare /deck.html
+    // falling back to a blank starter is expected, a dead ?slides= link isn't.
+    if (getParamHook('slides')) {
+      showHudStatusHook('⚠️ Could not load that deck — starting blank', 'warning');
+      setTimeout(hideHudStatusHook, 3000);
+    }
   }
 
   return [getSlideTemplateHook('title')];
@@ -321,8 +340,10 @@ function materializeSharedDeck(slideArray, options = {}) {
 function replaceUrlWithDeckId(deckId) {
   if (!window.history || typeof window.history.replaceState !== 'function') return;
   try {
-    const target = new URL(window.location.href);
-    target.search = '';
+    // Rewrite the pathname too: staying on /s/<slug> made every reload
+    // re-match the share loader and mint a fresh localStorage copy each
+    // time, orphaning any edits made to the previous copy.
+    const target = new URL('/deck.html', window.location.origin);
     target.hash = `deck=${encodeURIComponent(deckId)}`;
     window.history.replaceState({}, '', target.toString());
   } catch (error) {
@@ -387,7 +408,10 @@ function loadPersistedDeck() {
     try {
       validateSlides(payload.slides);
     } catch (validationError) {
-      console.warn('[loadPersistedDeck] Stored slides failed validation, discarding:', validationError);
+      console.warn('[loadPersistedDeck] Stored slides failed validation, backing up:', validationError);
+      // Returning null makes loadSlides persist a blank deck over this key —
+      // stash the original first so the user's data stays recoverable.
+      stashCorruptDeck(key, stored);
       return null;
     }
 
@@ -395,11 +419,24 @@ function loadPersistedDeck() {
   } catch (error) {
     console.warn('Failed to load deck overrides from localStorage:', error);
     try {
-      localStorage.removeItem(getDeckStorageKey());
+      const key = getDeckStorageKey();
+      const raw = localStorage.getItem(key);
+      if (raw) stashCorruptDeck(key, raw);
+      localStorage.removeItem(key);
     } catch {
       // Ignore cleanup failure – nothing else we can do.
     }
     return null;
+  }
+}
+
+// Outside DECK_STORAGE_PREFIX so the launcher shelf never lists it; the data
+// is recoverable from devtools if a user reports a vanished deck.
+function stashCorruptDeck(key, raw) {
+  try {
+    localStorage.setItem(`slideomatic_corrupt_backup:${key}`, raw);
+  } catch (error) {
+    console.warn('Could not back up corrupt deck payload:', error);
   }
 }
 

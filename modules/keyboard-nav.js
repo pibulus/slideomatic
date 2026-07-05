@@ -44,6 +44,13 @@ export function initKeyboardNav(partialContext = {}) {
   }
 
   keydownHandler = (event) => {
+    // Never hijack browser/system shortcuts: Cmd+D used to download the
+    // deck instead of bookmarking, Ctrl+U opened the file picker over
+    // view-source, Cmd+S opened Settings over save-page, etc.
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
     const target = event.target;
     if (
       target &&

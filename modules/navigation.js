@@ -490,5 +490,7 @@ function hydrateOverviewSlides() {
 }
 
 export function navigateToDeckHome() {
-  window.location.href = 'index.html';
+  // Absolute path: on a shared /s/<slug> URL a relative 'index.html' would
+  // resolve to /s/index.html and dead-end in the share loader.
+  window.location.href = '/index.html';
 }

@@ -282,10 +282,10 @@ export function initShareModal() {
     const json = JSON.stringify(clientPayload);
     const encoded = await compressAndEncode(json);
 
-    const url = new URL(window.location.href);
-    // Clear existing params to get a clean share link
-    url.search = '';
-    url.hash = '';
+    // Anchor to /deck.html explicitly — generating from an /s/<slug> page
+    // would otherwise produce /s/<slug>?data=… links where the stale hosted
+    // share wins over the fresh ?data= payload on load.
+    const url = new URL('/deck.html', window.location.origin);
     url.searchParams.set('data', encoded);
 
     // Check URL length — most browsers support ~2MB but proxies/servers cap at ~8KB
