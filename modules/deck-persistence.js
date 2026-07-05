@@ -383,23 +383,25 @@ export function persistSlides(options = {}) {
   const { suppressWarning = false, silent = false } = options;
   if (!Array.isArray(slides)) return false;
 
-  const slidesPath = resolveSlidesPath();
-  const isBuiltInDeck =
-    !activeDeckId &&
-    (slidesPath === 'guide.json' ||
-      slidesPath === 'design-resources.json' ||
-      slidesPath === 'demo-deck.json');
-  if (isBuiltInDeck) {
-    return false;
+  // Path-loaded decks (guide, starter templates, plain /deck.html) have no
+  // local deck id, and loadSlides() never reads path-keyed overrides back —
+  // edits would survive the session but vanish on reload. Fork into a real
+  // local deck on the first edit so autosave means what it says, the deck
+  // shows up on the launcher shelf, and built-ins stay pristine.
+  if (!activeDeckId) {
+    const deckId = generateDeckId();
+    setActiveDeckId(deckId);
+    setDeckStorageKey(`${DECK_STORAGE_PREFIX}${encodeURIComponent(deckId)}`);
+    replaceUrlWithDeckId(deckId);
   }
 
-  if (!silent && activeDeckId) {
+  if (!silent) {
     showSaveStatusHook('saving');
   }
 
   try {
     const updatedAt = Date.now();
-    const source = activeDeckId ? `local:${activeDeckId}` : resolveSlidesPath();
+    const source = `local:${activeDeckId}`;
     const storageKey = getDeckStorageKey();
     const currentTheme = getCurrentThemeHook();
     const payload = {
@@ -421,7 +423,7 @@ export function persistSlides(options = {}) {
     markDeckAsRecent();
     updateDeckNameDisplayHook();
 
-    if (!silent && activeDeckId) {
+    if (!silent) {
       showSaveStatusHook('saved');
     }
 
