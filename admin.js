@@ -12,7 +12,7 @@ const AUTH_TOKEN_KEY = 'deck-admin-token';
 //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourpassword'))
 //     .then(h => console.log(Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,'0')).join('')))
 // Then paste the hex string below.
-const ADMIN_PASSWORD_HASH = '1b1a8e28a3adde50adf938c0e8b5e9a14cd1e7060ca7a03f7ed6bfe7ef5ece3e'; // 'bonesoup'
+const ADMIN_PASSWORD_HASH = '1b1a8e28a3adde50adf938c0e8b5e9a14cd1e7060ca7a03f7ed6bfe7ef5ece3e';
 const SLIDES_PATH = resolveSlidesPath();
 
 let slides = [];

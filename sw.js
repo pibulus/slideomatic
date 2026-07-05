@@ -1,4 +1,6 @@
-const CACHE_VERSION = 'slideomatic-v1.0.1';
+// Bump on every deploy — there is no build step, so this string is the only
+// thing that invalidates cached JS/CSS for returning visitors.
+const CACHE_VERSION = 'slideomatic-v1.0.2';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -26,6 +28,10 @@ const SHELL_ASSETS = [
   '/css/print.css',
   '/main.js',
   '/modules/pwa.js',
+  '/js/vendor/browser-image-compression.js',
+  '/js/vendor/qr-code-styling.js',
+  '/guide.json',
+  '/favicon.svg',
   '/slides.json',
   '/theme.json',
   '/catalog.json',
@@ -38,7 +44,10 @@ const SHELL_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
-      .then((cache) => cache.addAll(SHELL_ASSETS))
+      // addAll() rejects the whole install if ANY asset 404s — one renamed
+      // file would silently kill the service worker forever. Cache each
+      // asset independently instead.
+      .then((cache) => Promise.allSettled(SHELL_ASSETS.map((asset) => cache.add(asset))))
       .then(() => self.skipWaiting())
   );
 });
@@ -81,10 +90,16 @@ async function networkFirst(request, fallbackUrl) {
   const cache = await caches.open(RUNTIME_CACHE);
   try {
     const response = await fetch(request);
-    cache.put(request, response.clone());
+    // Never cache error responses — a transient 404/500 would otherwise be
+    // served forever.
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
     return response;
   } catch {
-    return (await cache.match(request)) ||
+    // caches.match() searches shell + runtime; cache.match() ignored the
+    // precached shell entirely, breaking first-launch offline.
+    return (await caches.match(request)) ||
       (fallbackUrl ? await caches.match(fallbackUrl) : null) ||
       Response.error();
   }
@@ -92,9 +107,11 @@ async function networkFirst(request, fallbackUrl) {
 
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(request);
+  const cached = await caches.match(request);
   const fresh = fetch(request).then((response) => {
-    cache.put(request, response.clone());
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
     return response;
   }).catch(() => null);
 
