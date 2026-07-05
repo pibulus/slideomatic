@@ -1,5 +1,5 @@
 import { connectLambda, getStore } from '@netlify/blobs';
-import { STORE_NAMES, BASE_HEADERS } from './utils/common.js';
+import { STORE_NAMES, TTL, BASE_HEADERS } from './utils/common.js';
 
 /**
  * Cleanup Function: Delete expired shares and orphaned assets
@@ -29,6 +29,7 @@ export async function handler(event) {
     const results = {
       sharesScanned: 0,
       sharesDeleted: 0,
+      sharesKeptUndatable: 0,
       assetsScanned: 0,
       assetsDeleted: 0,
       bytesFreed: 0,
@@ -44,15 +45,27 @@ export async function handler(event) {
 
     for (const share of (shares.blobs || [])) {
       try {
-        const expiresAt = share.metadata?.expiresAt;
+        let expiresAt = Number(share.metadata?.expiresAt) || 0;
 
-        // Delete if expired or missing expiry (old shares)
-        if (!expiresAt || expiresAt < now) {
-          const ageInDays = expiresAt ? Math.round((now - expiresAt) / (24 * 60 * 60 * 1000)) : null;
+        // Records written before expiry metadata existed: derive a lifetime
+        // from creation. Treating "no expiry" as "expired" deleted every
+        // share the day after it was created.
+        if (!expiresAt) {
+          const createdAt = Number(share.metadata?.createdAt) || 0;
+          expiresAt = createdAt ? createdAt + TTL.SHARE_MS : 0;
+        }
+
+        // No way to date it at all — keep it rather than guess-delete.
+        if (!expiresAt) {
+          results.sharesKeptUndatable++;
+          continue;
+        }
+
+        if (expiresAt < now) {
+          const ageInDays = Math.round((now - expiresAt) / (24 * 60 * 60 * 1000));
 
           console.log(
-            `Deleting expired share: ${share.key} ` +
-            `(expired ${ageInDays ? ageInDays + ' days ago' : 'no expiry set'})`
+            `Deleting expired share: ${share.key} (expired ${ageInDays} days ago)`
           );
 
           if (!isDryRun) {

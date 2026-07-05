@@ -3,6 +3,7 @@ import { connectLambda, getStore } from '@netlify/blobs';
 import {
   STORE_NAMES,
   LIMITS,
+  TTL,
   BASE_HEADERS,
   corsHeaders,
   createAssetId,
@@ -120,6 +121,9 @@ async function handlePost(event) {
     metadata: {
       bytes,
       createdAt: Date.now(),
+      // Without this the daily cleanup treats the share as legacy and deletes
+      // it on its next run. Viewing the share refreshes the expiry.
+      expiresAt: Date.now() + TTL.SHARE_MS,
     },
   });
 
@@ -146,7 +150,8 @@ async function handleGet(event) {
   }
 
   const store = getStore(STORE_NAMES.SHARES);
-  const record = await store.get(id, { type: 'json' });
+  const result = await store.getWithMetadata(id, { type: 'json' });
+  const record = result?.data;
 
   if (!record) {
     return {
@@ -155,6 +160,8 @@ async function handleGet(event) {
       body: JSON.stringify({ error: 'Share not found' }),
     };
   }
+
+  await refreshShareExpiry(store, id, record, result?.metadata);
 
   const passwordProtected = Boolean(record?.meta?.passwordProtected && record.meta.passwordHash);
   if (passwordProtected) {
@@ -195,6 +202,33 @@ async function handleGet(event) {
     headers: BASE_HEADERS,
     body: JSON.stringify(sanitized),
   };
+}
+
+// Keep actively-viewed shares (and their externalized images) alive: once the
+// remaining lifetime dips below half the TTL, push expiry back out. Guarded so
+// each view costs at most one blob rewrite per half-TTL, not one per view.
+async function refreshShareExpiry(store, id, record, metadata = {}) {
+  try {
+    const now = Date.now();
+    const expiresAt = Number(metadata?.expiresAt) || 0;
+    if (expiresAt && expiresAt - now > TTL.SHARE_MS / 2) return;
+
+    await store.set(id, JSON.stringify(record), {
+      metadata: {
+        ...metadata,
+        createdAt: Number(metadata?.createdAt) || now,
+        expiresAt: now + TTL.SHARE_MS,
+      },
+    });
+
+    if (Array.isArray(record.assets) && record.assets.length) {
+      const assetStore = getStore(STORE_NAMES.ASSETS);
+      await Promise.all(record.assets.map((assetId) => extendAssetExpiry(assetStore, assetId)));
+    }
+  } catch (error) {
+    // Expiry refresh is best-effort; never block loading the deck over it.
+    console.warn(`Failed to refresh expiry for share ${id}:`, error);
+  }
 }
 
 async function createUniqueShareId(store, attempt = 0) {
@@ -336,7 +370,7 @@ async function externalizeInlineAssets(slides, event) {
             originalBytes: recompressed ? originalSize : finalBuffer.byteLength,
             hash,
             createdAt: Date.now(),
-            expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+            expiresAt: Date.now() + TTL.ASSET_MS,
           },
         });
 
@@ -424,8 +458,7 @@ async function extendAssetExpiry(assetStore, assetId) {
     const metadata = await assetStore.getMetadata(assetId);
     if (!metadata) return;
 
-    // Extend expiry by 30 days from now
-    const newExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+    const newExpiry = Date.now() + TTL.ASSET_MS;
 
     await assetStore.set(assetId, asset, {
       metadata: {

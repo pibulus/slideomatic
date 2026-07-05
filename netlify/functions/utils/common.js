@@ -17,6 +17,13 @@ export const LIMITS = {
   THUMBNAIL_BYTES: 50 * 1024,        // 50KB - for overview mode
 };
 
+// Shares and their externalized assets expire together; viewing a share
+// refreshes both, so actively-used links stay alive indefinitely.
+export const TTL = {
+  SHARE_MS: 90 * 24 * 60 * 60 * 1000,
+  ASSET_MS: 90 * 24 * 60 * 60 * 1000,
+};
+
 export const CACHE_HEADERS = {
   IMMUTABLE: 'public, max-age=31536000, immutable',
   NO_STORE: 'no-store',
@@ -197,6 +204,9 @@ export async function verifySharePassword(password, saltHex, hashHex) {
   if (!saltHex || !hashHex) return false;
   const salt = Buffer.from(saltHex, 'hex');
   const stored = Buffer.from(hashHex, 'hex');
+  // Corrupt hex decodes to a short/empty buffer; comparing zero-length keys
+  // would make every password "valid", so refuse instead.
+  if (salt.length < 8 || stored.length < 16) return false;
   // scrypt always returns exactly `stored.length` bytes, so timingSafeEqual
   // (which throws on length mismatch) is safe here.
   const derived = await scryptAsync(password, salt, stored.length);
