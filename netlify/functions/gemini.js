@@ -23,10 +23,24 @@ const ALLOWED_MODELS = new Set([
   'gemini-2.5-flash',
 ]);
 
+// The app only ever calls this proxy same-origin (relative /.netlify/... paths),
+// so cross-origin browser access is never legitimate. Echoing arbitrary Origins
+// here would let any other website use this endpoint — and the server-side app
+// key — as a free Gemini proxy from their visitors' browsers. Only the app's
+// own origins (plus local dev) get CORS headers; everyone else gets none, so
+// their browsers refuse the response.
+const ALLOWED_ORIGINS = new Set([
+  'https://slideomatic.app',
+  'https://www.slideomatic.app',
+]);
+const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
 function cors(headers = {}) {
-  const origin = headers.origin || headers.Origin || '*';
+  const origin = headers.origin || headers.Origin || '';
+  const allowed = ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
   return {
-    'Access-Control-Allow-Origin': origin,
+    ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}),
+    Vary: 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json',
