@@ -59,8 +59,9 @@ server.listen(port, async () => {
   const browser = await launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
   try {
     const page = await browser.newPage();
-    await page.goto(`http://localhost:${port}/deck.html`, { waitUntil: 'networkidle2' });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const deckHash = process.env.PDF_DECK ? `#slides=${encodeURIComponent(process.env.PDF_DECK)}` : '';
+    await page.goto(`http://localhost:${port}/deck.html${deckHash}`, { waitUntil: 'load', timeout: 60000 });
+    await new Promise((resolve) => setTimeout(resolve, 4000));
     await mkdir(path.dirname(outputPath), { recursive: true });
     await page.pdf({
       path: outputPath,
@@ -68,6 +69,7 @@ server.listen(port, async () => {
       landscape: true,
       printBackground: true,
       preferCSSPageSize: true,
+      timeout: 120000,
     });
     console.log(`✅ Saved PDF to ${outputPath}`);
   } catch (error) {
