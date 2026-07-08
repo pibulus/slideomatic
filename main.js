@@ -483,6 +483,7 @@ function getKeyboardContext() {
     closeSettingsModal,
     toggleKeyboardHelp,
     toggleSlideIndex,
+    toggleHud: () => toggleHudHidden(),
     triggerDeckUpload: () => {
       const uploadInput = document.getElementById('deck-upload');
       if (uploadInput) uploadInput.click();
@@ -681,6 +682,8 @@ function handleInitialIntent() {
   });
 }
 
+let toggleHudHidden = () => {};
+
 function initHudControls() {
   const hud = document.querySelector('.hud');
   if (!hud) return;
@@ -689,6 +692,8 @@ function initHudControls() {
   const HIDE_DELAY = 2800;
   let hideTimeout = null;
   let lastInteraction = 0;
+  // Presenter-toggled hide (H key): wins over every auto-reveal below
+  let manuallyHidden = false;
 
   const hideHud = () => {
     if (!autoHideQuery.matches) return;
@@ -702,10 +707,18 @@ function initHudControls() {
   };
 
   const revealHud = () => {
+    if (manuallyHidden) return;
     hud.dataset.hidden = 'false';
     if (!autoHideQuery.matches) return;
     clearTimeout(hideTimeout);
     hideTimeout = setTimeout(hideHud, HIDE_DELAY);
+  };
+
+  toggleHudHidden = () => {
+    manuallyHidden = !manuallyHidden;
+    clearTimeout(hideTimeout);
+    hud.dataset.hidden = manuallyHidden ? 'true' : 'false';
+    if (!manuallyHidden && autoHideQuery.matches) scheduleHide();
   };
 
   const prevBtn = document.getElementById('hud-prev-btn');
@@ -798,6 +811,7 @@ function initHudControls() {
   window.addEventListener('keydown', handleInteraction);
 
   const handleAutoHideChange = () => {
+    if (manuallyHidden) return;
     clearTimeout(hideTimeout);
     hud.dataset.hidden = 'false';
     if (autoHideQuery.matches) scheduleHide();
@@ -809,7 +823,7 @@ function initHudControls() {
   }
 
   hud.addEventListener('mouseenter', () => {
-    if (!autoHideQuery.matches) return;
+    if (manuallyHidden || !autoHideQuery.matches) return;
     hud.dataset.hidden = 'false';
     clearTimeout(hideTimeout);
   });
