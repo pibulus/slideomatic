@@ -2,7 +2,7 @@
   {
     "type": "title",
     "eyebrow": "Branding Presentation",
-    "title": "How to Get Got ",
+    "title": "How to Get Got",
     "subtitle": "Compressing worlds into brands that stick",
     "media": [
       {},
@@ -152,25 +152,25 @@
       {
         "image": {
           "src": "images/slide6-1.png",
-          "alt": "Oasis logo"
+          "alt": "Olympic rings logo"
         }
       },
       {
         "image": {
           "src": "images/slide6-2.webp",
-          "alt": "Supreme box logo"
+          "alt": "MTV logo"
         }
       },
       {
         "image": {
           "src": "images/slide6-3.png",
-          "alt": "Nike swoosh"
+          "alt": "Metallica logo"
         }
       },
       {
         "image": {
           "src": "images/slide6-4.png",
-          "alt": "Liquid Death skull can"
+          "alt": "Louis Vuitton monogram"
         }
       }
     ]
@@ -810,7 +810,7 @@
   {
     "type": "standard",
     "headline": "Now Break It",
-    "badge": false,
+    "badge": "Plot Twist",
     "body": [
       "You've learned the rules. Color, type, shape, systems, compression.",
       "Rules exist so you know exactly how to break them."
