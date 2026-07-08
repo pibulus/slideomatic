@@ -248,12 +248,8 @@ main {
 
 .start-deck__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: clamp(12px, 2vw, 18px);
-}
-
-@media (max-width: 760px) {
-  .start-deck__grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 480px) {
@@ -304,10 +300,73 @@ main {
 
 .start-card--guide::before { background: linear-gradient(90deg, var(--riso-pink), var(--riso-yellow)); }
 .start-card--blank::before { background: linear-gradient(90deg, var(--riso-blue), var(--riso-green)); }
-.start-card--pitch::before { background: var(--riso-pink); }
-.start-card--talk::before  { background: var(--riso-blue); }
-.start-card--show::before  { background: var(--riso-green); }
-.start-card--weird::before { background: var(--riso-yellow); }
+
+/* ===================================================================
+   TEMPLATE ROW — templates as quiet pills under the two lead cards
+   ================================================================ */
+
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(14px, 2vw, 20px);
+}
+
+.template-row__label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+
+.template-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 8px 16px;
+  box-shadow: 3px 3px 0 rgba(26, 21, 34, 0.25);
+  transition:
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 160ms ease;
+}
+
+.template-pill::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  flex: none;
+}
+
+.template-pill--pitch::before { background: var(--riso-pink); }
+.template-pill--talk::before  { background: var(--riso-blue); }
+.template-pill--show::before  { background: var(--riso-green); }
+.template-pill--weird::before { background: var(--riso-yellow); }
+
+.template-pill:hover,
+.template-pill:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 rgba(26, 21, 34, 0.3);
+  outline: none;
+}
+
+.template-pill:active {
+  transform: translate(-1px, -1px) scale(0.98);
+}
 
 .start-card__kicker {
   font-size: 0.65rem;
