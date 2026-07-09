@@ -62,6 +62,12 @@ export function openKeyboardHelp() {
   const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
+  // Voice is opt-in: only advertise V when a Gemini key is configured
+  const voiceHint = document.getElementById('hint-voice');
+  if (voiceHint) {
+    voiceHint.hidden = !localStorage.getItem('slideomatic_gemini_api_key');
+  }
+
   previousFocus = document.activeElement;
   modal.removeAttribute('inert');
   modal.setAttribute('aria-hidden', 'false');

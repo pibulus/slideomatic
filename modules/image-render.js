@@ -6,7 +6,6 @@ import { handleImageUpload } from './image-upload.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { trapFocus, escapeHtml } from './utils.js';
 import {
-    buildImageSearchUrl,
     normalizeOrientation,
     deriveOrientationFromDimensions,
     cleanupSlideAssets,
@@ -144,13 +143,11 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
         ? trimmedQuery
             ? `Generate graph for "${trimmedQuery}"`
             : 'Describe and generate graph'
-        : trimmedQuery
-            ? `Search "${trimmedQuery}" or drag & drop`
-            : 'Drag & drop or paste image';
+        : 'Drop, paste, or click to add image';
 
     const icon = document.createElement('span');
     icon.className = 'image-placeholder__icon';
-    icon.textContent = context === 'graph' ? '📊' : '🔍';
+    icon.textContent = context === 'graph' ? '📊' : '🖼️';
 
     const text = document.createElement('span');
     text.className = 'image-placeholder__text';
@@ -169,23 +166,31 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     // Track event listeners for cleanup
     const listeners = [];
 
-    // Click handler for Google Image Search
-    if (trimmedQuery && !isGraphContext) {
-        placeholder.dataset.searchQuery = trimmedQuery;
-        placeholder.setAttribute('aria-label', `Search images for ${trimmedQuery} or drag and drop`);
+    // Click opens a classic file picker — same path as drag & drop
+    if (!isGraphContext) {
+        placeholder.setAttribute(
+            'aria-label',
+            'Add an image: drag and drop, paste, or click to browse'
+        );
         const clickHandler = (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const url = buildImageSearchUrl(trimmedQuery);
-            window.open(url, '_blank', 'noopener');
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.addEventListener('change', async () => {
+                const file = input.files?.[0];
+                if (!file) return;
+                try {
+                    await handleImageUpload(file, placeholder, image);
+                } catch (error) {
+                    console.error('Image upload failed:', error);
+                }
+            });
+            input.click();
         };
         placeholder.addEventListener('click', clickHandler);
         listeners.push({ element: placeholder, event: 'click', handler: clickHandler });
-    } else if (!isGraphContext) {
-        placeholder.setAttribute(
-            'aria-label',
-            'Drag and drop or paste an image'
-        );
     } else {
         placeholder.setAttribute('aria-label', 'Describe the graph you want to generate');
     }

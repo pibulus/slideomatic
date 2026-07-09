@@ -85,6 +85,20 @@ function buildInputField(field, value, placeholder) {
 function buildTextareaField(field, value, placeholder) {
   const safeField = escapeHtml(field);
   const targetId = `quick-edit-${safeField}`;
+  // Dictation rides on Gemini — only offer the mic when a key is configured
+  const hasAiKey = !!localStorage.getItem('slideomatic_gemini_api_key');
+  const dictateButton = hasAiKey
+    ? `
+      <button
+        type="button"
+        class="edit-drawer__dictate-btn"
+        data-dictate-target="${targetId}"
+        aria-label="Dictate ${escapeHtml(placeholder)}"
+        title="Dictate ${escapeHtml(placeholder)}"
+      >
+        Mic
+      </button>`
+    : '';
   return `
     <div class="edit-drawer__dictate-field">
       <textarea
@@ -94,16 +108,7 @@ function buildTextareaField(field, value, placeholder) {
         rows="4"
         placeholder="${escapeHtml(placeholder)}"
         aria-label="${escapeHtml(placeholder)}"
-      >${escapeHtml(value ?? '')}</textarea>
-      <button
-        type="button"
-        class="edit-drawer__dictate-btn"
-        data-dictate-target="${targetId}"
-        aria-label="Dictate ${escapeHtml(placeholder)}"
-        title="Dictate ${escapeHtml(placeholder)}"
-      >
-        Mic
-      </button>
+      >${escapeHtml(value ?? '')}</textarea>${dictateButton}
     </div>
   `;
 }

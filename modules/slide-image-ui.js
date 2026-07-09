@@ -145,9 +145,9 @@ function buildImageManager(slide) {
               class="edit-drawer__image-alt-input"
               data-image-index="${index}"
               value="${escapeHtml(altText)}"
-              placeholder="${isEmpty ? 'Image title (for search)' : 'Image name'}"
-              title="${isEmpty ? 'Image title used for Google search' : 'Image name/alt text'}"
-              aria-label="Image ${index + 1} ${isEmpty ? 'search title' : 'alt text'}"
+              placeholder="${isEmpty ? 'Describe the image' : 'Image name'}"
+              title="${isEmpty ? 'Describes the image — also unlocks AI generation' : 'Image name/alt text'}"
+              aria-label="Image ${index + 1} description"
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>

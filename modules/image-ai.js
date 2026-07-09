@@ -6,7 +6,6 @@ import { replaceSlideAt } from './slide-actions.js';
 import { setActiveSlide } from './navigation.js';
 import {
     extractSlideContext,
-    buildImageSearchUrl,
     updateSlideImage,
     updateSlideImageByIndex
 } from './image-utils.js';
@@ -92,21 +91,11 @@ GENERATE`;
         }
 
         if (decision.toUpperCase().startsWith('SEARCH:')) {
-            const query = decision.replace(/^SEARCH:\s*/i, '').trim();
+            // AI thinks a real photo beats a generated one — no more shipping
+            // people off to Google; just say so and let them drop a file in.
             hideHudStatus();
-            const url = buildImageSearchUrl(query);
-            // Two awaits separate this from the click gesture, so popup
-            // blockers commonly return null — don't claim success when the
-            // tab never opened.
-            const opened = window.open(url, '_blank', 'noopener');
-            if (opened) {
-                showHudStatus(`🔍 Searching: "${query}"`, 'success');
-                setTimeout(hideHudStatus, 3000);
-            } else {
-                showHudStatus('🔍 Popup blocked — search copied to clipboard', 'warning');
-                navigator.clipboard?.writeText(url).catch(() => {});
-                setTimeout(hideHudStatus, 3500);
-            }
+            showHudStatus('🖼️ A real photo would work best here — drop one in', 'info');
+            setTimeout(hideHudStatus, 3000);
         } else if (decision.toUpperCase().includes('GENERATE')) {
             const genToastId = showHudStatus('🎨 Generating image...', 'processing');
             try {

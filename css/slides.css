@@ -757,6 +757,21 @@
   align-items: center;
 }
 
+/* The wrapper inherits slide__image sizing classes, but the picture-frame
+   dressing (accent bg, border, padding, shadow) belongs on real images only —
+   otherwise the dashed drop zone sits inside a big empty framed box. */
+div.image-placeholder-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+div.image-placeholder-wrapper .image-placeholder {
+  width: 100%;
+  min-height: clamp(120px, 18vh, 200px);
+}
+
 .image-placeholder__magic-btn {
   position: absolute;
   top: -8px;

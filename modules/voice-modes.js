@@ -245,7 +245,21 @@ function disableVoiceButtons() {
   });
 }
 
+export function hasGeminiKey() {
+  return !!getGeminiApiKey();
+}
+
 export function toggleVoiceRecording(mode = 'add') {
+  // Voice is opt-in: no pasted Gemini key, no voice. Point at Settings
+  // instead of failing mid-recording.
+  if (!hasGeminiKey()) {
+    import('./hud.js').then(({ showHudStatus, hideHudStatus }) => {
+      showHudStatus('🎙 Voice needs a Gemini key — press S to add one', 'info');
+      setTimeout(hideHudStatus, 3200);
+    });
+    return;
+  }
+
   if (voiceProcessing || isStartingRecording) {
     return;
   }
