@@ -4,7 +4,14 @@
     "eyebrow": "Slide-o-Matic",
     "title": "Welcome",
     "subtitle": "Voice-powered deck builder",
-    "media": [],
+    "media": [
+      {
+        "image": {
+          "src": "images/welcome-projector.webp",
+          "alt": "Riso-style retro projector beaming a confetti of pastel slides"
+        }
+      }
+    ],
     "font": "grotesk"
   },
   {

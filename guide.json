@@ -176,12 +176,30 @@
     "badge": "Grid layout",
     "headline": "Grids are for scanning, comparing, and choosing",
     "items": [
-      { "color": "#F472B6", "label": "Pink" },
-      { "color": "#818CF8", "label": "Indigo" },
-      { "color": "#34D399", "label": "Emerald" },
-      { "color": "#FBBF24", "label": "Amber" },
-      { "color": "#F87171", "label": "Red" },
-      { "color": "#60A5FA", "label": "Blue" }
+      {
+        "color": "#F472B6",
+        "label": "Pink"
+      },
+      {
+        "color": "#818CF8",
+        "label": "Indigo"
+      },
+      {
+        "color": "#34D399",
+        "label": "Emerald"
+      },
+      {
+        "color": "#FBBF24",
+        "label": "Amber"
+      },
+      {
+        "color": "#F87171",
+        "label": "Red"
+      },
+      {
+        "color": "#60A5FA",
+        "label": "Blue"
+      }
     ]
   },
   {
@@ -192,7 +210,11 @@
       "Press **S** to add a Gemini key. The settings modal links straight to Google AI Studio's API key page: create a key, paste it in, save, test.",
       "Type **666** or **696969** when you are not focused in a text field to open the cheat console. It can generate one slide or a rough starter deck from a prompt.",
       "Treat AI output like a sketch, not gospel. Keep the useful bits, delete the soggy bits, make it sound like a person."
-    ]
+    ],
+    "image": {
+      "src": "images/ai-robot-painter.webp",
+      "alt": "Friendly robot painting a slide — this image was AI-generated with the same feature"
+    }
   },
   {
     "type": "standard",
