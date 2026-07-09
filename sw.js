@@ -1,6 +1,6 @@
 // Bump on every deploy — there is no build step, so this string is the only
 // thing that invalidates cached JS/CSS for returning visitors.
-const CACHE_VERSION = 'slideomatic-v1.0.11';
+const CACHE_VERSION = 'slideomatic-v1.0.12';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 

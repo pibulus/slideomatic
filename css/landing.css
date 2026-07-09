@@ -365,6 +365,16 @@ main {
   transform: translate(-1px, -1px) scale(0.98);
 }
 
+.start-deck__reassurance {
+  margin: clamp(14px, 2vw, 20px) 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
 .start-card__kicker {
   font-size: 0.65rem;
   font-weight: 900;

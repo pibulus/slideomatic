@@ -108,6 +108,8 @@
               <a class="template-pill template-pill--show" href="deck.html#slides=templates/show-and-tell&open=edit" title="Image-forward, show your work.">Show &amp; Tell</a>
               <a class="template-pill template-pill--weird" href="deck.html#slides=templates/the-weird-one&open=edit" title="A manifesto. Pure pastel-punk.">The Weird One</a>
             </div>
+
+            <p class="start-deck__reassurance">Free · No sign-up · Everything saves in your browser</p>
             <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
           </div>
         </section>
@@ -486,6 +488,18 @@
         allDecks.forEach((deck) => {
           shelfList.appendChild(createDeckCard(deck));
         });
+
+        // Returning users came for their decks — lift the shelf above the
+        // starter-pack promo once there's anything on it.
+        const shelfSection = document.getElementById('saved');
+        const promoSection = document.querySelector('.collection-promo');
+        if (shelfSection && promoSection) {
+          if (allDecks.length > 0 && promoSection.compareDocumentPosition(shelfSection) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            promoSection.before(shelfSection);
+          } else if (allDecks.length === 0 && shelfSection.compareDocumentPosition(promoSection) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            shelfSection.before(promoSection);
+          }
+        }
 
         updateResumeButtonLabel();
       }
