@@ -270,6 +270,16 @@
     "font": "grotesk"
   },
   {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Let the Brain Finish the Picture",
+    "body": [
+      "Gestalt closure: minds complete what designers leave out. The FedEx arrow. The NBC peacock.",
+      "Hidden meaning is a gift — discovery makes people feel smart, and feeling smart makes it stick.",
+      "Design the gap, not just the mark."
+    ]
+  },
+  {
     "type": "typeface",
     "badge": "Slide 13",
     "headline": "Typography = Compressed Voice",
@@ -301,6 +311,16 @@
       "src": "images/slide15.webp",
       "alt": "Typography examples"
     }
+  },
+  {
+    "type": "standard",
+    "badge": "Theory Drop",
+    "headline": "Every Sign Has Two Halves",
+    "body": [
+      "Saussure’s split: the **signifier** (the form — mark, sound, shape) and the **signified** (the concept it triggers).",
+      "The swoosh is just ink. “Victory” happens in your head. Branding is engineering that jump.",
+      "You can’t control the signified directly — you tune signifiers until the right meaning fires."
+    ]
   },
   {
     "type": "gallery",
@@ -337,6 +357,47 @@
       }
     ],
     "font": "sans"
+  },
+  {
+    "type": "pillars",
+    "badge": "Theory Drop",
+    "headline": "Three Ways a Sign Points",
+    "body": "Peirce’s trichotomy — every logo you’ll ever make works one of these angles.",
+    "font": "sans",
+    "pillars": [
+      {
+        "title": "Icon",
+        "text": "Resembles the thing. Apple’s apple, Instagram’s camera."
+      },
+      {
+        "title": "Index",
+        "text": "Evidence of the thing. Smoke means fire. A paint splatter means process."
+      },
+      {
+        "title": "Symbol",
+        "text": "Pure convention — learned, arbitrary. The swoosh meant nothing until repetition taught us."
+      }
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Theory Drop",
+    "headline": "What It Shows vs What It Whispers",
+    "body": [
+      "**Denotation**: what’s literally there. Red liquid in a glass bottle.",
+      "**Connotation**: what culture stacked on top — classic, American, Christmas. Coca-Cola owns the connotations, not the color.",
+      "Barthes called that stack *myth* — meaning built on meaning until it feels natural."
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Exercise",
+    "headline": "Decode a Logo, Live",
+    "body": [
+      "Grab any logo you can see right now. Ask it three questions:",
+      "What does it literally show? (denotation) — What does it make you feel? (connotation)",
+      "Is it icon, index, or symbol? Congratulations — you’re doing semiotics."
+    ]
   },
   {
     "type": "standard",
@@ -440,6 +501,13 @@
       "orientation": "square"
     },
     "font": "grotesk"
+  },
+  {
+    "type": "quote",
+    "badge": "Receipts",
+    "headline": "“Design is the silent ambassador of your brand.”",
+    "body": "Paul Rand — the hand behind IBM, UPS, and ABC",
+    "font": "sans"
   },
   {
     "type": "title",
@@ -738,6 +806,13 @@
     "font": "sans"
   },
   {
+    "type": "quote",
+    "badge": "Receipts",
+    "headline": "“It took me a few seconds to draw it, but it took me 34 years to learn how to draw it in a few seconds.”",
+    "body": "Paula Scher — on sketching the Citi logo on a napkin, in the first meeting",
+    "font": "mono"
+  },
+  {
     "type": "standard",
     "badge": "Slide 31",
     "headline": "Shortcuts = Superpowers",
@@ -885,6 +960,16 @@
       "uploadedAt": 1763622907648
     },
     "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "MAYA: Most Advanced. Yet Acceptable.",
+    "body": [
+      "Raymond Loewy’s formula — push as far as you can while staying legible.",
+      "Too familiar is wallpaper. Too weird is noise. The sweet spot: new enough to notice, familiar enough to trust.",
+      "That’s why subversion needs fluency — you have to speak the code to bend it."
+    ]
   },
   {
     "type": "standard",
