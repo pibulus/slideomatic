@@ -99,6 +99,18 @@ main {
   z-index: 1;
 }
 
+/* ===================================================================
+   LANDING LAYOUT TOKENS — every section shares these three rules:
+   one width, one gutter rhythm, one card frame (4px ink / radius-soft
+   / shadow-card; the hero alone gets shadow-brutal as the loudest box)
+   ================================================================ */
+
+:root {
+  --landing-width: min(1140px, calc(100vw - 24px));
+  --landing-pad: clamp(24px, 4vw, 44px);
+  --landing-gap: clamp(24px, 4vw, 44px);
+}
+
 .landing {
   width: 100%;
   display: flex;
@@ -113,30 +125,15 @@ main {
 .landing__hero {
   position: relative;
   background: var(--paper);
-  padding: clamp(40px, 6vw, 64px) clamp(24px, 5vw, 48px);
-  margin: clamp(24px, 4vw, 40px) auto 0;
-  width: min(1200px, 96vw);
+  padding: clamp(40px, 6vw, 64px) clamp(24px, 5vw, 56px);
+  margin: var(--landing-gap) auto 0;
+  width: var(--landing-width);
   border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
   box-shadow: var(--shadow-brutal);
   overflow: visible;
   display: grid;
   gap: clamp(32px, 5vw, 48px);
-}
-
-@media (min-width: 1024px) {
-  .landing__hero-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: clamp(40px, 5vh, 64px) 20px clamp(72px, 9vh, 112px);
-  }
-
-  .landing__hero {
-    margin: 0;
-    width: min(1100px, 90vw);
-    padding: 48px 56px;
-  }
 }
 
 /* LARGE fluorescent circle - top right */
@@ -591,12 +588,12 @@ a.button--secondary:hover {
    ================================================================ */
 
 .collection-promo {
-  width: min(1200px, 96vw);
-  margin: clamp(24px, 4vw, 40px) auto 0;
-  padding: clamp(24px, 4vw, 48px);
+  width: var(--landing-width);
+  margin: var(--landing-gap) auto 0;
+  padding: var(--landing-pad);
   border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--paper);
   box-shadow: var(--shadow-card);
   display: flex;
   flex-wrap: wrap;
@@ -626,19 +623,22 @@ a.button--secondary:hover {
   z-index: 1;
 }
 
+/* Section eyebrows + titles share one voice (promo, shelf, footer) */
 .collection-promo__eyebrow {
   margin: 0 0 8px;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.15em;
   font-weight: 900;
-  font-size: 0.85rem;
-  color: var(--riso-blue);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
 }
 
 .collection-promo__content h2 {
   margin: 0 0 12px;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.1;
 }
 
 .collection-promo__content p {
@@ -675,13 +675,13 @@ a.button--secondary:hover {
    ================================================================ */
 
 .deck-shelf {
-  width: min(1200px, 96vw);
-  margin: clamp(32px, 5vw, 48px) auto clamp(32px, 5vw, 48px);
+  width: var(--landing-width);
+  margin: var(--landing-gap) auto 0;
   background: var(--paper);
   border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
   box-shadow: var(--shadow-card);
-  padding: clamp(24px, 4vw, 40px);
+  padding: var(--landing-pad);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -903,18 +903,18 @@ a.button--secondary:hover {
    ================================================================ */
 
 .landing__footer {
-  margin: 0 auto clamp(40px, 6vw, 64px);
-  width: min(1200px, 96vw);
+  margin: var(--landing-gap) auto;
+  width: var(--landing-width);
   display: flex;
   flex-wrap: wrap;
   gap: 20px clamp(12px, 3vw, 32px);
   align-items: flex-start;
   justify-content: space-between;
-  padding: clamp(24px, 4vw, 40px);
-  background: rgba(255, 255, 255, 0.6);
-  border: 3px solid var(--ink);
+  padding: var(--landing-pad);
+  background: var(--paper);
+  border: 4px solid var(--ink);
   border-radius: var(--radius-soft);
-  box-shadow: 4px 4px 0 rgba(26, 21, 34, 0.15);
+  box-shadow: var(--shadow-card);
 }
 
 .landing__footer-about {
@@ -932,9 +932,10 @@ a.button--secondary:hover {
 
 .landing__footer-about strong {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.15em;
   font-weight: 900;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
 }
 
 .landing__footer-about p {
@@ -1204,14 +1205,26 @@ a.button--secondary:hover {
    ================================================================ */
 
 @media (max-width: 640px) {
+  :root {
+    --landing-width: calc(100vw - 20px);
+    --landing-pad: 20px 16px;
+    --landing-gap: 16px;
+  }
+
   .landing__hero {
-    width: calc(100vw - 20px);
     margin-top: 12px;
     padding: 28px 18px;
+    gap: 24px;
+  }
+
+  /* One quieter frame for every section card on small screens */
+  .landing__hero,
+  .collection-promo,
+  .deck-shelf,
+  .landing__footer {
     border-width: 3px;
     border-radius: 18px;
-    box-shadow: 6px 6px 0 rgba(26, 21, 34, 0.24);
-    gap: 24px;
+    box-shadow: 5px 5px 0 rgba(26, 21, 34, 0.22);
   }
 
   .landing__hero::after {
@@ -1245,8 +1258,7 @@ a.button--secondary:hover {
       3px 3px 0 var(--riso-green);
   }
 
-  .start-card,
-  .collection-promo {
+  .start-card {
     border-width: 3px;
     border-radius: 18px;
     box-shadow: 4px 4px 0 rgba(26, 21, 34, 0.18);
