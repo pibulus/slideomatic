@@ -23,6 +23,10 @@
       "Theme randomizer",
       "Shareable decks"
     ],
-    "font": "sans"
+    "font": "sans",
+    "image": {
+      "src": "images/voice-mic.webp",
+      "alt": "Riso retro microphone singing slides into the air"
+    }
   }
 ]

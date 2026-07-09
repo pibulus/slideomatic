@@ -396,11 +396,26 @@
     "badge": "Exercise",
     "headline": "Decode a Logo, Live",
     "body": [
-      "Grab any logo you can see right now. Ask it three questions:",
+      "Grab any logo in the room — or the cover of the last album you played. Ask it three questions:",
       "What does it literally show? (denotation) — What does it make you feel? (connotation)",
       "Is it icon, index, or symbol? Congratulations — you’re doing semiotics."
     ],
-    "notes": "Actual participation moment. Pick a logo someone is wearing in the room if you can — way funnier than one on screen. 3-4 minutes."
+    "notes": "Actual participation moment. With a small room (~8), go around one by one — everyone decodes the last album they played. 5 minutes, worth every one of them."
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Genre Is a Design System",
+    "body": [
+      "Every scene is a brand system nobody wrote down: metal’s spiked blackletter, acid house’s smiley, riot grrrl’s xerox cut-and-paste.",
+      "Hear a genre and you can already *see* its poster. That’s semiotics doing its job.",
+      "Steal the move: pick a scene you love and reverse-engineer its rules — type, palette, texture, attitude."
+    ],
+    "image": {
+      "src": "images/genre-systems.webp",
+      "alt": "Riso collage of music scene icons — cassette, vinyl, smiley, safety pin, guitar, boombox"
+    },
+    "notes": "Music-class anchor slide. Ask the room: name a genre, then shout out what its poster looks like before anyone describes it. They already know — that is the lesson."
   },
   {
     "type": "standard",
@@ -637,6 +652,17 @@
         "text": "Templates are sacred. Repeat the wins."
       }
     ]
+  },
+  {
+    "type": "standard",
+    "badge": "Cheat Code",
+    "headline": "Stuck? Draw a Card",
+    "body": [
+      "Brian Eno & Peter Schmidt’s *Oblique Strategies*: a deck of constraint cards — “Honor thy error as a hidden intention.” “Use an old idea.”",
+      "Bowie pulled them constantly on the Berlin albums. Constraints aren’t the enemy of creativity — they’re the ignition.",
+      "Make your own: five cards with your rules. Pull one when the vibe stalls."
+    ],
+    "notes": "Eno is the bridge between the music kids and the design kids. If anyone bites, mention the cards are all online — and that making your OWN deck of five is the homework-shaped version of this slide."
   },
   {
     "type": "standard",

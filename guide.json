@@ -169,7 +169,11 @@
       "**T** randomizes the deck's look. Some rolls are beautiful. Some are cursed. Both are information.",
       "Open **Theme** in the edit drawer for presets, saved themes, AI theme prompts, and the SomaFM toggle.",
       "If a theme almost works, save it before you keep rolling. Future you has enough problems."
-    ]
+    ],
+    "image": {
+      "src": "images/theme-chameleon.webp",
+      "alt": "Riso chameleon mid color-change on a paint swatch wheel"
+    }
   },
   {
     "type": "grid",
