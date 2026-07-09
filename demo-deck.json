@@ -33,7 +33,8 @@
           "uploadedAt": 1763559859498
         }
       }
-    ]
+    ],
+    "notes": "Timing map: full deck ≈ 50 min at a brisk clip. Running short? The un-skippable core is Part One, the Theory Drop cluster, both exercises, and Part Five. Wave at the tools/systems slides — the deck lives at a URL they can raid later."
   },
   {
     "type": "standard",
@@ -320,7 +321,8 @@
       "Saussure’s split: the **signifier** (the form — mark, sound, shape) and the **signified** (the concept it triggers).",
       "The swoosh is just ink. “Victory” happens in your head. Branding is engineering that jump.",
       "You can’t control the signified directly — you tune signifiers until the right meaning fires."
-    ]
+    ],
+    "notes": "Theory cluster starts here (4 slides + exercise). This is the academic core for the class — take it slow, these are the tools they get graded on."
   },
   {
     "type": "gallery",
@@ -397,7 +399,8 @@
       "Grab any logo you can see right now. Ask it three questions:",
       "What does it literally show? (denotation) — What does it make you feel? (connotation)",
       "Is it icon, index, or symbol? Congratulations — you’re doing semiotics."
-    ]
+    ],
+    "notes": "Actual participation moment. Pick a logo someone is wearing in the room if you can — way funnier than one on screen. 3-4 minutes."
   },
   {
     "type": "standard",
@@ -428,7 +431,8 @@
       "alt": "designer moodboard desk workspace",
       "orientation": "landscape"
     },
-    "font": "sans"
+    "font": "sans",
+    "notes": "Say the stitch line here: culture already trained your instincts — theory just gives you NAMES for what your gut knows. And if you can name it, you can tame it. This connects the vibe half of the deck to the theory half."
   },
   {
     "type": "standard",
@@ -873,7 +877,8 @@
         "text": "[Mobbin.com](https://mobbin.com) / [PageFlows.com](https://pageflows.com) / [Godly.website](https://godly.website)"
       }
     ],
-    "headline": "We love free stuff"
+    "headline": "We love free stuff",
+    "notes": "Do not read the links aloud — just say \"this slide is a bookmark, the deck link is coming to you after class.\""
   },
   {
     "type": "quote",
@@ -1027,7 +1032,8 @@
       "Pick a brand you love. Describe it in exactly 3 words.",
       "Now pick a color, a font, and a shape that capture those 3 words.",
       "Congratulations — you just compressed a brand."
-    ]
+    ],
+    "notes": "Second exercise. If time is tight, set it as homework instead of running it live."
   },
   {
     "type": "standard",
@@ -1046,6 +1052,7 @@
       "compressedFormat": "image/jpeg",
       "uploadedAt": 1763623194112
     },
-    "font": "grotesk"
+    "font": "grotesk",
+    "notes": "Land the plane: compression, names, permission. Leave the deck URL on screen."
   }
 ]
