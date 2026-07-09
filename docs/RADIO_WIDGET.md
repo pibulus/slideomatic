@@ -12,8 +12,8 @@ Everything you need lives in these files:
 | File | What to grab |
 |------|-------------|
 | `modules/radio.js` | **Entire file.** Core audio state machine — zero external deps. |
-| `modules/edit-drawer-forms.js` | `buildRadioSection()` function (~lines 470–510) — HTML template for the toggle + channel selector. |
-| `modules/edit-drawer-forms.js` | `setupThemeRadioControls()` function (~lines 510–590) — event wiring for toggle + channel switching. |
+| `modules/radio-dock.js` | `buildDockMarkup()` — HTML template for the pill, toggle, and channel selector. |
+| `modules/radio-dock.js` | `wireControls()` + `initRadioDock()` — event wiring for toggle, channel switching, and the dock popover. |
 | `css/edit-drawer.css` | `.theme-radio*` classes (~lines 531–652) — all visual styling for the radio component. |
 | `css/accordion.css` | `.accordion--radio` — just the background tint (optional). |
 

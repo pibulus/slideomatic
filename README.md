@@ -26,7 +26,7 @@ Voice-powered slide deck builder with a neo-brutalist / pastel-punk aesthetic. C
 
 That's it—no build step, no frameworks.
 
-For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE.md`.
+For the repo map, read `docs/ARCHITECTURE.md`; the full docs index is `docs/INDEX.md`.
 
 ---
 
@@ -67,7 +67,7 @@ For release status, read `LAUNCH_AUDIT.md`. For the repo map, read `ARCHITECTURE
 - **Autosave:** Every deck you touch is cached locally under `slideomatic_deck_overrides:*`. Clear these keys in devtools if you want a blank slate.
 - **JSON:** Press `D`, use **Download JSON** in the edit drawer, or use **Download JSON backup** in the Share modal. JSON exports include slides and the current theme. Press `U`, use launcher upload, or paste JSON on the launcher to import a deck.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
-- **Voice & Notes:** Gemini voice tools can generate slides/themes from recordings, and prompt mic buttons clean up speech into text by removing filler words before insertion. Great for quick reviews and rough ideas.
+- **Voice & Notes:** With a Gemini key saved in Settings (`S`), voice tools generate slides/themes from recordings and mic buttons clean rough speech into text. Voice UI stays hidden until a key is added.
 - **Sharing:** The HUD Share button tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks. Hosted links live 90 days from their last view — any visit refreshes the clock, so links in active use never expire.
 - **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache version lives at the top of `sw.js` — **bump it on every deploy** (no build step means it's the only cache-buster).
 
@@ -96,7 +96,7 @@ You can add a `_schema` slide at the top of `slides.json` to document your forma
 ]
 ```
 
-See `SCHEMA_EXAMPLE.json` for a complete documentation template.
+See `docs/SCHEMA_EXAMPLE.json` for a complete documentation template.
 
 Note: `_schema` slides are for hand-maintained JSON files. The app strips them when it loads a deck (they'd desync editing otherwise), so decks saved or re-exported from the app won't carry them forward.
 
@@ -157,7 +157,7 @@ Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). 
 
 ### Missing Image Helpers
 
-If you define an `image` object without a `src`, the deck now renders a small “Search” button that opens a Google Images tab based on the slide’s `alt` (or label) text. Handy for quickly sourcing artwork while building the story.
+If you define an `image` object without a `src`, the deck renders a drop zone: drag & drop, paste, or click to browse for a file. Add alt text and the 🪄 button can generate an image with AI instead.
 Images automatically tag themselves as landscape/portrait/square once loaded, and you can override with `image.orientation` if you want to lock a layout in place.
 
 ### Rapid Screenshot Decks
@@ -262,7 +262,7 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `O` – Toggle overview grid (click to jump)
 - `Esc` – Exit overview
 - `?` – Show keyboard shortcuts help
-- `V` – **Voice-to-slide** (record audio, AI generates slide)
+- `V` – **Voice-to-slide** (record audio, AI generates slide — needs a Gemini key)
 - `T` – **Randomize theme** (instantly generates a new random theme variation)
 - `E` – Edit current slide (includes all theme controls)
 - `D` – Export deck as JSON
@@ -272,7 +272,7 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `N` – Toggle speaker notes
 
 ### 🎙️ Voice-to-Slide + Dictation
-Press `V` or click the voice button in the HUD to generate slides using AI. The edit drawer and cheat console also include mic buttons that transcribe rough speech into cleaned prompt/body text. See [VOICE_TO_SLIDE.md](VOICE_TO_SLIDE.md) for setup and examples.
+Press `V` or click the voice button in the HUD to generate slides using AI. The edit drawer and cheat console also include mic buttons that transcribe rough speech into cleaned prompt/body text. See [docs/VOICE_TO_SLIDE.md](docs/VOICE_TO_SLIDE.md) for setup and examples.
 
 ### 🕹️ AI Starter Deck (Cheat Code!)
 Type `666` or `696969` anywhere in the deck view to open the AI Cheat Console. Describe a topic and Gemini builds an 8-slide starter deck with:

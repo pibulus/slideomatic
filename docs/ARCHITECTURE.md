@@ -54,7 +54,8 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `theme-drawer.js` | Theme drawer/dropdown, random themes, AI theme prompts, saved theme library. |
 | `share-modal.js` | Netlify hosted `/s/...` share links, compressed `?data=` fallback links, and JSON backup action. |
 | `share-password-modal.js` | Legacy locked-share prompt. |
-| `voice-modes.js` | Gemini proxy plumbing, API key storage, voice-to-slide recording (V key), prompt dictation/transcription. |
+| `voice-modes.js` | Gemini proxy plumbing, API key storage, voice-to-slide recording (V key), prompt dictation/transcription. Voice UI is gated on a saved key. |
+| `radio-dock.js` | Floating SomaFM dock (bottom-left pill + panel); hides with the HUD via the H key. |
 | `cheat-codes.js` | Numeric cheat unlocks (`666`, `696969`) and AI starter deck console. |
 | `image-render.js` | Slide images, placeholders, image preview modal, generated graph image rendering. |
 | `image-upload.js` | Drop/paste/compress/upload image pipeline. |

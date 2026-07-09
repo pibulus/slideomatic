@@ -8,13 +8,6 @@ import { slides, slideElements } from './state.js';
 const assetDeletionQueue = new Map();
 let assetCleanupTimer = null;
 
-export function buildImageSearchUrl(query) {
-    const url = new URL('https://www.google.com/search');
-    url.searchParams.set('tbm', 'isch');
-    url.searchParams.set('q', query);
-    return url.toString();
-}
-
 export function extractSlideContext(placeholderElement) {
     const slideElement = placeholderElement.closest('.slide');
     const slideIndex = slideElement ? slideElements.indexOf(slideElement) : -1;
