@@ -190,6 +190,89 @@
   animation: none;
 }
 
+/* --- Radio Dock (bottom-left, lives outside the edit drawer) --- */
+.radio-dock {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: calc(20px + env(safe-area-inset-left));
+  z-index: var(--z-hud);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.radio-dock[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px);
+}
+
+.radio-dock__pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 160ms ease;
+}
+
+.radio-dock__pill:hover,
+.radio-dock__pill:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--color-ink);
+  outline: none;
+}
+
+.radio-dock__pill-eq {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.radio-dock__pill.is-live .radio-dock__pill-eq {
+  display: inline-flex;
+}
+
+.radio-dock__pill-eq i {
+  width: 3px;
+  background: var(--color-ink);
+  border-radius: 1px;
+  animation: radio-eq 900ms ease-in-out infinite;
+}
+
+.radio-dock__pill-eq i:nth-child(1) { height: 60%; animation-delay: 0ms; }
+.radio-dock__pill-eq i:nth-child(2) { height: 100%; animation-delay: 150ms; }
+.radio-dock__pill-eq i:nth-child(3) { height: 75%; animation-delay: 300ms; }
+
+@keyframes radio-eq {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1); }
+}
+
+.radio-dock__panel {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: min(320px, calc(100vw - 40px));
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+}
+
+@media (max-width: 1024px) {
+  /* On small screens the dock follows the HUD's auto-hide rhythm via H/tap */
+  .radio-dock__pill {
+    padding: 10px 13px;
+    font-size: 1rem;
+  }
+}
+
 /* --- Toast Notifications --- */
 .toast-container {
   position: fixed;

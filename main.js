@@ -23,6 +23,7 @@ import {
 } from './modules/slide-rendering.js';
 import { validateSlides } from './modules/validation.js';
 import { showHudStatus, hideHudStatus } from './modules/hud.js';
+import { initRadioDock, setRadioDockHidden } from './modules/radio-dock.js';
 
 
 import { renderEditForm, flushPendingEditDrawerWork } from './modules/edit-drawer.js';
@@ -620,6 +621,7 @@ async function initDeckWithTheme() {
   }
 
   initHudControls();
+  initRadioDock();
 
   // Initialize deck name display and rename functionality
   initDeckName();
@@ -718,6 +720,7 @@ function initHudControls() {
     manuallyHidden = !manuallyHidden;
     clearTimeout(hideTimeout);
     hud.dataset.hidden = manuallyHidden ? 'true' : 'false';
+    setRadioDockHidden(manuallyHidden);
     if (!manuallyHidden && autoHideQuery.matches) scheduleHide();
   };
 

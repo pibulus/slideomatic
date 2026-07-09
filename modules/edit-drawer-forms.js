@@ -10,15 +10,6 @@
 import { escapeHtml } from './utils.js';
 import { buildImageManager } from './slide-image-ui.js';
 import { loadThemeLibrary, getCurrentThemePath } from './theme-manager.js';
-import {
-  getRadioChannelList,
-  getRadioState,
-  getChannelById,
-  setRadioChannel,
-  enableRadio,
-  disableRadio,
-} from './radio.js';
-import { setCustomSelectValue } from './custom-select.js';
 
 export const LAYOUT_OPTIONS = [
   { value: 'title', label: 'Title', description: 'Hero intro' },
@@ -140,12 +131,13 @@ const SPLIT_LAYOUT_OPTIONS = [
 
 export function buildMainSections(slide) {
   const type = slide.type || 'standard';
+  // Content first — it's the actual job. Theme is deck-level dressing and
+  // was burying the fields below the fold on mobile.
   const sections = [
-    buildThemeSection(),
-    buildRadioSection(),
-    buildLayoutControl(type, slide.layout),
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
+    buildLayoutControl(type, slide.layout),
     buildImagesSection(slide),
+    buildThemeSection(),
   ].filter(Boolean);
   return sections.join('');
 }
@@ -474,134 +466,7 @@ function buildThemeSection() {
     </div>
   `;
 
-  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: true });
-}
-
-function buildRadioSection() {
-  const radioChannels = getRadioChannelList();
-  const radioState = getRadioState();
-  const activeRadioChannel = radioChannels.find((channel) => channel.id === radioState.channelId) || radioChannels[0];
-  const isRadioEnabled = radioState.enabled && !!activeRadioChannel;
-
-  const radioOptions = radioChannels.map((channel) => {
-    const isSelected = activeRadioChannel.id === channel.id ? 'is-selected' : '';
-    return `
-      <button type="button" class="custom-select__option ${isSelected}" data-value="${channel.id}">
-        <span class="custom-select__option-label">${escapeHtml(channel.name)}</span>
-        <span class="custom-select__option-desc">${escapeHtml(channel.description)}</span>
-      </button>
-    `;
-  }).join('');
-
-  const content = `
-    <div class="accordion__group theme-radio ${isRadioEnabled ? 'is-active' : ''}">
-      <button type="button" class="theme-radio__toggle ${isRadioEnabled ? 'is-active' : ''}" id="theme-radio-toggle" aria-pressed="${isRadioEnabled ? 'true' : 'false'}">
-        <span class="theme-radio__icon">\ud83d\udcfb</span>
-        <span class="theme-radio__copy">
-          <span class="theme-radio__label">SomaFM Radio</span>
-          <span class="theme-radio__status" id="theme-radio-status">
-            ${isRadioEnabled ? `${escapeHtml(activeRadioChannel.shortLabel || activeRadioChannel.name)} is live` : 'Off'}
-          </span>
-        </span>
-        <span class="theme-radio__pill" id="theme-radio-pill">${isRadioEnabled ? 'On' : 'Off'}</span>
-      </button>
-      <div class="theme-radio__channels ${isRadioEnabled ? 'is-visible' : ''}" id="theme-radio-channel">
-        <div class="custom-select custom-select--radio" id="theme-radio-select" data-value="${activeRadioChannel.id}">
-          <button type="button" class="custom-select__trigger">
-            <span class="custom-select__value">${escapeHtml(activeRadioChannel.name)}</span>
-            <span class="custom-select__arrow">\u25bc</span>
-          </button>
-          <div class="custom-select__dropdown">
-            ${radioOptions}
-          </div>
-        </div>
-        <p class="theme-radio__hint">Quick SomaFM vibes while you work. Toggle on, pick a station, done.</p>
-      </div>
-    </div>
-  `;
-
-  return buildAccordion('Radio', content, { modifier: ' accordion--radio', startOpen: false });
-}
-
-export function setupThemeRadioControls(addTrackedListener) {
-  const toggle = document.getElementById('theme-radio-toggle');
-  const select = document.getElementById('theme-radio-select');
-  const statusEl = document.getElementById('theme-radio-status');
-  const pillEl = document.getElementById('theme-radio-pill');
-  const channelWrapper = document.getElementById('theme-radio-channel');
-
-  if (!toggle || !select) return;
-
-  const state = { ...getRadioState() };
-
-  const getActiveChannel = () => getChannelById(state.channelId);
-
-  const updateVisualState = (enabled, channel = getActiveChannel()) => {
-    toggle.classList.toggle('is-active', enabled);
-    toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-    channelWrapper?.classList.toggle('is-visible', enabled);
-    if (pillEl) pillEl.textContent = enabled ? 'On' : 'Off';
-    if (statusEl) {
-      statusEl.textContent = enabled
-        ? `${channel.shortLabel || channel.name} is live`
-        : 'Off';
-    }
-  };
-
-  updateVisualState(state.enabled, getActiveChannel());
-
-  addTrackedListener(toggle, 'click', async () => {
-    if (state.enabled) {
-      disableRadio();
-      state.enabled = false;
-      updateVisualState(false);
-      const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus('⏹️ Radio paused', 'info');
-      setTimeout(hideHudStatus, 1400);
-      return;
-    }
-
-    try {
-      const channel = await enableRadio(state.channelId);
-      state.enabled = true;
-      updateVisualState(true, channel);
-      const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus(`📻 ${channel.name} is on`, 'success');
-      setTimeout(hideHudStatus, 1800);
-    } catch (error) {
-      console.error('Failed to start radio', error);
-      const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus('❌ Radio blocked', 'error');
-      setTimeout(hideHudStatus, 2200);
-      state.enabled = false;
-      updateVisualState(false);
-    }
-  });
-
-  addTrackedListener(select, 'customSelectChange', async (event) => {
-    const nextId = event?.detail?.value;
-    if (!nextId) return;
-    const channel = setRadioChannel(nextId);
-    state.channelId = channel.id;
-    setCustomSelectValue(select, channel.id);
-
-    if (state.enabled) {
-      try {
-        await enableRadio(channel.id);
-        updateVisualState(true, channel);
-        const { showHudStatus, hideHudStatus } = await import('./hud.js');
-        showHudStatus(`🎶 ${channel.name}`, 'success');
-        setTimeout(hideHudStatus, 1600);
-      } catch (error) {
-        console.error('Failed to switch radio station', error);
-        const { showHudStatus, hideHudStatus } = await import('./hud.js');
-        showHudStatus('⚠️ Could not switch station', 'warning');
-        setTimeout(hideHudStatus, 2000);
-      }
-    } else {
-      updateVisualState(false, channel);
-    }
-  });
+  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: false });
 }
 
 export function buildAdvancedSection(slide) {

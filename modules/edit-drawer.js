@@ -39,7 +39,6 @@ import {
   buildMainSections,
   buildActionsSection,
   buildAdvancedSection,
-  setupThemeRadioControls,
 } from './edit-drawer-forms.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -788,7 +787,6 @@ export function renderEditForm(context) {
 
   // Setup custom selects
   setupCustomSelect(content, { addTrackedListener });
-  setupThemeRadioControls(addTrackedListener);
 
   // Setup theme button handlers (inline in edit drawer)
   const handleThemeChange = async (themePath) => {
