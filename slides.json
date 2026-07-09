@@ -3,7 +3,7 @@
     "type": "title",
     "eyebrow": "Slide-o-Matic",
     "title": "Welcome",
-    "subtitle": "Voice-powered deck builder",
+    "subtitle": "A tiny deck builder with big feelings",
     "media": [
       {
         "image": {
@@ -19,14 +19,53 @@
     "badge": "About",
     "headline": "Why Slide-o-Matic?",
     "body": [
-      "AI-assisted editing",
-      "Theme randomizer",
-      "Shareable decks"
+      "Make a slideshow like you'd leave a voicemail — fast, warm, and done.",
+      "Everything saves to your browser. No accounts, no cloud, no fuss.",
+      "The link's ready whenever you are."
     ],
     "font": "sans",
     "image": {
       "src": "images/voice-mic.webp",
       "alt": "Riso retro microphone singing slides into the air"
     }
+  },
+  {
+    "type": "pillars",
+    "badge": "Three moves",
+    "headline": "Three keys and you're dangerous",
+    "body": "That's the whole learning curve. Press **?** anytime for the rest.",
+    "font": "sans",
+    "pillars": [
+      {
+        "title": "E — Edit",
+        "text": "Opens the workbench. Change words, swap images, rearrange."
+      },
+      {
+        "title": "T — Theme",
+        "text": "Shuffles the vibe. Keep pressing until it feels like you."
+      },
+      {
+        "title": "V — Voice",
+        "text": "Talk, get a slide. The fastest way from brain to screen."
+      }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "House rules",
+    "headline": "“Bless the mess. Compress the chaos. Ship the thing.”",
+    "attribution": "House rules",
+    "font": "grotesk"
+  },
+  {
+    "type": "standard",
+    "badge": "Where next",
+    "headline": "Pick your adventure",
+    "body": [
+      "Want the full tour? [Open the field guide](deck.html#slides=guide) — five minutes, everything explained.",
+      "In a hurry? Head home and grab a template — The Pitch, The Talk, Show & Tell, or The Weird One.",
+      "Or just press **E** right now and start typing over this deck. It's yours."
+    ],
+    "font": "sans"
   }
 ]
