@@ -23,7 +23,7 @@
     "type": "standard",
     "badge": "The hero",
     "headline": "The money shot",
-    "body": "Drop your best image in the slot — or generate one. The one picture that makes someone go 'oh, nice.' Swap this to a full-bleed image slide once you've got the shot.",
+    "body": "Drop your best image here — the one that makes someone go 'oh, nice.' Got the shot? Swap this slide's type to image and let it go full-bleed.",
     "image": { "alt": "The finished thing", "aspectRatio": "16 / 9", "objectFit": "cover" }
   },
   {

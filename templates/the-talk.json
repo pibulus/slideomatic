@@ -34,10 +34,10 @@
     "badge": "The takeaways",
     "headline": "Four things, then you're done",
     "items": [
-      { "color": "#F472B6", "label": "One" },
-      { "color": "#818CF8", "label": "Two" },
-      { "color": "#34D399", "label": "Three" },
-      { "color": "#FBBF24", "label": "Four" }
+      { "color": "#F472B6", "label": "Say it in one breath" },
+      { "color": "#818CF8", "label": "One idea per slide" },
+      { "color": "#34D399", "label": "Cut the slide that hedges" },
+      { "color": "#FBBF24", "label": "Stop before they want less" }
     ]
   },
   {
