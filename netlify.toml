@@ -21,6 +21,11 @@
   to = "/deck.html?share=:slug"
   status = 200
 
+[[redirects]]
+  from = "/design"
+  to = "/collections?collection=design-starter-pack"
+  status = 302
+
 # Headers for security and caching
 [[headers]]
   for = "/*"
