@@ -700,9 +700,24 @@
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
+/* .hint-item--action rows are real <button>s (tappable on mobile), so reset
+   the button defaults to keep them looking like the plain info rows. */
+.hint-item--action {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
 .hint-item:hover {
   transform: translateX(4px);
   box-shadow: 4px 4px 0 var(--color-ink);
+}
+
+.hint-item--action:active {
+  transform: translateX(2px) scale(0.98);
+  box-shadow: 2px 2px 0 var(--color-ink);
 }
 
 .hint-item__key {

@@ -112,6 +112,16 @@
   color: var(--color-accent);
 }
 
+.hud__action-icon {
+  display: none;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.hud__action-label {
+  display: inline;
+}
+
 .hud__counter {
   display: flex;
   gap: 6px;
@@ -273,6 +283,78 @@
   }
 }
 
+@media (max-width: 768px) {
+  /* Bottom-left collided with the full-width mobile HUD. Move it to a top
+     corner instead, out of the presentation controls' way entirely, and
+     drop the heavy shadow so it reads as a small utility button, not a
+     competing action. */
+  .radio-dock {
+    bottom: auto;
+    top: calc(16px + env(safe-area-inset-top));
+    left: auto;
+    right: calc(16px + env(safe-area-inset-right));
+  }
+
+  .radio-dock__pill {
+    box-shadow: none;
+    padding: 8px 10px;
+  }
+
+  .radio-dock__pill:hover,
+  .radio-dock__pill:focus-visible {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Panel now opens below the pill since the pill lives at the top */
+  .radio-dock__panel {
+    bottom: auto;
+    top: calc(100% + 12px);
+    left: auto;
+    right: 0;
+  }
+}
+
+/* --- Edge nav tap zones (mobile only) ---
+   Small arrows do it desktop-side, but they're easy to miss on a phone.
+   These sit over the outer edge of the slide so it's obvious the sides are
+   tappable, without a hitbox big enough to swallow slide content taps. */
+.edge-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .edge-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 44px;
+    border: none;
+    background: none;
+    color: var(--color-ink);
+    font-size: 1.8rem;
+    font-weight: 700;
+    opacity: 0.3;
+    z-index: 3;
+    transition: opacity 150ms ease;
+  }
+
+  .edge-nav:active {
+    opacity: 0.7;
+  }
+
+  .edge-nav--prev {
+    left: 0;
+  }
+
+  .edge-nav--next {
+    right: 0;
+  }
+}
+
 /* --- Toast Notifications --- */
 .toast-container {
   position: fixed;
@@ -327,13 +409,16 @@
 
 
 
-/* --- Responsive UI --- */
+/* --- Responsive UI ---
+   Mobile HUD: a real flex row (not grid) so the progress bar is the only
+   thing that shrinks. Nav arrows and icon actions keep a fixed size, the
+   counter is dropped (redundant with the progress bar on a small screen). */
 @media (max-width: 768px) {
   .hud {
-    grid-template-columns: auto auto 1fr;
-    gap: 8px;
-    text-align: center;
-    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
     bottom: calc(10px + env(safe-area-inset-bottom));
     width: calc(100vw - 20px);
     border-radius: 16px;
@@ -341,40 +426,46 @@
   }
 
   .hud__nav {
-    gap: 6px;
+    gap: 2px;
+    flex-shrink: 0;
   }
 
   .hud__actions {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: 100%;
-    gap: 8px;
-    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
   }
 
   .hud__action {
-    min-width: 44px;
-    min-height: 44px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    min-width: 0;
-    padding: 0 6px;
-    overflow-wrap: anywhere;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  /* Icons replace text labels so all 5 actions fit one row without wrapping */
+  .hud__action-icon {
+    display: block;
+    font-size: 1.05rem;
+  }
+
+  .hud__action-label {
+    display: none;
   }
 
   .hud__counter {
-    justify-content: center;
-    padding: 4px 0;
     display: none;
   }
 
   .hud__progress {
-    width: 100%;
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: 24px;
     border-width: 2px;
     height: 10px;
   }
@@ -385,9 +476,10 @@
   }
 
   .hud__nav-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 0.9rem;
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
   }
 
   .hud__swipe-hint {
@@ -395,7 +487,7 @@
   }
 
   .toast-container {
-    bottom: calc(140px + env(safe-area-inset-bottom)); /* Make room for larger HUD */
+    bottom: calc(90px + env(safe-area-inset-bottom));
     right: 16px;
     left: 16px;
     align-items: center;
@@ -408,33 +500,22 @@
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 400px) {
   .hud {
-    padding: 8px 10px;
-    gap: 6px;
-    font-size: 0.78rem;
-  }
-
-  .hud__nav {
+    padding: 6px 8px;
     gap: 4px;
   }
 
-  .hud__actions {
-    gap: 6px;
-    font-size: 0.68rem;
-  }
-
   .hud__action {
-    font-size: 0.7rem;
-  }
-
-  .hud__counter {
-    font-size: 0.95rem;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .hud__nav-btn {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
   }
 }
 

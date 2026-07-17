@@ -223,30 +223,30 @@
               <div class="hint-item__key">← →</div>
               <div class="hint-item__desc">Navigate slides</div>
             </div>
-            <div class="hint-item">
+            <button type="button" class="hint-item hint-item--action" data-hint-action="edit">
               <div class="hint-item__key">E</div>
               <div class="hint-item__desc">Edit or add slides</div>
-            </div>
-            <div class="hint-item">
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
               <div class="hint-item__key">O</div>
               <div class="hint-item__desc">Overview</div>
-            </div>
-            <div class="hint-item">
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="theme">
               <div class="hint-item__key">T</div>
               <div class="hint-item__desc">Change theme</div>
-            </div>
-            <div class="hint-item">
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
               <div class="hint-item__key">H</div>
               <div class="hint-item__desc">Hide/show nav bar</div>
-            </div>
-            <div class="hint-item">
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="notes">
               <div class="hint-item__key">N</div>
               <div class="hint-item__desc">Speaker notes</div>
-            </div>
-            <div class="hint-item" id="hint-voice">
+            </button>
+            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice">
               <div class="hint-item__key">V</div>
               <div class="hint-item__desc">Voice-to-slide (talk, get a slide)</div>
-            </div>
+            </button>
           </div>
           <div class="hints-modal__footer">
             <p class="hints-modal__easter-egg">Psst... old-school demon slayers might try typing 666.</p>
@@ -315,6 +315,8 @@
       </div>
 
       <main class="slides" id="slides" aria-live="polite" aria-label="Slide deck"></main>
+      <button type="button" class="edge-nav edge-nav--prev" id="edge-nav-prev" aria-label="Previous slide">‹</button>
+      <button type="button" class="edge-nav edge-nav--next" id="edge-nav-next" aria-label="Next slide">›</button>
       <footer class="hud" data-hidden="true">
         <div class="hud__nav">
           <button class="hud__nav-btn hud__nav-btn--prev" id="hud-prev-btn" aria-label="Previous slide" title="Previous slide">←</button>
@@ -333,16 +335,24 @@
         </div>
         <div class="hud__actions">
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
-            Overview
+            <span class="hud__action-icon" aria-hidden="true">⊞</span>
+            <span class="hud__action-label">Overview</span>
           </button>
           <button class="hud__action hud__home-btn" id="home-btn" aria-label="Go to first slide" title="Go to first slide">
-            Home
+            <span class="hud__action-icon" aria-hidden="true">⌂</span>
+            <span class="hud__action-label">Home</span>
           </button>
           <button class="hud__action hud__help-btn" id="help-btn" aria-label="Keyboard shortcuts (?)" title="Press ? for all keyboard shortcuts">
-            Help
+            <span class="hud__action-icon" aria-hidden="true">?</span>
+            <span class="hud__action-label">Help</span>
           </button>
           <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share this deck" title="Create a read-only share link">
-            Share
+            <span class="hud__action-icon" aria-hidden="true">⇪</span>
+            <span class="hud__action-label">Share</span>
+          </button>
+          <button class="hud__action hud__edit-btn" id="hud-edit-btn" aria-label="Edit this slide (E)" title="Edit this slide (E)">
+            <span class="hud__action-icon" aria-hidden="true">✎</span>
+            <span class="hud__action-label">Edit</span>
           </button>
         </div>
       </footer>

@@ -61,10 +61,12 @@
     padding-inline: 20px;
   }
 
-  /* Maximize image size on mobile */
+  /* Maximize image size on mobile: the desktop max-height: 50vh cap made
+     these look tiny once width went full-bleed, so raise the ceiling too */
   .slide__image:not(.slide__image-wrapper .slide__image) {
     width: 100%;
     max-width: 100%;
+    max-height: 65vh;
     padding: 4px; /* Minimal padding */
   }
 
@@ -72,13 +74,19 @@
     padding: 8px; /* Reduce wrapper padding */
     width: 100%;
     max-width: 100%;
+    max-height: 65vh;
   }
 
   /* Images inside wrappers should have no padding/borders */
   .slide__image-wrapper .slide__image {
     width: 100%;
     max-width: 100%;
+    max-height: 65vh;
     padding: 0;
+  }
+
+  .slide--standard .slide__image-wrapper {
+    max-height: 55vh;
   }
 
   .slide--split {
@@ -1141,9 +1149,18 @@ div.image-placeholder-wrapper .image-placeholder {
     font-size: clamp(1.1rem, 4vw, 1.35rem);
   }
 
+  /* 3-across squeezed every image into a ~110px sliver on a phone. Stack
+     them full-width instead so each one is actually visible. */
   .slide--title .media-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: clamp(8px, 2.5vw, 12px);
+  }
+
+  .slide--title .media-strip__image,
+  .slide--title .media-strip__color {
+    width: 100%;
+    max-width: 320px;
+    margin-inline: auto;
   }
 }
 

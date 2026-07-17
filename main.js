@@ -108,6 +108,7 @@ import {
   showKeyboardHintsIfFirstVisit,
   toggleKeyboardHelp,
   openKeyboardHelp,
+  closeKeyboardHelp,
 } from './modules/onboarding.js';
 import { toggleSpeakerNotes, initSpeakerNotes } from './modules/speaker-notes.js';
 import { getSlideTemplate } from './modules/slide-templates.js';
@@ -620,6 +621,34 @@ async function initDeckWithTheme() {
     overviewBtn.addEventListener('click', toggleOverview);
   }
 
+  // Persistent edit trigger: the only other way in is the auto-open
+  // ?open=edit param (skipped on mobile, see handleInitialIntent) or the
+  // E keyboard shortcut, neither of which a phone user can reach after
+  // closing the drawer once.
+  const hudEditBtn = document.getElementById('hud-edit-btn');
+  if (hudEditBtn) {
+    hudEditBtn.addEventListener('click', () => toggleEditDrawer());
+  }
+
+  // Help modal hint rows double as tappable shortcuts on mobile, since a
+  // phone user can't press E/O/T/H/N. Close the modal after firing so the
+  // action's own UI (drawer, overview, etc.) is what the user sees next.
+  const hintActions = {
+    edit: () => toggleEditDrawer(),
+    overview: () => toggleOverview(),
+    theme: () => randomizeTheme(),
+    hud: () => toggleHudHidden(),
+    notes: () => toggleSpeakerNotes(),
+    voice: () => toggleVoiceRecording('add'),
+  };
+  document.querySelectorAll('[data-hint-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = hintActions[btn.dataset.hintAction];
+      closeKeyboardHelp();
+      action?.();
+    });
+  });
+
   initHudControls();
   initRadioDock();
 
@@ -679,7 +708,17 @@ function handleInitialIntent() {
     } else if (openIntent === 'settings') {
       openSettingsModal();
     } else if (openIntent === 'edit') {
-      openEditDrawer();
+      // On a narrow phone screen, a full-width drawer slamming open over the
+      // very first slide a mobile visitor sees is a bad first impression —
+      // and worse, dead-ends them once they close it (no other reachable
+      // trigger existed before the HUD edit button). Skip the auto-open on
+      // mobile; the "open=edit" links from index.html (Start blank,
+      // templates, JSON restore) still work everywhere else, and mobile
+      // users can always reach editing via the HUD's persistent Edit button.
+      const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+      if (!isMobileViewport) {
+        openEditDrawer();
+      }
     }
   });
 }
@@ -735,6 +774,25 @@ function initHudControls() {
   const nextBtn = document.getElementById('hud-next-btn');
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
+      setActiveSlide(currentIndex + 1);
+      revealHud();
+    });
+  }
+
+  // Screen-edge tap zones, mobile only (see css/ui.css): a visible signifier
+  // that swiping/tapping the edges moves slides, since the HUD arrows are
+  // small and easy to miss on a phone.
+  const edgePrevBtn = document.getElementById('edge-nav-prev');
+  if (edgePrevBtn) {
+    edgePrevBtn.addEventListener('click', () => {
+      setActiveSlide(currentIndex - 1);
+      revealHud();
+    });
+  }
+
+  const edgeNextBtn = document.getElementById('edge-nav-next');
+  if (edgeNextBtn) {
+    edgeNextBtn.addEventListener('click', () => {
       setActiveSlide(currentIndex + 1);
       revealHud();
     });
