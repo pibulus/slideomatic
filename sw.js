@@ -1,6 +1,8 @@
-// Bump on every deploy — there is no build step, so this string is the only
-// thing that invalidates cached JS/CSS for returning visitors.
-const CACHE_VERSION = 'slideomatic-v1.0.14';
+// Placeholder value in git: scripts/stamp-sw-version.mjs overwrites this
+// with the real deploy's commit hash as Netlify's build command, so the
+// service worker's fetch handler is guaranteed to change on every deploy
+// and returning visitors' browsers actually notice new CSS/JS.
+const CACHE_VERSION = 'slideomatic-dev';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
