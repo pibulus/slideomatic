@@ -1,7 +1,7 @@
 {
   "name": "slideomatic.app",
   "version": "1.0.1",
-  "description": "Slideomatic.app — voice-powered, themeable slideshow engine.",
+  "description": "Slideomatic.app: voice-powered, themeable slideshow engine.",
   "private": true,
   "type": "module",
   "homepage": "https://slideomatic.app",

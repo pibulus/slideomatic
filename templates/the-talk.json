@@ -3,9 +3,12 @@
     "type": "typeface",
     "badge": "Lightning talk",
     "headline": "BIG TITLE, ONE BREATH",
-    "body": "Open with the title slammed across the screen. Say it out loud — if it sounds good spoken, it's a good title.",
+    "body": "Open with the title slammed across the screen. Say it out loud: if it sounds good spoken, it is a good title.",
     "samples": [
-      { "font": "Space Grotesk, Inter, sans-serif", "text": "Your talk title, oversized" }
+      {
+        "font": "Space Grotesk, Inter, sans-serif",
+        "text": "Your talk title, oversized"
+      }
     ]
   },
   {
@@ -20,13 +23,16 @@
     "headline": "THE TURN",
     "body": "A single big word to mark the moment the talk changes direction. Let the room catch up.",
     "samples": [
-      { "font": "Press Start 2P, monospace", "text": "BUT WAIT" }
+      {
+        "font": "Press Start 2P, monospace",
+        "text": "BUT WAIT"
+      }
     ]
   },
   {
     "type": "quote",
     "badge": "Borrowed wisdom",
-    "quote": "Drop in a line that isn't yours — it buys you authority and a breath.",
+    "quote": "Drop in a line that is not yours. It buys you authority and a breath.",
     "attribution": "Someone smarter, cited honestly"
   },
   {
@@ -34,10 +40,22 @@
     "badge": "The takeaways",
     "headline": "Four things, then you're done",
     "items": [
-      { "color": "#F472B6", "label": "Say it in one breath" },
-      { "color": "#818CF8", "label": "One idea per slide" },
-      { "color": "#34D399", "label": "Cut the slide that hedges" },
-      { "color": "#FBBF24", "label": "Stop before they want less" }
+      {
+        "color": "#F472B6",
+        "label": "Say it in one breath"
+      },
+      {
+        "color": "#818CF8",
+        "label": "One idea per slide"
+      },
+      {
+        "color": "#34D399",
+        "label": "Cut the slide that hedges"
+      },
+      {
+        "color": "#FBBF24",
+        "label": "Stop before they want less"
+      }
     ]
   },
   {

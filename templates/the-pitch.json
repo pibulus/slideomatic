@@ -8,7 +8,7 @@
   {
     "type": "standard",
     "badge": "The problem",
-    "headline": "Name the pain — make it felt, not abstract",
+    "headline": "Name the pain: make it felt, not abstract",
     "body": [
       "Describe the moment it goes wrong, the way the person living it would describe it.",
       "If they nod before you finish the sentence, you've got the right problem."
@@ -20,7 +20,7 @@
     "headline": "Before and after, side by side",
     "left": {
       "headline": "Today",
-      "body": "How it works now — the friction, the workaround, the thing everyone quietly tolerates."
+      "body": "How it works now: the friction, the workaround, the thing everyone quietly tolerates."
     },
     "right": {
       "headline": "With this",
@@ -32,9 +32,18 @@
     "badge": "How it works",
     "headline": "Three beats, no jargon",
     "pillars": [
-      { "title": "Step one", "text": "The first thing that happens. Plain words." },
-      { "title": "Step two", "text": "Where the magic is. Say it like you'd say it to a friend." },
-      { "title": "Step three", "text": "The payoff. What they walk away with." }
+      {
+        "title": "Step one",
+        "text": "The first thing that happens. Plain words."
+      },
+      {
+        "title": "Step two",
+        "text": "Where the magic is. Say it like you'd say it to a friend."
+      },
+      {
+        "title": "Step three",
+        "text": "The payoff. What they walk away with."
+      }
     ]
   },
   {

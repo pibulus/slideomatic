@@ -19,7 +19,7 @@
     "badge": "About",
     "headline": "Why Slide-o-Matic?",
     "body": [
-      "Make a slideshow like you'd leave a voicemail — fast, warm, and done.",
+      "Make a slideshow like you would leave a voicemail: fast, warm, and done.",
       "Everything saves to your browser. No accounts, no cloud, no fuss.",
       "The link's ready whenever you are."
     ],
@@ -37,15 +37,15 @@
     "font": "sans",
     "pillars": [
       {
-        "title": "E — Edit",
+        "title": "E: Edit",
         "text": "Opens the workbench. Change words, swap images, rearrange."
       },
       {
-        "title": "T — Theme",
+        "title": "T: Theme",
         "text": "Shuffles the vibe. Keep pressing until it feels like you."
       },
       {
-        "title": "V — Voice",
+        "title": "V: Voice",
         "text": "Talk, get a slide. The fastest way from brain to screen."
       }
     ]
@@ -62,8 +62,8 @@
     "badge": "Where next",
     "headline": "Pick your adventure",
     "body": [
-      "Want the full tour? [Open the field guide](deck.html#slides=guide) — five minutes, everything explained.",
-      "In a hurry? Head home and grab a template — The Pitch, The Talk, Show & Tell, or The Weird One.",
+      "Want the full tour? [Open the field guide](deck.html#slides=guide), five minutes, everything explained.",
+      "In a hurry? Head home and grab a template: The Pitch, The Talk, Show & Tell, or The Weird One.",
       "Or just press **E** right now and start typing over this deck. It's yours."
     ],
     "font": "sans"
