@@ -110,10 +110,10 @@ function saveApiKey() {
       showApiKeyStatus('success', '✓ API key saved successfully!');
     } catch (error) {
       console.warn('Failed to store API key:', error);
-      showApiKeyStatus('error', 'Could not save the key — storage is full or blocked (private mode?)');
+      showApiKeyStatus('error', 'The key did not save. Browser storage looks full, or private mode is on');
     }
   } else {
-    showApiKeyStatus('error', 'Please enter a valid API key');
+    showApiKeyStatus('error', 'Paste a key first, then hit Save');
   }
 }
 
@@ -122,7 +122,7 @@ async function testApiKey() {
   const testBtn = /** @type {HTMLButtonElement} */ (document.getElementById('test-api-key'));
 
   if (!key) {
-    showApiKeyStatus('error', 'No API key found. Please save one first.');
+    showApiKeyStatus('error', 'Save a key first, then test it');
     return;
   }
 
@@ -159,7 +159,7 @@ async function testApiKey() {
       }
     } else {
       const error = await response.json();
-      showApiKeyStatus('error', `❌ Invalid API key or connection failed: ${error.error?.message || 'Unknown error'}`);
+      showApiKeyStatus('error', `🔑 Gemini said no to that key: ${error.error?.message || 'no details given'}`);
       if (testBtn) {
         testBtn.classList.remove('is-loading');
         testBtn.innerHTML = 'Test Connection';
@@ -167,7 +167,7 @@ async function testApiKey() {
       }
     }
   } catch {
-    showApiKeyStatus('error', '❌ Connection test failed. Please check your internet connection.');
+    showApiKeyStatus('error', '📡 No reply from Gemini. Check the connection and try again');
     if (testBtn) {
       testBtn.classList.remove('is-loading');
       testBtn.innerHTML = 'Test Connection';
@@ -177,12 +177,28 @@ async function testApiKey() {
 }
 
 function clearApiKey() {
-  if (confirm('Are you sure you want to clear your API key?')) {
-    localStorage.removeItem(STORAGE_KEY_API);
-    const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
-    if (input) input.value = '';
-    showApiKeyStatus('info', 'API key cleared');
+  // Soft two-tap confirm instead of a native dialog: first tap arms the
+  // button for 3s, second tap clears. Pain-free zone.
+  const clearBtn = document.getElementById('clear-api-key');
+  if (clearBtn && clearBtn.dataset.armed !== 'true') {
+    clearBtn.dataset.armed = 'true';
+    clearBtn.textContent = 'Tap again to clear';
+    setTimeout(() => {
+      if (clearBtn.isConnected && clearBtn.dataset.armed === 'true') {
+        delete clearBtn.dataset.armed;
+        clearBtn.textContent = 'Clear Key';
+      }
+    }, 3000);
+    return;
   }
+  if (clearBtn) {
+    delete clearBtn.dataset.armed;
+    clearBtn.textContent = 'Clear Key';
+  }
+  localStorage.removeItem(STORAGE_KEY_API);
+  const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
+  if (input) input.value = '';
+  showApiKeyStatus('info', 'Key cleared. Add a new one anytime');
 }
 
 function toggleApiKeyVisibility() {

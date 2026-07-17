@@ -134,7 +134,7 @@ function wireControls() {
     } catch (error) {
       console.error('Failed to start radio', error);
       const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus('❌ Radio blocked', 'error');
+      showHudStatus('📻 The radio got shy. Give it another tap', 'info');
       setTimeout(hideHudStatus, 2200);
       state.enabled = false;
       updateVisualState(false);
@@ -161,7 +161,7 @@ function wireControls() {
       } catch (error) {
         console.error('Failed to switch radio station', error);
         const { showHudStatus, hideHudStatus } = await import('./hud.js');
-        showHudStatus('⚠️ Could not switch station', 'warning');
+        showHudStatus('📻 Station change hiccup. Try again', 'info');
         setTimeout(hideHudStatus, 2000);
       }
     } else {

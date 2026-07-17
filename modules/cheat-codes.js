@@ -173,7 +173,7 @@ async function handleDictationToggle() {
           insertPromptText(transcript);
           setStatus('Transcript added.', 'success');
         } catch (error) {
-          setStatus(error?.message || 'Could not transcribe audio.', 'error');
+          setStatus(error?.message || 'That take got lost in the wires. Record it again', 'error');
         } finally {
           dictationSession = null;
           setDictationButtonState('idle');
@@ -184,14 +184,14 @@ async function handleDictationToggle() {
         if (token.cancelled) return;
         dictationSession = null;
         setDictationButtonState('idle');
-        setStatus(error?.message || 'Recording failed.', 'error');
+        setStatus(error?.message || 'Recording hiccup. One more take', 'error');
       },
     });
     dictationSession = { stop: recorder.stop, token };
   } catch (error) {
     dictationSession = null;
     setDictationButtonState('idle');
-    setStatus(error?.message || 'Could not start microphone.', 'error');
+    setStatus(error?.message || 'The mic would not wake up. Check browser permissions', 'error');
   }
 }
 
@@ -229,7 +229,7 @@ async function handleCheatAction(mode) {
   if (!promptInput || !slideBtn || !deckBtn) return;
   const prompt = promptInput.value.trim();
   if (!prompt) {
-    setStatus('Add a description first.', 'error');
+    setStatus('Add a description first, then let Gemini cook', 'info');
     promptInput.focus();
     return;
   }
@@ -258,7 +258,7 @@ async function handleCheatAction(mode) {
       }
     }
   } catch (error) {
-    setStatus(error?.message || 'Something went wrong.', 'error');
+    setStatus(error?.message || 'That one fizzled. Give it another go', 'error');
   } finally {
     triggerBtn.disabled = false;
     otherBtn.disabled = false;

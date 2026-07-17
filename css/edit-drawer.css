@@ -452,6 +452,14 @@
   border-color: #991b1b;
 }
 
+/* Two-tap confirm state: armed and waiting for the second tap */
+.edit-drawer__button--delete.is-armed {
+  background: var(--color-accent);
+  color: var(--color-ink);
+  border-color: var(--color-ink);
+  animation: pulse-processing 0.9s ease-in-out infinite;
+}
+
 .edit-drawer__actions-grid {
   display: flex;
   flex-direction: column;
@@ -800,8 +808,19 @@
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
+.edit-drawer__image-move:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.edit-drawer__image-move:disabled:hover {
+  background: var(--color-surface);
+  transform: none;
+}
+
 .edit-drawer__image-ai,
-.edit-drawer__image-replace {
+.edit-drawer__image-replace,
+.edit-drawer__image-move {
   appearance: none;
   background: var(--color-surface);
   border: 2px solid var(--color-ink);
@@ -822,7 +841,8 @@
 }
 
 .edit-drawer__image-ai:hover,
-.edit-drawer__image-replace:hover {
+.edit-drawer__image-replace:hover,
+.edit-drawer__image-move:hover {
   background: var(--color-accent);
   transform: scale(1.08);
 }
@@ -941,8 +961,16 @@
   }
 
   .edit-drawer__image-item {
-    align-items: flex-start;
+    align-items: center;
     padding: 10px;
+    /* Name field gets its own full row; the button crew wraps underneath
+       so five 46px targets never crush the input */
+    flex-wrap: wrap;
+  }
+
+  .edit-drawer__image-details {
+    flex: 1 1 100%;
+    order: -1;
   }
 
   .edit-drawer__checkbox-label {
@@ -956,6 +984,7 @@
 
   .edit-drawer__image-ai,
   .edit-drawer__image-replace,
+  .edit-drawer__image-move,
   .edit-drawer__image-remove {
     width: 46px;
     height: 46px;

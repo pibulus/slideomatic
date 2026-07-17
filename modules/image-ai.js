@@ -109,7 +109,7 @@ GENERATE`;
 
     } catch (error) {
         console.error('AI image decision failed:', error);
-        showHudStatus(`❌ ${error.message}`, 'error', {
+        showHudStatus(`🎨 ${error.message}`, 'error', {
             onRetry: () => askAIForImage(placeholderElement, imageConfig)
         });
         setTimeout(hideHudStatus, 6000);
@@ -228,7 +228,7 @@ The image should be visually striking and support the slide content.`;
 
     } catch (error) {
         console.error('AI image generation failed:', error);
-        showHudStatus(`❌ ${error.message}`, 'error');
+        showHudStatus(`🎨 ${error.message}`, 'error');
         setTimeout(hideHudStatus, 3000);
         return false;
     }

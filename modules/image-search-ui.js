@@ -210,7 +210,7 @@ async function selectImage(item, cell) {
   } catch (err) {
     if (cell) cell.classList.remove('is-loading');
     hideToastById(toastId);
-    showHudStatus(`❌ ${err.message || 'Failed to add image'}`, 'error');
+    showHudStatus(`🖼 ${err.message || 'That image did not come through. Try another'}`, 'error');
     setTimeout(hideHudStatus, 4000);
   }
 }

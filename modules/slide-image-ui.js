@@ -151,6 +151,8 @@ function buildImageManager(slide) {
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
+          ${images.length > 1 ? `<button type="button" class="edit-drawer__image-move" data-image-index="${index}" data-move="-1" title="Move image up" aria-label="Move image ${index + 1} up" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" class="edit-drawer__image-move" data-image-index="${index}" data-move="1" title="Move image down" aria-label="Move image ${index + 1} down" ${index === images.length - 1 ? 'disabled' : ''}>↓</button>` : ''}
           ${isEmpty ? `<button type="button" class="edit-drawer__image-search" data-image-index="${index}" title="Search stock images" aria-label="Search stock images for slot ${index + 1}">🔍</button>` : ''}
           ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="Generate image with AI" aria-label="Generate image ${index + 1} with AI">✨</button>` : ''}
           ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image" aria-label="Replace image ${index + 1}">↻</button>` : ''}
@@ -258,6 +260,32 @@ function setupImageAIButtons({ root, onAI, addTrackedListener }) {
   };
 
   addTrackedListener(root, 'click', handleAI);
+}
+
+/**
+ * Setup move up/down buttons using event delegation. Drag reorder is
+ * mouse-only (HTML5 drag events never fire on touch), so these buttons are
+ * the sole way to reorder images on a phone.
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onMove - Callback given (fromIndex, toIndex)
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageMoveButtons({ root, onMove, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  const handleMove = (event) => {
+    const button = event.target.closest('.edit-drawer__image-move');
+    if (!button || button.disabled) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    const delta = Number.parseInt(button.dataset.move, 10);
+    if (Number.isNaN(index) || Number.isNaN(delta)) return;
+    onMove?.(index, index + delta);
+  };
+
+  addTrackedListener(root, 'click', handleMove);
 }
 
 /**
@@ -432,5 +460,6 @@ export {
   setupImageReplaceButtons,
   setupImageAIButtons,
   setupImageSearchButtons,
+  setupImageMoveButtons,
   setupImageDragReorder,
 };

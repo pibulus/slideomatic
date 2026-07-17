@@ -251,7 +251,7 @@ export async function handleGlobalPaste(event) {
             if (placeholder) {
                 await handleImageUpload(file, placeholder);
             } else {
-                showHudStatus('⚠️ No image slot on this slide', 'warning');
+                showHudStatus('🖼 This slide type has no image slot', 'info');
                 setTimeout(hideHudStatus, 2000);
             }
         }

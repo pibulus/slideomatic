@@ -174,7 +174,7 @@ function setupThemeSelectDropdown() {
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
         console.error('Failed to apply theme:', error);
-        showHudStatus('❌ Theme failed', 'error');
+        showHudStatus('🎨 Theme shuffle stumbled. Hit it again', 'error');
         setTimeout(hideHudStatus, 2000);
       }
     });
@@ -311,7 +311,7 @@ function handleSaveTheme() {
 
     const saved = saveThemeToLibrary(name.trim(), theme);
     if (!saved) {
-      showHudStatus('⚠️ Could not save theme — storage may be full', 'error');
+      showHudStatus('💾 Theme did not save. Browser storage looks full', 'error');
       setTimeout(hideHudStatus, 2400);
       return;
     }
@@ -322,7 +322,7 @@ function handleSaveTheme() {
     showHudStatus('💾 Theme saved', 'success');
     setTimeout(hideHudStatus, 1600);
   } catch (error) {
-    showHudStatus(`❌ ${error.message}`, 'error');
+    showHudStatus(`🎨 ${error.message}`, 'error');
     setTimeout(hideHudStatus, 2000);
   }
 }
@@ -343,7 +343,7 @@ async function handleAiTheme(aiBtn) {
     showHudStatus('✨ Theme generated!', 'success');
     setTimeout(hideHudStatus, 1600);
   } catch (error) {
-    showHudStatus(`❌ ${error.message}`, 'error');
+    showHudStatus(`🎨 ${error.message}`, 'error');
     setTimeout(hideHudStatus, 3000);
   } finally {
     aiBtn.disabled = false;
@@ -362,7 +362,7 @@ function handleRandomTheme() {
     showHudStatus('✨ Random theme applied!', 'success');
     setTimeout(hideHudStatus, 1600);
   } catch (error) {
-    showHudStatus(`❌ ${error.message}`, 'error');
+    showHudStatus(`🎨 ${error.message}`, 'error');
     setTimeout(hideHudStatus, 2000);
   }
 }

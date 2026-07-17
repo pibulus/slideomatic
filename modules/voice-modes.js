@@ -136,7 +136,7 @@ export async function startSpeechCapture({ onStop, onError } = {}) {
   recorder.onerror = (event) => {
     stopTracks();
     if (typeof onError === 'function') {
-      onError(event.error || new Error('Voice recording failed.'));
+      onError(event.error || new Error('The recording did not come through. One more take?'));
     }
   };
 
@@ -186,7 +186,7 @@ export async function transcribeSpeechToText(audioBlob, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
-    throw new Error(error?.error?.message || `Transcription failed (${response.status})`);
+    throw new Error(error?.error?.message || `Gemini could not hear that one (${response.status}). Try again`);
   }
 
   const data = await response.json();
@@ -334,7 +334,7 @@ export async function startVoiceRecording(mode) {
   } catch (error) {
     console.error('❌ Error starting recording:', error);
     const context = getVoiceContext();
-    context.showHudStatus('🎙 Mic unavailable — check browser permissions', 'error');
+    context.showHudStatus('🎙 The mic is not reachable. Check browser permissions', 'error');
     setTimeout(context.hideHudStatus, 3000);
     cleanupVoiceRecording({ resetButton: false });
     updateVoiceUI(mode, 'idle');
@@ -466,7 +466,7 @@ export async function processVoiceToSlide(audioBlob) {
       // Non-JSON error bodies (e.g. a 404 from `npm run dev`, which has no
       // functions) shouldn't surface as "Unexpected token '<'".
       const error = await response.json().catch(() => null);
-      throw new Error(error?.error?.message || `Gemini request failed (${response.status})`);
+      throw new Error(error?.error?.message || `Gemini did not answer (${response.status}). Try again`);
     }
 
     const result = await response.json();
@@ -492,7 +492,7 @@ export async function processVoiceToSlide(audioBlob) {
     debug('Slide created and inserted');
   } catch (error) {
     console.error('❌ Error processing voice:', error);
-    context.showHudStatus(`❌ Failed: ${error.message}`, 'error');
+    context.showHudStatus(`🎙 ${error.message}`, 'error');
     setTimeout(context.hideHudStatus, 4000);
   }
 }
@@ -527,7 +527,7 @@ export async function generateSlideFromPrompt(promptText, { insert = false } = {
     return slide;
   } catch (error) {
     console.error('Gemini slide prompt failed:', error);
-    context.showHudStatus(`❌ ${error.message}`, 'error');
+    context.showHudStatus(`🎙 ${error.message}`, 'error');
     setTimeout(context.hideHudStatus, 3500);
     throw error;
   }
@@ -578,7 +578,7 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
     return { slides: slidesArray, firstIndex: firstInserted };
   } catch (error) {
     console.error('Gemini deck prompt failed:', error);
-    context.showHudStatus(`❌ ${error.message}`, 'error');
+    context.showHudStatus(`🎙 ${error.message}`, 'error');
     setTimeout(context.hideHudStatus, 3500);
     throw error;
   }

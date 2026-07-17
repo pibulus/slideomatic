@@ -361,7 +361,7 @@ function renameDeck() {
     setTimeout(hideHudStatus, 1500);
   } catch (error) {
     console.error('Failed to rename deck:', error);
-    showHudStatus('⚠️ Unable to rename', 'error');
+    showHudStatus('✏️ Rename did not stick. Try again', 'error');
     setTimeout(hideHudStatus, 2000);
   }
 }

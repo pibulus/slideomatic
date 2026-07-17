@@ -451,7 +451,7 @@ export async function generateGraphImage(slide, container) {
     } catch (error) {
         console.error('Graph generation failed:', error);
         const message = error instanceof Error ? error.message : 'Graph generation failed';
-        showHudStatus(`❌ ${message}`, 'error');
+        showHudStatus(`📊 ${message}`, 'error');
         setTimeout(hideHudStatus, 3500);
         container.innerHTML = `
             <div class="graph-error">

@@ -21,6 +21,7 @@ import {
   setupImageRemoveButtons,
   setupImageReplaceButtons,
   setupImageAIButtons,
+  setupImageMoveButtons,
   setupImageSearchButtons,
   setupImageDragReorder,
   removeImageByIndex,
@@ -166,7 +167,8 @@ function handleLayoutApply(context) {
 function applyLayoutToCurrentSlide(ctx, layout, variant) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
-    alert(`No template available for type "${layout}".`);
+    ctx.showHudStatus(`🧩 No template for "${layout}" yet`, 'info');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
     return;
   }
 
@@ -361,7 +363,8 @@ function handleLayoutAdd(context) {
 function addNewSlideWithLayout(ctx, layout) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
-    alert(`No template available for type "${layout}".`);
+    ctx.showHudStatus(`🧩 No template for "${layout}" yet`, 'info');
+    setTimeout(() => ctx.hideHudStatus(), 2000);
     return;
   }
 
@@ -440,7 +443,7 @@ async function handleDownloadPdf(context) {
     }
   } catch (error) {
     console.error('PDF export failed:', error);
-    ctx.showHudStatus('❌ PDF export failed', 'error');
+    ctx.showHudStatus('📄 PDF export hiccup. Give it another go', 'error');
   } finally {
     if (downloadBtn) downloadBtn.disabled = false;
     setTimeout(() => ctx.hideHudStatus(), 2000);
@@ -581,7 +584,7 @@ async function handleImageFile(context, file) {
     setTimeout(() => ctx.hideHudStatus(), 2000);
   } catch (error) {
     console.warn('Image upload failed:', error);
-    ctx.showHudStatus('⚠️ Unable to add that image', 'error');
+    ctx.showHudStatus('🖼 That image did not want to load. Try another', 'error');
     setTimeout(() => ctx.hideHudStatus(), 2000);
   }
 }
@@ -839,7 +842,7 @@ export function renderEditForm(context) {
 
       const saved = saveThemeToLibrary(name.trim(), theme);
       if (!saved) {
-        showHudStatus('⚠️ Could not save theme — storage may be full', 'error');
+        showHudStatus('💾 Theme did not save. Browser storage looks full', 'error');
         setTimeout(hideHudStatus, 2400);
         return;
       }
@@ -940,7 +943,7 @@ Make the colors harmonious and ensure good contrast for readability.`;
 
     } catch (error) {
       console.error('AI theme generation failed:', error);
-      showHudStatus('❌ Failed to generate theme', 'error');
+      showHudStatus('🎨 Theme did not come together. One more try', 'error');
       setTimeout(hideHudStatus, 2000);
     } finally {
       if (aiBtn instanceof HTMLButtonElement) {
@@ -1090,6 +1093,12 @@ Make the colors harmonious and ensure good contrast for readability.`;
     });
   }
 
+  setupImageMoveButtons({
+    root: content,
+    onMove: (fromIndex, toIndex) => handleImageReorder(ctx, fromIndex, toIndex),
+    addTrackedListener,
+  });
+
   setupImageAIButtons({
     root: content,
     onAI: (imageIndex) => {
@@ -1192,7 +1201,8 @@ export function saveCurrentSlide(context) {
 
     debug('Slide saved');
   } catch (error) {
-    alert(`Invalid JSON: ${error.message}`);
+    ctx.showHudStatus(`🧩 That JSON did not parse: ${error.message}`, 'error');
+    setTimeout(() => ctx.hideHudStatus(), 3000);
   }
 }
 
@@ -1224,12 +1234,31 @@ export function deleteCurrentSlide(context) {
   const currentIndex = ctx.getCurrentIndex();
 
   if (slides.length <= 1) {
-    alert('Cannot delete the last slide!');
+    ctx.showHudStatus('🌱 A deck needs at least one slide', 'info');
+    setTimeout(() => ctx.hideHudStatus(), 1800);
     return;
   }
 
-  const confirmed = confirm('Delete this slide? This cannot be undone.');
-  if (!confirmed) return;
+  // Soft two-tap confirm instead of a native dialog: first tap arms the
+  // button for 3s, second tap deletes. Pain-free zone.
+  const deleteBtn = document.getElementById('delete-slide-btn');
+  if (deleteBtn && deleteBtn.dataset.armed !== 'true') {
+    deleteBtn.dataset.armed = 'true';
+    deleteBtn.textContent = 'Tap again to delete';
+    deleteBtn.classList.add('is-armed');
+    setTimeout(() => {
+      if (deleteBtn.isConnected && deleteBtn.dataset.armed === 'true') {
+        delete deleteBtn.dataset.armed;
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.classList.remove('is-armed');
+      }
+    }, 3000);
+    return;
+  }
+  if (deleteBtn) {
+    delete deleteBtn.dataset.armed;
+    deleteBtn.classList.remove('is-armed');
+  }
 
   // removeSlideAt (via deleteSlideAt) already re-renders, re-indexes, and
   // persists the deck — no extra replaceSlideAt needed here.
