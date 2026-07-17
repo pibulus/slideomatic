@@ -21,6 +21,7 @@ import {
   setupImageRemoveButtons,
   setupImageReplaceButtons,
   setupImageAIButtons,
+  setupImageSearchButtons,
   setupImageDragReorder,
   removeImageByIndex,
   replaceImageByIndex,
@@ -29,6 +30,7 @@ import {
   updateImageAltText,
 } from './slide-image-ui.js';
 import { askAIForImage } from './image-ai.js';
+import { openImageSearch } from './image-search-ui.js';
 import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
 import { loadThemeLibrary } from './theme-manager.js';
@@ -1109,6 +1111,29 @@ Make the colors harmonious and ensure good contrast for readability.`;
       });
     },
     addTrackedListener
+  });
+
+  setupImageSearchButtons({
+    root: content,
+    onSearch: (imageIndex) => {
+      const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
+      if (!currentSlide) return;
+
+      // Seed the search box with the slide's headline/title so the first
+      // query is usually already what the user wants.
+      const seedQuery = (currentSlide.headline || currentSlide.title || '')
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .trim()
+        .slice(0, 60);
+
+      openImageSearch({
+        slideIndex: ctx.getCurrentIndex(),
+        imageIndex,
+        seedQuery,
+        onSuccess: () => renderEditForm(ctx),
+      });
+    },
+    addTrackedListener,
   });
 
   // Setup alt text input event listeners using event delegation

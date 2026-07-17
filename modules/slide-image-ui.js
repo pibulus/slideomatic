@@ -151,7 +151,8 @@ function buildImageManager(slide) {
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
           </div>
-          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="AI Assist: Search or Generate" aria-label="Search or generate image ${index + 1} with AI">✨</button>` : ''}
+          ${isEmpty ? `<button type="button" class="edit-drawer__image-search" data-image-index="${index}" title="Search stock images" aria-label="Search stock images for slot ${index + 1}">🔍</button>` : ''}
+          ${isEmpty ? `<button type="button" class="edit-drawer__image-ai" data-image-index="${index}" title="Generate image with AI" aria-label="Generate image ${index + 1} with AI">✨</button>` : ''}
           ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image" aria-label="Replace image ${index + 1}">↻</button>` : ''}
           <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot" aria-label="Remove image ${index + 1}">×</button>
         </div>
@@ -257,6 +258,29 @@ function setupImageAIButtons({ root, onAI, addTrackedListener }) {
   };
 
   addTrackedListener(root, 'click', handleAI);
+}
+
+/**
+ * Setup stock-image-search buttons using event delegation
+ * @param {Object} params - Configuration object
+ * @param {HTMLElement} params.root - Container element
+ * @param {Function} params.onSearch - Callback given the image slot index
+ * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
+ */
+function setupImageSearchButtons({ root, onSearch, addTrackedListener }) {
+  if (!root || !addTrackedListener) return;
+
+  const handleSearch = (event) => {
+    const button = event.target.closest('.edit-drawer__image-search');
+    if (!button) return;
+
+    event.preventDefault();
+    const index = Number.parseInt(button.dataset.imageIndex, 10);
+    if (Number.isNaN(index)) return;
+    onSearch?.(index);
+  };
+
+  addTrackedListener(root, 'click', handleSearch);
 }
 
 function getDragAfterElement(container, y) {
@@ -407,5 +431,6 @@ export {
   setupImageRemoveButtons,
   setupImageReplaceButtons,
   setupImageAIButtons,
+  setupImageSearchButtons,
   setupImageDragReorder,
 };
