@@ -40,6 +40,16 @@
   --slide-aspect: 16 / 9;
   --slide-padding: 64px;
 
+  /* Theme-injectable tokens — safe defaults so slides never render broken
+     when a theme omits them (an undefined var() drops the whole property:
+     image slides were getting padding 0 and quote cards a transparent
+     border before these existed) */
+  --gutter: clamp(32px, 5vw, 72px);
+  --image-slide-padding: clamp(24px, 4vw, 64px);
+  --image-wrapper-bg: transparent;
+  --color-surface-2: color-mix(in srgb, var(--color-surface) 85%, var(--color-ink));
+  --color-border: var(--color-ink);
+
   /* UI Tokens */
   --radius: 24px; /* --radius-soft */
   --radius-sm: 12px;

@@ -480,10 +480,9 @@ export function buildAdvancedSection(slide) {
   const jsonString = escapeHtml(JSON.stringify(slide, null, 2));
   const content = `
     <textarea
-      class="edit-drawer__textarea"
+      class="edit-drawer__textarea edit-drawer__textarea--json"
       id="slide-json-editor"
       rows="20"
-      style="font-family: var(--font-mono); font-size: 0.9rem;"
     >${jsonString}</textarea>
   `;
   return buildAccordion('Advanced JSON', content, { modifier: ' accordion--advanced', startOpen: false });

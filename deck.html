@@ -125,7 +125,11 @@
       <div class="edit-drawer" id="edit-drawer" role="dialog" aria-modal="true" aria-labelledby="edit-drawer-title" aria-hidden="true" inert>
         <div class="edit-drawer__header">
           <h2 id="edit-drawer-title">Edit Slide</h2>
-          <button class="edit-drawer__close" aria-label="Close editor">×</button>
+          <div class="edit-drawer__header-actions">
+            <button type="button" class="edit-drawer__nav-btn" id="edit-nav-prev" aria-label="Edit previous slide" title="Previous slide">‹</button>
+            <button type="button" class="edit-drawer__nav-btn" id="edit-nav-next" aria-label="Edit next slide" title="Next slide">›</button>
+            <button class="edit-drawer__close" aria-label="Close editor">×</button>
+          </div>
         </div>
         <div class="edit-drawer__content" id="edit-drawer-content">
           <!-- Form will be dynamically generated -->
@@ -219,33 +223,64 @@
             <h2 id="hints-modal-title">Keyboard Shortcuts</h2>
           </div>
           <div class="hints-modal__body">
-            <div class="hint-item">
+            <div class="hint-item hint-item--static">
               <div class="hint-item__key">← →</div>
               <div class="hint-item__desc">Navigate slides</div>
             </div>
             <button type="button" class="hint-item hint-item--action" data-hint-action="edit">
               <div class="hint-item__key">E</div>
               <div class="hint-item__desc">Edit or add slides</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="ai">
+              <div class="hint-item__key">666</div>
+              <div class="hint-item__desc">AI console: talk a deck into being</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
               <div class="hint-item__key">O</div>
-              <div class="hint-item__desc">Overview</div>
+              <div class="hint-item__desc">See all slides</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="index">
+              <div class="hint-item__key">I</div>
+              <div class="hint-item__desc">Jump to any slide</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="theme">
               <div class="hint-item__key">T</div>
-              <div class="hint-item__desc">Change theme</div>
+              <div class="hint-item__desc">Shuffle the theme</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
-              <div class="hint-item__key">H</div>
-              <div class="hint-item__desc">Hide/show nav bar</div>
+            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice">
+              <div class="hint-item__key">V</div>
+              <div class="hint-item__desc">Voice-to-slide</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="notes">
               <div class="hint-item__key">N</div>
               <div class="hint-item__desc">Speaker notes</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
-            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice">
-              <div class="hint-item__key">V</div>
-              <div class="hint-item__desc">Voice-to-slide (talk, get a slide)</div>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
+              <div class="hint-item__key">H</div>
+              <div class="hint-item__desc">Hide/show nav bar</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="settings">
+              <div class="hint-item__key">S</div>
+              <div class="hint-item__desc">Settings + API key</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="download">
+              <div class="hint-item__key">D</div>
+              <div class="hint-item__desc">Download deck backup</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="upload">
+              <div class="hint-item__key">U</div>
+              <div class="hint-item__desc">Load a deck file</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
           </div>
           <div class="hints-modal__footer">

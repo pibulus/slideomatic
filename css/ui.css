@@ -448,6 +448,20 @@
     flex-shrink: 0;
   }
 
+  /* Buttons render 36px (32px on tiny phones) to fit one row, but the
+     tap target must still clear ~44px — invisible overlay does it */
+  .hud__action,
+  .hud__nav-btn {
+    position: relative;
+  }
+
+  .hud__action::after,
+  .hud__nav-btn::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+  }
+
   /* Icons replace text labels so all actions fit one row without wrapping */
   .hud__action-icon {
     display: block;
@@ -532,6 +546,11 @@
   .hud__nav-btn {
     width: 32px;
     height: 32px;
+  }
+
+  .hud__action::after,
+  .hud__nav-btn::after {
+    inset: -6px;
   }
 }
 

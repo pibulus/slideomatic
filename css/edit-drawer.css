@@ -107,6 +107,11 @@
   pointer-events: none;
 }
 
+.edit-drawer__textarea--json {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
 .edit-drawer__header {
   padding: 24px;
   border-bottom: var(--border-width) solid var(--color-ink);
@@ -124,6 +129,40 @@
   letter-spacing: 0.05em;
   margin: 0;
   color: var(--color-ink);
+}
+
+.edit-drawer__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-drawer__nav-btn {
+  appearance: none;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-ink);
+  color: var(--color-ink);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.2, 2, 0.4, 1),
+              box-shadow 200ms ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.edit-drawer__nav-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--color-ink);
+}
+
+.edit-drawer__nav-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--color-ink);
 }
 
 .edit-drawer__close {
@@ -883,6 +922,16 @@
   .edit-drawer__image-alt-input,
   .edit-drawer__button {
     min-height: 46px;
+  }
+
+  /* Anything under 16px makes iOS Safari zoom the viewport on focus —
+     every field must clear that bar on phones */
+  .edit-drawer__input,
+  .edit-drawer__textarea,
+  .edit-drawer__textarea--json,
+  .edit-drawer__select,
+  .edit-drawer__image-alt-input {
+    font-size: 16px;
   }
 
   .edit-drawer__button {

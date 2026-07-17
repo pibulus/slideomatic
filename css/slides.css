@@ -522,7 +522,9 @@
 
 .slide p {
   font-size: clamp(1.1rem, 2.1vw, 1.8rem);
-  max-width: 100%; /* Allow full width */
+  /* Cap line length — uncapped paragraphs ran 100+ characters on wide
+     screens, well past comfortable reading range */
+  max-width: min(100%, 70ch);
   line-height: 1.5;
   margin: 0;
 }

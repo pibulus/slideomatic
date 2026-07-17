@@ -254,7 +254,7 @@ export function toggleVoiceRecording(mode = 'add') {
   // instead of failing mid-recording.
   if (!hasGeminiKey()) {
     import('./hud.js').then(({ showHudStatus, hideHudStatus }) => {
-      showHudStatus('🎙 Voice needs a Gemini key — press S to add one', 'info');
+      showHudStatus('🎙 Voice needs a Gemini key. Add one in Settings (S or the ? menu)', 'info');
       setTimeout(hideHudStatus, 3200);
     });
     return;

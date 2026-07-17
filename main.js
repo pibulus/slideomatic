@@ -46,7 +46,7 @@ import {
   initSlideIndex,
   toggleSlideIndex,
 } from './modules/slide-index.js';
-import { initCheatConsole } from './modules/cheat-codes.js';
+import { initCheatConsole, openCheatConsole } from './modules/cheat-codes.js';
 import {
   loadSlides,
   generateDeckId,
@@ -630,16 +630,31 @@ async function initDeckWithTheme() {
     hudEditBtn.addEventListener('click', () => toggleEditDrawer());
   }
 
+  // Flip slides without leaving the editor — setActiveSlide re-renders the
+  // open edit form (navigation.js), so these just move the deck under it.
+  // On mobile the full-bleed drawer buries every other nav control.
+  document.getElementById('edit-nav-prev')?.addEventListener('click', () => {
+    setActiveSlide(currentIndex - 1);
+  });
+  document.getElementById('edit-nav-next')?.addEventListener('click', () => {
+    setActiveSlide(currentIndex + 1);
+  });
+
   // Help modal hint rows double as tappable shortcuts on mobile, since a
   // phone user can't press E/O/T/H/N. Close the modal after firing so the
   // action's own UI (drawer, overview, etc.) is what the user sees next.
   const hintActions = {
     edit: () => toggleEditDrawer(),
     overview: () => toggleOverview(),
+    index: () => toggleSlideIndex(),
     theme: () => randomizeTheme(),
     hud: () => toggleHudHidden(),
     notes: () => toggleSpeakerNotes(),
     voice: () => toggleVoiceRecording('add'),
+    settings: () => openSettingsModal(),
+    download: () => downloadDeck(),
+    upload: () => document.getElementById('deck-upload')?.click(),
+    ai: () => openCheatConsole(),
   };
   document.querySelectorAll('[data-hint-action]').forEach((btn) => {
     btn.addEventListener('click', () => {

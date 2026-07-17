@@ -107,6 +107,12 @@ function hasBlockingModal() {
   return Boolean(!root?.classList.contains('is-open') && document.querySelector('.modal-base.is-open'));
 }
 
+// Touch path into the console — phones can't type 666 into thin air.
+// Reached from the help modal's AI row.
+export function openCheatConsole() {
+  showConsole('666');
+}
+
 function showConsole(code) {
   if (!root || !promptInput) return;
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
