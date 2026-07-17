@@ -54,7 +54,7 @@ function buildModal() {
         <button type="submit" class="image-search__submit">Search</button>
       </form>
       <div class="image-search__results" id="image-search-results" aria-live="polite"></div>
-      <p class="image-search__attribution">Photos from Pexels. Free to use, credit appreciated.</p>
+      <p class="image-search__attribution">Photos from Pexels and Unsplash. Free to use, credit appreciated.</p>
     </div>
   `;
   document.body.appendChild(el);
