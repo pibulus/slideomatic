@@ -19,6 +19,7 @@ import {
   enableRadio,
   disableRadio,
   setRadioChannel,
+  isRadioPlaying,
 } from './radio.js';
 import { escapeHtml } from './utils.js';
 import { setupCustomSelect, setCustomSelectValue } from './custom-select.js';
@@ -29,7 +30,9 @@ function buildDockMarkup() {
   const radioChannels = getRadioChannelList();
   const radioState = getRadioState();
   const activeRadioChannel = radioChannels.find((channel) => channel.id === radioState.channelId) || radioChannels[0];
-  const isRadioEnabled = radioState.enabled && !!activeRadioChannel;
+  // Audio never autoplays on load, so the UI starts from actual playback —
+  // the stored 'enabled' flag can be stale-true after a reload.
+  const isRadioEnabled = isRadioPlaying() && !!activeRadioChannel;
 
   const radioOptions = radioChannels.map((channel) => {
     const isSelected = activeRadioChannel.id === channel.id ? 'is-selected' : '';
@@ -83,10 +86,12 @@ function wireControls() {
   const pillEl = document.getElementById('theme-radio-pill');
   const channelWrapper = document.getElementById('theme-radio-channel');
   const dockPill = document.getElementById('radio-dock-pill');
+  // Mobile HUD icon toggles the same radio; dock is display:none there
+  const hudRadioBtn = document.getElementById('hud-radio-btn');
 
   if (!toggle || !select || !dockPill) return;
 
-  const state = { ...getRadioState() };
+  const state = { channelId: getRadioState().channelId, enabled: isRadioPlaying() };
   const getActiveChannel = () => getChannelById(state.channelId);
 
   const updateVisualState = (enabled, channel = getActiveChannel()) => {
@@ -94,6 +99,10 @@ function wireControls() {
     toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     channelWrapper?.classList.toggle('is-visible', enabled);
     dockPill.classList.toggle('is-live', enabled);
+    if (hudRadioBtn) {
+      hudRadioBtn.classList.toggle('is-live', enabled);
+      hudRadioBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    }
     if (pillEl) pillEl.textContent = enabled ? 'On' : 'Off';
     if (statusEl) {
       statusEl.textContent = enabled
@@ -104,7 +113,7 @@ function wireControls() {
 
   updateVisualState(state.enabled, getActiveChannel());
 
-  toggle.addEventListener('click', async () => {
+  const toggleRadio = async () => {
     if (state.enabled) {
       disableRadio();
       state.enabled = false;
@@ -130,7 +139,10 @@ function wireControls() {
       state.enabled = false;
       updateVisualState(false);
     }
-  });
+  };
+
+  toggle.addEventListener('click', toggleRadio);
+  hudRadioBtn?.addEventListener('click', toggleRadio);
 
   select.addEventListener('customSelectChange', async (event) => {
     const nextId = event?.detail?.value;

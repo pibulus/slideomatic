@@ -191,6 +191,12 @@ export function isRadioEnabled() {
   return radioEnabled;
 }
 
+// The stored 'enabled' flag survives reloads, but audio never autoplays — so
+// UI should trust actual playback, not the flag, or it paints a lying On.
+export function isRadioPlaying() {
+  return !!audioElement && !audioElement.paused;
+}
+
 export function getCurrentChannel() {
   return getChannelById(currentChannelId);
 }

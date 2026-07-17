@@ -112,6 +112,24 @@
   color: var(--color-accent);
 }
 
+.hud__action.is-active {
+  color: var(--color-accent);
+}
+
+/* Radio lives in the floating dock on desktop; HUD icon is mobile-only */
+.hud__radio-btn {
+  display: none;
+}
+
+.hud__radio-btn.is-live {
+  background: var(--color-accent);
+  border-radius: 10px;
+}
+
+.hud__radio-btn.is-live .hud__action-icon {
+  animation: pulse-processing 1.6s ease-in-out infinite;
+}
+
 .hud__action-icon {
   display: none;
   font-size: 1.15rem;
@@ -284,34 +302,10 @@
 }
 
 @media (max-width: 768px) {
-  /* Bottom-left collided with the full-width mobile HUD. Move it to a top
-     corner instead, out of the presentation controls' way entirely, and
-     drop the heavy shadow so it reads as a small utility button, not a
-     competing action. */
+  /* The floating pill fought every corner it was put in. On phones the
+     radio is a plain HUD icon toggle instead (see .hud__radio-btn). */
   .radio-dock {
-    bottom: auto;
-    top: calc(16px + env(safe-area-inset-top));
-    left: auto;
-    right: calc(16px + env(safe-area-inset-right));
-  }
-
-  .radio-dock__pill {
-    box-shadow: none;
-    padding: 8px 10px;
-  }
-
-  .radio-dock__pill:hover,
-  .radio-dock__pill:focus-visible {
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* Panel now opens below the pill since the pill lives at the top */
-  .radio-dock__panel {
-    bottom: auto;
-    top: calc(100% + 12px);
-    left: auto;
-    right: 0;
+    display: none;
   }
 }
 
@@ -352,6 +346,11 @@
 
   .edge-nav--next {
     right: 0;
+  }
+
+  /* Overview has its own tap-to-jump cards; edge arrows only confuse there */
+  body[data-mode="overview"] .edge-nav {
+    display: none;
   }
 }
 
@@ -449,7 +448,7 @@
     flex-shrink: 0;
   }
 
-  /* Icons replace text labels so all 5 actions fit one row without wrapping */
+  /* Icons replace text labels so all actions fit one row without wrapping */
   .hud__action-icon {
     display: block;
     font-size: 1.05rem;
@@ -457,6 +456,23 @@
 
   .hud__action-label {
     display: none;
+  }
+
+  /* Radio joins the row on phones (the floating dock is hidden here) */
+  .hud__action.hud__radio-btn {
+    display: flex;
+  }
+
+  /* Home is redundant on a phone — tapping the start of the progress bar
+     does the same job, and the row needs the room for radio */
+  .hud__action.hud__home-btn {
+    display: none;
+  }
+
+  .hud__notes-indicator {
+    min-width: 36px;
+    min-height: 36px;
+    margin-left: 0;
   }
 
   .hud__counter {

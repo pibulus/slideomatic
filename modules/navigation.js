@@ -46,32 +46,7 @@ let renderEditFormHook = (_context) => {};
 let toggleSpeakerNotesHook = () => {};
 let onSlideChangeHook = (_index) => {};
 
-const columnOverviewQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
-  ? window.matchMedia('(max-width: 640px)')
-  : { matches: false };
 let glideAnimationFrame = null;
-
-const handleOrientationChange = () => {
-  if (!isOverview) return;
-  cancelGlide();
-  requestAnimationFrame(() => {
-    const current = slideElements[overviewCursor];
-    if (current) {
-      glideToSlide(current);
-    }
-    updateScrollGradients();
-  });
-};
-
-if (typeof columnOverviewQuery.addEventListener === 'function') {
-  columnOverviewQuery.addEventListener('change', handleOrientationChange);
-} else if (typeof columnOverviewQuery.addListener === 'function') {
-  columnOverviewQuery.addListener(handleOrientationChange);
-}
-
-function isColumnOverview() {
-  return columnOverviewQuery.matches;
-}
 
 function cancelGlide() {
   if (glideAnimationFrame) {
@@ -80,18 +55,15 @@ function cancelGlide() {
   }
 }
 
-function startGlide(target, axis = 'x') {
+// Overview is a vertically scrolling grid at every size, so glide is y-only
+function startGlide(target) {
   if (!slidesRoot) return;
   cancelGlide();
   const duration = 550;
-  const start = axis === 'y' ? slidesRoot.scrollTop : slidesRoot.scrollLeft;
+  const start = slidesRoot.scrollTop;
   const distance = target - start;
   if (Math.abs(distance) < 1) {
-    if (axis === 'y') {
-      slidesRoot.scrollTop = target;
-    } else {
-      slidesRoot.scrollLeft = target;
-    }
+    slidesRoot.scrollTop = target;
     return;
   }
 
@@ -102,12 +74,7 @@ function startGlide(target, axis = 'x') {
     const elapsed = now - initialTime;
     const progress = Math.min(elapsed / duration, 1);
     const eased = easeOutCubic(progress);
-    const value = start + distance * eased;
-    if (axis === 'y') {
-      slidesRoot.scrollTop = value;
-    } else {
-      slidesRoot.scrollLeft = value;
-    }
+    slidesRoot.scrollTop = start + distance * eased;
 
     if (progress < 1) {
       glideAnimationFrame = requestAnimationFrame(step);
@@ -121,17 +88,12 @@ function startGlide(target, axis = 'x') {
 
 function glideToSlide(slide) {
   if (!slidesRoot || !slide) return;
-  const axis = isColumnOverview() ? 'y' : 'x';
   const containerRect = slidesRoot.getBoundingClientRect();
   const slideRect = slide.getBoundingClientRect();
-  const currentOffset = axis === 'y' ? slidesRoot.scrollTop : slidesRoot.scrollLeft;
-  const delta = axis === 'y' ? slideRect.top - containerRect.top : slideRect.left - containerRect.left;
-  const viewportSize = axis === 'y' ? slidesRoot.clientHeight : slidesRoot.clientWidth;
-  const slideSize = axis === 'y' ? slideRect.height : slideRect.width;
-  const rawTarget = currentOffset + delta - (viewportSize - slideSize) / 2;
-  const maxScroll = Math.max((axis === 'y' ? slidesRoot.scrollHeight - viewportSize : slidesRoot.scrollWidth - viewportSize), 0);
-  const boundedTarget = clamp(rawTarget, 0, maxScroll);
-  startGlide(boundedTarget, axis);
+  const delta = slideRect.top - containerRect.top;
+  const rawTarget = slidesRoot.scrollTop + delta - (slidesRoot.clientHeight - slideRect.height) / 2;
+  const maxScroll = Math.max(slidesRoot.scrollHeight - slidesRoot.clientHeight, 0);
+  startGlide(clamp(rawTarget, 0, maxScroll));
 }
 
 function bindGlideInterruptions(shouldBind) {
@@ -191,8 +153,6 @@ export function enterOverview() {
   if (focusedSlide) {
     requestAnimationFrame(() => focusedSlide.focus({ preventScroll: true }));
   }
-  // Bind scroll listener for gradient indicators
-  slidesRoot?.addEventListener('scroll', updateScrollGradients, { passive: true });
   bindGlideInterruptions(true);
   updateOverviewButton();
 }
@@ -200,8 +160,6 @@ export function enterOverview() {
 export function exitOverview(targetIndex = currentIndex) {
   delete document.body.dataset.mode;
   setOverview(false);
-  // Remove scroll listener
-  slidesRoot?.removeEventListener('scroll', updateScrollGradients);
   bindGlideInterruptions(false);
   slideElements.forEach((slide, index) => {
     if (index !== targetIndex) {
@@ -221,49 +179,63 @@ export function exitOverview(targetIndex = currentIndex) {
 export function updateOverviewButton() {
   const overviewBtn = document.getElementById('overview-btn');
   if (!overviewBtn) return;
+  // Only touch the label span — replacing textContent wipes the icon/label
+  // structure the mobile icon-only layout depends on.
+  const label = overviewBtn.querySelector('.hud__action-label');
+  overviewBtn.classList.toggle('is-active', isOverview);
+  overviewBtn.setAttribute('aria-pressed', isOverview ? 'true' : 'false');
   if (isOverview) {
-    overviewBtn.textContent = 'Slides';
+    if (label) label.textContent = 'Slides';
     overviewBtn.setAttribute('aria-label', 'Exit overview');
     overviewBtn.title = 'Return to active slide';
   } else {
-    overviewBtn.textContent = 'Overview';
+    if (label) label.textContent = 'Overview';
     overviewBtn.setAttribute('aria-label', 'View all slides');
     overviewBtn.title = 'View all slides';
   }
 }
 
-export function updateScrollGradients() {
-  if (!slidesRoot) return;
-
-  if (isColumnOverview()) {
-    slidesRoot.classList.remove('has-scroll-left', 'has-scroll-right');
-    return;
-  }
-
-  const { scrollLeft, scrollWidth, clientWidth } = slidesRoot;
-  const maxScroll = scrollWidth - clientWidth;
-
-  if (scrollLeft > 20) {
-    slidesRoot.classList.add('has-scroll-left');
-  } else {
-    slidesRoot.classList.remove('has-scroll-left');
-  }
-
-  if (scrollLeft < maxScroll - 20) {
-    slidesRoot.classList.add('has-scroll-right');
-  } else {
-    slidesRoot.classList.remove('has-scroll-right');
-  }
-}
+// Slide content renders at a fixed 1920×1080 and is scaled down per card, so
+// card width and scale must always be derived together.
+const OVERVIEW_NATIVE_WIDTH = 1920;
+const OVERVIEW_MIN_CARD = 150;
+const OVERVIEW_MAX_CARD = 520;
 
 export function updateOverviewLayout() {
   const totalSlides = slideElements.length;
   if (!totalSlides) return;
-  setOverviewRowCount(1);
-  setOverviewColumnCount(totalSlides);
-  slidesRoot?.style.setProperty('--overview-row-count', overviewRowCount);
-  slidesRoot?.style.setProperty('--overview-column-count', overviewColumnCount);
-  updateScrollGradients();
+
+  const viewportWidth = slidesRoot?.clientWidth || window.innerWidth;
+  const isPhone = viewportWidth <= 640;
+  const targetCard = isPhone ? 168 : viewportWidth <= 1024 ? 300 : 360;
+  const padX = isPhone ? 14 : 40;
+  const gap = isPhone ? 12 : 24;
+  const available = viewportWidth - padX * 2;
+
+  let columns = Math.max(1, Math.min(
+    Math.round((available + gap) / (targetCard + gap)),
+    totalSlides
+  ));
+  while (columns > 1 && (available - gap * (columns - 1)) / columns < OVERVIEW_MIN_CARD) {
+    columns -= 1;
+  }
+
+  const cardWidth = Math.min(
+    Math.floor((available - gap * (columns - 1)) / columns),
+    OVERVIEW_MAX_CARD
+  );
+
+  setOverviewColumnCount(columns);
+  setOverviewRowCount(Math.ceil(totalSlides / columns));
+  if (slidesRoot) {
+    slidesRoot.style.setProperty('--overview-column-count', overviewColumnCount);
+    slidesRoot.style.setProperty('--overview-row-count', overviewRowCount);
+    slidesRoot.style.setProperty('--overview-slide-width', `${cardWidth}px`);
+    slidesRoot.style.setProperty('--overview-scale', String(cardWidth / OVERVIEW_NATIVE_WIDTH));
+    slidesRoot.style.setProperty('--overview-gap', `${gap}px`);
+    slidesRoot.style.setProperty('--overview-pad-x', `${padX}px`);
+  }
+
   setOverviewCursor(clamp(overviewCursor, 0, totalSlides - 1));
   if (isOverview) {
     highlightOverviewSlide(overviewCursor, { scroll: false });
@@ -298,9 +270,11 @@ export function highlightOverviewSlide(index, { scroll = true } = {}) {
 export function moveOverviewCursorBy(deltaColumn, deltaRow) {
   const totalSlides = slideElements.length;
   if (!totalSlides) return;
-  const delta = deltaColumn !== 0 ? deltaColumn : deltaRow;
+  // Up/down hops a full grid row; left/right steps one slide
+  const delta = deltaColumn + deltaRow * Math.max(1, overviewColumnCount);
   if (!delta) return;
   const nextIndex = clamp(overviewCursor + delta, 0, totalSlides - 1);
+  if (nextIndex === overviewCursor) return;
   highlightOverviewSlide(nextIndex);
 }
 
