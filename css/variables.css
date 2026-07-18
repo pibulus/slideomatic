@@ -67,7 +67,8 @@
   --space-sm: clamp(16px, 3vw, 24px);       /* card grids, split columns */
   --space-md: clamp(20px, 4vh, 40px);       /* content stack gap, vertical rhythm */
   --space-lg: clamp(24px, 4vw, 48px);       /* column and grid gutters */
-  --space-heading: clamp(32px, 5vh, 64px);  /* content offset below the badge row */
+  --space-heading: clamp(56px, 6vh, 72px);  /* content offset below the badge row:
+                                               floor must clear the badge height */
 
   /* UI Tokens */
   --radius: 24px; /* --radius-soft */

@@ -29,7 +29,10 @@
               transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   background: var(--slide-bg, var(--color-bg));
   border: var(--slide-border-width, var(--border-width)) solid var(--slide-border-color, var(--color-ink));
-  border-radius: var(--radius);
+  /* Full bleed: the chunky border is the frame. Rounded corners let the
+     page background peek through and made the slide read as a card
+     floating on something. Overview mode re-rounds its thumbnails. */
+  border-radius: 0;
   box-shadow: var(--slide-shadow, var(--shadow-md));
   will-change: opacity, transform;
   content-visibility: auto;
@@ -266,7 +269,9 @@
     width: 100%;
     max-width: 100%;
     margin: 0;
-    margin-block-start: clamp(24px, 4vh, 48px);
+    /* Same badge-clearing offset as the base rule: the old smaller clamp
+       slid the heading under the badge at 900-1024px widths */
+    margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
     display: flex !important;
     flex-direction: column;
     gap: var(--space-md);
@@ -357,8 +362,11 @@
   flex-direction: column;
   flex: 1;
   /* Center the title group in the free height: no bare lower half on tall
-     screens, and "safe" falls back to top-aligned when content overflows */
+     screens, and "safe" falls back to top-aligned when content overflows.
+     The larger end margin biases the group above true center, where a
+     title optically belongs. */
   justify-content: safe center;
+  margin-block-end: clamp(48px, 8vh, 96px);
   align-items: flex-start;
   text-align: left;
   gap: var(--space-md);
@@ -398,11 +406,20 @@
 }
 .slide--title .media-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 32vw), 1fr));
+  /* Wider minimum: laptops get a 2-up collage with a full-width third
+     image instead of three small stamps; big screens fit 3-up */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 36vw), 1fr));
   justify-content: flex-start;
   gap: clamp(12px, 2.4vw, 24px);
   width: 100%;
   padding-block: clamp(4px, 1vh, 12px);
+}
+
+/* Height guard: a lone image spanning the full strip stays a wide
+   banner crop instead of a giant block */
+.slide--title .media-strip__image {
+  width: 100%;
+  max-height: clamp(200px, 34vh, 400px);
 }
 
 .slide--title .title__subtitle {
@@ -450,12 +467,13 @@
   aspect-ratio: 1 / 1;
 }
 
-/* Photos fill their frames edge to edge; graphics keep the white mat */
+/* Photos fill their frames with just a sliver of mat; graphics keep the
+   full white mat */
 .media-strip__image[src$=".jpg"],
 .media-strip__image[src$=".jpeg"],
 .media-strip__image[src$=".webp"] {
   object-fit: cover;
-  padding: 0;
+  padding: clamp(3px, 0.4vw, 6px);
 }
 
 .media-strip__image[data-orientation="portrait"] {
