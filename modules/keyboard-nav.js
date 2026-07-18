@@ -213,6 +213,13 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
+    if (lowerKey === 'r') {
+      event.preventDefault();
+      flashKeyFeedback('R');
+      context.toggleRadio();
+      return;
+    }
+
     if (lowerKey === '?' || (event.shiftKey && lowerKey === '/')) {
       event.preventDefault();
       flashKeyFeedback('?');

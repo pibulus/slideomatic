@@ -888,7 +888,12 @@
   background: #EF4444;
   color: white;
   border-color: #EF4444;
-  transform: scale(1.1);
+  transform: scale(1.15) rotate(90deg);
+}
+
+.edit-drawer__image-remove:active {
+  transform: scale(0.78) rotate(90deg);
+  transition-duration: 60ms;
 }
 
 .edit-drawer__image-item.dragging {

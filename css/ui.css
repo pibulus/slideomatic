@@ -235,10 +235,19 @@
 /* --- Radio Dock (bottom-left, lives outside the edit drawer) --- */
 .radio-dock {
   position: fixed;
-  bottom: calc(20px + env(safe-area-inset-bottom));
+  /* Same baseline as the HUD pill so the bottom edge reads as one row */
+  bottom: calc(30px + env(safe-area-inset-bottom));
   left: calc(20px + env(safe-area-inset-left));
   z-index: var(--z-hud);
+  /* Rests faded; wakes on hover or while playing (R toggles it too) */
+  opacity: 0.45;
   transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.radio-dock:hover,
+.radio-dock:focus-within,
+.radio-dock:has(.is-live) {
+  opacity: 1;
 }
 
 .radio-dock[data-hidden="true"] {
