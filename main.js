@@ -588,7 +588,7 @@ function getKeyboardContext() {
     toggleKeyboardHelp,
     toggleSlideIndex,
     toggleHud: () => toggleHudHidden(),
-    toggleRadio: () => document.querySelector('.radio-dock__pill')?.click(),
+    toggleRadio: () => document.getElementById('hud-radio-btn')?.click(),
     triggerDeckUpload: () => {
       const uploadInput = document.getElementById('deck-upload');
       if (uploadInput) uploadInput.click();

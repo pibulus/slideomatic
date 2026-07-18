@@ -45,11 +45,6 @@ function buildDockMarkup() {
   }).join('');
 
   return `
-    <button type="button" class="radio-dock__pill${isRadioEnabled ? ' is-live' : ''}" id="radio-dock-pill"
-      aria-haspopup="true" aria-expanded="false" title="SomaFM radio">
-      <span class="radio-dock__pill-icon">📻</span>
-      <span class="radio-dock__pill-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-    </button>
     <div class="radio-dock__panel" id="radio-dock-panel" hidden>
       <div class="theme-radio ${isRadioEnabled ? 'is-active' : ''}">
         <button type="button" class="theme-radio__toggle ${isRadioEnabled ? 'is-active' : ''}" id="theme-radio-toggle" aria-pressed="${isRadioEnabled ? 'true' : 'false'}">
@@ -85,11 +80,10 @@ function wireControls() {
   const statusEl = document.getElementById('theme-radio-status');
   const pillEl = document.getElementById('theme-radio-pill');
   const channelWrapper = document.getElementById('theme-radio-channel');
-  const dockPill = document.getElementById('radio-dock-pill');
-  // Mobile HUD icon toggles the same radio; dock is display:none there
+  // The HUD RADIO button is the main switch on every screen size now
   const hudRadioBtn = document.getElementById('hud-radio-btn');
 
-  if (!toggle || !select || !dockPill) return;
+  if (!toggle || !select) return;
 
   const state = { channelId: getRadioState().channelId, enabled: isRadioPlaying() };
   const getActiveChannel = () => getChannelById(state.channelId);
@@ -98,7 +92,6 @@ function wireControls() {
     toggle.classList.toggle('is-active', enabled);
     toggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     channelWrapper?.classList.toggle('is-visible', enabled);
-    dockPill.classList.toggle('is-live', enabled);
     if (hudRadioBtn) {
       hudRadioBtn.classList.toggle('is-live', enabled);
       hudRadioBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
@@ -178,18 +171,26 @@ export function initRadioDock() {
   dockEl.innerHTML = buildDockMarkup();
   document.body.appendChild(dockEl);
 
-  const pill = document.getElementById('radio-dock-pill');
   const panel = document.getElementById('radio-dock-panel');
+  const hudRadioBtn = document.getElementById('hud-radio-btn');
 
   const setOpen = (open) => {
     panel.hidden = !open;
-    pill.setAttribute('aria-expanded', open ? 'true' : 'false');
+    hudRadioBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
 
-  pill.addEventListener('click', () => setOpen(panel.hidden));
+  // Click flicks the radio on/off (wired in wireControls); right-click
+  // summons the station picker above the HUD
+  hudRadioBtn?.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    setOpen(panel.hidden);
+  });
 
   document.addEventListener('pointerdown', (event) => {
-    if (!panel.hidden && !dockEl.contains(event.target)) setOpen(false);
+    if (panel.hidden) return;
+    if (dockEl.contains(event.target)) return;
+    if (event.target instanceof Element && event.target.closest('#hud-radio-btn')) return;
+    setOpen(false);
   });
 
   document.addEventListener('keydown', (event) => {
