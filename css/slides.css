@@ -630,6 +630,25 @@
   border-color: currentColor;
 }
 
+/* Markdown links get the same riso treatment as auto-links, plus a
+   standing underline so they read as clickable at a glance (bare <a>
+   was rendering browser-default blue) */
+.slide p a:not(.auto-link),
+.slide li a:not(.auto-link),
+.slide blockquote a:not(.auto-link) {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid currentColor;
+  transition: color 160ms ease;
+}
+
+.slide p a:not(.auto-link):hover,
+.slide li a:not(.auto-link):hover,
+.slide blockquote a:not(.auto-link):hover {
+  color: var(--color-ink);
+}
+
 .slide p code {
   font-family: var(--font-mono);
   background: rgba(0, 0, 0, 0.08);

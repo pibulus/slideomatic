@@ -667,8 +667,26 @@ export function renderColumn(column, data = {}) {
 export function appendBody(container, body) {
     if (!body) return;
     const copy = Array.isArray(body) ? body : [body];
+    // Consecutive "- " lines group into one ul so decks can use real dot
+    // points (the .slide ul li accent-bar styling was unreachable before)
+    let listEl = null;
     copy.forEach((text) => {
-        if (!text) return;
+        if (!text) {
+            listEl = null;
+            return;
+        }
+        const bulletMatch = typeof text === 'string' && text.match(/^\s*[-•]\s+(.+)$/);
+        if (bulletMatch) {
+            if (!listEl) {
+                listEl = document.createElement('ul');
+                container.appendChild(listEl);
+            }
+            const item = document.createElement('li');
+            setRichContent(item, bulletMatch[1]);
+            listEl.appendChild(item);
+            return;
+        }
+        listEl = null;
         const quoteElement = maybeCreateQuoteElement(text);
         if (quoteElement) {
             container.appendChild(quoteElement);

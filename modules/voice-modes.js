@@ -669,6 +669,8 @@ THE ONE-SLIDE PROMISE:
   welcome; nonsense is not.
 - Slide copy is punchy: short headline, at most 3 short body lines. No
   corporate filler.
+- Body lines may start with "- " to render as bullet points; use them for
+  true lists, plain lines for prose.
 
 RULES:
 - Only respond with JSON (no markdown, no explanation)
