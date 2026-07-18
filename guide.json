@@ -212,7 +212,7 @@
     "headline": "The AI stuff is there when you want turbo",
     "body": [
       "Press **S** to add a Gemini key. The settings modal links straight to Google AI Studio's API key page: create a key, paste it in, save, test.",
-      "Type **666** or **696969** when you are not focused in a text field to open the cheat console. It can generate one slide or a rough starter deck from a prompt.",
+      "Type **kazam** when you are not focused in a text field to open the cheat console. It can generate one slide or a rough starter deck from a prompt.",
       "Treat AI output like a sketch, not gospel. Keep the useful bits, delete the soggy bits, make it sound like a person."
     ],
     "image": {

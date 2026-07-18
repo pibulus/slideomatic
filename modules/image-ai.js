@@ -159,7 +159,9 @@ ${body ? `- Content: ${body.substring(0, 200)}` : ''}
 
 Style requirements:
 - Risograph print aesthetic with bold, flat colors, ${themeMood}
-- Use complementary colors inspired by: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}
+- HYPER-SATURATED fluorescent ink: colors at full intensity, like fresh
+  riso soy ink on bright paper. Never washed out, never pastel-muddy
+- Use complementary colors inspired by: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}, pushed to their most vivid versions
 - Clean, minimal composition
 - High contrast, professional quality
 - No text or labels in the image
@@ -264,7 +266,7 @@ Description: ${description}
 ${slideFacts}
 
 ${paletteLine}
-Use chunky ink lines, halftone fills, and grain. Choose an appropriate chart style (bar, line, radial, stacked, comparison cards, etc.) that best communicates the data/story. Label axes or segments minimally, keep typography clean (Inter / Space Mono inspiration). Avoid realistic photos or UI chrome. Include the title within the graphic. Output only an image.
+Use chunky ink lines, halftone fills, grain, and HYPER-SATURATED fluorescent riso inks at full intensity (never washed out). Choose an appropriate chart style (bar, line, radial, stacked, comparison cards, etc.) that best communicates the data/story. Label axes or segments minimally, keep typography clean (Inter / Space Mono inspiration). Avoid realistic photos or UI chrome. Include the title within the graphic. Output only an image.
 `.trim();
 
     const response = await callGemini(
