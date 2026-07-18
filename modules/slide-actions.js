@@ -110,7 +110,7 @@ function reindexSlides(startIndex = 0) {
     slideElement.dataset.index = index;
     const autoBadge = slideElement.querySelector(':scope > .badge[data-badge-auto="true"]');
     if (autoBadge) {
-      autoBadge.textContent = `+ Slide ${index + 1}`;
+      autoBadge.textContent = `Slide ${index + 1}`;
     }
   }
 }

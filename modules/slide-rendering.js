@@ -149,7 +149,7 @@ function buildSlide(slide, index, rendererMap = renderers) {
                 section.firstChild ?? null
             );
         } else if (slide.autoBadge !== false) {
-            const autoBadge = createBadge(`+ Slide ${index + 1}`);
+            const autoBadge = createBadge(`Slide ${index + 1}`);
             autoBadge.dataset.badgeAuto = 'true';
             section.insertBefore(autoBadge, section.firstChild ?? null);
         }

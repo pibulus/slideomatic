@@ -50,6 +50,25 @@
   --color-surface-2: color-mix(in srgb, var(--color-surface) 85%, var(--color-ink));
   --color-border: var(--color-ink);
 
+  /* Fluid type scale: one step per text role, shared across slide types.
+     Each value is the incumbent clamp that dominated slides.css, so slides
+     keep their current size. Themes can override any step via theme.json. */
+  --type-h1: clamp(2.5rem, 5vw, 4rem);      /* slide titles */
+  --type-xxl: clamp(2rem, 4.5vw, 3.4rem);   /* quote slide blockquote */
+  --type-h2: clamp(1.8rem, 3.5vw, 2.8rem);  /* section headings */
+  --type-xl: clamp(1.4rem, 2.4vw, 2rem);    /* subtitles, cites, inline quotes */
+  --type-lg: clamp(1.1rem, 2.1vw, 1.8rem);  /* body copy, list items, pillar headings */
+  --type-md: clamp(1.05rem, 2vw, 1.4rem);   /* secondary copy */
+  --type-sm: clamp(0.9rem, 1.6vw, 1.2rem);  /* captions, card copy */
+  --type-xs: clamp(0.8rem, 1.4vw, 1rem);    /* labels, counters, fine print */
+
+  /* Fluid spacing scale for intra-slide rhythm */
+  --space-xs: clamp(12px, 2vw, 20px);       /* tight internals: pillar stack, counters */
+  --space-sm: clamp(16px, 3vw, 24px);       /* card grids, split columns */
+  --space-md: clamp(20px, 4vh, 40px);       /* content stack gap, vertical rhythm */
+  --space-lg: clamp(24px, 4vw, 48px);       /* column and grid gutters */
+  --space-heading: clamp(32px, 5vh, 64px);  /* content offset below the badge row */
+
   /* UI Tokens */
   --radius: 24px; /* --radius-soft */
   --radius-sm: 12px;
@@ -75,4 +94,13 @@
   --z-modal: 10000;
   --z-toast: 10000;
   --z-tooltip: 10001;
+}
+
+/* Mobile regime: phones re-anchor the h1 display size lower. Body copy has
+   its own mobile rule in slides.css so lists and pillar headings keep the
+   base scale. */
+@media (max-width: 768px) {
+  :root {
+    --type-h1: clamp(2rem, 8vw, 3rem);
+  }
 }
