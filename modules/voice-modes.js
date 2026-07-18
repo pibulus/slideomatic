@@ -635,8 +635,15 @@ function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
  */
 function normalizeGeneratedSlide(slide) {
   const fixImage = (obj) => {
-    if (obj && typeof obj.image === 'string') {
+    if (!obj) return;
+    if (typeof obj.image === 'string') {
       obj.image = { src: '', alt: obj.image };
+    }
+    // Models invent plausible-looking stock URLs that are wrong or dead
+    // (ask for tacos, get pizza). Drop the URL, keep the findable alt, and
+    // let the placeholder's search/AI actually fill the slot.
+    if (obj.image && typeof obj.image === 'object' && obj.image.src) {
+      obj.image.src = '';
     }
   };
   fixImage(slide);

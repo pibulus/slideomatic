@@ -18,6 +18,7 @@ import {
   restoreBase64FromTokens,
 } from './base64-tokens.js';
 import {
+  collectSlideImages,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
   setupImageMoveButtons,
@@ -924,9 +925,12 @@ export function renderEditForm(context) {
       const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
       if (!currentSlide) return;
 
-      // Seed the search box with the slide's headline/title so the first
-      // query is usually already what the user wants.
-      const seedQuery = (currentSlide.headline || currentSlide.title || '')
+      // Seed the search with the image slot's own alt text first: alt is
+      // written as a findable description, while headlines are often puns
+      // ("An Explosive History" finds pizza, "taco stand street food" finds
+      // tacos). Headline stays as the fallback.
+      const slotAlt = collectSlideImages(currentSlide)[imageIndex]?.alt || '';
+      const seedQuery = (slotAlt || currentSlide.headline || currentSlide.title || '')
         .replace(/[^\p{L}\p{N}\s]/gu, '')
         .trim()
         .slice(0, 60);
