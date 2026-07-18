@@ -35,7 +35,13 @@ import {
 import {
   initVoiceButtons,
   toggleVoiceRecording,
+  startVoiceRecording,
+  stopVoiceRecording,
+  getGeminiApiKey,
+  canRecordSpeech,
+  isVoiceBusy,
 } from './modules/voice-modes.js';
+import { vibrate } from './modules/haptics.js';
 import { initKeyboardNav } from './modules/keyboard-nav.js';
 import {
   openSettingsModal,
@@ -476,6 +482,68 @@ document.addEventListener('dblclick', (event) => {
   }, 400);
 });
 
+// ═══════════════════════════════════════════════════════════════════════
+// VOICE FAB: hold to speak, release to get a slide
+// ═══════════════════════════════════════════════════════════════════════
+
+function initVoiceFab() {
+  const fab = document.getElementById('voice-fab');
+  if (!fab) return;
+
+  if (!canRecordSpeech()) {
+    fab.hidden = true;
+    return;
+  }
+
+  let holdActive = false;
+  let busyPoll = null;
+
+  const settleWhenDone = () => {
+    clearInterval(busyPoll);
+    busyPoll = setInterval(() => {
+      if (!isVoiceBusy()) {
+        clearInterval(busyPoll);
+        busyPoll = null;
+        fab.classList.remove('is-holding', 'is-recording', 'is-processing');
+      }
+    }, 400);
+  };
+
+  const onDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.preventDefault();
+    if (!getGeminiApiKey()) {
+      // Shows the friendly "paste a key in Settings" nudge
+      toggleVoiceRecording('add');
+      return;
+    }
+    if (isVoiceBusy()) return;
+    holdActive = true;
+    fab.classList.add('is-holding', 'is-recording');
+    vibrate('light');
+    fab.setPointerCapture?.(event.pointerId);
+    startVoiceRecording('add');
+  };
+
+  const onUp = () => {
+    if (!holdActive) return;
+    holdActive = false;
+    fab.classList.remove('is-holding', 'is-recording');
+    fab.classList.add('is-processing');
+    vibrate('medium');
+    stopVoiceRecording();
+    settleWhenDone();
+  };
+
+  fab.addEventListener('pointerdown', onDown);
+  fab.addEventListener('pointerup', onUp);
+  fab.addEventListener('pointercancel', onUp);
+  // A mouse dragging off the button then releasing still finishes the take
+  fab.addEventListener('lostpointercapture', onUp);
+}
+
+initVoiceFab();
+
 
 
 
@@ -810,6 +878,7 @@ function initHudControls() {
     clearTimeout(hideTimeout);
     hud.dataset.hidden = manuallyHidden ? 'true' : 'false';
     setRadioDockHidden(manuallyHidden);
+    document.getElementById('voice-fab')?.setAttribute('data-hidden', manuallyHidden ? 'true' : 'false');
     if (!manuallyHidden && autoHideQuery.matches) scheduleHide();
   };
 

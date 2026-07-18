@@ -71,13 +71,35 @@ export function getGeminiApiKey() {
 // the proxy uses theirs instead. Returns the raw fetch Response so existing
 // callers keep using response.ok / response.json() unchanged.
 const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
-export function callGemini(model, payload, { signal } = {}) {
-  return fetch(GEMINI_PROXY_URL, {
+export async function callGemini(model, payload, { signal } = {}) {
+  const response = await fetch(GEMINI_PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal,
     body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
-  });
+  }).catch(() => null);
+
+  if (response && response.status !== 404) return response;
+
+  // Static hosting and `npm run dev` have no Netlify functions: when the
+  // visitor pasted their own key, go direct instead of dying on a 404
+  const key = getGeminiApiKey();
+  if (!key) {
+    return response || fetch(GEMINI_PROXY_URL, { method: 'POST' });
+  }
+  return fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export function isVoiceBusy() {
+  return isRecording || isStartingRecording || voiceProcessing;
 }
 
 export function getVoiceAssistantContext() {
@@ -307,7 +329,7 @@ export async function startVoiceRecording(mode) {
         if (audioBlob.size < MIN_RECORDING_BYTES) {
           // Insta-taps produce empty blobs — don't burn an API call on them.
           const context = getVoiceContext();
-          context.showHudStatus('🤏 Nothing recorded — try holding V a little longer', 'warning');
+          context.showHudStatus('🤏 Nothing recorded — hold the mic a moment longer', 'warning');
         } else {
           await processVoiceToSlide(audioBlob);
         }
@@ -480,7 +502,7 @@ export async function processVoiceToSlide(audioBlob) {
                       generatedText.match(/\{[\s\S]*\}/);
 
     const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : generatedText;
-    const slideData = JSON.parse(jsonText);
+    const slideData = normalizeGeneratedSlide(JSON.parse(jsonText));
     context.validateSlides([slideData]);
 
     const newIndex = insertSlideAfterCurrent(slideData);
@@ -509,10 +531,10 @@ export async function generateSlideFromPrompt(promptText, { insert = false } = {
 
   try {
     const prompt = buildSlideDesignPrompt(request);
-    const slide = await requestGeminiJson(apiKey, prompt, {
+    const slide = normalizeGeneratedSlide(await requestGeminiJson(apiKey, prompt, {
       temperature: 0.65,
       maxOutputTokens: 2048,
-    });
+    }));
 
     context.validateSlides([slide]);
 
@@ -606,11 +628,44 @@ function ensureMinimumDelay(startTimestamp, minimumMs = 1200) {
   return new Promise((resolve) => setTimeout(resolve, minimumMs - elapsed));
 }
 
+/**
+ * Gemini sometimes hands back "image": "some description" instead of the
+ * {src, alt} object the renderer expects. Coerce every image field so a
+ * model quirk never produces a broken slide.
+ */
+function normalizeGeneratedSlide(slide) {
+  const fixImage = (obj) => {
+    if (obj && typeof obj.image === 'string') {
+      obj.image = { src: '', alt: obj.image };
+    }
+  };
+  fixImage(slide);
+  if (Array.isArray(slide.items)) slide.items.forEach(fixImage);
+  if (Array.isArray(slide.pillars)) slide.pillars.forEach(fixImage);
+  fixImage(slide.left);
+  fixImage(slide.right);
+  return slide;
+}
+
 function buildSlideDesignPrompt(description = null) {
   let basePrompt = `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's request.
 
+THE ONE-SLIDE PROMISE:
+- You ALWAYS return exactly one good slide, whatever you receive. A two-minute
+  ramble gets distilled to its single sharpest idea. One word becomes a bold
+  statement slide. Never ask for more input, never apologize for thin material.
+- Spoken input is thinking-out-loud: DISTILL it, do not transcribe it. Drop the
+  filler, keep the spark.
+- If the material is thin (one word, a vibe), have fun: a punchy statement
+  slide, or a REAL quote from a famous person that fits the theme (type "quote"
+  with a true attribution), or one surprising true fact. A little sass is
+  welcome; nonsense is not.
+- Slide copy is punchy: short headline, at most 3 short body lines. No
+  corporate filler.
+
 RULES:
 - Only respond with JSON (no markdown, no explanation)
+- "image" is ALWAYS an object {"src": "", "alt": "findable description"}, never a bare string
 - Match the requested slide type if the user mentions one
 - Assume images should have descriptive alt text using FINDABLE language (see examples below)
 - If the user does not mention type, pick the best default: "standard" for text slides, "gallery" for lists of visuals, "quote" for quotes, "pillars" for feature lists
