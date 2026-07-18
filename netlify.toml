@@ -24,6 +24,12 @@
   to = "/deck.html?share=:slug"
   status = 200
 
+# Internal docs ride along in the repo but aren't part of the site
+[[redirects]]
+  from = "/docs/*"
+  to = "/index.html"
+  status = 404
+
 [[redirects]]
   from = "/design"
   to = "/collections?collection=design-starter-pack"

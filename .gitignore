@@ -12,3 +12,11 @@ yarn-error.log*
 
 # Generated PDFs
 exports/
+
+# Local-only assets: raw moodboard material + QA screenshot deck images
+branding/
+images/screenshots/
+
+# Tooling junk
+.playwright-mcp/
+.claude/settings.local.json
