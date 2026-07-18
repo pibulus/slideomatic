@@ -20,7 +20,6 @@ import {
 import {
   setupImageRemoveButtons,
   setupImageReplaceButtons,
-  setupImageAIButtons,
   setupImageMoveButtons,
   setupImageSearchButtons,
   setupImageDragReorder,
@@ -30,11 +29,9 @@ import {
   addImageToSlide,
   updateImageAltText,
 } from './slide-image-ui.js';
-import { askAIForImage } from './image-ai.js';
 import { openImageSearch } from './image-search-ui.js';
 import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
-import { loadThemeLibrary } from './theme-manager.js';
 import { exportDeckToPdf } from './pdf-export.js';
 import { CONFIG, debug } from './constants.js';
 import {
@@ -230,16 +227,6 @@ function setupQuickEditSync(context) {
   };
 
   addTrackedListener(content, 'input', handleInput);
-  
-  // Also track the toggle change to save preference
-  const autoSaveToggle = document.getElementById('autosave-toggle');
-  if (autoSaveToggle) {
-    addTrackedListener(autoSaveToggle, 'change', (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        localStorage.setItem('slideomatic_autosave', String(e.target.checked));
-      }
-    });
-  }
 }
 
 function syncQuickEditToJSON() {
@@ -793,177 +780,8 @@ export function renderEditForm(context) {
   // Setup custom selects
   setupCustomSelect(content, { addTrackedListener });
 
-  // Setup theme button handlers (inline in edit drawer)
-  const handleThemeChange = async (themePath) => {
-    // Import theme functions dynamically
-    const { applyTheme, setCurrentTheme } = await import('./theme-manager.js');
-    const { showHudStatus, hideHudStatus } = await import('./hud.js');
-
-    try {
-      if (themePath.startsWith('saved:')) {
-        const savedName = themePath.replace('saved:', '');
-        const library = loadThemeLibrary();
-        const entry = library.find((entry) => entry.name === savedName);
-        if (entry) {
-          const normalizedTheme = applyTheme(entry.theme);
-          setCurrentTheme(normalizedTheme, { source: themePath });
-        }
-      } else {
-        const response = await fetch(themePath, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-        const theme = await response.json();
-        const normalizedTheme = applyTheme(theme);
-        setCurrentTheme(normalizedTheme, { source: themePath });
-      }
-      showHudStatus('✨ Theme applied', 'success');
-      setTimeout(hideHudStatus, 1600);
-      // Re-render to update theme UI
-      renderEditForm(ctx);
-    } catch (error) {
-      console.error('Failed to apply theme:', error);
-    }
-  };
-
-  const themeSelect = document.getElementById('edit-theme-select');
-  if (themeSelect) {
-    themeSelect.addEventListener('customSelectChange', (e) => {
-      handleThemeChange(e.detail.value);
-    });
-  }
-
-  const handleSaveThemeInline = async () => {
-    const { getCurrentTheme, saveThemeToLibrary, setCurrentTheme } = await import('./theme-manager.js');
-    const { showHudStatus, hideHudStatus } = await import('./hud.js');
-
-    try {
-      const theme = getCurrentTheme();
-      const name = prompt('Name your theme:', '');
-      if (!name || !name.trim()) return;
-
-      const saved = saveThemeToLibrary(name.trim(), theme);
-      if (!saved) {
-        showHudStatus('💾 Theme did not save. Browser storage looks full', 'error');
-        setTimeout(hideHudStatus, 2400);
-        return;
-      }
-      setCurrentTheme(theme, { source: `saved:${name.trim()}` });
-      showHudStatus('💾 Theme saved', 'success');
-      setTimeout(hideHudStatus, 1600);
-      renderEditForm(ctx);
-    } catch (error) {
-      console.error('Failed to save theme:', error);
-    }
-  };
-
-  const handleRandomThemeInline = async () => {
-    const { randomizeTheme } = await import('./theme-drawer.js');
-    randomizeTheme();
-    // Re-render to show updated theme in the selector
-    setTimeout(() => renderEditForm(ctx), 100);
-  };
-
-  const handleAIThemeInline = async () => {
-    const { showHudStatus, hideHudStatus } = await import('./hud.js');
-    const { getGeminiApiKey } = await import('./voice-modes.js');
-    const { getCurrentTheme, applyTheme, setCurrentTheme } = await import('./theme-manager.js');
-
-    // Route through the Netlify proxy so the shared server key is used as a
-    // fallback when the visitor hasn't pasted their own key. No early bail.
-    const callGemini = (model, payload, { signal } = {}) =>
-      fetch('/.netlify/functions/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-        body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
-      });
-
-    const prompt = window.prompt('Describe the theme vibe you want:', 'pastel punk with neon accents');
-    if (!prompt || !prompt.trim()) return;
-
-    const aiBtn = document.getElementById('theme-ai-btn-inline');
-    if (aiBtn instanceof HTMLButtonElement) {
-      aiBtn.disabled = true;
-      aiBtn.textContent = 'Generating...';
-    }
-
-    try {
-      showHudStatus('🤖 Asking Gemini for a theme...', 'info');
-
-      const currentTheme = getCurrentTheme();
-      const themePrompt = `You are a theme generator. Create a beautiful color theme based on this description: "${prompt}".
-
-Return ONLY a JSON object with these exact fields (no markdown, no explanation):
-{
-  "primary": "#hex",
-  "secondary": "#hex",
-  "accent": "#hex",
-  "background": "#hex",
-  "surface": "#hex",
-  "text": "#hex"
-}
-
-Make the colors harmonious and ensure good contrast for readability.`;
-
-      const response = await callGemini(
-        'gemini-flash-lite-latest',
-        {
-          contents: [{ parts: [{ text: themePrompt }] }],
-        },
-        { signal: AbortSignal.timeout(30_000) }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!textContent) {
-        throw new Error('No theme generated');
-      }
-
-      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Invalid theme format');
-      }
-
-      const aiTheme = JSON.parse(jsonMatch[0]);
-      // Map the AI's simple palette onto real theme tokens — spreading the
-      // raw keys over the theme was a visual no-op (nothing reads "primary").
-      const { themeFromAiPalette } = await import('./theme-drawer.js');
-      const mergedTheme = themeFromAiPalette(aiTheme, currentTheme);
-      const normalizedTheme = applyTheme(mergedTheme);
-
-      setCurrentTheme(normalizedTheme, { source: `ai:${prompt.slice(0, 30)}` });
-
-      showHudStatus('✨ AI theme applied!', 'success');
-      setTimeout(hideHudStatus, 1600);
-      renderEditForm(ctx);
-
-    } catch (error) {
-      console.error('AI theme generation failed:', error);
-      showHudStatus('🎨 Theme did not come together. One more try', 'error');
-      setTimeout(hideHudStatus, 2000);
-    } finally {
-      if (aiBtn instanceof HTMLButtonElement) {
-        aiBtn.disabled = false;
-        aiBtn.textContent = 'AI Theme';
-      }
-    }
-  };
-
-  addTrackedListener(document.getElementById('theme-save-btn-inline'), 'click', handleSaveThemeInline);
-  addTrackedListener(document.getElementById('theme-random-btn-inline'), 'click', handleRandomThemeInline);
-  addTrackedListener(document.getElementById('theme-ai-btn-inline'), 'click', handleAIThemeInline);
 
   // Register all button click handlers with cleanup tracking
-  addTrackedListener(
-    document.getElementById('save-slide-btn'),
-    'click',
-    () => saveCurrentSlide(ctx)
-  );
-
   addTrackedListener(
     document.getElementById('duplicate-slide-btn'),
     'click',
@@ -1099,28 +917,6 @@ Make the colors harmonious and ensure good contrast for readability.`;
     addTrackedListener,
   });
 
-  setupImageAIButtons({
-    root: content,
-    onAI: (imageIndex) => {
-      const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
-      if (!currentSlide) return;
-      
-      const context = {
-        slideIndex: ctx.getCurrentIndex(),
-        headline: currentSlide.headline || currentSlide.title || '',
-        body: Array.isArray(currentSlide.body) ? currentSlide.body.join(' ') : (currentSlide.body || ''),
-        slideType: currentSlide.type || 'standard'
-      };
-
-      askAIForImage(null, {
-        context,
-        slideIndex: ctx.getCurrentIndex(),
-        imageIndex,
-        onSuccess: () => renderEditForm(ctx)
-      });
-    },
-    addTrackedListener
-  });
 
   setupImageSearchButtons({
     root: content,
@@ -1160,51 +956,6 @@ Make the colors harmonious and ensure good contrast for readability.`;
 /**
  * @param {object} context
  */
-export function saveCurrentSlide(context) {
-  const ctx = ensureContext(context);
-
-  // Cancel any pending auto-save to prevent race condition
-  if (autoSaveTimeout) {
-    clearTimeout(autoSaveTimeout);
-    autoSaveTimeout = null;
-  }
-
-  syncQuickEditToJSON();
-
-  const textarea = document.getElementById('slide-json-editor');
-  if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-  try {
-    const editedSlide = JSON.parse(textarea.value);
-    const slides = ctx.getSlides();
-    const currentIndex = ctx.getCurrentIndex();
-    const originalSlide = slides[currentIndex];
-
-    if (!originalSlide) {
-      throw new Error('No slide selected');
-    }
-
-    const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
-    ctx.updateSlide(currentIndex, restoredSlide);
-    ctx.replaceSlideAt(currentIndex);
-    ctx.closeDrawer();
-
-    // Bigger celebration for explicit save
-    ctx.showHudStatus('✓ Slide saved', 'success');
-    setTimeout(() => ctx.hideHudStatus(), 2000);
-
-    // Add pulse animation to the save button before it closes
-    const saveBtn = document.getElementById('save-slide-btn');
-    if (saveBtn) {
-      saveBtn.style.animation = 'pulse 0.3s ease';
-    }
-
-    debug('Slide saved');
-  } catch (error) {
-    ctx.showHudStatus(`🧩 That JSON did not parse: ${error.message}`, 'error');
-    setTimeout(() => ctx.hideHudStatus(), 3000);
-  }
-}
 
 /**
  * @param {object} context

@@ -9,7 +9,6 @@
 
 import { escapeHtml } from './utils.js';
 import { buildImageManager } from './slide-image-ui.js';
-import { loadThemeLibrary, getCurrentThemePath } from './theme-manager.js';
 
 export const LAYOUT_OPTIONS = [
   { value: 'title', label: 'Title', description: 'Hero intro' },
@@ -142,7 +141,6 @@ export function buildMainSections(slide) {
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildLayoutControl(type, slide.layout),
     buildImagesSection(slide),
-    buildThemeSection(),
   ].filter(Boolean);
   return sections.join('');
 }
@@ -213,21 +211,9 @@ function buildCombinedContentSection(slide, type) {
 }
 
 export function buildActionsSection() {
-  const isAutoSave = localStorage.getItem('slideomatic_autosave') !== 'false';
-  const checked = isAutoSave ? 'checked' : '';
-  const statusIcon = isAutoSave ? '✓' : '○';
-
+  // Changes save themselves: the drawer autosaves as you type, closing it
+  // is "done". No toggle, no Save button, no decision.
   const content = `
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(255, 159, 243, 0.08); border-radius: var(--radius); border: 2px solid var(--color-surface); margin-bottom: 8px;">
-      <label class="edit-drawer__checkbox-label" style="margin: 0; cursor: pointer; user-select: none;">
-        <input type="checkbox" id="autosave-toggle" ${checked} style="accent-color: var(--color-surface); width: 18px; height: 18px;">
-        <span style="font-weight: 600; color: var(--color-ink);">Auto-save changes</span>
-      </label>
-      <span style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--color-surface);">${statusIcon}</span>
-    </div>
-    <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="save-slide-btn">
-      Save Changes
-    </button>
     <div style="display: flex; gap: 10px;">
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
         Duplicate
@@ -412,67 +398,6 @@ function buildSplitContentSection(slide) {
   return buildAccordion('Split Content', content, { startOpen: true });
 }
 
-function buildThemeSection() {
-  // Build theme select options from library + defaults
-  const library = loadThemeLibrary();
-  const currentPath = getCurrentThemePath() || 'theme.json';
-
-  const defaultThemes = [
-    { value: 'theme.json', label: 'Default' },
-    { value: 'themes/vaporwave.json', label: 'Vaporwave' },
-    { value: 'themes/slack.json', label: 'Slack' },
-    { value: 'themes/gameboy.json', label: 'Gameboy' },
-  ];
-
-  const savedThemes = library.map((entry) => ({
-    value: `saved:${entry.name}`,
-    label: `\u2728 ${entry.name}`,
-  }));
-
-  const allThemes = [...defaultThemes, ...savedThemes];
-  const currentTheme = allThemes.find(t => currentPath.includes(t.value.replace('saved:', ''))) || defaultThemes[0];
-
-  const themeOptions = allThemes.map(({ value, label }) => {
-    const isSelected = currentTheme.value === value ? 'is-selected' : '';
-    return `
-      <button type="button" class="custom-select__option ${isSelected}" data-value="${escapeHtml(value)}">
-        <span class="custom-select__option-label">${escapeHtml(label)}</span>
-      </button>
-    `;
-  }).join('');
-
-  const content = `
-    <div class="accordion__group">
-      <div class="custom-select" id="edit-theme-select" data-value="${escapeHtml(currentTheme.value)}">
-        <button type="button" class="custom-select__trigger">
-          <span class="custom-select__value">${escapeHtml(currentTheme.label)}</span>
-          <span class="custom-select__arrow">\u25bc</span>
-        </button>
-        <div class="custom-select__dropdown">
-          ${themeOptions}
-        </div>
-      </div>
-      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); margin-top: 8px;">
-        Tip: Press <kbd style="padding: 2px 6px; background: rgba(255, 159, 243, 0.15); border-radius: 3px; font-family: var(--font-mono); font-size: 0.7rem;">T</kbd> to randomize
-      </p>
-    </div>
-    <div class="accordion__group">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current theme to library">
-          Save Theme
-        </button>
-        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Generate random variation">
-          Randomize
-        </button>
-      </div>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="theme-ai-btn-inline" title="Generate theme with AI" style="width: 100%;">
-        AI Theme
-      </button>
-    </div>
-  `;
-
-  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: false });
-}
 
 export function buildAdvancedSection(slide) {
   // Slide data can come from strangers via share links — unescaped, a string

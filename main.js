@@ -442,6 +442,40 @@ function openEditDrawer() {
   openDrawer(editDrawerInstance);
 }
 
+// Double-click any text on a slide to edit that exact bit: the drawer opens
+// pre-focused on the matching field. The 80/20 of in-place editing, no
+// contenteditable round-tripping. Desktop only by nature (no touch dblclick).
+document.addEventListener('dblclick', (event) => {
+  if (document.body.dataset.mode === 'overview') return;
+  if (!(event.target instanceof Element)) return;
+  if (!event.target.closest('.slide.is-active')) return;
+  if (event.target.closest('.badge, a, img, button, input, textarea')) return;
+  const textEl = event.target.closest('h1, h2, blockquote, cite, p, li');
+  if (!textEl) return;
+
+  const slideEl = event.target.closest('.slide');
+  const isTitle = slideEl.classList.contains('slide--title');
+  const isQuote = slideEl.classList.contains('slide--quote');
+  let field = 'body';
+  if (textEl.matches('h1')) field = isTitle ? 'title' : 'headline';
+  else if (textEl.matches('h2')) field = 'headline';
+  else if (textEl.matches('blockquote')) field = 'quote';
+  else if (textEl.matches('cite')) field = 'attribution';
+  else if (isTitle) field = 'subtitle';
+  else if (isQuote) field = 'attribution';
+
+  event.preventDefault();
+  openEditDrawer();
+  setTimeout(() => {
+    const target = document.getElementById(`quick-edit-${field}`)
+      || document.querySelector('#edit-drawer-content input[type="text"], #edit-drawer-content textarea');
+    target?.focus();
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+      target.select();
+    }
+  }, 400);
+});
+
 
 
 
