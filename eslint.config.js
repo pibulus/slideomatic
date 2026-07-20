@@ -7,8 +7,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        imageCompression: 'readonly',
-        QRCodeStyling: 'readonly'
+        imageCompression: 'readonly'
       },
       ecmaVersion: 2022,
       sourceType: 'module'

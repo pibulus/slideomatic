@@ -14,29 +14,9 @@
 // added — no client change needed.
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { allowlistCorsHeaders } from './utils/common.js';
+
 const PER_PAGE = 24;
-
-// The app only ever calls this proxy same-origin. Echoing arbitrary Origins
-// would let any site use this endpoint (and the app's stock-API keys) as a
-// free proxy from their visitors' browsers. Only the app's own origins (plus
-// local dev) get CORS headers; everyone else gets none.
-const ALLOWED_ORIGINS = new Set([
-  'https://slideomatic.app',
-  'https://www.slideomatic.app',
-]);
-const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
-
-function cors(headers = {}) {
-  const origin = headers.origin || headers.Origin || '';
-  const allowed = ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
-  return {
-    ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}),
-    Vary: 'Origin',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  };
-}
 
 // Interleave provider result lists round-robin so the grid alternates sources
 // (a, b, a, b, ...) rather than showing one provider's whole page first.
@@ -100,7 +80,7 @@ async function searchUnsplash(query, page) {
 }
 
 export async function handler(event) {
-  const headers = cors(event.headers || {});
+  const headers = allowlistCorsHeaders(event.headers || {});
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers };

@@ -39,48 +39,35 @@ function replaceBase64WithToken(imageObj) {
   return result;
 }
 
+// Every path where a slide can hold an image object — the single source of
+// truth for the tokenize/restore/collect walks below.
+function imagePaths(slide) {
+  if (!slide || typeof slide !== 'object') return [];
+  const paths = [];
+  if (slide.image) paths.push(['image']);
+  if (Array.isArray(slide.media)) slide.media.forEach((m, i) => m?.image && paths.push(['media', i, 'image']));
+  if (Array.isArray(slide.items)) slide.items.forEach((it, i) => it?.image && paths.push(['items', i, 'image']));
+  if (slide.left?.image) paths.push(['left', 'image']);
+  if (slide.right?.image) paths.push(['right', 'image']);
+  if (Array.isArray(slide.pillars)) slide.pillars.forEach((p, i) => p?.image && paths.push(['pillars', i, 'image']));
+  return paths;
+}
+
+function getAtPath(obj, path) {
+  return path.reduce((node, key) => node?.[key], obj);
+}
+
+function setAtPath(obj, path, value) {
+  const parent = getAtPath(obj, path.slice(0, -1));
+  if (parent) parent[path[path.length - 1]] = value;
+}
+
 function prepareSlideForEditing(slide) {
   // Deep clone to avoid mutating original
   const clone = JSON.parse(JSON.stringify(slide));
-
-  if (clone.image) {
-    clone.image = replaceBase64WithToken(clone.image);
-  }
-
-  if (Array.isArray(clone.media)) {
-    clone.media = clone.media.map((mediaItem) => {
-      if (mediaItem.image) {
-        return { ...mediaItem, image: replaceBase64WithToken(mediaItem.image) };
-      }
-      return mediaItem;
-    });
-  }
-
-  if (Array.isArray(clone.items)) {
-    clone.items = clone.items.map((item) => {
-      if (item.image) {
-        return { ...item, image: replaceBase64WithToken(item.image) };
-      }
-      return item;
-    });
-  }
-
-  if (clone.left?.image) {
-    clone.left = { ...clone.left, image: replaceBase64WithToken(clone.left.image) };
-  }
-  if (clone.right?.image) {
-    clone.right = { ...clone.right, image: replaceBase64WithToken(clone.right.image) };
-  }
-
-  if (Array.isArray(clone.pillars)) {
-    clone.pillars = clone.pillars.map((pillar) => {
-      if (pillar.image) {
-        return { ...pillar, image: replaceBase64WithToken(pillar.image) };
-      }
-      return pillar;
-    });
-  }
-
+  imagePaths(clone).forEach((path) => {
+    setAtPath(clone, path, replaceBase64WithToken(getAtPath(clone, path)));
+  });
   return clone;
 }
 
@@ -102,45 +89,17 @@ function restoreBase64InImage(editedImage, originalImage) {
 }
 
 function restoreBase64FromTokens(editedSlide, originalSlide) {
-  const result = { ...editedSlide };
+  // Deep clone so the token-rescue pass below can mutate slots freely without
+  // reaching back into the caller's edited object.
+  const result = JSON.parse(JSON.stringify(editedSlide));
 
-  if (result.image && originalSlide.image) {
-    result.image = restoreBase64InImage(result.image, originalSlide.image);
-  }
-
-  if (Array.isArray(result.media) && Array.isArray(originalSlide.media)) {
-    result.media = result.media.map((mediaItem, index) => {
-      if (mediaItem.image && originalSlide.media[index]?.image) {
-        return { ...mediaItem, image: restoreBase64InImage(mediaItem.image, originalSlide.media[index].image) };
-      }
-      return mediaItem;
-    });
-  }
-
-  if (Array.isArray(result.items) && Array.isArray(originalSlide.items)) {
-    result.items = result.items.map((item, index) => {
-      if (item.image && originalSlide.items[index]?.image) {
-        return { ...item, image: restoreBase64InImage(item.image, originalSlide.items[index].image) };
-      }
-      return item;
-    });
-  }
-
-  if (result.left?.image && originalSlide.left?.image) {
-    result.left = { ...result.left, image: restoreBase64InImage(result.left.image, originalSlide.left.image) };
-  }
-  if (result.right?.image && originalSlide.right?.image) {
-    result.right = { ...result.right, image: restoreBase64InImage(result.right.image, originalSlide.right.image) };
-  }
-
-  if (Array.isArray(result.pillars) && Array.isArray(originalSlide.pillars)) {
-    result.pillars = result.pillars.map((pillar, index) => {
-      if (pillar.image && originalSlide.pillars[index]?.image) {
-        return { ...pillar, image: restoreBase64InImage(pillar.image, originalSlide.pillars[index].image) };
-      }
-      return pillar;
-    });
-  }
+  // Positional restore: same slot in the edited and original slide.
+  imagePaths(result).forEach((path) => {
+    const originalImage = getAtPath(originalSlide, path);
+    if (originalImage) {
+      setAtPath(result, path, restoreBase64InImage(getAtPath(result, path), originalImage));
+    }
+  });
 
   // The positional restore above misses reordered arrays (e.g. gallery items
   // swapped in the JSON editor). Rescue leftover tokens by matching against
@@ -168,15 +127,7 @@ function restoreBase64FromTokens(editedSlide, originalSlide) {
 }
 
 function collectImages(slide) {
-  if (!slide || typeof slide !== 'object') return [];
-  const images = [];
-  if (slide.image) images.push(slide.image);
-  if (Array.isArray(slide.media)) slide.media.forEach((m) => m?.image && images.push(m.image));
-  if (Array.isArray(slide.items)) slide.items.forEach((i) => i?.image && images.push(i.image));
-  if (slide.left?.image) images.push(slide.left.image);
-  if (slide.right?.image) images.push(slide.right.image);
-  if (Array.isArray(slide.pillars)) slide.pillars.forEach((p) => p?.image && images.push(p.image));
-  return images;
+  return imagePaths(slide).map((path) => getAtPath(slide, path));
 }
 
 export {

@@ -56,6 +56,31 @@ export function corsHeaders(headers = {}, methods = 'GET,POST,OPTIONS') {
   };
 }
 
+// Strict allowlist variant for the key-holding proxies (gemini, image-search).
+// Those endpoints are only ever called same-origin (relative /.netlify/...
+// paths), so cross-origin browser access is never legitimate. Echoing
+// arbitrary Origins would let any other website use them — and the app's
+// server-side API keys — as a free proxy from their visitors' browsers. Only
+// the app's own origins (plus local dev) get CORS headers; everyone else gets
+// none, so their browsers refuse the response.
+const ALLOWED_ORIGINS = new Set([
+  'https://slideomatic.app',
+  'https://www.slideomatic.app',
+]);
+const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
+export function allowlistCorsHeaders(headers = {}) {
+  const origin = headers.origin || headers.Origin || '';
+  const allowed = ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
+  return {
+    ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}),
+    Vary: 'Origin',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+}
+
 export function createAssetId(filename = 'asset') {
   const safeName = filename
     .toLowerCase()

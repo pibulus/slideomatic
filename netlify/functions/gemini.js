@@ -12,6 +12,8 @@
 // model output is returned verbatim for the existing parsers to consume.
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { allowlistCorsHeaders } from './utils/common.js';
+
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const ALLOWED_MODELS = new Set([
   'gemini-flash-latest',      // text: voice, decisions, edit, theme
@@ -22,30 +24,6 @@ const ALLOWED_MODELS = new Set([
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
 ]);
-
-// The app only ever calls this proxy same-origin (relative /.netlify/... paths),
-// so cross-origin browser access is never legitimate. Echoing arbitrary Origins
-// here would let any other website use this endpoint — and the server-side app
-// key — as a free Gemini proxy from their visitors' browsers. Only the app's
-// own origins (plus local dev) get CORS headers; everyone else gets none, so
-// their browsers refuse the response.
-const ALLOWED_ORIGINS = new Set([
-  'https://slideomatic.app',
-  'https://www.slideomatic.app',
-]);
-const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
-
-function cors(headers = {}) {
-  const origin = headers.origin || headers.Origin || '';
-  const allowed = ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
-  return {
-    ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}),
-    Vary: 'Origin',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  };
-}
 
 // transient 503/429 backoff so a busy model degrades to a slight delay
 async function withRetry(fn, tries = 3, baseMs = 600) {
@@ -69,7 +47,7 @@ async function withRetry(fn, tries = 3, baseMs = 600) {
 }
 
 export async function handler(event) {
-  const headers = cors(event.headers || {});
+  const headers = allowlistCorsHeaders(event.headers || {});
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers };
