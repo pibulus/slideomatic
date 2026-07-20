@@ -108,7 +108,7 @@ body[data-mode="overview"] .slide {
   border: 3px solid var(--color-ink);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  background: white;
+  background: var(--warm-white);
   overflow: hidden;
 
   counter-increment: slide-counter;

@@ -402,7 +402,7 @@ main {
 /* The two lead cards carry a touch more weight than the templates */
 .start-card--guide,
 .start-card--blank {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), var(--paper));
+  background: linear-gradient(180deg, rgba(var(--warm-white-rgb), 0.55), var(--paper));
 }
 
 .start-card--guide .start-card__kicker,
@@ -495,7 +495,7 @@ main {
 }
 
 .start-menu__secondary-actions .link-button {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(var(--warm-white-rgb), 0.5);
   border: 2px solid var(--ink);
   padding: 6px 14px;
   border-radius: 20px;
@@ -512,7 +512,7 @@ main {
 }
 
 .start-menu__secondary-actions .link-button:hover {
-  background: white;
+  background: var(--warm-white);
   transform: translateY(-1px);
   box-shadow: 3px 3px 0 rgba(26, 21, 34, 0.15);
   color: var(--riso-blue);
@@ -575,7 +575,7 @@ main {
 
 .button--secondary {
   background: var(--riso-blue);
-  color: white;
+  color: var(--warm-white);
 }
 
 /* Fix for a.button inheriting link styles */
@@ -589,7 +589,7 @@ a.button:hover {
 }
 
 a.button--secondary:hover {
-  color: white;
+  color: var(--warm-white);
 }
 
 
@@ -779,7 +779,7 @@ a.button--secondary:hover {
   padding: 16px 20px;
   border: 3px solid var(--ink);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(var(--warm-white-rgb), 0.7);
   box-shadow: 4px 4px 0 rgba(26, 21, 34, 0.15);
   cursor: pointer;
   position: relative;
@@ -807,7 +807,7 @@ a.button--secondary:hover {
 
 .deck-card--starred {
   background: rgba(255, 249, 200, 0.85);
-  border-color: #ffc107;
+  border-color: var(--color-starred);
 }
 
 .deck-card:hover {
@@ -821,7 +821,7 @@ a.button--secondary:hover {
 }
 
 .deck-card--starred:hover {
-  background: #ffc107; /* Bright golden yellow for starred */
+  background: var(--color-starred); /* Bright golden yellow for starred */
 }
 
 .deck-card__meta {
@@ -860,7 +860,7 @@ a.button--secondary:hover {
 
 .deck-card--starred .deck-card__star {
   opacity: 1;
-  color: #ffc107;
+  color: var(--color-starred);
 }
 
 .deck-card__name {
@@ -995,7 +995,7 @@ a.button--secondary:hover {
 .link-button:hover {
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 rgba(26, 21, 34, 0.2);
-  background: white;
+  background: var(--warm-white);
   border-bottom: 2px solid var(--ink);
 }
 

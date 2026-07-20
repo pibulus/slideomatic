@@ -18,6 +18,29 @@
   --ink-soft: #5C5670;
   --paper: rgba(255, 248, 220, 0.95);
 
+  /* Warm absolutes — NEVER raw #fff/#000. Pablo's law, no exceptions. */
+  --warm-white: #FFFEF7;
+  --warm-black: #1E1714;
+  /* RGB triplets so shadows/overlays can do rgba(var(--warm-black-rgb), x)
+     instead of raw rgba(0,0,0,x) / rgba(255,255,255,x) — mirrors the
+     existing --color-accent-rgb / --color-surface-rgb pattern below. */
+  --warm-white-rgb: 255, 254, 247;
+  --warm-black-rgb: 30, 23, 20;
+  --color-text: var(--warm-black);
+  --color-text-muted: #666;
+
+  /* Status tokens (existing values, just centralized — not new colors) */
+  --color-danger: #EF4444;
+  --color-danger-ink: #991B1B;
+  --color-success: #10B981;
+  --color-success-ink: #065F46;
+  --color-starred: #FFC107; /* golden yellow, landing.css starred-deck state, used 3x */
+
+  /* Near-white cream surfaces reused 3x+ as literal solid backgrounds
+     (existing values, just centralized) */
+  --surface-cream-1: #fffefc;
+  --surface-cream-2: #fffdf7;
+
   /* Core Palette - Mapped to Risograph */
   --color-bg: var(--cream);
   --color-surface: var(--paper);

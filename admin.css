@@ -2,7 +2,7 @@
   color-scheme: light;
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   --color-bg: #fafafa;
-  --color-panel: #ffffff;
+  --color-panel: #fffef7;
   --color-border: #d0d0d0;
   --color-text: #1f1f1f;
   --color-muted: #676767;
@@ -29,9 +29,9 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 20px clamp(16px, 4vw, 40px);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--warm-white-rgb), 0.8);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(var(--warm-black-rgb), 0.08);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -51,7 +51,7 @@ button {
   appearance: none;
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
-  color: white;
+  color: var(--color-panel);
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -62,7 +62,7 @@ button {
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 18px -12px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 18px -12px rgba(var(--warm-black-rgb), 0.45);
 }
 
 button:disabled {
@@ -93,10 +93,10 @@ button:disabled {
 }
 
 .auth-card {
-  background: white;
+  background: var(--color-panel);
   padding: clamp(24px, 4vw, 40px);
   border-radius: 16px;
-  box-shadow: 0 32px 60px -40px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 32px 60px -40px rgba(var(--warm-black-rgb), 0.75);
   display: grid;
   gap: 16px;
   max-width: 360px;
@@ -140,9 +140,9 @@ button:disabled {
 
 .slide-card {
   background: var(--color-panel);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(var(--warm-black-rgb), 0.05);
   border-radius: var(--radius);
-  box-shadow: 0 18px 28px -30px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 28px -30px rgba(var(--warm-black-rgb), 0.55);
   overflow: hidden;
 }
 
@@ -152,7 +152,7 @@ button:disabled {
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(var(--warm-black-rgb), 0.04);
 }
 
 .slide-card[open] summary {
@@ -187,7 +187,7 @@ button:disabled {
   padding: 10px 12px;
   font-size: 0.95rem;
   font-family: inherit;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(var(--warm-white-rgb), 0.9);
 }
 
 .field textarea {
@@ -196,7 +196,7 @@ button:disabled {
 }
 
 fieldset.nested {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(var(--warm-black-rgb), 0.08);
   border-radius: 8px;
   padding: 12px;
   margin: 0;
@@ -210,7 +210,7 @@ fieldset.nested legend {
 }
 
 .array-item {
-  border: 1px dashed rgba(0, 0, 0, 0.1);
+  border: 1px dashed rgba(var(--warm-black-rgb), 0.1);
   border-radius: 8px;
   padding: 12px;
   display: grid;
@@ -221,17 +221,17 @@ fieldset.nested legend {
   margin: 40px auto;
   max-width: 480px;
   padding: 24px;
-  background: white;
+  background: var(--color-panel);
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(var(--warm-black-rgb), 0.08);
   text-align: center;
-  box-shadow: 0 18px 40px -32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 18px 40px -32px rgba(var(--warm-black-rgb), 0.6);
 }
 
 pre {
   margin: 0;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--warm-black-rgb), 0.05);
   border-radius: 8px;
   overflow-x: auto;
 }
