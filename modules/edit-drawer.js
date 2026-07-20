@@ -212,7 +212,7 @@ function setupQuickEditSync(context) {
     const input = event.target;
     if (!(input instanceof Element) || !input.matches('[data-field]')) return;
 
-    syncQuickEditToJSON();
+    syncQuickEditToJSON(context);
 
     // Check if auto-save is enabled
     const autoSaveToggle = document.getElementById('autosave-toggle');
@@ -230,9 +230,11 @@ function setupQuickEditSync(context) {
   addTrackedListener(content, 'input', handleInput);
 }
 
-function syncQuickEditToJSON() {
+let jsonSyncBroken = false;
+
+function syncQuickEditToJSON(context) {
   const textarea = document.getElementById('slide-json-editor');
-  if (!(textarea instanceof HTMLTextAreaElement)) return;
+  if (!(textarea instanceof HTMLTextAreaElement)) return true;
 
   try {
     const slide = JSON.parse(textarea.value);
@@ -254,7 +256,9 @@ function syncQuickEditToJSON() {
             .map((line) => line.trim())
             .filter(Boolean);
           // @ts-ignore - Reassigning to array is intentional here
-          finalValue = lines.length ? lines : '';
+          // Empty array (not '') so an all-whitespace paste empties the
+          // field instead of deleting it and collapsing the drawer layout
+          finalValue = lines.length ? lines : [];
         }
       }
 
@@ -280,14 +284,35 @@ function syncQuickEditToJSON() {
     });
 
     textarea.value = JSON.stringify(slide, null, 2);
+
+    if (jsonSyncBroken) {
+      jsonSyncBroken = false;
+      textarea.classList.remove('edit-drawer__textarea--needs-fix');
+      if (context) {
+        const ctx = ensureContext(context);
+        ctx.showHudStatus('✓ Back in sync', 'success');
+        setTimeout(() => ctx.hideHudStatus(), 1200);
+      }
+    }
+    return true;
   } catch {
     console.warn('Cannot sync quick-edit: invalid JSON');
+    if (!jsonSyncBroken) {
+      jsonSyncBroken = true;
+      textarea.classList.add('edit-drawer__textarea--needs-fix');
+      if (context) {
+        const ctx = ensureContext(context);
+        ctx.showHudStatus('🧩 The JSON below needs a tweak — your edits are waiting', 'info');
+        setTimeout(() => ctx.hideHudStatus(), 2500);
+      }
+    }
+    return false;
   }
 }
 
 function autoSaveSlide(context) {
   const ctx = ensureContext(context);
-  syncQuickEditToJSON();
+  syncQuickEditToJSON(context);
 
   const textarea = document.getElementById('slide-json-editor');
   if (!(textarea instanceof HTMLTextAreaElement)) return;
@@ -308,6 +333,8 @@ function autoSaveSlide(context) {
     showAutoSaveStatus(ctx);
   } catch (error) {
     console.warn('Auto-save failed:', error);
+    ctx.showHudStatus('💾 Not saved yet — fix the JSON below and it\'ll catch up', 'info');
+    setTimeout(() => ctx.hideHudStatus(), 2500);
   }
 }
 

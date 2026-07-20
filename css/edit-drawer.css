@@ -112,6 +112,11 @@
   font-size: 0.9rem;
 }
 
+.edit-drawer__textarea--needs-fix {
+  outline: 3px dashed #ffb300;
+  outline-offset: 2px;
+}
+
 .edit-drawer__header {
   padding: 24px;
   border-bottom: var(--border-width) solid var(--color-ink);

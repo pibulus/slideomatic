@@ -6,7 +6,7 @@
 .modal-base {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,7 +61,7 @@
 .image-modal {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +125,7 @@
 .notes-modal {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -236,7 +236,7 @@
 .settings-modal {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -362,7 +362,7 @@
 .intro-modal {
   position: fixed;
   inset: 0;
-  z-index: 10002;
+  z-index: var(--z-modal-top);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -613,7 +613,7 @@
 
 /* --- Hints Modal (Quick Guide) --- */
 .hints-modal {
-  z-index: 10003;
+  z-index: var(--z-hints);
 }
 
 .hints-modal__backdrop {
@@ -860,7 +860,7 @@
 .share-modal {
   position: fixed;
   inset: 0;
-  z-index: 10002;
+  z-index: var(--z-modal-top);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1171,7 +1171,7 @@
 }
 
 .share-protect {
-  z-index: 10004;
+  z-index: var(--z-share-protect);
 }
 
 .share-protect__dialog {
@@ -1264,7 +1264,7 @@
   display: flex;
   justify-content: flex-end;
   pointer-events: none;
-  z-index: 1200;
+  z-index: var(--z-slide-index);
 }
 
 .slide-index.is-open {
@@ -1707,7 +1707,7 @@
 .notes-modal {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1844,7 +1844,7 @@
 .settings-modal {
   position: fixed;
   inset: 0;
-  z-index: 10001;
+  z-index: var(--z-modal-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2167,7 +2167,7 @@
 .intro-modal {
   position: fixed;
   inset: 0;
-  z-index: 10002;
+  z-index: var(--z-modal-top);
   display: flex;
   align-items: center;
   justify-content: center;
