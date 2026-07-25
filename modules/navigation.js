@@ -292,6 +292,12 @@ export const handleResize = () => {
 };
 
 export function setActiveSlide(nextIndex) {
+  // Empty deck is a real state (delete the last slide -> renderEmptyState), and
+  // keyboard nav is never torn down. Without this, an arrow key here clamps to
+  // -1 and the `.classList` read below throws, leaving the deck dead until a
+  // refresh. Same guard handleResize already uses.
+  if (!slideElements.length) return;
+
   const clamped = clamp(nextIndex, 0, slideElements.length - 1);
   // Navigating while the overview grid is up (HUD arrows, slider, Home/End)
   // must go through the overview teardown — activating a slide mid-grid
