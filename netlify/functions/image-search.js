@@ -15,6 +15,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { allowlistCorsHeaders } from './utils/common.js';
+import { guardSpend } from './utils/spendGuard.js';
 
 const PER_PAGE = 24;
 
@@ -101,6 +102,11 @@ export async function handler(event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing search query' }) };
   }
   const page = Number.isInteger(body.page) && body.page > 0 ? body.page : 1;
+
+  // Same door as the Gemini proxy: this one holds PEXELS_API_KEY. There is no
+  // bring-your-own variant here, so the house always pays.
+  const blocked = await guardSpend(event, headers, true);
+  if (blocked) return blocked;
 
   const providers = [searchPexels, searchUnsplash];
   const settled = await Promise.allSettled(providers.map((fn) => fn(query, page)));

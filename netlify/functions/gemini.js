@@ -13,6 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { allowlistCorsHeaders } from './utils/common.js';
+import { guardSpend } from './utils/spendGuard.js';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const ALLOWED_MODELS = new Set([
@@ -72,7 +73,15 @@ export async function handler(event) {
   }
 
   // visitor key wins; otherwise the app's server-side key
-  const apiKey = (typeof userKey === 'string' && userKey.trim()) || process.env.GEMINI_API_KEY || '';
+  const visitorKey = typeof userKey === 'string' && userKey.trim();
+  const apiKey = visitorKey || process.env.GEMINI_API_KEY || '';
+
+  // Origin check + daily budgets, charged only when the HOUSE key is paying.
+  // After the cheap body validation above so junk never touches the budget,
+  // and before the key is used so a blocked request costs nothing.
+  const blocked = await guardSpend(event, headers, !visitorKey);
+  if (blocked) return blocked;
+
   if (!apiKey) {
     return {
       statusCode: 503,

@@ -69,9 +69,17 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
+// The allowlist as a yes/no, for callers that must REFUSE rather than merely
+// withhold CORS headers. Omitting the header only stops a browser; a script
+// never reads it. See utils/spendGuard.js.
+export function isAllowedOrigin(headers = {}) {
+  const origin = headers.origin || headers.Origin || '';
+  return ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
+}
+
 export function allowlistCorsHeaders(headers = {}) {
   const origin = headers.origin || headers.Origin || '';
-  const allowed = ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN.test(origin);
+  const allowed = isAllowedOrigin(headers);
   return {
     ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}),
     Vary: 'Origin',
