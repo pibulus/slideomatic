@@ -15,12 +15,8 @@
         "npm:@netlify/blobs@10.4.1",
         "npm:eslint@9.39.1",
         "npm:globals@16.5.0",
-        "npm:html2canvas@1.4.1",
-        "npm:jspdf@2.5.1",
         "npm:puppeteer@23.7.0",
-        "npm:run-deepseek-cli@0.1.1",
-        "npm:serve@^14.2.1",
-        "npm:sharp@0.33"
+        "npm:serve@^14.2.1"
       ]
     }
   }
