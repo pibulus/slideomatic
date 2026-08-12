@@ -1237,11 +1237,17 @@ a.button--secondary:hover {
     box-shadow: 5px 5px 0 rgba(26, 21, 34, 0.22);
   }
 
+  /* Keep the circle bleeds inside the 10px page gutter — anything wider
+     lets iOS pan sideways (body overflow-x: hidden doesn't stop it) */
   .landing__hero::after {
     width: 180px;
     height: 180px;
     top: -70px;
-    right: -70px;
+    right: -10px;
+  }
+
+  .deck-shelf::before {
+    right: -10px;
   }
 
   .landing__eyebrow {
