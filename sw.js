@@ -72,6 +72,9 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/.netlify/functions/')) return;
+  // The deploy stamp always goes to the network — a cached stamp reports the
+  // build this client installed, not the one the server is serving.
+  if (url.pathname === '/version.json') return;
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request, '/index.html'));

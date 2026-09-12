@@ -5,7 +5,7 @@
   # Only real "build" step: stamp sw.js's CACHE_VERSION with this deploy's
   # commit hash so returning visitors' service workers always notice new
   # CSS/JS instead of serving a stale cached copy forever.
-  command = "node scripts/stamp-sw-version.mjs"
+  command = "node scripts/stamp-sw-version.mjs && STAMP_OUT=version.json node scripts/stamp-version.mjs"
 
 # Function configuration
 [functions]
@@ -112,3 +112,10 @@
   for = "/.netlify/functions/*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
+
+# The deploy stamp must never be cached, or `fleet-check --deployed` reads a
+# ghost and reports a stale site as current — the exact failure it detects.
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
