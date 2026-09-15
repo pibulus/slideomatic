@@ -28,12 +28,20 @@ function commit() {
   if (fromEnv) return fromEnv.trim().slice(0, 7);
 
   try {
-    return execSync("git rev-parse HEAD", {
+    const sha = execSync("git rev-parse HEAD", {
       stdio: ["ignore", "pipe", "ignore"],
     })
       .toString()
       .trim()
       .slice(0, 7);
+
+    const dirty = execSync("git status --porcelain", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+
+    return dirty ? `${sha}-dirty` : sha;
   } catch {
     // A tarball build with no git and no CI env. Better to serve a known
     // "unknown" than to fail the build over a diagnostic file.
