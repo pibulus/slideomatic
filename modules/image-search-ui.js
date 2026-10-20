@@ -79,9 +79,9 @@ function buildModal() {
   return el;
 }
 
-export function openImageSearch({ slideIndex, imageIndex, onSuccess, seedQuery = '' } = {}) {
+export function openImageSearch({ slideIndex, imageIndex, onPick, onSuccess, seedQuery = '' } = {}) {
   if (!modalEl) modalEl = buildModal();
-  currentContext = { slideIndex, imageIndex, onSuccess };
+  currentContext = { slideIndex, imageIndex, onPick, onSuccess };
 
   modalEl.removeAttribute('inert');
   modalEl.setAttribute('aria-hidden', 'false');
@@ -191,14 +191,18 @@ async function selectImage(item, cell) {
       storage: 'inline',
     };
 
-    const applied = updateSlideImageByIndex(
-      currentContext.slideIndex,
-      currentContext.imageIndex,
-      imageData
-    );
-    if (!applied) throw new Error('Could not apply image to slide');
+    if (typeof currentContext.onPick === 'function') {
+      await currentContext.onPick(imageData);
+    } else {
+      const applied = updateSlideImageByIndex(
+        currentContext.slideIndex,
+        currentContext.imageIndex,
+        imageData
+      );
+      if (!applied) throw new Error('Could not apply image to slide');
 
-    replaceSlideAt(currentContext.slideIndex, { focus: false });
+      replaceSlideAt(currentContext.slideIndex, { focus: false });
+    }
 
     const onSuccess = currentContext.onSuccess;
     closeImageSearch();

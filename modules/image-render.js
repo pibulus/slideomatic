@@ -9,8 +9,13 @@ import {
     normalizeOrientation,
     deriveOrientationFromDimensions,
     cleanupSlideAssets,
-    cleanupAllSlideAssets
+    cleanupAllSlideAssets,
+    findSlideIndexForPlaceholder,
+    extractSlideContext,
+    updateSlideImage,
 } from './image-utils.js';
+import { openImageSearch } from './image-search-ui.js';
+import { replaceSlideAt } from './slide-actions.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Image Rendering Module
@@ -244,7 +249,46 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     // Magic button appears only when an API key is configured (or always enabled for custom handlers)
     const hasAiKey = Boolean(localStorage.getItem('slideomatic_gemini_api_key'));
     const magicAlwaysEnabled = isGraphContext || Boolean(customMagicHandler);
-    if (hasAiKey || magicAlwaysEnabled) {
+    const showMagicBtn = hasAiKey || magicAlwaysEnabled;
+
+    if (!isGraphContext) {
+        const searchBtn = document.createElement('button');
+        searchBtn.type = 'button';
+        searchBtn.className = 'image-placeholder__magic-btn image-placeholder__search-btn';
+        if (showMagicBtn) {
+            searchBtn.style.right = '42px';
+        }
+        searchBtn.textContent = '🔍';
+        searchBtn.title = 'Search stock photos';
+        searchBtn.setAttribute('aria-label', 'Search stock photos');
+
+        const searchClickHandler = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const slideIdx = findSlideIndexForPlaceholder(placeholder);
+            const slideCtx = extractSlideContext(placeholder);
+            const seedQuery = (trimmedQuery || slideCtx.headline || '')
+                .replace(/[^\p{L}\p{N}\s]/gu, '')
+                .trim()
+                .slice(0, 60);
+            openImageSearch({
+                slideIndex: slideIdx,
+                seedQuery,
+                onPick: (imageData) => {
+                    const idx = findSlideIndexForPlaceholder(placeholder);
+                    if (idx !== -1) {
+                        updateSlideImage(idx, imageData, placeholder);
+                        replaceSlideAt(idx, { focus: false });
+                    }
+                },
+            });
+        };
+        searchBtn.addEventListener('click', searchClickHandler);
+        listeners.push({ element: searchBtn, event: 'click', handler: searchClickHandler });
+        wrapper.appendChild(searchBtn);
+    }
+
+    if (showMagicBtn) {
         const aiBtn = document.createElement('button');
         aiBtn.type = 'button';
         aiBtn.className = 'image-placeholder__magic-btn';

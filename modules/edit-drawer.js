@@ -25,11 +25,11 @@ import {
   setupImageSearchButtons,
   setupImageDragReorder,
   removeImageByIndex,
-  replaceImageByIndex,
   reorderSlideImages,
   addImageToSlide,
   updateImageAltText,
 } from './slide-image-ui.js';
+import { updateSlideImageByIndex } from './image-utils.js';
 import { openImageSearch } from './image-search-ui.js';
 import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
@@ -556,26 +556,6 @@ function handleImageRemove(context, imageIndex) {
 
 /**
  * @param {object} context
- * @param {number} imageIndex
- */
-function handleImageReplace(context, imageIndex) {
-  const ctx = ensureContext(context);
-  const slides = ctx.getSlides();
-  const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = slides[currentIndex];
-  if (!currentSlide) return;
-
-  const updatedSlide = replaceImageByIndex(imageIndex, currentSlide);
-  ctx.updateSlide(currentIndex, updatedSlide);
-  ctx.replaceSlideAt(currentIndex);
-  renderEditForm(ctx);
-  ctx.showHudStatus('↻ Image cleared', 'success');
-  setTimeout(() => ctx.hideHudStatus(), 1600);
-  debug('Image replaced - src cleared, title preserved');
-}
-
-/**
- * @param {object} context
  * @param {number} fromIndex
  * @param {number} toIndex
  */
@@ -608,37 +588,14 @@ function handleImageAltUpdate(context, imageIndex, altText) {
   const updatedSlide = updateImageAltText(imageIndex, altText, currentSlide);
   ctx.updateSlide(currentIndex, updatedSlide);
   ctx.replaceSlideAt(currentIndex);
-  // Don't re-render form - that would lose focus on the input
-  // Just update the slide in the background
-}
-
-/**
- * @param {object} context
- */
-function handleImageAdd(context) {
-  const ctx = ensureContext(context);
-
-  const slides = ctx.getSlides();
-  const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = slides[currentIndex];
-
-  // Add empty placeholder (user can name it and then fill it via drag/drop, AI, or search)
-  const emptyImage = { alt: '' };
-  const updatedSlide = addImageToSlide(currentSlide, emptyImage);
-
-  ctx.updateSlide(currentIndex, updatedSlide);
-  ctx.replaceSlideAt(currentIndex);
-  renderEditForm(ctx);
-
-  ctx.showHudStatus('📷 Image slot added', 'success');
-  setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
 /**
  * @param {object} context
  * @param {File} file
+ * @param {number|null} [replaceIndex]
  */
-async function handleImageFile(context, file) {
+async function handleImageFile(context, file, replaceIndex = null) {
   if (!file || !file.type.startsWith('image/')) return;
   const ctx = ensureContext(context);
 
@@ -648,7 +605,7 @@ async function handleImageFile(context, file) {
 
     const imageData = {
       src: dataUrl,
-      alt: file.name,
+      alt: file.name.replace(/\.[^/.]+$/, ''),
       originalFilename: file.name,
       compressedSize: compressed.size,
       format,
@@ -659,8 +616,12 @@ async function handleImageFile(context, file) {
     const currentSlide = slides[currentIndex];
     if (!currentSlide) return;
 
-    const updatedSlide = addImageToSlide(currentSlide, imageData);
-    ctx.updateSlide(currentIndex, updatedSlide);
+    if (typeof replaceIndex === 'number' && replaceIndex >= 0) {
+      updateSlideImageByIndex(currentIndex, replaceIndex, imageData);
+    } else {
+      const updatedSlide = addImageToSlide(currentSlide, imageData);
+      ctx.updateSlide(currentIndex, updatedSlide);
+    }
     ctx.replaceSlideAt(currentIndex);
     renderEditForm(ctx);
 
@@ -1045,12 +1006,6 @@ export function renderEditForm(context) {
     }
   });
 
-  addTrackedListener(
-    document.getElementById('add-image-btn'),
-    'click',
-    () => handleImageAdd(ctx)
-  );
-
   setupQuickEditSync(ctx);
 
   setupImageRemoveButtons({
@@ -1059,11 +1014,7 @@ export function renderEditForm(context) {
     addTrackedListener,
   });
 
-  setupImageReplaceButtons({
-    root: content,
-    onReplace: (imageIndex) => handleImageReplace(ctx, imageIndex),
-    addTrackedListener,
-  });
+  let pendingReplaceImageIndex = null;
 
   const dropzone = document.getElementById('image-manager-dropzone');
   if (dropzone) {
@@ -1077,25 +1028,42 @@ export function renderEditForm(context) {
       return moduleImagePicker;
     };
 
-    // Re-bind the change handler each render (old one is replaced)
     const picker = getImagePicker();
     const handlePickerChange = () => {
       const file = picker.files?.[0];
+      const replaceIdx = pendingReplaceImageIndex;
+      pendingReplaceImageIndex = null;
       if (file) {
-        handleImageFile(ctx, file);
+        handleImageFile(ctx, file, replaceIdx);
       }
       picker.value = '';
     };
-    // Remove any previous handler before adding new one
     picker.onchange = handlePickerChange;
 
-    // Only trigger file picker if clicking the empty state dropzone or the add button
-    // We don't want to trigger it when clicking the list itself (unless on empty space?)
-    // Actually, let's keep the click listener specific to the empty state dropzone if it exists
+    addTrackedListener(
+      document.getElementById('add-image-btn'),
+      'click',
+      (event) => {
+        event.preventDefault();
+        pendingReplaceImageIndex = null;
+        picker.click();
+      }
+    );
+
+    setupImageReplaceButtons({
+      root: content,
+      onReplace: (imageIndex) => {
+        pendingReplaceImageIndex = imageIndex;
+        picker.click();
+      },
+      addTrackedListener,
+    });
+
     const emptyDropzone = dropzone.querySelector('.edit-drawer__image-dropzone');
     if (emptyDropzone) {
       addTrackedListener(emptyDropzone, 'click', (event) => {
         event.preventDefault();
+        pendingReplaceImageIndex = null;
         picker.click();
       });
     }
@@ -1115,10 +1083,36 @@ export function renderEditForm(context) {
       const files = Array.from(event.dataTransfer?.files || []);
       const imageFile = files.find((file) => file.type.startsWith('image/'));
       if (imageFile) {
-        handleImageFile(ctx, imageFile);
+        handleImageFile(ctx, imageFile, null);
       }
     });
   }
+
+  addTrackedListener(
+    document.getElementById('search-new-image-btn'),
+    'click',
+    () => {
+      const currentSlide = ctx.getSlides()[ctx.getCurrentIndex()];
+      if (!currentSlide) return;
+      const seedQuery = (currentSlide.headline || currentSlide.title || '')
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .trim()
+        .slice(0, 60);
+      openImageSearch({
+        slideIndex: ctx.getCurrentIndex(),
+        seedQuery,
+        onPick: (imageData) => {
+          const slideIdx = ctx.getCurrentIndex();
+          const slideObj = ctx.getSlides()[slideIdx];
+          if (!slideObj) return;
+          const updatedSlide = addImageToSlide(slideObj, imageData);
+          ctx.updateSlide(slideIdx, updatedSlide);
+          ctx.replaceSlideAt(slideIdx);
+        },
+        onSuccess: () => renderEditForm(ctx),
+      });
+    }
+  );
 
   const imageList = content.querySelector('.edit-drawer__image-list');
   if (imageList instanceof HTMLElement) {

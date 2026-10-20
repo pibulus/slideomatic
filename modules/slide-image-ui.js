@@ -153,9 +153,9 @@ function buildImageManager(slide) {
           </div>
           ${images.length > 2 ? `<button type="button" class="edit-drawer__image-move" data-image-index="${index}" data-move="-1" title="Move image up" aria-label="Move image ${index + 1} up" ${index === 0 ? 'disabled' : ''}>↑</button>
           <button type="button" class="edit-drawer__image-move" data-image-index="${index}" data-move="1" title="Move image down" aria-label="Move image ${index + 1} down" ${index === images.length - 1 ? 'disabled' : ''}>↓</button>` : ''}
-          ${isEmpty ? `<button type="button" class="edit-drawer__image-search" data-image-index="${index}" title="Find an image" aria-label="Find an image for slot ${index + 1}">🔍</button>` : ''}
-          ${!isEmpty ? `<button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Replace image" aria-label="Replace image ${index + 1}">↻</button>` : ''}
-          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image slot" aria-label="Remove image ${index + 1}">×</button>
+          <button type="button" class="edit-drawer__image-search" data-image-index="${index}" title="Search stock photos" aria-label="Search stock photos for slot ${index + 1}">🔍</button>
+          <button type="button" class="edit-drawer__image-replace" data-image-index="${index}" title="Upload image from computer" aria-label="Upload image for slot ${index + 1}">📁</button>
+          <button type="button" class="edit-drawer__image-remove" data-image-index="${index}" title="Remove image" aria-label="Remove image ${index + 1}">×</button>
         </div>
       `;
     });
@@ -166,16 +166,21 @@ function buildImageManager(slide) {
     html += `
       <div class="edit-drawer__image-dropzone">
         <span class="edit-drawer__image-dropzone-icon">✶</span>
-        <p>Add or drop images</p>
+        <p>Drop an image here or choose below</p>
       </div>
     `;
   }
 
   if (canAdd) {
     html += `
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn">
-        Add image
-      </button>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-image-btn" style="flex: 1;">
+          Upload File
+        </button>
+        <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="search-new-image-btn" style="flex: 1;">
+          Search Photos
+        </button>
+      </div>
     `;
   } else {
     html += `
