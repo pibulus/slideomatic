@@ -3,7 +3,7 @@
     "type": "typeface",
     "badge": "Lightning talk",
     "headline": "BIG TITLE, ONE BREATH",
-    "body": "Open with the title slammed across the screen. Say it out loud: if it sounds good spoken, it is a good title.",
+    "body": "Open with the title slammed across the screen. Say it out loud: if it sounds good spoken, it's a good title.",
     "samples": [
       {
         "font": "Space Grotesk, Inter, sans-serif",
@@ -15,13 +15,20 @@
     "type": "standard",
     "badge": "One idea",
     "headline": "Every slide earns its place",
-    "body": "One idea per slide. If a slide has two ideas, it's two slides. Lightning talks live or die on pace."
+    "body": [
+      "One idea per slide. If a slide has two ideas, it's two slides. Lightning talks live or die on pace.",
+      "Need another beat? Hit the + button at the top of the editor to drop in a fresh slide."
+    ],
+    "image": {
+      "src": "images/riso-talk-megaphone.webp",
+      "alt": "Riso vintage megaphone blasting lightning bolts and musical notes"
+    }
   },
   {
     "type": "typeface",
     "badge": "Pivot",
     "headline": "THE TURN",
-    "body": "A single big word to mark the moment the talk changes direction. Let the room catch up.",
+    "body": "A single big phrase to mark the moment the talk changes direction. Let the room catch up.",
     "samples": [
       {
         "font": "Press Start 2P, monospace",
@@ -39,6 +46,7 @@
     "type": "grid",
     "badge": "The takeaways",
     "headline": "Four things, then you're done",
+    "body": "Press T anytime to shuffle the deck's colors until the room vibe clicks.",
     "items": [
       {
         "color": "#F472B6",

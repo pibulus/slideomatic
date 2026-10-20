@@ -297,6 +297,50 @@ main {
 
 .start-card--guide::before { background: linear-gradient(90deg, var(--riso-pink), var(--riso-yellow)); }
 .start-card--blank::before { background: linear-gradient(90deg, var(--riso-blue), var(--riso-green)); }
+.start-card--pitch::before { background: var(--riso-pink); }
+.start-card--talk::before  { background: var(--riso-blue); }
+.start-card--show::before  { background: var(--riso-green); }
+.start-card--weird::before { background: var(--riso-yellow); }
+
+.template-section {
+  margin-top: clamp(18px, 2.5vw, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(10px, 1.6vw, 14px);
+}
+
+@media (max-width: 900px) {
+  .template-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.start-card--template {
+  padding: clamp(12px, 1.8vw, 16px);
+  padding-top: clamp(16px, 2.2vw, 20px);
+  border-width: 3px;
+  border-radius: 18px;
+}
+
+.start-card--template .start-card__name {
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+}
+
+.start-card--template .start-card__desc {
+  font-size: 0.8rem;
+}
 
 /* ===================================================================
    TEMPLATE ROW — templates as quiet pills under the two lead cards

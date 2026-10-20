@@ -3,16 +3,30 @@
     "type": "title",
     "eyebrow": "A pitch in six slides",
     "title": "Replace this with your one-line hook",
-    "subtitle": "The sentence that makes someone lean in. Specific beats clever."
+    "subtitle": "The sentence that makes someone lean in. Specific beats clever. (Double-click any text to rewrite it.)",
+    "media": [
+      {
+        "image": {
+          "src": "images/riso-pitch-magnet.webp",
+          "alt": "Riso horseshoe magnet pulling in glowing lightbulbs and paper airplanes"
+        }
+      }
+    ],
+    "font": "grotesk"
   },
   {
     "type": "standard",
     "badge": "The problem",
     "headline": "Name the pain: make it felt, not abstract",
     "body": [
-      "Describe the moment it goes wrong, the way the person living it would describe it.",
-      "If they nod before you finish the sentence, you've got the right problem."
-    ]
+      "Describe the exact moment it goes wrong, the way the person living it would describe it.",
+      "If they nod before you finish the sentence, you've got the right problem.",
+      "Swap the image on the right via the Images section in the drawer (or drop a screenshot straight onto the slide)."
+    ],
+    "image": {
+      "src": "images/student-sketchbook-and-stickers.jpg",
+      "alt": "Sketchbook and notes on a desk"
+    }
   },
   {
     "type": "split",
@@ -31,6 +45,7 @@
     "type": "pillars",
     "badge": "How it works",
     "headline": "Three beats, no jargon",
+    "body": "Edit these three cards right in the Content panel—or double-click any card on the slide.",
     "pillars": [
       {
         "title": "Step one",
@@ -55,7 +70,7 @@
   {
     "type": "title",
     "eyebrow": "The ask",
-    "title": "Here's what I want from you",
-    "subtitle": "One clear next step. Your name, your link, the thing to do now."
+    "title": "Here's what we do next",
+    "subtitle": "One clear next step: your name, your link, and what you're asking for. Hit Share or Download PDF when you're ready."
   }
 ]

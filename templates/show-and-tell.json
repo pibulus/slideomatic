@@ -1,1 +1,82 @@
-[{"type": "title", "eyebrow": "Show & tell", "title": "The thing I made", "subtitle": "Drop a hero image here, or click the slot to browse or search for one.", "media": [{"image": {"alt": "Your hero shot goes here", "aspectRatio": "16 / 9", "objectFit": "cover", "orientation": "landscape"}}]}, {"type": "gallery", "badge": "How it came together", "headline": "The process, in three shots", "body": "Paste your own images, drag them in, or search for photos in the editor. Messy in-progress shots are the good ones.", "items": [{"image": {"alt": "Early / rough stage"}}, {"image": {"alt": "Mid build"}}, {"image": {"alt": "Almost there"}}]}, {"type": "standard", "badge": "The hero", "headline": "The money shot", "body": "Drop your best image here, the one that makes someone go \"oh, nice.\" Got the shot? Swap this slide's type to image and let it go full-bleed.", "image": {"alt": "The finished thing", "aspectRatio": "16 / 9", "objectFit": "cover"}}, {"type": "split", "badge": "What it is", "headline": "Picture on one side, plain words on the other", "left": {"headline": "What you're looking at", "body": "Two or three sentences. What it is, what it does, why it exists."}, "right": {"headline": "The interesting bit", "body": "The one detail you're secretly proud of. The part nobody asked for but you did anyway."}}, {"type": "quote", "badge": "What I learned", "quote": "The honest takeaway: what surprised you, what you would do differently.", "attribution": "You, after shipping it"}, {"type": "title", "eyebrow": "See more", "title": "Want the full thing?", "subtitle": "Your link, your handle, where the rest of it lives."}]
+[
+  {
+    "type": "title",
+    "eyebrow": "Show & tell",
+    "title": "The thing I made",
+    "subtitle": "Swap the illustration below with your own hero shot, or click 🔍 in the Images panel to search for one.",
+    "media": [
+      {
+        "image": {
+          "src": "images/riso-show-workbench.webp",
+          "alt": "Riso Polaroid camera ejecting an instant photo surrounded by scissors, tape, and paintbrush"
+        }
+      }
+    ]
+  },
+  {
+    "type": "gallery",
+    "badge": "How it came together",
+    "headline": "The process, in three shots",
+    "body": "Drop your own photos onto the empty slots below, click a box to browse your files, or hit 🔍 on any slot to search stock photos. Messy work-in-progress shots are the best ones.",
+    "items": [
+      {
+        "image": {
+          "src": "images/workshop-table-with-laptop-and-design-to.jpg",
+          "alt": "Early sketch and workbench stage"
+        },
+        "label": "1. Rough sketch"
+      },
+      {
+        "image": {
+          "alt": "Mid-build progress shot"
+        },
+        "label": "2. Mid build (drop yours here)"
+      },
+      {
+        "image": {
+          "alt": "Almost finished shot"
+        },
+        "label": "3. Almost there (drop yours here)"
+      }
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "The hero",
+    "headline": "The money shot",
+    "body": [
+      "Drop your best photo here—the one that makes someone go \"oh, nice.\"",
+      "Want it full-screen? Open Slide Type in the drawer and switch this slide to Image."
+    ],
+    "image": {
+      "alt": "The finished thing",
+      "aspectRatio": "16 / 9",
+      "objectFit": "cover"
+    }
+  },
+  {
+    "type": "split",
+    "badge": "What it is",
+    "headline": "Plain words on one side, the nerdy detail on the other",
+    "left": {
+      "headline": "What you're looking at",
+      "body": "Two or three sentences. What it is, what it does, why it exists."
+    },
+    "right": {
+      "headline": "The interesting bit",
+      "body": "The one detail you're secretly proud of. The part nobody asked for, but you built anyway."
+    }
+  },
+  {
+    "type": "quote",
+    "badge": "What I learned",
+    "quote": "The honest takeaway: what surprised you, what broke, and what you'd do differently next time.",
+    "attribution": "You, after shipping it"
+  },
+  {
+    "type": "title",
+    "eyebrow": "See more",
+    "title": "Want to try it?",
+    "subtitle": "Your link, your repo, your handle—where the rest of it lives."
+  }
+]

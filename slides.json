@@ -20,8 +20,8 @@
     "headline": "Why Slide-o-Matic?",
     "body": [
       "Make a slideshow like you would leave a voicemail: fast, warm, and done.",
-      "Everything saves to your browser. No accounts, no cloud, no fuss.",
-      "The link's ready whenever you are."
+      "Everything saves in your browser. No accounts, no cloud lock-in, no fuss.",
+      "Double-click any text right on a slide to rewrite it on the spot."
     ],
     "font": "sans",
     "image": {
@@ -33,22 +33,81 @@
     "type": "pillars",
     "badge": "Three moves",
     "headline": "Three keys and you're rolling",
-    "body": "That's the whole learning curve. Press **?** anytime for the rest.",
+    "body": "That's the whole learning curve. Press **?** anytime for the full list.",
     "font": "sans",
     "pillars": [
       {
         "title": "E: Edit",
-        "text": "Opens the workbench. Change words, swap layouts, drop in images, or pick a theme."
+        "text": "Opens the workbench. Rewrite text, swap layouts, drop in photos, or pick a theme."
       },
       {
         "title": "T: Theme",
-        "text": "Shuffles the colors. Keep pressing until it feels like you."
+        "text": "Shuffles the color palette. Keep pressing until the room feels right."
       },
       {
         "title": "O: Overview",
         "text": "Zooms out to see every slide at once. Jump anywhere in one click."
       }
     ]
+  },
+  {
+    "type": "split",
+    "badge": "Layouts",
+    "headline": "Pick a shape, then make it yours",
+    "left": {
+      "headline": "9 built-in shapes",
+      "body": "Title, Standard, Split (like this one), Pillars, Grid, Gallery, Quote, Image, and Typeface. Switch a slide's type anytime without losing your words."
+    },
+    "right": {
+      "headline": "Zero layout math",
+      "body": "No nudging text boxes by two pixels. You write the point; the slide handles the proportions, borders, and mobile layout."
+    },
+    "font": "sans"
+  },
+  {
+    "type": "gallery",
+    "badge": "Pictures",
+    "headline": "Drop, paste, or search for photos",
+    "body": "Drag files onto a slide, paste from your clipboard, or hit **🔍** to pull free shots from Pexels and Unsplash.",
+    "items": [
+      {
+        "image": {
+          "src": "images/genre-systems.webp",
+          "alt": "Riso collage of cassette tape, vinyl record, boombox, and guitar"
+        },
+        "label": "Drop your own art"
+      },
+      {
+        "image": {
+          "src": "images/curatedcollage.webp",
+          "alt": "Colorful zine and collage cutouts"
+        },
+        "label": "Paste from clipboard"
+      },
+      {
+        "image": {
+          "src": "images/teenage-engineering.jpg",
+          "alt": "Synth hardware on a desk"
+        },
+        "label": "Search stock photos"
+      }
+    ],
+    "font": "sans"
+  },
+  {
+    "type": "standard",
+    "badge": "Themes + tunes",
+    "headline": "Flip the vibe in one keystroke",
+    "body": [
+      "Press **T** right now to shuffle the color palette.",
+      "Want a whole different look? Open **E → Theme** to switch between Default, Vaporwave, Slack, and Gameboy—or save your own.",
+      "Press **R** to flip on the built-in SomaFM radio dock while you build or present."
+    ],
+    "font": "sans",
+    "image": {
+      "src": "images/theme-chameleon.webp",
+      "alt": "Riso chameleon mid color-change on a paint swatch wheel"
+    }
   },
   {
     "type": "quote",
@@ -59,12 +118,12 @@
   },
   {
     "type": "standard",
-    "badge": "Where next",
-    "headline": "Pick your adventure",
+    "badge": "Your turn",
+    "headline": "Ready when you are",
     "body": [
-      "Want the full tour? [Open the field guide](deck.html#slides=guide), five minutes, everything explained.",
-      "In a hurry? Head home and grab a template: The Pitch, The Talk, Show & Tell, or The Weird One.",
-      "Or just press **E** right now and start typing over this deck. It's yours."
+      "Press **E** (or double-click this headline) to edit right over this deck—your changes auto-save to your browser.",
+      "Want a structure to fill in? Head home and grab **The Pitch**, **The Talk**, **Show & Tell**, or **The Weird One**.",
+      "When you're done, hit **Share** for a link, **D** for a JSON backup, or export a **PDF**."
     ],
     "font": "sans"
   }

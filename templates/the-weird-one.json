@@ -1,13 +1,18 @@
 [
   {
-    "type": "typeface",
-    "badge": "Manifesto",
-    "headline": "A MANIFESTO ABOUT SOMETHING",
-    "body": "Replace this with the thing you actually believe. Decks don't have to be polite. This one definitely isn't.",
-    "font": "grotesk",
-    "samples": [
-      { "font": "Space Grotesk, Inter, sans-serif", "text": "We hold these truths to be self-evident" }
-    ]
+    "type": "title",
+    "eyebrow": "Manifesto",
+    "title": "A Manifesto About Something",
+    "subtitle": "Replace this with the thing you actually believe. Decks don't have to be polite. (Try switching Theme → Vaporwave or Gameboy in the drawer.)",
+    "media": [
+      {
+        "image": {
+          "src": "images/riso-weird-ufo.webp",
+          "alt": "Riso flying saucer beaming up a smiling retro CRT computer monitor"
+        }
+      }
+    ],
+    "font": "grotesk"
   },
   {
     "type": "quote",
@@ -26,6 +31,10 @@
       "4. The fourth rule, contradicts rule one on purpose.",
       "5. There is no fifth rule. (There is.)"
     ],
+    "image": {
+      "src": "images/vintage-diy-zine-covers-and-punk-posters.jpg",
+      "alt": "DIY punk zine covers and posters"
+    },
     "font": "mono"
   },
   {
@@ -52,7 +61,7 @@
   {
     "type": "title",
     "eyebrow": "One of us",
-    "title": "Join the cult",
+    "title": "Join the conspiracy",
     "subtitle": "Your link goes here. No refunds. No regrets. Bring snacks."
   }
 ]
