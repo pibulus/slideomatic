@@ -462,8 +462,13 @@ document.addEventListener('dblclick', (event) => {
   const slideEl = event.target.closest('.slide');
   const isTitle = slideEl.classList.contains('slide--title');
   const isQuote = slideEl.classList.contains('slide--quote');
+  const pillarEl = event.target.closest('.pillar');
   let field = 'body';
-  if (textEl.matches('h1')) field = isTitle ? 'title' : 'headline';
+  if (pillarEl) {
+    const pillars = Array.from(slideEl.querySelectorAll('.pillar'));
+    const pIdx = Math.max(0, pillars.indexOf(pillarEl));
+    field = textEl.matches('h3') ? `pillars.${pIdx}.title` : `pillars.${pIdx}.copy`;
+  } else if (textEl.matches('h1')) field = isTitle ? 'title' : 'headline';
   else if (textEl.matches('h2')) field = 'headline';
   else if (textEl.matches('blockquote')) field = 'quote';
   else if (textEl.matches('cite')) field = 'attribution';
@@ -757,6 +762,13 @@ async function initDeckWithTheme() {
   });
   document.getElementById('edit-nav-next')?.addEventListener('click', () => {
     setActiveSlide(currentIndex + 1);
+  });
+  document.getElementById('edit-nav-add')?.addEventListener('click', () => {
+    const newSlide = getSlideTemplate('standard');
+    if (!newSlide) return;
+    insertSlideAt(currentIndex + 1, newSlide, { activate: true });
+    showHudStatus('✨ New slide added', 'success');
+    setTimeout(hideHudStatus, 1600);
   });
 
   // Help modal hint rows double as tappable shortcuts on mobile, since a

@@ -143,38 +143,6 @@ function ensureContext(context) {
   return context;
 }
 
-// ... (existing code) ...
-
-function getSelectedLayoutVariant() {
-  const standardSelect = document.getElementById('standard-layout-select-wrapper');
-  if (standardSelect) {
-    return standardSelect.dataset.value || null;
-  }
-  const splitSelect = document.getElementById('split-layout-select-wrapper');
-  if (splitSelect) {
-    return splitSelect.dataset.value || null;
-  }
-  const quoteSelect = document.getElementById('quote-layout-select-wrapper');
-  if (quoteSelect) {
-    return quoteSelect.dataset.value || null;
-  }
-  return null;
-}
-
-function handleLayoutApply(context) {
-  const layout = getSelectedLayoutValue();
-  const variant = getSelectedLayoutVariant();
-  const ctx = ensureContext(context);
-  if (!layout) {
-    ctx.showHudStatus('Select a slide type first', 'warning');
-    setTimeout(() => ctx.hideHudStatus(), 1500);
-    return;
-  }
-  applyLayoutToCurrentSlide(ctx, layout, variant);
-}
-
-// ... (existing code) ...
-
 function applyLayoutToCurrentSlide(ctx, layout, variant) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
@@ -183,23 +151,36 @@ function applyLayoutToCurrentSlide(ctx, layout, variant) {
     return;
   }
 
+  // Flush any in-progress quick-edit typing before switching layout
+  syncQuickEditToJSON(ctx);
+  const textarea = document.getElementById('slide-json-editor');
+  let latestSlide = null;
+  if (textarea instanceof HTMLTextAreaElement) {
+    try {
+      const parsed = JSON.parse(textarea.value);
+      const orig = ctx.getSlides()[ctx.getCurrentIndex()];
+      if (orig) latestSlide = restoreBase64FromTokens(parsed, orig);
+    } catch {
+      // Fall back to current slide in state
+    }
+  }
+
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = slides[currentIndex];
+  const currentSlide = latestSlide || slides[currentIndex];
   if (!currentSlide) return;
 
   const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
-  
+
   // Apply variant if present and type matches
   if (layout === 'standard' && variant) {
     mergedSlide.layout = variant;
-    delete mergedSlide.variant; // Clean up potential split/quote variant
+    delete mergedSlide.variant;
   } else if ((layout === 'split' || layout === 'quote') && variant) {
     mergedSlide.variant = variant;
-    delete mergedSlide.layout; // Clean up potential standard layout
+    delete mergedSlide.layout;
   } else {
     delete mergedSlide.layout;
-    // Only clear variant if switching to a type that doesn't use it
     if (layout !== 'split' && layout !== 'quote') delete mergedSlide.variant;
   }
 
@@ -208,8 +189,38 @@ function applyLayoutToCurrentSlide(ctx, layout, variant) {
   renderEditForm(ctx);
 
   const label = getLayoutMeta(layout)?.label || layout;
-  ctx.showHudStatus(`✨ Layout switched to ${label}`, 'success');
+  ctx.showHudStatus(`✓ Switched to ${label}`, 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
+}
+
+function applyVariantToCurrentSlide(ctx, variant) {
+  syncQuickEditToJSON(ctx);
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const currentSlide = slides[currentIndex];
+  if (!currentSlide) return;
+
+  const updatedSlide = JSON.parse(JSON.stringify(currentSlide));
+  const type = updatedSlide.type || 'standard';
+  if (type === 'standard') {
+    if (!variant || variant === 'default') {
+      delete updatedSlide.layout;
+    } else {
+      updatedSlide.layout = variant;
+    }
+  } else if (type === 'split' || type === 'quote') {
+    if (!variant || variant === 'default' || variant === 'simple') {
+      delete updatedSlide.variant;
+    } else {
+      updatedSlide.variant = variant;
+    }
+  }
+
+  ctx.updateSlide(currentIndex, updatedSlide);
+  ctx.replaceSlideAt(currentIndex);
+  renderEditForm(ctx);
+  ctx.showHudStatus('✓ Layout updated', 'success');
+  setTimeout(() => ctx.hideHudStatus(), 1400);
 }
 
 /**
@@ -275,15 +286,32 @@ function syncQuickEditToJSON(context) {
         }
       }
 
-      // Handle nested fields (e.g., 'left.headline')
+      // Handle nested fields (e.g., 'left.headline', 'pillars.0.title', 'items.0.label')
       if (field.includes('.')) {
-        const [parent, child] = field.split('.');
-        if (!slide[parent]) slide[parent] = {};
-        
-        if (finalValue === '' || finalValue == null) {
-          delete slide[parent][child];
+        const parts = field.split('.');
+        if (parts.length === 3 && (parts[0] === 'pillars' || parts[0] === 'items')) {
+          const arrName = parts[0];
+          const idx = Number.parseInt(parts[1], 10);
+          const prop = parts[2];
+          if (Array.isArray(slide[arrName]) && slide[arrName][idx]) {
+            if (prop === 'copy' && Array.isArray(slide[arrName][idx].copy) && typeof finalValue === 'string') {
+              const lines = finalValue.split('\n').map((l) => l.trim()).filter(Boolean);
+              slide[arrName][idx].copy = lines.length ? lines : [''];
+            } else if (finalValue === '' || finalValue == null) {
+              delete slide[arrName][idx][prop];
+            } else {
+              slide[arrName][idx][prop] = finalValue;
+            }
+          }
         } else {
-          slide[parent][child] = finalValue;
+          const [parent, child] = parts;
+          if (!slide[parent]) slide[parent] = {};
+
+          if (finalValue === '' || finalValue == null) {
+            delete slide[parent][child];
+          } else {
+            slide[parent][child] = finalValue;
+          }
         }
       } else {
         // Handle top-level fields
@@ -430,21 +458,49 @@ const PRESERVED_FIELDS = [
  */
 function mergeSlideWithTemplate(template, currentSlide) {
   const merged = JSON.parse(JSON.stringify(template));
+  const targetType = merged.type || 'standard';
+
+  // Preserve matching fields that exist on currentSlide and are non-empty
   PRESERVED_FIELDS.forEach((key) => {
-    if (
-      Object.prototype.hasOwnProperty.call(currentSlide, key) &&
-      (merged[key] === undefined || merged[key] === null || merged[key] === '')
-    ) {
-      merged[key] = currentSlide[key];
+    const val = currentSlide[key];
+    const hasVal = Array.isArray(val) ? val.length > 0 : (val !== undefined && val !== null && val !== '');
+    if (hasVal && Object.prototype.hasOwnProperty.call(merged, key)) {
+      merged[key] = JSON.parse(JSON.stringify(val));
     }
   });
-  // Preserve notes collection if present
-  if (currentSlide.notes && !merged.notes) {
-    merged.notes = currentSlide.notes;
+
+  // Cross-map primary heading across title / quote / standard-family slides
+  const existingHeading = currentSlide.headline || currentSlide.title || currentSlide.quote;
+  if (existingHeading) {
+    if (targetType === 'title' && !currentSlide.title) {
+      merged.title = existingHeading;
+    } else if (targetType === 'quote' && !currentSlide.quote) {
+      merged.quote = existingHeading;
+    } else if (Object.prototype.hasOwnProperty.call(merged, 'headline') && !currentSlide.headline) {
+      merged.headline = existingHeading;
+    }
   }
-  if (currentSlide.speaker_notes && !merged.speaker_notes) {
-    merged.speaker_notes = currentSlide.speaker_notes;
+
+  // Cross-map subtitle <-> attribution
+  const existingSub = currentSlide.subtitle || currentSlide.attribution;
+  if (existingSub) {
+    if (targetType === 'quote' && !currentSlide.attribution) {
+      merged.attribution = existingSub;
+    } else if (Object.prototype.hasOwnProperty.call(merged, 'subtitle') && !currentSlide.subtitle) {
+      merged.subtitle = existingSub;
+    }
   }
+
+  // Preserve single image if switching between single-image slide types
+  if (currentSlide.image?.src && (targetType === 'standard' || targetType === 'image' || targetType === 'quote')) {
+    merged.image = JSON.parse(JSON.stringify(currentSlide.image));
+  }
+
+  // Always preserve notes and badge/eyebrow if present
+  if (currentSlide.notes) merged.notes = currentSlide.notes;
+  if (currentSlide.speaker_notes) merged.speaker_notes = currentSlide.speaker_notes;
+  if (currentSlide.badge && targetType !== 'title') merged.badge = currentSlide.badge;
+
   return merged;
 }
 
@@ -929,17 +985,65 @@ export function renderEditForm(context) {
     () => handleDownloadPdf(ctx)
   );
 
-  addTrackedListener(
-    document.getElementById('layout-apply-btn'),
-    'click',
-    () => handleLayoutApply(ctx)
-  );
+  // Instant Slide Type switching (no "Update Slide" button needed)
+  const layoutSelect = document.getElementById('slide-layout-select-wrapper');
+  if (layoutSelect) {
+    addTrackedListener(layoutSelect, 'customSelectChange', (e) => {
+      const nextType = e.detail?.value;
+      if (nextType) {
+        applyLayoutToCurrentSlide(ctx, nextType, null);
+      }
+    });
+  }
+
+  // Instant Layout Variant switching
+  ['standard-layout-select-wrapper', 'split-layout-select-wrapper', 'quote-layout-select-wrapper'].forEach((id) => {
+    const variantSelect = document.getElementById(id);
+    if (variantSelect) {
+      addTrackedListener(variantSelect, 'customSelectChange', (e) => {
+        applyVariantToCurrentSlide(ctx, e.detail?.value);
+      });
+    }
+  });
 
   addTrackedListener(
     document.getElementById('layout-add-btn'),
     'click',
     () => handleLayoutAdd(ctx)
   );
+
+  // Add / remove pillar cards on Pillars slides
+  addTrackedListener(
+    document.getElementById('add-pillar-btn'),
+    'click',
+    () => {
+      syncQuickEditToJSON(ctx);
+      const s = JSON.parse(JSON.stringify(ctx.getSlides()[ctx.getCurrentIndex()] || {}));
+      if (!Array.isArray(s.pillars)) s.pillars = [];
+      s.pillars.push({ title: `Card ${s.pillars.length + 1}`, copy: ['Supporting detail'] });
+      ctx.updateSlide(ctx.getCurrentIndex(), s);
+      ctx.replaceSlideAt(ctx.getCurrentIndex());
+      renderEditForm(ctx);
+    }
+  );
+
+  addTrackedListener(content, 'click', (event) => {
+    const removePillarBtn = event.target instanceof Element
+      ? event.target.closest('[data-remove-pillar]')
+      : null;
+    if (!removePillarBtn) return;
+    event.preventDefault();
+    const pIdx = Number.parseInt(removePillarBtn.getAttribute('data-remove-pillar') || '', 10);
+    if (Number.isNaN(pIdx)) return;
+    syncQuickEditToJSON(ctx);
+    const s = JSON.parse(JSON.stringify(ctx.getSlides()[ctx.getCurrentIndex()] || {}));
+    if (Array.isArray(s.pillars) && s.pillars.length > 1) {
+      s.pillars.splice(pIdx, 1);
+      ctx.updateSlide(ctx.getCurrentIndex(), s);
+      ctx.replaceSlideAt(ctx.getCurrentIndex());
+      renderEditForm(ctx);
+    }
+  });
 
   addTrackedListener(
     document.getElementById('add-image-btn'),

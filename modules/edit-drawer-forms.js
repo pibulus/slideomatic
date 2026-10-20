@@ -205,6 +205,45 @@ function buildCombinedContentSection(slide, type) {
     fields.push(buildTextareaField('body', bodyValue, 'Body copy'));
   }
 
+  // Pillars cards (editable without touching raw JSON)
+  if (type === 'pillars' && Array.isArray(slide.pillars)) {
+    slide.pillars.forEach((pillar, idx) => {
+      const copyVal = Array.isArray(pillar.copy) ? pillar.copy.join('\n') : (pillar.copy ?? pillar.text ?? pillar.body ?? '');
+      const removeBtn = slide.pillars.length > 1
+        ? `<button type="button" class="edit-drawer__image-remove" data-remove-pillar="${idx}" title="Remove pillar ${idx + 1}" aria-label="Remove pillar ${idx + 1}" style="margin-left: auto;">×</button>`
+        : '';
+      fields.push(`
+        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.18);">
+          <div style="display: flex; align-items: center; margin-bottom: 6px;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface);">Card ${idx + 1}</span>
+            ${removeBtn}
+          </div>
+          ${buildInputField(`pillars.${idx}.title`, pillar.title || '', `Card ${idx + 1} title`)}
+          ${buildTextareaField(`pillars.${idx}.copy`, copyVal, `Card ${idx + 1} copy`)}
+        </div>
+      `);
+    });
+    fields.push(`
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="add-pillar-btn">
+        + Add Card
+      </button>
+    `);
+  }
+
+  // Grid / Gallery item captions (editable without touching raw JSON)
+  if ((type === 'grid' || type === 'gallery') && Array.isArray(slide.items) && slide.items.length > 0) {
+    slide.items.forEach((item, idx) => {
+      const copyVal = Array.isArray(item.copy) ? item.copy.join('\n') : (item.copy || '');
+      fields.push(`
+        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.18);">
+          <span style="display: block; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin-bottom: 6px;">Item ${idx + 1}</span>
+          ${buildInputField(`items.${idx}.label`, item.label || '', `Item ${idx + 1} label`)}
+          ${type === 'gallery' ? buildTextareaField(`items.${idx}.copy`, copyVal, `Item ${idx + 1} copy`) : ''}
+        </div>
+      `);
+    });
+  }
+
   if (fields.length === 0) return '';
 
   return buildAccordion('Content', fields.join(''), { startOpen: true });
@@ -357,12 +396,9 @@ function buildLayoutControl(currentType, currentLayout) {
       </div>
     </div>
     ${layoutSelector}
-    <div class="accordion__group" style="display: flex; gap: 10px;">
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-apply-btn" title="Update this slide with the selected type" style="flex: 1;">
-        Update Slide
-      </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--primary" id="layout-add-btn" title="Add a new slide with the selected type" style="flex: 1;">
-        Add Slide
+    <div class="accordion__group">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="layout-add-btn" title="Add a new slide after this one using this type" style="width: 100%;">
+        + Add New Slide of This Type
       </button>
     </div>
   `;
