@@ -8,6 +8,12 @@
     "shareLabel": "Share the vibes",
     "decks": [
       {
+        "id": "sovereign-passport",
+        "title": "The Sovereign Passport Architecture",
+        "summary": "Zero accounts, zero passwords, zero server surveillance: how TalkType's holofoil Passport Cartridge, PBKDF2/HKDF sync, 4-word keys, and self-email recovery work.",
+        "slides": "sovereign-passport"
+      },
+      {
         "id": "brand-visual",
         "title": "Brand and Visual Presentation",
         "summary": "How to get got. Compressing meaning into symbols. A practical toolkit of mental models to brand and build.",

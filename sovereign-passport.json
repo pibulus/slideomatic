@@ -1,0 +1,182 @@
+[
+  {
+    "type": "title",
+    "eyebrow": "SoftStack Cartridge Architecture",
+    "title": "The Sovereign Passport",
+    "subtitle": "How to sell $39 indie tools with zero accounts, zero passwords, and zero server surveillance.",
+    "font": "grotesk",
+    "media": [
+      {
+        "image": {
+          "src": "images/passport-cartridge-hero.png",
+          "alt": "Holographic Game Boy cartridge and TalkType Passport card with ghost mascot",
+          "aspectRatio": "16 / 9",
+          "objectFit": "cover",
+          "orientation": "landscape"
+        }
+      },
+      {
+        "image": {
+          "src": "images/passport-four-words.png",
+          "alt": "Four cute words unlocking a cryptographic chest",
+          "aspectRatio": "16 / 9",
+          "objectFit": "cover",
+          "orientation": "square"
+        }
+      },
+      {
+        "image": {
+          "src": "images/passport-qr-bridge.png",
+          "alt": "Laptop and phone syncing over QR bridge while cloud server is blindfolded",
+          "aspectRatio": "16 / 9",
+          "objectFit": "cover",
+          "orientation": "landscape"
+        }
+      }
+    ],
+    "notes": "Press E to edit, T to roll themes, or Arrow keys to step through the 4 layers of the Sovereign Passport."
+  },
+  {
+    "type": "split",
+    "badge": "The Problem",
+    "headline": "Why Corporate SaaS Login Walls Kill Soul",
+    "left": {
+      "headline": "The Landlord Model (Bloat)",
+      "body": [
+        "Forces an email + password + OTP wall before you even use the tool.",
+        "Stores user notes in plaintext Postgres tables waiting to be breached.",
+        "Charges $20/mo recurring subscriptions for a glorified scratchpad.",
+        "Treats identity like a government DMV form instead of a toy you own."
+      ]
+    },
+    "right": {
+      "headline": "The Cartridge Model (Sovereign)",
+      "body": [
+        "App works 100% locally on millisecond one — zero sign-up gate.",
+        "Pay once ($39/yr) -> receive a holographic, collectible **Passport Cartridge**.",
+        "One secret unlocks your perks AND derives your encrypted device-sync room.",
+        "The server never knows your name, your email, or a single word you dictated."
+      ]
+    }
+  },
+  {
+    "type": "pillars",
+    "badge": "Architecture",
+    "headline": "Four Layers From One Secret",
+    "body": [
+      "Everything in TalkType's Passport flows deterministically from one root secret."
+    ],
+    "pillars": [
+      {
+        "title": "1. Deterministic Mint",
+        "text": "`licenseIdForCheckout()` HMACs the Square checkout ID so webhook + browser polling race safely without duplicate records."
+      },
+      {
+        "title": "2. Blind Verification",
+        "text": "Server stores only `HMAC(code)` + a 365-day term. Browser holds a signed HS256 JWT (`v:2`) for instant cloud admission."
+      },
+      {
+        "title": "3. PBKDF2 -> HKDF Sync",
+        "text": "100,000 rounds of PBKDF2 + HKDF split your secret into a public `roomId` and a private `AES-GCM-256` key. Relay sees only noise."
+      },
+      {
+        "title": "4. Collectible Soul",
+        "text": "`vaultHash` seeds your procedural moniker (**Mossy Otter**), DiceBear avatar, and 60fps pointer-reactive holofoil skin."
+      }
+    ]
+  },
+  {
+    "type": "standard",
+    "badge": "Layer 1 & 2",
+    "headline": "The Cartridge: What's Actually Stored vs. Derived",
+    "body": [
+      "**Right now in the code**: When you buy or redeem a Passport, you get a personal `TT-XXXX-XXXX-XXXX` code. The server only stores its SHA-256 HMAC (`codeHash`) plus three idempotent buckets: your 1-year term, your Deepgram Nova-3 bank, and your Gemini restyle budget.",
+      "**Shared Promo Words (`supporterPass.js`)**: If you type a shared promo word like `MAESTRO`, the server automatically trades it in for your **own personal `TT-XXXX` code** so everyone who used the promo word doesn't end up in the same sync room!",
+      "**Your Identity (`identityUtils.js`)**: Your `vaultHash` deterministically generates your card persona — e.g. **Mossy Otter** (*\"mossy otter drifts at midnight\"*) + custom holofoil palette."
+    ],
+    "image": {
+      "src": "images/passport-cartridge-hero.png",
+      "alt": "TalkType holographic Passport Cartridge"
+    }
+  },
+  {
+    "type": "standard",
+    "badge": "Layer 3",
+    "headline": "Zero-Knowledge Sync: Why the Relay Is Blindfolded",
+    "body": [
+      "How do your phone and laptop find each other without an account? **`syncCrypto.js`** runs `PBKDF2 (100,000 iterations, SHA-256)` on your Passport secret (+ optional 4-word phrase), then splits that seed via **HKDF** into two mathematically independent keys:",
+      "**1. `softstack:sync:room:v2`** -> Derives the 128-bit `roomId` that the WebSocket/HTTP relay sees.",
+      "**2. `softstack:sync:key:v2`** -> Derives the 256-bit `AES-GCM` key that seals every note (`{ iv, ct }`) before it leaves your browser. Walking backward from `roomId` to your code costs 100k PBKDF2 rounds per guess."
+    ],
+    "image": {
+      "src": "images/passport-qr-bridge.png",
+      "alt": "Zero-knowledge QR bridge between laptop and phone"
+    }
+  },
+  {
+    "type": "standard",
+    "badge": "The 4-Word Dream",
+    "headline": "Four Cute Words vs. Hex Codes: Where We Are & How to Finish It",
+    "body": [
+      "**Reality check**: Right now, TalkType has **two** word systems: `identityUtils.js` makes your card's poetic subtitle (*\"mossy otter drifts at midnight\"*), and `syncPhrase.js` generates a 4-word private room phrase (`neon otter drifts quietly`, `40^4 = 2.56M` combos) to fork a shared sync room.",
+      "**The gap**: Today, the actual unlock code the server checks is still `TT-XXXX-XXXX-XXXX`. You can't type *\"neon otter drifts quietly\"* into the Redeem box to unlock a new browser yet.",
+      "**How to make 4 Cute Words the ACTUAL unlock key**: Map `4 words (+ optional 2-digit number/emoji)` -> `codeHash` on mint (`neon-otter-drifts-82` = ~256M combos). Easy to say out loud, easy to type on a phone, zero hex soup!"
+    ],
+    "image": {
+      "src": "images/passport-four-words.png",
+      "alt": "Four cute words unlocking the Passport chest"
+    }
+  },
+  {
+    "type": "split",
+    "badge": "The Recovery Masterstroke",
+    "headline": "\"Email Me My Passport\" — The 80/20 Missing Link",
+    "left": {
+      "headline": "The Only Real Risk Today",
+      "body": [
+        "Because we don't force an email/password database, what happens when someone buys a new iPhone 6 months later or wipes Safari?",
+        "If they didn't save their `TT-XXXX` code or keep a second device linked, they have no 'Forgot Password' button."
+      ]
+    },
+    "right": {
+      "headline": "The 'Email Me My Passport' Button",
+      "body": [
+        "Add a `[ ✉️ Email me my Passport ]` button right under the holofoil card.",
+        "Sends ONE cute Soft Neo Toybrut HTML email: cream `#fffdf5` card, **Mossy Otter** badge, their 4-word / `TT-XXXX` key, and a giant hot-pink **`[ Unlock My TalkType Passport ]`** magic link.",
+        "We never store their email in a database — their own inbox becomes their permanent, searchable vault!"
+      ]
+    }
+  },
+  {
+    "type": "grid",
+    "badge": "Glossary",
+    "headline": "Four Nouns in the Codebase (Why Your Brain Felt Fuzzy)",
+    "body": [
+      "It evolved across 3 eras, so one system currently wears four hats in the code:"
+    ],
+    "items": [
+      {
+        "color": "#F472B6",
+        "label": "Passport — The user-facing product & holofoil MembershipCard.svelte"
+      },
+      {
+        "color": "#FBBF24",
+        "label": "Supporter — The server JWT & quota tier (isSupporter, licenseStore.js)"
+      },
+      {
+        "color": "#34D399",
+        "label": "Vault — The SHA-256 identity hash & encrypted cloud backup (vaultHash)"
+      },
+      {
+        "color": "#818CF8",
+        "label": "SoftStack Sync — The PBKDF2 + HKDF + AES-GCM live device beam"
+      }
+    ]
+  },
+  {
+    "type": "quote",
+    "badge": "Verdict",
+    "quote": "\"Don't extract an npm package yet. Add 'Email Me My Passport', let 4 cute words unlock the gate, and keep shipping cartridges with soul.\"",
+    "attribution": "TalkType Architecture Audit · Oct 2026"
+  }
+]
