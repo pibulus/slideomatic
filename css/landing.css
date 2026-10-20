@@ -606,25 +606,11 @@ a.button--secondary:hover {
   background: var(--paper);
   box-shadow: var(--shadow-card);
   display: flex;
-  flex-direction: column;
-  gap: clamp(18px, 3vw, 24px);
+  flex-wrap: wrap;
+  gap: clamp(16px, 3vw, 32px);
+  align-items: center;
   position: relative;
   overflow: hidden;
-}
-
-.collection-promo__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: space-between;
-  align-items: flex-end;
-  position: relative;
-  z-index: 1;
-}
-
-.collection-promo__grid {
-  position: relative;
-  z-index: 1;
 }
 
 .collection-promo::after {
