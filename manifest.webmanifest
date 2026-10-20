@@ -1,7 +1,7 @@
 {
   "name": "Slide-o-Matic",
   "short_name": "Slideomatic",
-  "description": "A local-first, voice-powered slideshow builder with lush themes and quick JSON exports.",
+  "description": "A local-first slideshow builder with bold themes, instant sharing, and JSON/PDF exports.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -44,10 +44,10 @@
       "url": "/deck.html#deck=new&open=edit"
     },
     {
-      "name": "Guide Deck",
-      "short_name": "Guide",
-      "description": "Open the Slide-o-Matic guide deck.",
-      "url": "/deck.html#slides=guide"
+      "name": "Welcome Deck",
+      "short_name": "Welcome",
+      "description": "Open the Slide-o-Matic welcome deck.",
+      "url": "/deck.html"
     }
   ]
 }

@@ -229,13 +229,15 @@ export function removeSlideAt(index, options = {}) {
 }
 
 export function replaceSlideAt(index, options = {}) {
-  const { focus = true } = options;
+  const { focus = true, persist = true } = options;
   if (index < 0 || index >= slides.length) return;
 
   const existing = slideElements[index];
   if (!existing || !existing.parentElement) {
     reloadDeck({ targetIndex: index, focus });
-    persistSlides();
+    if (persist) {
+      persistSlides();
+    }
     return;
   }
 
@@ -286,7 +288,9 @@ export function replaceSlideAt(index, options = {}) {
   if (wasActive && !isOverview) {
     updateHud();
   }
-  persistSlides();
+  if (persist) {
+    persistSlides();
+  }
 }
 
 export function downloadDeck(filename) {

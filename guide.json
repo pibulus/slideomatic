@@ -72,8 +72,7 @@
     "headline": "Press **E** and the workbench slides in",
     "body": [
       "The edit drawer is where the deck becomes yours. It uses compact sections instead of a giant control wall.",
-      "**Theme** changes the whole deck mood. **Slide Type** swaps or adds layouts. **Content** edits the words. **Images** handles uploads, replacements, and AI assist. **Actions** covers save, duplicate, delete, JSON, and PDF.",
-      "Most text boxes also have a **Mic** button. Talk messy, get clean prompt text back. It removes the um/uh/like fog before it lands in the field."
+      "**Content** edits the words. **Slide Type** swaps or adds layouts. **Images** handles uploads, replacements, and stock search. **Theme** switches styles (Default, Vaporwave, Slack, Gameboy) or saves your own. **Actions** covers duplicate, delete, JSON, and PDF."
     ]
   },
   {
@@ -103,7 +102,7 @@
     "type": "gallery",
     "badge": "Gallery",
     "headline": "Use pictures when words get tired",
-    "body": "Drag in your own images, paste from the clipboard, or leave an empty image slot and let the AI/image helpers kick in.",
+    "body": "Drag in your own images, paste from the clipboard, or search for free photos right inside the editor.",
     "items": [
       {
         "image": {
@@ -154,7 +153,7 @@
   {
     "type": "image",
     "badge": "Image playground",
-    "caption": "Images can be uploaded, pasted, generated, replaced, or kept local-only until you export a JSON backup.",
+    "caption": "Images can be uploaded, pasted, searched, replaced, or kept local-only until you export a JSON backup.",
     "image": {
       "src": "images/riotgrrl.webp",
       "alt": "Riot grrl collage",
@@ -164,11 +163,11 @@
   {
     "type": "standard",
     "badge": "Themes + tunes",
-    "headline": "Press **T** when the vibe gets stale",
+    "headline": "Press **T** when the look gets stale",
     "body": [
-      "**T** randomizes the deck's look. Some rolls are beautiful. Some are cursed. Both are information.",
-      "Open **Theme** in the edit drawer for presets, saved themes, AI theme prompts, and the SomaFM toggle.",
-      "If a theme almost works, save it before you keep rolling. Future you has enough problems."
+      "**T** shuffles the deck's colors. Keep pressing until something clicks.",
+      "Open **Theme** in the edit drawer to pick a style (Default, Vaporwave, Slack, Gameboy) or save a look you want to keep.",
+      "Need background music while presenting? Hit **R** (or the Radio button) for SomaFM stations."
     ],
     "image": {
       "src": "images/theme-chameleon.webp",
@@ -208,26 +207,12 @@
   },
   {
     "type": "standard",
-    "badge": "AI, optional",
-    "headline": "The AI stuff is there when you want turbo",
-    "body": [
-      "Press **S** to add a Gemini key. The settings modal links straight to Google AI Studio's API key page: create a key, paste it in, save, test.",
-      "Type **kazam** when you are not focused in a text field to open the cheat console. It can generate one slide or a rough starter deck from a prompt.",
-      "Treat AI output like a sketch, not gospel. Keep the useful bits, delete the soggy bits, make it sound like a person."
-    ],
-    "image": {
-      "src": "images/ai-robot-painter.webp",
-      "alt": "Friendly robot painting a slide, made with the same AI image feature"
-    }
-  },
-  {
-    "type": "standard",
     "badge": "Shortcuts",
-    "headline": "The keyboard is optional, but nice",
+    "headline": "The keyboard is optional, but fast",
     "body": [
-      "**E** = edit drawer. **T** = random theme. **O** = overview. **I** = slide index. **N** = speaker notes.",
-      "**D** downloads JSON. **U** uploads JSON. **S** opens settings. **?** shows the full cheat sheet.",
-      "**Shift + Arrow** skips five slides. **Alt/Option + Arrow Right** duplicates the current slide."
+      "**E** = edit drawer. **T** = shuffle theme. **O** = overview grid. **N** = speaker notes. **R** = radio.",
+      "**D** downloads JSON. **U** loads a JSON file. **H** hides the bottom bar. **?** opens the shortcut list.",
+      "Double-click any text on a slide to jump straight into editing that field."
     ]
   },
   {

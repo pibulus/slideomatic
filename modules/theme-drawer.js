@@ -37,6 +37,7 @@ import {
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { clamp } from './utils.js';
 import { getGeminiApiKey } from './voice-modes.js';
+import { persistSlides } from './deck-persistence.js';
 
 // Route Gemini calls through our Netlify proxy so the SHARED app key stays
 // server-side. If the visitor pasted their own key, it's sent as `userKey` and
@@ -170,11 +171,11 @@ function setupThemeSelectDropdown() {
           setCurrentTheme(normalizedTheme, { source: themePath });
         }
         syncThemeSelectUI();
-        showHudStatus('✨ Theme applied', 'success');
+        showHudStatus('✓ Theme applied', 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
         console.error('Failed to apply theme:', error);
-        showHudStatus('🎨 Theme shuffle stumbled. Hit it again', 'error');
+        showHudStatus('Could not load that theme', 'error');
         setTimeout(hideHudStatus, 2000);
       }
     });
@@ -311,7 +312,7 @@ function handleSaveTheme() {
 
     const saved = saveThemeToLibrary(name.trim(), theme);
     if (!saved) {
-      showHudStatus('💾 Theme did not save. Browser storage looks full', 'error');
+      showHudStatus('Could not save theme (storage full)', 'error');
       setTimeout(hideHudStatus, 2400);
       return;
     }
@@ -319,10 +320,10 @@ function handleSaveTheme() {
     populateThemeDropdown();
     syncThemeSelectUI();
 
-    showHudStatus('💾 Theme saved', 'success');
+    showHudStatus('✓ Theme saved', 'success');
     setTimeout(hideHudStatus, 1600);
   } catch (error) {
-    showHudStatus(`🎨 ${error.message}`, 'error');
+    showHudStatus(error.message || 'Could not save theme', 'error');
     setTimeout(hideHudStatus, 2000);
   }
 }
@@ -358,11 +359,12 @@ function handleRandomTheme() {
     const normalizedTheme = applyTheme(theme);
     setCurrentTheme(normalizedTheme, { source: `random:${baseSource}` });
     loadThemeIntoEditor();
+    persistSlides({ silent: true });
 
-    showHudStatus('✨ Random theme applied!', 'success');
-    setTimeout(hideHudStatus, 1600);
+    showHudStatus('✓ Theme shuffled', 'success');
+    setTimeout(hideHudStatus, 1400);
   } catch (error) {
-    showHudStatus(`🎨 ${error.message}`, 'error');
+    showHudStatus(error.message || 'Could not shuffle theme', 'error');
     setTimeout(hideHudStatus, 2000);
   }
 }
@@ -404,13 +406,37 @@ export function populateThemeDropdown() {
 }
 
 export function syncThemeSelectUI() {
+  const currentPath = getCurrentThemePath() || '';
+  const basePath = resolveBaseThemePath(currentPath);
+  const isRandom = currentPath.startsWith('random:');
+
+  const editSelect = document.getElementById('edit-theme-select');
+  if (editSelect) {
+    const editValueSpan = editSelect.querySelector('.custom-select__value');
+    const editOptions = Array.from(editSelect.querySelectorAll('.custom-select__option'));
+    const editMatching = editOptions.find((opt) => {
+      const value = opt.dataset.value || '';
+      if (!value) return false;
+      return value === currentPath || value === basePath || basePath.endsWith(value);
+    });
+    if (editMatching && editValueSpan) {
+      const label = editMatching.querySelector('.custom-select__option-label')?.textContent.trim()
+        || editMatching.textContent.trim();
+      editValueSpan.textContent = isRandom ? `${label} (Shuffled)` : label;
+      editSelect.dataset.value = editMatching.dataset.value || '';
+      editOptions.forEach((opt) => {
+        opt.classList.toggle('is-selected', opt === editMatching);
+      });
+    } else if (editValueSpan) {
+      editValueSpan.textContent = isRandom ? 'Shuffled Theme' : 'Custom Theme';
+      editOptions.forEach((opt) => opt.classList.remove('is-selected'));
+    }
+  }
+
   const trigger = document.getElementById('theme-select-trigger');
   const dropdown = document.getElementById('theme-select-dropdown');
   if (!trigger || !dropdown) return;
 
-  const currentPath = getCurrentThemePath() || '';
-  const basePath = resolveBaseThemePath(currentPath);
-  const isRandom = currentPath.startsWith('random:');
   const valueSpan = trigger.querySelector('.theme-select__value');
   if (!valueSpan) return;
 

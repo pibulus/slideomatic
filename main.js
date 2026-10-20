@@ -52,7 +52,7 @@ import {
   initSlideIndex,
   toggleSlideIndex,
 } from './modules/slide-index.js';
-import { initCheatConsole, openCheatConsole } from './modules/cheat-codes.js';
+import { initCheatConsole } from './modules/cheat-codes.js';
 import {
   loadSlides,
   generateDeckId,
@@ -486,12 +486,28 @@ document.addEventListener('dblclick', (event) => {
 // VOICE FAB: hold to speak, release to get a slide
 // ═══════════════════════════════════════════════════════════════════════
 
+function syncVoiceFabVisibility() {
+  const fab = document.getElementById('voice-fab');
+  if (!fab) return;
+  fab.hidden = !canRecordSpeech() || !getGeminiApiKey();
+}
+
+function handleApiKeyChanged() {
+  syncVoiceFabVisibility();
+  slides.forEach((_, idx) => replaceSlideAt(idx, { focus: false, persist: false }));
+  if (editDrawerInstance?.isOpen) {
+    renderEditForm(getEditDrawerContext());
+  }
+}
+
 function initVoiceFab() {
   const fab = document.getElementById('voice-fab');
   if (!fab) return;
 
+  syncVoiceFabVisibility();
+  window.addEventListener('slideomatic:apikey-changed', handleApiKeyChanged);
+
   if (!canRecordSpeech()) {
-    fab.hidden = true;
     return;
   }
 
@@ -751,13 +767,12 @@ async function initDeckWithTheme() {
     overview: () => toggleOverview(),
     index: () => toggleSlideIndex(),
     theme: () => randomizeTheme(),
+    radio: () => document.getElementById('hud-radio-btn')?.click(),
     hud: () => toggleHudHidden(),
     notes: () => toggleSpeakerNotes(),
     voice: () => toggleVoiceRecording('add'),
-    settings: () => openSettingsModal(),
     download: () => downloadDeck(),
     upload: () => document.getElementById('deck-upload')?.click(),
-    ai: () => openCheatConsole(),
   };
   document.querySelectorAll('[data-hint-action]').forEach((btn) => {
     btn.addEventListener('click', () => {

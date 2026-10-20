@@ -32,21 +32,21 @@
   {
     "type": "pillars",
     "badge": "Three moves",
-    "headline": "Three keys and you're dangerous",
+    "headline": "Three keys and you're rolling",
     "body": "That's the whole learning curve. Press **?** anytime for the rest.",
     "font": "sans",
     "pillars": [
       {
         "title": "E: Edit",
-        "text": "Opens the workbench. Change words, swap images, rearrange."
+        "text": "Opens the workbench. Change words, swap layouts, drop in images, or pick a theme."
       },
       {
         "title": "T: Theme",
-        "text": "Shuffles the vibe. Keep pressing until it feels like you."
+        "text": "Shuffles the colors. Keep pressing until it feels like you."
       },
       {
-        "title": "V: Voice",
-        "text": "Talk, get a slide. The fastest way from brain to screen."
+        "title": "O: Overview",
+        "text": "Zooms out to see every slide at once. Jump anywhere in one click."
       }
     ]
   },

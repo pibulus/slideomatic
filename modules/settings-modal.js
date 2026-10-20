@@ -107,10 +107,11 @@ function saveApiKey() {
   if (key) {
     try {
       localStorage.setItem(STORAGE_KEY_API, key);
-      showApiKeyStatus('success', '✓ API key saved successfully!');
+      window.dispatchEvent(new CustomEvent('slideomatic:apikey-changed'));
+      showApiKeyStatus('success', '✓ API key saved');
     } catch (error) {
       console.warn('Failed to store API key:', error);
-      showApiKeyStatus('error', 'The key did not save. Browser storage looks full, or private mode is on');
+      showApiKeyStatus('error', 'Could not save key. Browser storage may be full or in private mode.');
     }
   } else {
     showApiKeyStatus('error', 'Paste a key first, then hit Save');
@@ -196,9 +197,10 @@ function clearApiKey() {
     clearBtn.textContent = 'Clear Key';
   }
   localStorage.removeItem(STORAGE_KEY_API);
+  window.dispatchEvent(new CustomEvent('slideomatic:apikey-changed'));
   const input = /** @type {HTMLInputElement} */ (document.getElementById('gemini-api-key'));
   if (input) input.value = '';
-  showApiKeyStatus('info', 'Key cleared. Add a new one anytime');
+  showApiKeyStatus('info', 'Key cleared');
 }
 
 function toggleApiKeyVisibility() {

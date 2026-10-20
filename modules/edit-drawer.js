@@ -33,6 +33,19 @@ import {
 import { openImageSearch } from './image-search-ui.js';
 import { setupAccordion } from './accordion.js';
 import { setupCustomSelect } from './custom-select.js';
+import {
+  loadThemeLibrary,
+  applyTheme,
+  setCurrentTheme,
+  getCurrentTheme,
+  saveThemeToLibrary,
+} from './theme-manager.js';
+import {
+  randomizeTheme,
+  syncThemeSelectUI,
+  populateThemeDropdown,
+} from './theme-drawer.js';
+import { persistSlides } from './deck-persistence.js';
 import { exportDeckToPdf } from './pdf-export.js';
 import { CONFIG, debug } from './constants.js';
 import {
@@ -63,8 +76,8 @@ let drawerDictationSession = null;
  */
 function cleanupFormListeners() {
   stopDrawerDictation();
-  activeFormListeners.forEach(({ element, event, handler }) => {
-    element?.removeEventListener(event, handler);
+  activeFormListeners.forEach(({ element, event, handler, options }) => {
+    element?.removeEventListener(event, handler, options);
   });
   activeFormListeners = [];
 
@@ -96,10 +109,10 @@ export function flushPendingEditDrawerWork(context) {
 /**
  * Register an event listener for cleanup tracking
  */
-function addTrackedListener(element, event, handler) {
+function addTrackedListener(element, event, handler, options) {
   if (!element) return;
-  element.addEventListener(event, handler);
-  activeFormListeners.push({ element, event, handler });
+  element.addEventListener(event, handler, options);
+  activeFormListeners.push({ element, event, handler, options });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -561,7 +574,7 @@ function handleImageAdd(context) {
   ctx.replaceSlideAt(currentIndex);
   renderEditForm(ctx);
 
-  ctx.showHudStatus('📷 Empty image added - name it or drag & drop!', 'success');
+  ctx.showHudStatus('📷 Image slot added', 'success');
   setTimeout(() => ctx.hideHudStatus(), 2000);
 }
 
@@ -780,6 +793,14 @@ export function renderEditForm(context) {
   // Clean up all existing event listeners before re-rendering
   cleanupFormListeners();
 
+  // Preserve open/closed state of existing accordions across re-renders
+  const existingAccordions = content.querySelectorAll('.accordion');
+  const hadAccordions = existingAccordions.length > 0;
+  const openTitles = new Set(
+    Array.from(content.querySelectorAll('.accordion.is-open .accordion__title'))
+      .map((el) => el.textContent.trim())
+  );
+
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
   const currentSlide = slides[currentIndex];
@@ -798,6 +819,13 @@ export function renderEditForm(context) {
     </form>
   `;
 
+  if (hadAccordions) {
+    content.querySelectorAll('.accordion').forEach((acc) => {
+      const title = acc.querySelector('.accordion__title')?.textContent.trim() || '';
+      acc.classList.toggle('is-open', openTitles.has(title));
+    });
+  }
+
   // Setup auto-expanding textareas
   setupTextareaExpansion();
   setupDictationButtons(ctx);
@@ -807,6 +835,73 @@ export function renderEditForm(context) {
 
   // Setup custom selects
   setupCustomSelect(content, { addTrackedListener });
+
+  // Setup theme picker & buttons inside edit drawer
+  const themeSelect = document.getElementById('edit-theme-select');
+  if (themeSelect) {
+    addTrackedListener(themeSelect, 'customSelectChange', async (e) => {
+      const themePath = e.detail.value;
+      try {
+        if (themePath.startsWith('saved:')) {
+          const savedName = themePath.replace('saved:', '');
+          const library = loadThemeLibrary();
+          const entry = library.find((item) => item.name === savedName);
+          if (entry) {
+            const normalizedTheme = applyTheme(entry.theme);
+            setCurrentTheme(normalizedTheme, { source: themePath });
+          }
+        } else {
+          const response = await fetch(themePath, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
+          const theme = await response.json();
+          const normalizedTheme = applyTheme(theme);
+          setCurrentTheme(normalizedTheme, { source: themePath });
+        }
+        syncThemeSelectUI();
+        persistSlides({ silent: true });
+        ctx.showHudStatus('✓ Theme applied', 'success');
+        setTimeout(() => ctx.hideHudStatus(), 1600);
+      } catch (error) {
+        console.error('Failed to apply theme:', error);
+        ctx.showHudStatus('Could not load that theme', 'error');
+        setTimeout(() => ctx.hideHudStatus(), 2000);
+      }
+    });
+  }
+
+  addTrackedListener(
+    document.getElementById('theme-random-btn-inline'),
+    'click',
+    () => randomizeTheme()
+  );
+
+  addTrackedListener(
+    document.getElementById('theme-save-btn-inline'),
+    'click',
+    () => {
+      try {
+        const theme = getCurrentTheme();
+        const name = window.prompt('Name this theme:', '');
+        if (!name || !name.trim()) return;
+        const trimmedName = name.trim();
+        const saved = saveThemeToLibrary(trimmedName, theme);
+        if (!saved) {
+          ctx.showHudStatus('Could not save theme (storage full)', 'error');
+          setTimeout(() => ctx.hideHudStatus(), 2400);
+          return;
+        }
+        setCurrentTheme(theme, { source: `saved:${trimmedName}` });
+        populateThemeDropdown();
+        syncThemeSelectUI();
+        persistSlides({ silent: true });
+        renderEditForm(ctx);
+        ctx.showHudStatus('✓ Theme saved', 'success');
+        setTimeout(() => ctx.hideHudStatus(), 1600);
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
+    }
+  );
 
 
   // Register all button click handlers with cleanup tracking
@@ -895,19 +990,10 @@ export function renderEditForm(context) {
     // Actually, let's keep the click listener specific to the empty state dropzone if it exists
     const emptyDropzone = dropzone.querySelector('.edit-drawer__image-dropzone');
     if (emptyDropzone) {
-        addTrackedListener(emptyDropzone, 'click', (event) => {
-            event.preventDefault();
-            picker.click();
-        });
-    }
-
-    // Also attach to the add button if it exists
-    const addBtn = document.getElementById('add-image-btn');
-    if (addBtn) {
-        addTrackedListener(addBtn, 'click', (event) => {
-            event.preventDefault();
-            picker.click();
-        });
+      addTrackedListener(emptyDropzone, 'click', (event) => {
+        event.preventDefault();
+        picker.click();
+      });
     }
 
     addTrackedListener(dropzone, 'dragover', (event) => {

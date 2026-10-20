@@ -61,8 +61,13 @@ export function setupCustomSelect(container, options = {}) {
       }
     };
 
-    window.addEventListener('resize', repositionWhileOpen);
-    window.addEventListener('scroll', repositionWhileOpen, true);
+    // Setup listeners using tracked listener if available
+    const addEventListener = addTrackedListener || ((el, event, handler, opts) => {
+      if (el) el.addEventListener(event, handler, opts);
+    });
+
+    addEventListener(window, 'resize', repositionWhileOpen);
+    addEventListener(window, 'scroll', repositionWhileOpen, true);
 
     const closeDropdown = () => {
       if (!isOpen) return;
@@ -136,11 +141,6 @@ export function setupCustomSelect(container, options = {}) {
       });
       select.dispatchEvent(changeEvent);
     };
-
-    // Setup listeners using tracked listener if available
-    const addEventListener = addTrackedListener || ((el, event, handler) => {
-      if (el) el.addEventListener(event, handler);
-    });
 
     const handleTriggerKeydown = (event) => {
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {

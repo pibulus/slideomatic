@@ -9,6 +9,7 @@
 
 import { escapeHtml } from './utils.js';
 import { buildImageManager } from './slide-image-ui.js';
+import { loadThemeLibrary, getCurrentThemePath } from './theme-manager.js';
 
 export const LAYOUT_OPTIONS = [
   { value: 'title', label: 'Title', description: 'Hero intro' },
@@ -135,12 +136,11 @@ const SPLIT_LAYOUT_OPTIONS = [
 
 export function buildMainSections(slide) {
   const type = slide.type || 'standard';
-  // Content first — it's the actual job. Theme is deck-level dressing and
-  // was burying the fields below the fold on mobile.
   const sections = [
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildLayoutControl(type, slide.layout),
     buildImagesSection(slide),
+    buildThemeSection(),
   ].filter(Boolean);
   return sections.join('');
 }
@@ -396,6 +396,75 @@ function buildSplitContentSection(slide) {
   `;
 
   return buildAccordion('Split Content', content, { startOpen: true });
+}
+
+function resolveBaseThemeValue(source = '') {
+  let value = (source || '').trim();
+  while (value.startsWith('random:')) {
+    value = value.slice(7).trim();
+  }
+  return value.replace(/^\/+/, '');
+}
+
+function buildThemeSection() {
+  const library = loadThemeLibrary();
+  const rawPath = getCurrentThemePath() || 'theme.json';
+  const basePath = resolveBaseThemeValue(rawPath);
+  const isRandom = rawPath.startsWith('random:');
+
+  const defaultThemes = [
+    { value: 'theme.json', label: 'Default' },
+    { value: 'themes/vaporwave.json', label: 'Vaporwave' },
+    { value: 'themes/slack.json', label: 'Slack' },
+    { value: 'themes/gameboy.json', label: 'Gameboy' },
+  ];
+
+  const savedThemes = library.map((entry) => ({
+    value: `saved:${entry.name}`,
+    label: `★ ${entry.name}`,
+  }));
+
+  const allThemes = [...defaultThemes, ...savedThemes];
+  const matchedTheme = allThemes.find((t) => basePath === t.value || basePath.endsWith(t.value));
+  const currentTheme = matchedTheme || {
+    value: basePath || 'theme.json',
+    label: isRandom ? 'Shuffled Theme' : 'Custom Theme',
+  };
+  const displayLabel = matchedTheme && isRandom ? `${currentTheme.label} (Shuffled)` : currentTheme.label;
+
+  const themeOptions = allThemes.map(({ value, label }) => {
+    const isSelected = matchedTheme?.value === value ? 'is-selected' : '';
+    return `
+      <button type="button" class="custom-select__option ${isSelected}" data-value="${escapeHtml(value)}">
+        <span class="custom-select__option-label">${escapeHtml(label)}</span>
+      </button>
+    `;
+  }).join('');
+
+  const content = `
+    <div class="accordion__group">
+      <label class="edit-drawer__label">Style</label>
+      <div class="custom-select" id="edit-theme-select" data-value="${escapeHtml(currentTheme.value)}">
+        <button type="button" class="custom-select__trigger">
+          <span class="custom-select__value">${escapeHtml(displayLabel)}</span>
+          <span class="custom-select__arrow">▼</span>
+        </button>
+        <div class="custom-select__dropdown">
+          ${themeOptions}
+        </div>
+      </div>
+    </div>
+    <div class="accordion__group" style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Shuffle colors within this style (T)" style="flex: 1;">
+        Shuffle (T)
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current look to your browser" style="flex: 1;">
+        Save Theme
+      </button>
+    </div>
+  `;
+
+  return buildAccordion('Theme', content, { modifier: ' accordion--theme', startOpen: false });
 }
 
 

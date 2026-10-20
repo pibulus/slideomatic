@@ -166,7 +166,7 @@
             <form class="settings-field" onsubmit="event.preventDefault();">
               <label class="settings-field__label" for="gemini-api-key">
                 Gemini API Key
-                <span class="settings-field__hint">Optional — AI features work out of the box on the shared key; add your own for your own quota</span>
+                <span class="settings-field__hint">Unlocks voice dictation, slide generation, and image helpers — stored locally in your browser</span>
               </label>
               <div class="settings-field__input-group">
                 <input
@@ -230,17 +230,7 @@
             </div>
             <button type="button" class="hint-item hint-item--action" data-hint-action="edit">
               <div class="hint-item__key">E</div>
-              <div class="hint-item__desc">Edit or add slides</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="ai">
-              <div class="hint-item__key">KAZAM</div>
-              <div class="hint-item__desc">AI console: talk a deck into being</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
-              <div class="hint-item__key">O</div>
-              <div class="hint-item__desc">See all slides</div>
+              <div class="hint-item__desc">Edit slide or theme</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="theme">
@@ -248,9 +238,14 @@
               <div class="hint-item__desc">Shuffle the theme</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
-            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice">
+            <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
+              <div class="hint-item__key">O</div>
+              <div class="hint-item__desc">Overview grid</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
+            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice" hidden>
               <div class="hint-item__key">V</div>
-              <div class="hint-item__desc">Voice-to-slide</div>
+              <div class="hint-item__desc">Speak a slide</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="notes">
@@ -258,19 +253,19 @@
               <div class="hint-item__desc">Speaker notes</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
+            <button type="button" class="hint-item hint-item--action" data-hint-action="radio">
+              <div class="hint-item__key">R</div>
+              <div class="hint-item__desc">Toggle radio</div>
+              <span class="hint-item__go" aria-hidden="true">→</span>
+            </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
               <div class="hint-item__key">H</div>
               <div class="hint-item__desc">Hide/show nav bar</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="settings">
-              <div class="hint-item__key">S</div>
-              <div class="hint-item__desc">Settings + API key</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="download">
               <div class="hint-item__key">D</div>
-              <div class="hint-item__desc">Download deck backup</div>
+              <div class="hint-item__desc">Download JSON backup</div>
               <span class="hint-item__go" aria-hidden="true">→</span>
             </button>
             <button type="button" class="hint-item hint-item--action" data-hint-action="upload">
@@ -390,7 +385,7 @@
           </button>
         </div>
       </footer>
-      <button type="button" class="voice-fab" id="voice-fab" aria-label="Hold to speak a slide (or press V)" title="Hold to speak a slide (V)">
+      <button type="button" class="voice-fab" id="voice-fab" aria-label="Hold to speak a slide (or press V)" title="Hold to speak a slide (V)" hidden>
         <span class="voice-fab__icon" aria-hidden="true">🎙️</span>
       </button>
     </div>

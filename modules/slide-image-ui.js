@@ -145,8 +145,8 @@ function buildImageManager(slide) {
               class="edit-drawer__image-alt-input"
               data-image-index="${index}"
               value="${escapeHtml(altText)}"
-              placeholder="${isEmpty ? 'Describe the image' : 'Image name'}"
-              title="${isEmpty ? 'Describes the image — also unlocks AI generation' : 'Image name/alt text'}"
+              placeholder="${isEmpty ? 'Describe the image' : 'Image caption / alt text'}"
+              title="${isEmpty ? 'Describe the image to search for a match' : 'Image caption / alt text'}"
               aria-label="Image ${index + 1} description"
             />
             ${!isEmpty ? `<span class="edit-drawer__image-filename">${escapeHtml(displayName)}</span>` : ''}
@@ -236,29 +236,6 @@ function setupImageReplaceButtons({ root, onReplace, addTrackedListener }) {
   };
 
   addTrackedListener(root, 'click', handleReplace);
-}
-
-/**
- * Setup AI buttons using event delegation
- * @param {Object} params - Configuration object
- * @param {HTMLElement} params.root - Container element
- * @param {Function} params.onAI - Callback function
- * @param {Function} params.addTrackedListener - Listener tracking function from edit-drawer
- */
-function setupImageAIButtons({ root, onAI, addTrackedListener }) {
-  if (!root || !addTrackedListener) return;
-
-  const handleAI = (event) => {
-    const button = event.target.closest('.edit-drawer__image-ai');
-    if (!button) return;
-
-    event.preventDefault();
-    const index = Number.parseInt(button.dataset.imageIndex, 10);
-    if (Number.isNaN(index)) return;
-    onAI?.(index);
-  };
-
-  addTrackedListener(root, 'click', handleAI);
 }
 
 /**
@@ -457,7 +434,6 @@ export {
   buildImageManager,
   setupImageRemoveButtons,
   setupImageReplaceButtons,
-  setupImageAIButtons,
   setupImageSearchButtons,
   setupImageMoveButtons,
   setupImageDragReorder,

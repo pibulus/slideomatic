@@ -127,7 +127,7 @@ function wireControls() {
     } catch (error) {
       console.error('Failed to start radio', error);
       const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus('📻 The radio got shy. Give it another tap', 'info');
+      showHudStatus('Could not start radio stream. Try again.', 'info');
       setTimeout(hideHudStatus, 2200);
       state.enabled = false;
       updateVisualState(false);

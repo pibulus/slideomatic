@@ -241,32 +241,35 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
 
     wrapper.appendChild(placeholder);
 
-    // Magic button appears once there's a description (or always enabled for custom handlers)
-    const aiBtn = document.createElement('button');
-    aiBtn.type = 'button';
-    aiBtn.className = 'image-placeholder__magic-btn';
-    aiBtn.textContent = isGraphContext ? '📊' : '🪄';
-    aiBtn.title = isGraphContext
-        ? 'Generate chart with AI'
-        : trimmedQuery ? 'Generate image with AI' : 'Add a description to unlock AI assist';
-    aiBtn.setAttribute('aria-label', aiBtn.title);
+    // Magic button appears only when an API key is configured (or always enabled for custom handlers)
+    const hasAiKey = Boolean(localStorage.getItem('slideomatic_gemini_api_key'));
     const magicAlwaysEnabled = isGraphContext || Boolean(customMagicHandler);
-    aiBtn.disabled = !trimmedQuery && !magicAlwaysEnabled;
+    if (hasAiKey || magicAlwaysEnabled) {
+        const aiBtn = document.createElement('button');
+        aiBtn.type = 'button';
+        aiBtn.className = 'image-placeholder__magic-btn';
+        aiBtn.textContent = isGraphContext ? '📊' : '🪄';
+        aiBtn.title = isGraphContext
+            ? 'Generate chart'
+            : trimmedQuery ? 'Generate image' : 'Add a description to generate image';
+        aiBtn.setAttribute('aria-label', aiBtn.title);
+        aiBtn.disabled = !trimmedQuery && !magicAlwaysEnabled;
 
-    const aiClickHandler = async (event) => {
-        if (aiBtn.disabled) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (customMagicHandler) {
-            await customMagicHandler({ placeholder, image, button: aiBtn });
-            return;
-        }
-        await askAIForImage(placeholder, image);
-    };
-    aiBtn.addEventListener('click', aiClickHandler);
-    listeners.push({ element: aiBtn, event: 'click', handler: aiClickHandler });
+        const aiClickHandler = async (event) => {
+            if (aiBtn.disabled) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (customMagicHandler) {
+                await customMagicHandler({ placeholder, image, button: aiBtn });
+                return;
+            }
+            await askAIForImage(placeholder, image);
+        };
+        aiBtn.addEventListener('click', aiClickHandler);
+        listeners.push({ element: aiBtn, event: 'click', handler: aiClickHandler });
 
-    wrapper.appendChild(aiBtn);
+        wrapper.appendChild(aiBtn);
+    }
 
     // Store reference on wrapper
     /** @type {any} */ (wrapper)._imageRef = image;

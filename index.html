@@ -92,8 +92,8 @@
             <div class="start-deck__grid">
               <button class="start-card start-card--guide" type="button" data-action="open-demo">
                 <span class="start-card__kicker">Start here</span>
-                <span class="start-card__name">Tour the guide</span>
-                <span class="start-card__desc">A quick walkthrough of editing, themes, sharing, and shortcuts.</span>
+                <span class="start-card__name">Open welcome deck</span>
+                <span class="start-card__desc">Five slides that show how it works. Flip through or edit right over it.</span>
               </button>
 
               <a class="start-card start-card--blank" href="deck.html#deck=new&open=edit">
@@ -143,8 +143,8 @@
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
           <li class="deck-shelf__empty" id="deck-shelf-empty">
-            <p>No decks yet</p>
-            <p class="deck-shelf__empty-hint">Start with the guide or a blank deck above.</p>
+            <p>No saved decks yet</p>
+            <p class="deck-shelf__empty-hint">Open the welcome deck or start blank above.</p>
           </li>
         </ul>
       </section>
@@ -191,12 +191,11 @@
         </p>
 
         <ul class="about-modal__list">
-          <li>Keyboard flow: press ? anytime for the full shortcut cheat sheet.</li>
-          <li>Lush themes + layouts you can swap mid-deck without wrecking alignment.</li>
-          <li>Local-first saves: everything lives on your device, not mine.</li>
+          <li>Keyboard flow: press ? anytime for the shortcut cheat sheet.</li>
+          <li>Themes and layouts you can swap mid-deck without breaking alignment.</li>
+          <li>Local-first saves: everything lives in your browser, not on a server.</li>
           <li>Works on whatever’s in your bag: phone, tablet, laptop.</li>
-          <li>JSON exports so you can remix/share without vendor lock-in.</li>
-          <li>Bring your own key and it’ll draft slides, images, and charts for you.</li>
+          <li>JSON and PDF exports so you can back up or share without lock-in.</li>
         </ul>
 
         <p class="about-modal__footer">
@@ -370,7 +369,7 @@
 
       function bindDemoButton() {
         demoButton?.addEventListener('click', () => {
-          window.location.href = 'deck.html#slides=guide';
+          window.location.href = 'deck.html';
         });
       }
 
