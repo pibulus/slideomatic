@@ -120,6 +120,9 @@ export function setNewDeckRequest(flag) {
 
 export function setEditDrawerOpen(state) {
   isEditDrawerOpen = state;
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.toggle('is-drawer-open', Boolean(state));
+  }
 }
 
 export function setEditDrawerInstance(instance) {

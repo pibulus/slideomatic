@@ -71,11 +71,11 @@
   }
   
   /* Handle specific slide types */
-  .slide--split {
+  .slide--split .slide__content {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 20px !important;
-    align-items: center !important;
+    align-items: start !important;
   }
 
   .slide--quote blockquote {

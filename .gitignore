@@ -14,7 +14,8 @@ yarn-error.log*
 exports/
 
 # Local-only assets: raw moodboard material + QA screenshot deck images
-branding/
+branding/*
+!branding/index.html
 images/screenshots/
 
 # Tooling junk

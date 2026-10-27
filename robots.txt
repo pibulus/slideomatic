@@ -3,5 +3,8 @@ Allow: /
 Disallow: /admin.html
 Disallow: /admin
 Disallow: /.netlify/
+Disallow: /s/
+Disallow: /*?share=
+Disallow: /*?data=
 
 Sitemap: https://slideomatic.app/sitemap.xml

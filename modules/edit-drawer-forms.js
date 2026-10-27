@@ -419,6 +419,7 @@ function buildSplitContentSection(slide) {
   const right = slide.right || {};
 
   const content = `
+    ${buildInputField('headline', slide.headline || '', 'Slide Headline')}
     <div class="accordion__group">
       <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Left Column</p>
       ${buildInputField('left.headline', left.headline || '', 'Headline')}
@@ -427,7 +428,7 @@ function buildSplitContentSection(slide) {
     <div class="accordion__group">
       <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Right Column</p>
       ${buildInputField('right.headline', right.headline || '', 'Headline')}
-      ${buildTextareaField('right.body', Array.isArray(right.body) ? right.body.join('\n') : (right.body || ''), 'Body copy')}
+      ${buildTextareaField('right.body', Array.isArray(right.body) ? left.body !== undefined && Array.isArray(right.body) ? right.body.join('\n') : right.body.join('\n') : (right.body || ''), 'Body copy')}
     </div>
   `;
 

@@ -17,6 +17,8 @@
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://slideomatic.app/" />
+    <link rel="alternate" hreflang="en" href="https://slideomatic.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://slideomatic.app/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -27,6 +29,7 @@
     <meta property="og:description" content="A simple way to make a slideshow and share it. A title, an image, a few words, it stays out of the way and the link's ready when you are. No login, nothing to install." />
     <meta property="og:image" content="https://slideomatic.app/og-image.jpg" />
     <meta property="og:image:secure_url" content="https://slideomatic.app/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Slide-o-Matic logo art with the line Slideshows that don't suck." />
@@ -49,21 +52,64 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Slide-o-Matic",
-        "url": "https://slideomatic.app/",
-        "description": "A simple way to make a slideshow and share it. Edit in the browser, save locally, and export JSON or PDF when you want it elsewhere. No login, nothing to install.",
-        "applicationCategory": "PresentationApplication",
-        "operatingSystem": "Any",
-        "creator": {
-          "@type": "Person",
-          "name": "Pablo"
-        },
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://slideomatic.app/#website",
+            "url": "https://slideomatic.app/",
+            "name": "Slide-o-Matic",
+            "description": "Local-first browser slideshow builder with Neo-Toybrut themes, keyboard stage mode, and instant share links.",
+            "inLanguage": "en-AU"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://slideomatic.app/#app",
+            "name": "Slide-o-Matic",
+            "alternateName": "Slideomatic",
+            "url": "https://slideomatic.app/",
+            "description": "A simple way to make a slideshow and share it. Edit in the browser, save locally, and export JSON or PDF when you want it elsewhere. No login, nothing to install.",
+            "applicationCategory": "PresentationApplication",
+            "applicationSubCategory": "Slide Deck Builder",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires a modern web browser with JavaScript and LocalStorage enabled.",
+            "isAccessibleForFree": true,
+            "inLanguage": "en-AU",
+            "image": "https://slideomatic.app/og-image.jpg",
+            "screenshot": "https://slideomatic.app/og-image.jpg",
+            "featureList": [
+              "Nine purpose-built slide layouts: title, standard, quote, split, grid, pillars, gallery, graph, image, and typeface specimen",
+              "Voice-to-slide and voice-to-theme studio for spoken or typed deck and palette generation",
+              "Swap Neo-Toybrut CSS themes mid-deck without breaking alignment",
+              "Keyboard-driven stage mode with fullscreen presentation, speaker notes drawer, and slide overview grid",
+              "Built-in SomaFM internet radio dock for live workshops and classrooms",
+              "Local-first browser storage with zero sign-up and zero cloud lock-in",
+              "Instant hosted share links plus portable JSON and print-ready PDF exports"
+            ],
+            "creator": {
+              "@type": "Person",
+              "name": "Pablo",
+              "url": "https://github.com/pibulus"
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": "https://slideomatic.app/#breadcrumb",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Slide-o-Matic",
+                "item": "https://slideomatic.app/"
+              }
+            ]
+          }
+        ]
       }
     </script>
 
@@ -143,7 +189,7 @@
           <p class="collection-promo__subtitle">A couple of ready-made decks to poke around in. Open one, take it apart, keep what works.</p>
         </div>
         <div class="collection-promo__actions">
-          <a class="button button--secondary" href="collections.html?collection=design-starter-pack">Check out the decks</a>
+          <a class="button button--secondary" href="/collections">Check out the decks</a>
         </div>
       </section>
 
@@ -189,6 +235,8 @@
         </p>
         <div class="landing__footer-buttons">
           <button class="link-button" type="button" data-about-open>More about this project</button>
+          <a class="link-button" href="/collections">Deck collections</a>
+          <a class="link-button" href="/branding/">How to Get Got pack</a>
           <a class="link-button link-button--kofi" href="https://ko-fi.com/madebypablo" target="_blank" rel="noopener">☕ Shout me a coffee</a>
         </div>
       </div>

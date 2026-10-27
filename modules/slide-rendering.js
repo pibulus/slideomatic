@@ -351,6 +351,12 @@ export function renderSplitSlide(section, slide) {
         section.classList.add(`slide--split--${variant}`);
     });
 
+    if (slide.headline) {
+        const headline = document.createElement('h2');
+        setRichContent(headline, slide.headline);
+        section.appendChild(headline);
+    }
+
     const leftColumn = document.createElement('div');
     leftColumn.className = 'slide__column slide__column--left';
     const rightColumn = document.createElement('div');

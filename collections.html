@@ -13,15 +13,18 @@
     <meta name="description" content="Browse shareable Slide-o-Matic deck packs and starter resources. Open a deck, remix it, or keep the collection link handy.">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <link rel="canonical" href="https://slideomatic.app/collections">
+    <link rel="alternate" hreflang="en" href="https://slideomatic.app/collections">
+    <link rel="alternate" hreflang="x-default" href="https://slideomatic.app/collections">
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Slide-o-Matic" />
     <meta property="og:locale" content="en_AU" />
     <meta property="og:url" content="https://slideomatic.app/collections" />
-    <meta property="og:title" content="Slide-o-Matic Deck Collection" />
+    <meta property="og:title" content="Slide-o-Matic Deck Collections" />
     <meta property="og:description" content="Browse shareable Slide-o-Matic deck packs and starter resources. Open a deck, remix it, or keep the collection link handy." />
     <meta property="og:image" content="https://slideomatic.app/og-image.jpg" />
     <meta property="og:image:secure_url" content="https://slideomatic.app/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Slide-o-Matic logo art with the line Slideshows that don't suck." />
@@ -29,7 +32,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:domain" content="slideomatic.app" />
     <meta name="twitter:url" content="https://slideomatic.app/collections" />
-    <meta name="twitter:title" content="Slide-o-Matic Deck Collection" />
+    <meta name="twitter:title" content="Slide-o-Matic Deck Collections" />
     <meta name="twitter:description" content="Browse shareable Slide-o-Matic deck packs and starter resources. Open a deck, remix it, or keep the collection link handy." />
     <meta name="twitter:image" content="https://slideomatic.app/og-image.jpg" />
     <meta name="twitter:image:alt" content="Slide-o-Matic logo art with the line Slideshows that don't suck." />
@@ -38,18 +41,108 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "CollectionPage",
+            "@id": "https://slideomatic.app/collections#page",
+            "url": "https://slideomatic.app/collections",
+            "name": "Slide-o-Matic Deck Collections",
+            "description": "Browse shareable Slide-o-Matic deck packs and starter resources. Open a deck, remix it, or keep the collection link handy.",
+            "inLanguage": "en-AU",
+            "isPartOf": {
+              "@id": "https://slideomatic.app/#website"
+            },
+            "mainEntity": {
+              "@id": "https://slideomatic.app/collections#deck-list"
+            }
+          },
+          {
+            "@type": "ItemList",
+            "@id": "https://slideomatic.app/collections#deck-list",
+            "name": "Design Starter Pack — Slide-o-Matic Decks",
+            "numberOfItems": 4,
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "item": {
+                  "@type": "CreativeWork",
+                  "name": "The Sovereign Passport Architecture",
+                  "description": "Why one key should unlock the whole neighborhood.",
+                  "url": "https://slideomatic.app/deck.html#slides=passport-deck.json"
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "item": {
+                  "@type": "CreativeWork",
+                  "name": "How To Get Got - Branding 101",
+                  "description": "Quick primer on telling your story so people remember it without turning into a walking ad.",
+                  "url": "https://slideomatic.app/s/k3m9x2p4"
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "item": {
+                  "@type": "CreativeWork",
+                  "name": "Show, Don't Tell - Visual Identity",
+                  "description": "Simple ways to pick colors, type, and layout motifs that feel like you everywhere you post.",
+                  "url": "https://slideomatic.app/s/r7n4w8q1"
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "item": {
+                  "@type": "CreativeWork",
+                  "name": "Getting Heard - Promo Without Being Gross",
+                  "description": "Lightweight launch checklists, DM templates, and promo rhythms that respect your audience.",
+                  "url": "https://slideomatic.app/s/v2b6j5t9"
+                }
+              }
+            ]
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": "https://slideomatic.app/collections#breadcrumb",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Slide-o-Matic",
+                "item": "https://slideomatic.app/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Deck Collections",
+                "item": "https://slideomatic.app/collections"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
     <link rel="stylesheet" href="css/landing.css">
     <link rel="stylesheet" href="css/collections.css">
+    <script defer src="https://fleetcount.pibulus.deno.net/beacon.js" data-site="slideomatic.app"></script>
   </head>
   <body>
     <main class="collections">
       <header class="collections__hero">
         <div class="collections__hero-content">
-          <a class="link-button" href="index.html">← Back to Slide-o-Matic</a>
-          <p class="collections__eyebrow" data-collection-eyebrow>Classroom pack</p>
-          <h1 class="collections__title" data-collection-title>Deck collection</h1>
-          <p class="collections__tagline" data-collection-tagline></p>
-          <p class="collections__description" data-collection-description></p>
+          <a class="link-button" href="/">← Back to Slide-o-Matic</a>
+          <p class="collections__eyebrow" data-collection-eyebrow>Shared pack</p>
+          <h1 class="collections__title" data-collection-title>Design Starter</h1>
+          <p class="collections__tagline" data-collection-tagline>Some stuff I threw together on branding, visuals, and getting your work out there.</p>
+          <p class="collections__description" data-collection-description>Three decks from a design series I've been putting together. Take what's useful, ignore the rest, or remix the whole thing in Slide-o-Matic.</p>
           <div class="collections__actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="button button--primary" type="button" data-copy-link style="flex: 1;">Copy share link</button>
             <span class="collections__copy-status" data-copy-status>Link copied</span>
@@ -61,13 +154,65 @@
 
       <section class="collections__group" id="collection">
         <header class="collections__group-header">
-          <h2 data-group-title>Deck bundle</h2>
+          <h2 data-group-title>4 decks in this pack</h2>
           <p data-group-description>Ready-to-share decks from Slide-o-Matic.</p>
         </header>
-        <ul class="collections__deck-list" data-deck-list></ul>
+        <ul class="collections__deck-list" data-deck-list>
+          <li class="collection-card">
+            <div class="collection-card__body">
+              <h3 class="collection-card__title">The Sovereign Passport Architecture</h3>
+              <p class="collection-card__summary">Why one key should unlock the whole neighborhood.</p>
+            </div>
+            <div class="collection-card__actions">
+              <a class="button button--secondary" href="deck.html#slides=passport-deck.json" target="_blank" rel="noopener">View Manifesto</a>
+            </div>
+          </li>
+          <li class="collection-card">
+            <div class="collection-card__body">
+              <h3 class="collection-card__title">How To Get Got - Branding 101</h3>
+              <p class="collection-card__summary">Quick primer on telling your story so people remember it without turning into a walking ad.</p>
+            </div>
+            <div class="collection-card__actions">
+              <a class="button button--secondary" href="/s/k3m9x2p4" target="_blank" rel="noopener">Open deck</a>
+            </div>
+          </li>
+          <li class="collection-card">
+            <div class="collection-card__body">
+              <h3 class="collection-card__title">Show, Don't Tell - Visual Identity</h3>
+              <p class="collection-card__summary">Simple ways to pick colors, type, and layout motifs that feel like you everywhere you post.</p>
+            </div>
+            <div class="collection-card__actions">
+              <a class="button button--secondary" href="/s/r7n4w8q1" target="_blank" rel="noopener">Open deck</a>
+            </div>
+          </li>
+          <li class="collection-card">
+            <div class="collection-card__body">
+              <h3 class="collection-card__title">Getting Heard - Promo Without Being Gross</h3>
+              <p class="collection-card__summary">Lightweight launch checklists, DM templates, and promo rhythms that respect your audience.</p>
+            </div>
+            <div class="collection-card__actions">
+              <a class="button button--secondary" href="/s/v2b6j5t9" target="_blank" rel="noopener">Open deck</a>
+            </div>
+          </li>
+        </ul>
         <p class="collections__empty" data-empty-message hidden>More decks coming soon.</p>
       </section>
     </main>
+
+    <footer class="landing__footer">
+      <div class="landing__footer-about">
+        <strong>Slide-o-Matic</strong>
+        <p>
+          Made by <a href="https://github.com/pibulus" target="_blank" rel="noopener">Pablo</a> • with ❤️ and ☕ • Brunswick, Melbourne.
+        </p>
+        <div class="landing__footer-buttons">
+          <a class="link-button" href="/">Launch Slide-o-Matic</a>
+          <a class="link-button" href="/branding/">How to Get Got pack</a>
+          <a class="link-button" href="https://talktype.app" target="_blank" rel="noopener">TalkType voice dictation</a>
+          <a class="link-button link-button--kofi" href="https://ko-fi.com/madebypablo" target="_blank" rel="noopener">☕ Shout me a coffee</a>
+        </div>
+      </div>
+    </footer>
 
     <script type="module" src="modules/pwa.js"></script>
     <script type="module">

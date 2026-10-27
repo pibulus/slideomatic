@@ -126,6 +126,10 @@ const urlParams = new URLSearchParams(window.location.search);
 // Also check hash params (for servers that strip query strings)
 const hashParams = new URLSearchParams(window.location.hash.slice(1));
 
+window.addEventListener('hashchange', () => {
+  window.location.reload();
+});
+
 // Helper to get param from search OR hash
 function getParam(name) {
   const value = urlParams.get(name) || hashParams.get(name);
@@ -456,18 +460,24 @@ document.addEventListener('dblclick', (event) => {
   if (!(event.target instanceof Element)) return;
   if (!event.target.closest('.slide.is-active')) return;
   if (event.target.closest('.badge, a, img, button, input, textarea')) return;
-  const textEl = event.target.closest('h1, h2, blockquote, cite, p, li');
+  const textEl = event.target.closest('h1, h2, h3, blockquote, cite, p, li, figcaption');
   if (!textEl) return;
 
   const slideEl = event.target.closest('.slide');
   const isTitle = slideEl.classList.contains('slide--title');
   const isQuote = slideEl.classList.contains('slide--quote');
   const pillarEl = event.target.closest('.pillar');
+  const splitLeftEl = event.target.closest('.slide__column--left');
+  const splitRightEl = event.target.closest('.slide__column--right');
   let field = 'body';
   if (pillarEl) {
     const pillars = Array.from(slideEl.querySelectorAll('.pillar'));
     const pIdx = Math.max(0, pillars.indexOf(pillarEl));
     field = textEl.matches('h3') ? `pillars.${pIdx}.title` : `pillars.${pIdx}.copy`;
+  } else if (splitLeftEl) {
+    field = textEl.matches('h3') ? 'left.headline' : 'left.body';
+  } else if (splitRightEl) {
+    field = textEl.matches('h3') ? 'right.headline' : 'right.body';
   } else if (textEl.matches('h1')) field = isTitle ? 'title' : 'headline';
   else if (textEl.matches('h2')) field = 'headline';
   else if (textEl.matches('blockquote')) field = 'quote';

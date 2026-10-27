@@ -19,7 +19,12 @@ const allowedTypes = new Set([
   '_schema'  // Documentation slide type (ignored during render)
 ]);
 
-const mandatoryFiles = ['slides.json', 'theme.json', 'catalog.json'];
+const mandatoryFiles = ['slides.json', 'theme.json', 'catalog.json', 'robots.txt', 'sitemap.xml'];
+const indexableHtmlPages = [
+  { file: 'index.html', canonical: 'https://slideomatic.app/' },
+  { file: 'collections.html', canonical: 'https://slideomatic.app/collections' },
+  { file: 'branding/index.html', canonical: 'https://slideomatic.app/branding/' }
+];
 
 try {
   mandatoryFiles.forEach(assertFileExists);
@@ -28,7 +33,8 @@ try {
   validateCatalog('catalog.json');
   validateOptional('autolinks.json', validateAutolinks);
   validateTemplates();
-  console.log('✔ Validation passed for slides, themes, catalog, and templates.');
+  validateSeoPortal();
+  console.log('✔ Validation passed for slides, themes, catalog, templates, and SEO portal.');
 } catch (error) {
   console.error('✖ Validation failed:', error.message);
   process.exitCode = 1;
@@ -165,5 +171,49 @@ function validateAutolinks(relativePath) {
     if (!entry.term) {
       throw new Error(`${relativePath}: entry ${index + 1} missing "term"`);
     }
+  });
+}
+
+function validateSeoPortal() {
+  const sitemap = readFileSync(join(root, 'sitemap.xml'), 'utf8');
+  if (!sitemap.includes('xmlns:xhtml="http://www.w3.org/1999/xhtml"')) {
+    throw new Error('sitemap.xml is missing xmlns:xhtml namespace');
+  }
+
+  indexableHtmlPages.forEach(({ file, canonical }) => {
+    assertFileExists(file);
+    const html = readFileSync(join(root, file), 'utf8');
+
+    if (!sitemap.includes(`<loc>${canonical}</loc>`)) {
+      throw new Error(`sitemap.xml is missing <loc>${canonical}</loc> for ${file}`);
+    }
+
+    const canonicalPattern = new RegExp(
+      `<link\\s+rel="canonical"\\s+href="${canonical.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`,
+      'i'
+    );
+    if (!canonicalPattern.test(html)) {
+      throw new Error(`${file}: missing self-referencing canonical ${canonical}`);
+    }
+
+    if (!html.includes('hreflang="en"') || !html.includes('hreflang="x-default"')) {
+      throw new Error(`${file}: missing hreflang="en" or hreflang="x-default" link tags`);
+    }
+
+    const jsonLdMatches = [...html.matchAll(/<script\s+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)];
+    if (jsonLdMatches.length === 0) {
+      throw new Error(`${file}: missing <script type="application/ld+json"> structured data`);
+    }
+
+    jsonLdMatches.forEach((match, idx) => {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (!parsed || typeof parsed !== 'object') {
+          throw new Error('JSON-LD root must be an object');
+        }
+      } catch (err) {
+        throw new Error(`${file}: invalid JSON-LD block #${idx + 1}: ${err.message}`);
+      }
+    });
   });
 }
