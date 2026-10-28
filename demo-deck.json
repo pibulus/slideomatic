@@ -46,7 +46,7 @@
       "\"Marketing is what you do, branding is what you are.\" - John Jantsch"
     ],
     "image": {
-      "src": "images/slide1.png",
+      "src": "images/compression-say-more-less.png",
       "alt": "visual metaphor for compression in design"
     }
   },
@@ -60,7 +60,7 @@
       "Wittgenstein: \"The limits of my language mean the limits of my world.\""
     ],
     "image": {
-      "src": "images/slide2.jpg",
+      "src": "images/if-you-can-name-it-you-can.jpg",
       "alt": "typographic exploration of naming and framing"
     }
   },
@@ -91,8 +91,8 @@
       "Like a song you recognize in one note."
     ],
     "image": {
-      "src": "images/screenshot-47-jpg.jpg",
-      "alt": "screenshot 47.jpg",
+      "src": "images/first-point-three-seconds.jpg",
+      "alt": "Slide O Matic Reference Slide 47",
       "originalFilename": "screenshot 47.jpg",
       "compressedSize": 251920,
       "format": "image/jpeg"
@@ -122,7 +122,7 @@
       "The strongest brands are myths you can summarize in one word."
     ],
     "image": {
-      "src": "images/slide5.jpg",
+      "src": "images/narrative-ultimate-compression.jpg",
       "alt": "Oasis logo juxtaposed with crowd energy"
     }
   },
@@ -173,7 +173,7 @@
     ],
     "image": {
       "alt": "screenshot 45",
-      "src": "images/screenshot-45.jpg",
+      "src": "images/coherence-builds-trust.jpg",
       "originalFilename": "screenshot 45.jpg",
       "compressedSize": 100610,
       "compressedFormat": "image/jpeg",
@@ -195,21 +195,21 @@
     "media": [
       {
         "image": {
-          "src": "images/part-two-1.jpeg",
+          "src": "images/visual-toolkit.jpg",
           "alt": "Riso print texture close-up",
           "orientation": "square"
         }
       },
       {
         "image": {
-          "src": "images/part-two-2.jpeg",
+          "src": "images/visual-toolkit-2.jpg",
           "alt": "skate zine layout",
           "orientation": "portrait"
         }
       },
       {
         "image": {
-          "src": "images/part-two-3.jpeg",
+          "src": "images/visual-toolkit-3.jpg",
           "alt": "bold typography collage",
           "orientation": "landscape"
         }
@@ -251,7 +251,7 @@
       "That’s why banks love squares and toy brands love circles."
     ],
     "image": {
-      "src": "images/slide16.png",
+      "src": "images/shape-compressed-psychology.png",
       "alt": "diagram of circle square triangle psychology",
       "orientation": "landscape"
     },
@@ -296,7 +296,7 @@
       "Get loads of free fonts at [open-foundry.com](https://open-foundry.com/fonts)"
     ],
     "image": {
-      "src": "images/slide15.webp",
+      "src": "images/typography-compressed-voice.webp",
       "alt": "Typography examples"
     }
   },
@@ -403,7 +403,7 @@
       "Meaning is a frequency. Tune it until it resonates."
     ],
     "image": {
-      "src": "images/slide18.jpeg",
+      "src": "images/steal-remix-repeat.jpg",
       "alt": "collage of cultural symbols and remixes",
       "orientation": "landscape"
     },
@@ -418,7 +418,7 @@
       "Everything else is noise."
     ],
     "image": {
-      "src": "images/slide20.jpg",
+      "src": "images/follow-your-nose.jpg",
       "alt": "designer moodboard desk workspace",
       "orientation": "landscape"
     },
@@ -505,21 +505,21 @@
     "media": [
       {
         "image": {
-          "src": "images/part-three-1.webp",
+          "src": "images/systems-and-synthesis.webp",
           "alt": "Teenage Engineering OP-1 close-up",
           "orientation": "landscape"
         }
       },
       {
         "image": {
-          "src": "images/part-three-2.jpg",
+          "src": "images/systems-and-synthesis.jpg",
           "alt": "Mac DeMarco portrait with warm tones",
           "orientation": "portrait"
         }
       },
       {
         "image": {
-          "src": "images/part-three-3.jpg",
+          "src": "images/systems-and-synthesis-2.jpg",
           "alt": "Riso stamp on envelope",
           "orientation": "square"
         }
@@ -536,7 +536,7 @@
       "Lock the palette, type, and spacing: templates that scale."
     ],
     "image": {
-      "src": "images/slide22.png",
+      "src": "images/build-systems-not-one-offs.png",
       "alt": "repeating poster grid with consistent layout",
       "orientation": "landscape"
     },
@@ -552,7 +552,7 @@
       "Playfulness *is* precision when it's intentional."
     ],
     "image": {
-      "src": "images/slide23.webp",
+      "src": "images/teenage-engineering-elegance-through-play.webp",
       "alt": "Teenage Engineering homepage screenshot",
       "orientation": "landscape"
     },
@@ -643,7 +643,7 @@
       "Curation isn't procrastination. It's preprocessing."
     ],
     "image": {
-      "src": "images/slide24.jpg",
+      "src": "images/moodboard-as-operating-system.jpg",
       "alt": "Pinterest moodboard screenshot",
       "orientation": "portrait"
     },
@@ -656,7 +656,7 @@
     "font": "mono",
     "body": "Everything else is flavor. Keep the pack light so you can move fast.",
     "image": {
-      "src": "images/slide25.png",
+      "src": "images/your-pack-design-survival-kit.png",
       "alt": "Design survival kit essentials"
     },
     "pillars": [
@@ -752,7 +752,7 @@
       "Design's job is to frame meaning. The font, crop, and border are the handshake."
     ],
     "image": {
-      "src": "images/slide33.jpg",
+      "src": "images/frame-is-everything.jpg",
       "alt": "art gallery frames and interface borders",
       "orientation": "portrait"
     },
@@ -798,7 +798,7 @@
       "Perfecting minor details before core tone is ego, not craft."
     ],
     "image": {
-      "src": "images/slide29.png",
+      "src": "images/pareto-principle-design.png",
       "alt": "80/20 design ratio diagram",
       "orientation": "landscape"
     },
@@ -834,7 +834,7 @@
     ],
     "image": {
       "alt": "55468f2d739c535ca3e3f0ec1a59047a",
-      "src": "images/55468f2d739c535ca3e3f0ec1a59047a.jpg",
+      "src": "images/build-your-creative-os.jpg",
       "originalFilename": "55468f2d739c535ca3e3f0ec1a59047a.jpg",
       "compressedSize": 138599,
       "compressedFormat": "image/jpeg",
