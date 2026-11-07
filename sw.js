@@ -2,7 +2,7 @@
 // with the real deploy's commit hash as Netlify's build command, so the
 // service worker's fetch handler is guaranteed to change on every deploy
 // and returning visitors' browsers actually notice new CSS/JS.
-const CACHE_VERSION = 'slideomatic-v2-20261108b';
+const CACHE_VERSION = 'slideomatic-v2-20261108h';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -22,6 +22,7 @@ const SHELL_ASSETS = [
   '/css/modals.css',
   '/css/animations.css',
   '/css/edit-drawer.css',
+  '/css/deck-panel.css',
   '/css/theme-drawer.css',
   '/css/landing.css',
   '/css/collections.css',

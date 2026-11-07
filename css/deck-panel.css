@@ -1,0 +1,197 @@
+/* ===================================================================
+   DECK PANEL — the second face of the edit drawer
+   ----------------------------------------------------------------
+   The HUD is a stage control: move, look, edit, hide. Everything that
+   belongs to the whole deck (type weight, sharing, files, AI) lives
+   here, one tab away, instead of crowding the bar.
+   ================================================================ */
+
+/* --- Tabs ------------------------------------------------------------ */
+
+.drawer-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drawer-tabs__tab {
+  appearance: none;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius-round);
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.2, 2, 0.4, 1),
+              box-shadow 160ms ease,
+              background 160ms ease;
+}
+
+.drawer-tabs__tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--color-ink);
+}
+
+.drawer-tabs__tab.is-active {
+  background: var(--color-ink);
+  color: var(--color-surface);
+  box-shadow: none;
+}
+
+.drawer-tabs__tab:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* The close button that lives beside the tab bar when the slide nav
+   cluster (‹ › +) is hidden on the Deck tab. */
+.edit-drawer__close--deck {
+  margin-left: auto;
+}
+
+/* --- Panel ----------------------------------------------------------- */
+
+.deck-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fade-slide-in 260ms cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+
+.deck-panel[hidden] {
+  display: none;
+}
+
+.deck-panel__group {
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: var(--warm-white);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deck-panel__title {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: var(--weight-heading);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.deck-panel__hint {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--color-ink);
+  opacity: 0.72;
+  margin: 0;
+}
+
+.deck-panel__preview {
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 5px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.deck-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deck-panel__btn {
+  appearance: none;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  background: var(--warm-white);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 11px 14px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--color-ink);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.deck-panel__btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--color-ink);
+}
+
+.deck-panel__btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--color-ink);
+}
+
+.deck-panel__btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* --- Weight picker ---------------------------------------------------- */
+
+.weight-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.weight-picker__option {
+  flex: 1;
+  appearance: none;
+  border: var(--border-width) solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  background: var(--warm-white);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  padding: 10px 8px;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.weight-picker__option[data-weight="400"] { font-weight: 400; }
+.weight-picker__option[data-weight="500"] { font-weight: 500; }
+.weight-picker__option[data-weight="600"] { font-weight: 600; }
+
+.weight-picker__option.is-active {
+  background: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.weight-picker__option:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .drawer-tabs__tab {
+    padding: 8px 12px;
+    font-size: 0.74rem;
+  }
+
+  .deck-panel {
+    padding: 16px;
+  }
+}

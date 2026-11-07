@@ -212,8 +212,8 @@
 }
 
 .hints-modal__dialog {
-  width: min(560px, 92vw);
-  max-width: 92vw;
+  width: min(840px, 94vw);
+  max-width: 94vw;
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 28px;
@@ -273,26 +273,49 @@
   background: transparent;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 22px 20px;
+  align-items: start;
   margin-bottom: 0;
 }
 
-/* Two columns once there's room — ten rows in one column is a tall tube */
-@media (min-width: 560px) {
+/* Shortcuts are grouped by what they are FOR (move / present / make)
+   instead of poured into one ragged two-column grid with an orphan row at
+   the end. Each column is a small legend that reads top to bottom. */
+.hint-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hint-group__title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  opacity: 0.55;
+  margin: 0 0 2px 2px;
+}
+
+@media (min-width: 620px) {
   .hints-modal__body {
     grid-template-columns: 1fr 1fr;
   }
+}
 
-  .hint-item--static {
-    grid-column: 1 / -1;
+@media (min-width: 860px) {
+  .hints-modal__body {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .hint-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 8px 12px;
   border: 2px solid var(--color-ink);
   border-radius: 12px;
 }
@@ -342,9 +365,9 @@
 }
 
 .hint-item__key {
-  min-width: 42px;
-  height: 42px;
-  padding: 0 10px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,17 +376,18 @@
   border-radius: 8px;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.92rem;
   box-shadow: 0 3px 0 rgba(var(--warm-black-rgb), 0.2);
   flex-shrink: 0;
 }
 
 .hint-item__desc {
   flex: 1;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: var(--weight-ui);
   color: var(--color-ink);
   margin: 0;
+  white-space: nowrap;
 }
 
 .hints-modal__footer {

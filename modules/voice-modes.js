@@ -648,6 +648,30 @@ function normalizeGeneratedSlide(slide) {
   return slide;
 }
 
+// Shared design law for anything the model writes into a deck. Encoded once
+// so the single-slide and whole-deck prompts cannot drift apart, and so the
+// rules travel with the model instead of living in someone's head.
+const HOUSE_DESIGN_RULES = `
+HOUSE DESIGN RULES (a deck that breaks these reads as a document dump):
+- ONE idea per slide. If a slide needs two headlines, it is two slides.
+- Headline: seven words or fewer, no full stop, no "Introduction to" /
+  "Overview of" filler. The badge already says where we are.
+- Body: at most 4 short lines. Each line is one complete thought, roughly
+  twelve words. Bullets ("- " prefix) only for true lists, prose otherwise.
+- If the material honestly needs more room than that, use the "scroll" type:
+  a long-form page with a lead sentence, "## Section" lines, and body copy.
+  At most one scroll page in five; it is a pacing device, not the default.
+- Never address the reader as "you". Lead with the thing itself, a kinetic
+  verb, or a two-word image. Software is atmosphere, not a lecturer.
+- Never invent a quote or an attribution. A real quote from a real person, or
+  no quote at all.
+- Images are punctuation, not wallpaper: at most one per slide, and it must
+  earn its place. Alt text is 2-4 plain words in language a stock library
+  would use ("mountain sunrise landscape", "retro synthesizer").
+- Vary the rhythm across a deck: statement, evidence, quote, image, question.
+  Five standard slides in a row is a wall, whatever the words say.
+`;
+
 function buildSlideDesignPrompt(description = null) {
   let basePrompt = `You are a slide designer for Slideomatic, a presentation system. Your job is to create a single slide JSON object based on the user's request.
 
@@ -665,7 +689,7 @@ THE ONE-SLIDE PROMISE:
   corporate filler.
 - Body lines may start with "- " to render as bullet points; use them for
   true lists, plain lines for prose.
-
+${HOUSE_DESIGN_RULES}
 RULES:
 - Only respond with JSON (no markdown, no explanation)
 - "image" is ALWAYS an object {"src": "", "alt": "findable description"}, never a bare string
@@ -673,7 +697,7 @@ RULES:
 - Assume images should have descriptive alt text using FINDABLE language (see examples below)
 - If the user does not mention type, pick the best default: "standard" for text slides, "gallery" for lists of visuals, "quote" for quotes, "pillars" for feature lists
 - Always include "type" key
-- For text arrays (items, pillars), return arrays of objects with the expected keys
+- For text arrays, return arrays of strings (or objects with the expected keys for items/pillars)
 - If the user mentions notes/speaker notes, include "notes"
 - If the user mentions fonts, add "font"
 - Use proper punctuation and casing
@@ -687,14 +711,15 @@ IMAGE ALT TEXT RULES:
 AVAILABLE SLIDE TYPES:
 1. "title" - Big hero slide with title, subtitle, optional media strip
 2. "standard" - Headline + body + optional image
-3. "quote" - Large quote with attribution
-4. "split" - Two-column layout
-5. "grid" - Image or color grid
-6. "pillars" - Feature cards
-7. "gallery" - Visual gallery
-8. "image" - Full-bleed image
-9. "graph" - AI-generated infographic/graph
-10. "typeface" - Font showcase
+3. "scroll" - Long-form page: lead paragraph, body copy, and "## Section" headings
+4. "quote" - Large quote with attribution
+5. "split" - Two-column layout, one idea per column
+6. "grid" - Image or color grid
+7. "pillars" - Feature cards
+8. "gallery" - Visual gallery
+9. "image" - Full-bleed image
+10. "graph" - AI-generated infographic/graph
+11. "typeface" - Font showcase
 
 `;
 
@@ -711,7 +736,7 @@ AVAILABLE SLIDE TYPES:
 function buildDeckDesignPrompt(description, desiredCount = 8) {
   const safeCount = Math.max(3, Math.min(desiredCount, 12));
   return `You are a presentation coach and researcher for Slideomatic. Create ${safeCount} slides that form a REAL, PRESENTABLE deck on this topic — not a skeleton or outline.
-
+${HOUSE_DESIGN_RULES}
 PHILOSOPHY:
 This deck should be good enough to present TODAY, but obviously better once the person adds their own knowledge and examples. Think of it as a research springboard + starter kit:
 - Include REAL facts, specific names, dates, and examples — not vague summaries
@@ -731,6 +756,8 @@ The goal is dual-use content. Every slide should work as a real presentation sli
 SLIDE MIX (vary these):
 - 1 title slide with a compelling angle on the topic
 - 4-5 content slides with real substance (facts, links, images, examples)
+- at most 1 "scroll" page, and only for genuine reference material (a timeline,
+  a glossary, a comparison that needs the room)
 - 1-2 slides with discussion questions or provocations that could be used in a talk
 - 1 closing slide that reframes the topic or leaves a thread to pull
 
@@ -739,6 +766,7 @@ STRICT SCHEMA — follow these EXACTLY:
 VALID SLIDE TYPES (use ONLY these, never invent new ones):
 - "title" — keys: type, title, subtitle, image:{src,alt}, notes
 - "standard" — keys: type, badge, headline, body:["line","line"], image:{src,alt}, notes
+- "scroll" — keys: type, badge, headline, lead, body:["## Section","copy"], notes
 - "quote" — keys: type, quote, attribution, notes
 - "split" — keys: type, badge, headline, left:{}, right:{}, notes
 - "pillars" — keys: type, badge, headline, pillars:[{title,body}], notes

@@ -24,6 +24,7 @@ const defaultContext = {
   getCurrentIndex: () => 0,
   getSlideCount: () => 0,
   toggleEditDrawer: () => {},
+  openDeckPanel: () => {},
   toggleVoiceRecording: (_mode) => {},
   randomizeTheme: () => {},
   openSettingsModal: () => {},
@@ -149,24 +150,10 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
-    if (lowerKey === 'd') {
-      event.preventDefault();
-      flashKeyFeedback('D');
-      context.downloadDeck();
-      return;
-    }
-
     if (lowerKey === 'n') {
       event.preventDefault();
       flashKeyFeedback('N');
       context.toggleSpeakerNotes();
-      return;
-    }
-
-    if (lowerKey === 'u') {
-      event.preventDefault();
-      flashKeyFeedback('U');
-      context.triggerDeckUpload();
       return;
     }
 
@@ -186,16 +173,10 @@ export function initKeyboardNav(partialContext = {}) {
       return;
     }
 
-    if (lowerKey === 't') {
-      event.preventDefault();
-      context.randomizeTheme();
-      return;
-    }
-
     if (lowerKey === 's') {
       event.preventDefault();
       flashKeyFeedback('S');
-      context.openSettingsModal();
+      context.openDeckPanel();
       return;
     }
 

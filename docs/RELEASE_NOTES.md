@@ -13,6 +13,15 @@
 - Scroll pages take a `two-column` variant for dense reference pages.
 - `## Heading` lines in any body copy render as section subheadings.
 - The HUD gains a Hide button matching the existing `H` shortcut, so the nav bar is discoverable to hide on touch.
+- The HUD is now a stage control: **Overview · Radio · Edit · Hide** plus navigation. Home, Share and Help moved into the drawer, and clicking the slide counter jumps to the first slide.
+- The edit drawer has two tabs: **Slide** (the current slide) and **Deck** (whole-deck settings, or press `S`). Theme moved to the top of the Slide tab.
+- The Deck tab carries body weight (**Light / Regular / Heavy**), share, download/load JSON, theme shuffle, shortcuts, and the Gemini key.
+- Body copy defaults to weight 500 and the Vaporwave theme now sets Space Mono, so thin hairlines are readable at projector distance.
+- The top badge is in the layout flow instead of floating above it. On tall slides the headline used to start inside the badge box; it now keeps a consistent 40px-plus gap on every slide type.
+- Column subheadings use a mix of the theme surface and the ink colour instead of pure surface, roughly 1.3:1 contrast before.
+- The shortcut sheet is grouped by purpose (Move / Present / Make) in aligned columns instead of a ragged two-column grid.
+- Overview is calmer: a paper wash behind the grid, larger thumbnails, and slide numbers in the bottom-right corner where they no longer sit on the copy.
+- The AI slide and deck prompts now carry the house design rules: one idea per slide, headline length, body limits, scroll-page pacing, image punctuation, real quotes only, and the no-"you" voice.
 
 ## v1.0.1 - May 30, 2026
 

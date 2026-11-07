@@ -49,6 +49,7 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `slide-actions.js` | Insert/replace/delete/reload/download deck operations. |
 | `edit-drawer.js` | Main editor UI, autosave, duplicate/delete, PDF/JSON export buttons, dictation fields. |
 | `edit-drawer-forms.js` | HTML builders for drawer sections and controls. |
+| `deck-panel.js` | The drawer's Deck tab: body-weight preference, share/download/load/shuffle actions, AI key status. |
 | `drawer-base.js` | Shared drawer lifecycle, focus trap, focus restore, `inert`/ARIA state. |
 | `theme-manager.js` | Theme load/apply/save, token normalization, contrast helpers. |
 | `theme-drawer.js` | Theme drawer/dropdown, random themes, AI theme prompts, saved theme library. |
@@ -103,7 +104,7 @@ See `SCHEMA_EXAMPLE.json` for a deck-format reference.
 - **Hosted share:** `share-modal.js` posts slides + theme to `netlify/functions/share.js`, which stores a share record in Netlify Blobs and returns `/s/:slug`. Shares (and their externalized image assets) expire 90 days after their last view; loading a share refreshes both. The daily `cleanup-shares` cron sweeps expired records.
 - **Fallback share:** if functions are unavailable, `share-modal.js` compresses slides + theme into a `?data=` URL; opening it creates a local `#deck=` copy.
 - **Large inline images:** hosted shares externalize/recompress them where possible. Fallback URL shares replace inline `data:` images with placeholders to keep links usable. JSON backup keeps full fidelity.
-- **JSON export/import:** available from keyboard (`D`/`U`), edit drawer, Share modal, launcher upload, and launcher paste.
+- **JSON export/import:** available from the Deck tab, edit drawer, Share modal, launcher upload, and launcher paste.
 - **PDF export:** edit drawer uses `html2canvas` + `jsPDF` through `pdf-export.js`.
 - **Blob assets:** `upload-asset`, `asset`, and `delete-asset` support uploaded slide images. Deleted assets can remain publicly cacheable at the edge until cache expiry, so deletion is storage cleanup first.
 

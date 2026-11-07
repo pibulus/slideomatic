@@ -24,6 +24,7 @@ import {
 import { validateSlides } from './modules/validation.js';
 import { showHudStatus, hideHudStatus } from './modules/hud.js';
 import { initRadioDock, setRadioDockHidden } from './modules/radio-dock.js';
+import { initDeckPanel, refreshAiStatus } from './modules/deck-panel.js';
 
 
 import { renderEditForm, flushPendingEditDrawerWork } from './modules/edit-drawer.js';
@@ -442,11 +443,45 @@ function toggleEditDrawer() {
   return Boolean(editDrawerInstance?.isOpen);
 }
 
-function openEditDrawer() {
+/**
+ * The drawer has two faces: the slide in front of you, and the deck as a
+ * whole. Switching is cheap — both panels live in the drawer, only one is
+ * visible — and the ‹ › + cluster belongs to the slide face only.
+ */
+function setDrawerTab(tab = 'slide') {
+  const isDeck = tab === 'deck';
+  const slideTab = document.getElementById('drawer-tab-slide');
+  const deckTab = document.getElementById('drawer-tab-deck');
+  const content = document.getElementById('edit-drawer-content');
+  const panel = document.getElementById('deck-panel');
+  const slideActions = document.getElementById('edit-drawer-slide-actions');
+  const deckClose = document.querySelector('.edit-drawer__close--deck');
+  const title = document.getElementById('edit-drawer-title');
+
+  if (!slideTab || !deckTab || !content || !panel) return;
+
+  slideTab.classList.toggle('is-active', !isDeck);
+  slideTab.setAttribute('aria-selected', String(!isDeck));
+  deckTab.classList.toggle('is-active', isDeck);
+  deckTab.setAttribute('aria-selected', String(isDeck));
+
+  content.hidden = isDeck;
+  panel.hidden = !isDeck;
+  if (slideActions) slideActions.hidden = isDeck;
+  if (deckClose) deckClose.hidden = !isDeck;
+  if (title) title.textContent = isDeck ? 'Deck settings' : 'Edit Slide';
+
+  if (isDeck) {
+    refreshAiStatus({ getApiKey: getGeminiApiKey });
+  }
+}
+
+function openEditDrawer(tab = 'slide') {
   if (!editDrawerInstance) return;
   if (themeDrawerInstance?.isOpen) {
     closeDrawer(themeDrawerInstance, { restoreFocus: false });
   }
+  setDrawerTab(tab);
   // Pre-render the form BEFORE opening to avoid DOM manipulation during animation
   renderEditForm(getEditDrawerContext());
   openDrawer(editDrawerInstance);
@@ -612,6 +647,7 @@ function getKeyboardContext() {
     getCurrentIndex: () => currentIndex,
     getSlideCount: () => slideElements.length,
     toggleEditDrawer,
+    openDeckPanel: () => openEditDrawer('deck'),
     toggleVoiceRecording,
     randomizeTheme,
     openSettingsModal,
@@ -631,11 +667,11 @@ const createdEditDrawer = createDrawer({
   onOpen: () => {
     setEditDrawerOpen(true);
     // renderEditForm is now called before opening for smooth animation
-    const closeBtn = editDrawerInstance.element.querySelector('.edit-drawer__close');
-    if (closeBtn && !closeBtn.dataset.listenerAttached) {
+    editDrawerInstance.element.querySelectorAll('.edit-drawer__close').forEach((closeBtn) => {
+      if (closeBtn.dataset.listenerAttached) return;
       closeBtn.addEventListener('click', () => closeDrawer(editDrawerInstance));
       closeBtn.dataset.listenerAttached = 'true';
-    }
+    });
   },
   onClose: () => {
     setEditDrawerOpen(false);
@@ -745,6 +781,10 @@ async function initDeckWithTheme() {
     });
   }
 
+  document.querySelectorAll('[data-drawer-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => setDrawerTab(btn.dataset.drawerTab));
+  });
+
   const helpBtn = document.getElementById('help-btn');
   if (helpBtn) {
     helpBtn.addEventListener('click', openKeyboardHelp);
@@ -786,15 +826,13 @@ async function initDeckWithTheme() {
   // action's own UI (drawer, overview, etc.) is what the user sees next.
   const hintActions = {
     edit: () => toggleEditDrawer(),
+    deck: () => openEditDrawer('deck'),
     overview: () => toggleOverview(),
     index: () => toggleSlideIndex(),
-    theme: () => randomizeTheme(),
     radio: () => document.getElementById('hud-radio-btn')?.click(),
     hud: () => toggleHudHidden(),
     notes: () => toggleSpeakerNotes(),
     voice: () => toggleVoiceRecording('add'),
-    download: () => downloadDeck(),
-    upload: () => document.getElementById('deck-upload')?.click(),
   };
   document.querySelectorAll('[data-hint-action]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -806,6 +844,13 @@ async function initDeckWithTheme() {
 
   initHudControls();
   initRadioDock();
+  initDeckPanel({
+    downloadDeck,
+    triggerDeckUpload: () => document.getElementById('deck-upload')?.click(),
+    randomizeTheme,
+    openSettingsModal,
+    getApiKey: getGeminiApiKey,
+  });
 
   // Initialize deck name display and rename functionality
   initDeckName();
@@ -862,6 +907,8 @@ function handleInitialIntent() {
       openThemeDrawer();
     } else if (openIntent === 'settings') {
       openSettingsModal();
+    } else if (openIntent === 'deck') {
+      openEditDrawer('deck');
     } else if (openIntent === 'edit') {
       // On a narrow phone screen, a full-width drawer slamming open over the
       // very first slide a mobile visitor sees is a bad first impression —
@@ -932,6 +979,23 @@ function initHudControls() {
     nextBtn.addEventListener('click', () => {
       setActiveSlide(currentIndex + 1);
       revealHud();
+    });
+  }
+
+  // The counter is the way home now: a stage bar has room for one obvious
+  // "start again", and the number already in view is the honest place for it.
+  const hudCounter = document.getElementById('hud-counter');
+  if (hudCounter) {
+    const goHome = () => {
+      setActiveSlide(0);
+      revealHud();
+    };
+    hudCounter.addEventListener('click', goHome);
+    hudCounter.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        goHome();
+      }
     });
   }
 

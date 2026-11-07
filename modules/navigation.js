@@ -207,7 +207,7 @@ export function updateOverviewLayout() {
 
   const viewportWidth = slidesRoot?.clientWidth || window.innerWidth;
   const isPhone = viewportWidth <= 640;
-  const targetCard = isPhone ? 168 : viewportWidth <= 1024 ? 300 : 360;
+  const targetCard = isPhone ? 200 : viewportWidth <= 1024 ? 340 : 430;
   const padX = isPhone ? 14 : 40;
   const gap = isPhone ? 12 : 24;
   const available = viewportWidth - padX * 2;

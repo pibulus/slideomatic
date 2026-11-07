@@ -77,6 +77,11 @@ body[data-mode="overview"] .slides {
            var(--overview-pad-x, 40px)
            calc(110px + env(safe-area-inset-bottom));
 
+  /* A paper wash over the theme's gradient. The deck's own background is
+     gorgeous behind ONE slide and pure noise behind fifty; thumbnails need
+     a calm light table to sit on. */
+  background: color-mix(in srgb, var(--warm-white) 86%, transparent);
+
   overflow-x: hidden;
   overflow-y: auto;
   touch-action: pan-y;
@@ -181,25 +186,27 @@ body[data-mode="overview"] .slide > .badge {
   display: none;
 }
 
-/* Slide number chip — bottom-left, where slide content (top-heavy titles
-   and badges) almost never lives */
+/* Slide number chip — bottom-right, where slide content rarely reaches
+   (titles are top-left, bodies run left, images sit centre). Top-left
+   collided with the first line of the headline once the badge was hidden. */
 body[data-mode="overview"] .slide::before {
   content: counter(slide-counter);
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 6px;
+  right: 6px;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   line-height: 1;
   color: var(--color-ink);
   background: var(--color-accent, #ffeab6);
-  padding: 5px 9px;
+  padding: 4px 8px;
   border: 2px solid var(--color-ink);
   border-radius: 999px;
   z-index: 40;
   pointer-events: none;
+  opacity: 0.9;
 }
 
 @media (max-width: 640px) {
@@ -213,9 +220,9 @@ body[data-mode="overview"] .slide::before {
   }
 
   body[data-mode="overview"] .slide::before {
-    bottom: 6px;
-    left: 6px;
-    font-size: 0.65rem;
-    padding: 4px 7px;
+    bottom: 5px;
+    right: 5px;
+    font-size: 0.62rem;
+    padding: 3px 6px;
   }
 }

@@ -56,6 +56,15 @@
   --font-mono: "JetBrains Mono", "Fira Code", "Roboto Mono", monospace;
   --font-serif: "Merriweather", "Georgia", serif;
 
+  /* Type weight. Body copy at 400 was too thin to read comfortably at slide
+     distance, especially in the mono themes (Courier New's hairlines vanish
+     on a gradient). The Deck drawer sets this, and it is remembered per
+     browser; a theme may also carry a "weight-body" token to pin its own. */
+  --weight-body: 500;
+  --weight-strong: 700;
+  --weight-heading: 800;
+  --weight-ui: 600;
+
   /* Spacing & Layout */
   --spacing-unit: 8px;
   --slide-width: 1920px;
@@ -90,8 +99,10 @@
   --space-sm: clamp(16px, 3vw, 24px);       /* card grids, split columns */
   --space-md: clamp(20px, 4vh, 40px);       /* content stack gap, vertical rhythm */
   --space-lg: clamp(24px, 4vw, 48px);       /* column and grid gutters */
-  --space-heading: clamp(56px, 6vh, 72px);  /* content offset below the badge row:
-                                               floor must clear the badge height */
+  --space-heading: clamp(22px, 3vh, 36px);  /* gap between the badge and the
+                                               first line of content; the badge
+                                               now reserves its own height, so
+                                               this is pure breathing room */
 
   /* UI Tokens */
   --radius: 24px; /* --radius-soft */

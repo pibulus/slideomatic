@@ -62,7 +62,7 @@
       },
       {
         "title": "Ship",
-        "text": "Use **Share**, **Download JSON**, or **Download PDF** when the deck is ready to leave the nest."
+        "text": "Open **Deck** (or press **S**) for **Share**, **Download JSON**, and **Download PDF** when the deck is ready to leave the nest."
       }
     ]
   },
@@ -71,8 +71,8 @@
     "badge": "The drawer",
     "headline": "Press **E** and the workbench slides in",
     "body": [
-      "The edit drawer is where the deck becomes yours. It uses compact sections instead of a giant control wall.",
-      "**Content** edits the words. **Slide Type** swaps or adds layouts. **Images** handles uploads, replacements, and stock search. **Theme** switches styles (Default, Vaporwave, Slack, Gameboy) or saves your own. **Actions** covers duplicate, delete, JSON, and PDF."
+      "The edit drawer has two faces. **Slide** edits the one in front of you. **Deck** holds everything that belongs to the whole thing: body weight, sharing, files, and the AI key.",
+      "**Content** edits the words. **Slide Type** swaps or adds layouts. **Images** handles uploads, replacements, and stock search. **Theme** sits at the top and switches styles (Default, Vaporwave, Slack, Gameboy) or saves your own. **Actions** covers duplicate, delete, JSON, and PDF."
     ]
   },
   {
@@ -210,8 +210,8 @@
     "badge": "Shortcuts",
     "headline": "The keyboard is optional, but fast",
     "body": [
-      "**E** = edit drawer. **T** = shuffle theme. **O** = overview grid. **N** = speaker notes. **R** = radio.",
-      "**D** downloads JSON. **U** loads a JSON file. **H** hides the bottom bar. **?** opens the shortcut list.",
+      "**E** = edit drawer. **S** = deck settings. **O** = overview grid. **N** = speaker notes. **R** = radio.",
+      "**H** hides the bottom bar. **?** opens the shortcut list. Click the slide counter to go back to the top.",
       "Double-click any text on a slide to jump straight into editing that field."
     ]
   },

@@ -138,10 +138,12 @@ const SPLIT_LAYOUT_OPTIONS = [
 export function buildMainSections(slide) {
   const type = slide.type || 'standard';
   const sections = [
+    // Theme first: it is a deck-level choice, not a property of this slide,
+    // and hiding it at the bottom made it feel like an afterthought.
+    buildThemeSection(),
     type === 'split' ? buildSplitContentSection(slide) : buildCombinedContentSection(slide, type),
     buildLayoutControl(type, slide.layout),
     buildImagesSection(slide),
-    buildThemeSection(),
   ].filter(Boolean);
   return sections.join('');
 }

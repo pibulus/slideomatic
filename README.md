@@ -22,7 +22,7 @@ Voice-powered slide deck builder with a neo-brutalist / pastel-punk aesthetic. C
 
    Then open <http://localhost:3000/index.html> (or the port printed). Pick a deck and launch it (default deck lives at `/deck.html`).
 
-3. **Open the main builder** at `/deck.html` or start from `/index.html`. Press `E` to edit, `?` for shortcuts, and `S` to add a Gemini key.
+3. **Open the main builder** at `/deck.html` or start from `/index.html`. Press `E` to edit, `?` for shortcuts, and `S` for deck settings (type weight, share, files, AI key).
 
 That's it—no build step, no frameworks.
 
@@ -65,10 +65,10 @@ For the repo map, read `docs/ARCHITECTURE.md`; the full docs index is `docs/INDE
 ## Saving & Exporting
 
 - **Autosave:** Every deck you touch is cached locally under `slideomatic_deck_overrides:*`. Clear these keys in devtools if you want a blank slate.
-- **JSON:** Press `D`, use **Download JSON** in the edit drawer, or use **Download JSON backup** in the Share modal. JSON exports include slides and the current theme. Press `U`, use launcher upload, or paste JSON on the launcher to import a deck.
+- **JSON:** Use **Download JSON** in the Deck drawer, the edit drawer's **Actions**, or the Share modal. JSON exports include slides and the current theme. Load a deck from the **Deck** drawer, the launcher upload, or by pasting JSON on the launcher.
 - **PDF:** Use **Download PDF** inside the edit drawer. The browser renders the current deck to a downloaded PDF using `html2canvas`/`jsPDF`.
-- **Voice & Notes:** With a Gemini key saved in Settings (`S`), voice tools generate slides/themes from recordings and mic buttons clean rough speech into text. Voice UI stays hidden until a key is added.
-- **Sharing:** The HUD Share button tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks. Hosted links live 90 days from their last view — any visit refreshes the clock, so links in active use never expire.
+- **Voice & Notes:** With a Gemini key saved in Deck settings (`S`), voice tools generate slides/themes from recordings and mic buttons clean rough speech into text. Voice UI stays hidden until a key is added.
+- **Sharing:** The **Share link** button in the Deck drawer tries to create a short hosted `/s/...` link through Netlify Blobs first, preserving slides, theme, and shareable image assets. If functions are unavailable, it falls back to a compressed client-side `?data=` link. Opening either link creates a local deck copy in that browser. Fallback URL links replace large inline data images with placeholders; use JSON backup for full-fidelity image-heavy decks. Hosted links live 90 days from their last view — any visit refreshes the clock, so links in active use never expire.
 - **PWA:** `manifest.webmanifest`, `sw.js`, and app icons are wired for install on desktop/mobile. The service worker cache version lives at the top of `sw.js` — **bump it on every deploy** (no build step means it's the only cache-buster).
 
 Old `?url=`, fallback `?data=`, and hosted `?share=`/`/s/...` parameters still load decks if you need to sideload JSON manually or maintain old links.
@@ -286,6 +286,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 
 ## Keyboard Controls
 
+The list is deliberately short: navigation and presentation on the keyboard, everything that belongs to the whole deck in the Deck drawer.
+
 - `→` / `Space` – Next slide
 - `←` – Previous slide
 - `Home` / `End` – Jump to first / last slide
@@ -293,15 +295,14 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `Esc` – Exit overview
 - `?` – Show keyboard shortcuts help
 - `V` – **Voice-to-slide** (record audio, AI generates slide — needs a Gemini key)
-- `T` – **Randomize theme** (instantly generates a new random theme variation)
-- `E` – Edit current slide (includes all theme controls)
-- `D` – Export deck as JSON
-- `U` – Upload deck from JSON
-- `S` – Settings (configure Gemini API key)
+- `E` – Edit current slide
+- `S` – Deck settings (type weight, share, files, AI key)
 - `I` – Toggle slide index
 - `N` – Toggle speaker notes
 - `H` – Hide/show the navigation bar (HUD)
 - `R` – Toggle radio
+
+Click the slide counter in the HUD to jump back to the first slide. `T` (shuffle theme), `D` (download JSON), and `U` (upload JSON) now live in the Deck drawer instead of on a hotkey.
 
 ### 🎙️ Voice-to-Slide + Dictation
 Press `V` or click the voice button in the HUD to generate slides using AI. The edit drawer and cheat console also include mic buttons that transcribe rough speech into cleaned prompt/body text. See [docs/VOICE_TO_SLIDE.md](docs/VOICE_TO_SLIDE.md) for setup and examples.
@@ -321,11 +322,18 @@ When a slide has an empty image slot, click the `✨` button in the edit drawer.
 The AI cheat console also tries to fill empty image slots after generating a starter deck.
 
 ### 🎨 Theme Controls
-Press `E` to open the edit drawer where you'll find all theme controls:
+Press `E` to open the drawer. **Theme** is the first section, where it belongs: it changes the whole deck, not the slide in front of you.
 - **Select themes** from presets (Default, Gameboy, Vaporwave, Slack) or your saved library
-- **Randomize** themes with one click (or press `T` for instant randomization)
+- **Randomize** themes with one click
 - **AI Theme Generation** — describe the vibe and Gemini creates a full theme
 - **Save themes** to your personal library for quick access later
+
+### ⚖️ Deck Drawer
+Open the drawer and switch to the **Deck** tab (or press `S`). It holds everything that belongs to the whole deck rather than the current slide:
+
+- **Type** — body weight: Light, Regular, Heavy. Body copy defaults to Regular (500); thin hairline type was hard work at projector distance. The choice is remembered per browser.
+- **Deck** — share link, download JSON, load a deck, shuffle theme, keyboard shortcuts.
+- **AI** — Gemini key status and setup. With a key in place, the cheat console drafts slides and starter decks.
 
 ---
 

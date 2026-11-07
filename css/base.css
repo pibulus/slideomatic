@@ -37,6 +37,28 @@ p {
   line-height: 1.5;
 }
 
+/* The hidden attribute must always win. Several components have a
+   display:flex rule on the same element (the drawer header actions, for
+   one), and a class rule outranks the UA's [hidden] default — which left
+   both the slide controls and the deck controls on screen at once. */
+[hidden] {
+  display: none !important;
+}
+
+/* Kept in the accessibility tree, out of the picture. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 a {
   color: inherit;
   text-decoration: none;

@@ -54,6 +54,7 @@
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
+  font-weight: var(--weight-body);
 }
 
 @media (min-width: 1100px) {
@@ -379,10 +380,18 @@
   justify-self: start;
 }
 
+/* The badge sits in the flow, not absolutely positioned above the copy.
+   Absolute placement meant `--space-heading` was measured from the padding
+   edge while the badge grew downward from it, so on any slide tall enough to
+   top-align (a standard slide with an image), the headline started *inside*
+   the badge's box. In flow the badge reserves its own height and the headline
+   gets the same gap every time. */
 .slide > .badge {
-  position: absolute;
-  top: var(--slide-space-block);
-  left: var(--slide-space-inline);
+  position: relative;
+  top: auto;
+  left: auto;
+  align-self: flex-start;
+  flex: 0 0 auto;
   margin: 0;
   z-index: 2;
   cursor: pointer;
@@ -611,7 +620,10 @@
 }
 
 .slide h3 {
-  color: var(--color-surface);
+  /* A pure surface tint (pink on cream) sat at about 1.3:1 — the column
+     headings on split slides were nearly invisible. Pull the theme colour
+     toward the ink so it keeps its identity and stays readable. */
+  color: color-mix(in srgb, var(--color-surface) 40%, var(--color-ink));
 }
 
 .slide p {

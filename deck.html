@@ -63,7 +63,7 @@
       crossorigin
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Press+Start+2P&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -127,16 +127,56 @@
       <!-- Slide Editor Drawer (Right Side) -->
       <div class="edit-drawer" id="edit-drawer" role="dialog" aria-modal="true" aria-labelledby="edit-drawer-title" aria-hidden="true" inert>
         <div class="edit-drawer__header">
-          <h2 id="edit-drawer-title">Edit Slide</h2>
-          <div class="edit-drawer__header-actions">
+          <div class="drawer-tabs" role="tablist" aria-label="Drawer panels">
+            <button type="button" class="drawer-tabs__tab is-active" id="drawer-tab-slide" role="tab" aria-selected="true" aria-controls="edit-drawer-content" data-drawer-tab="slide">Slide</button>
+            <button type="button" class="drawer-tabs__tab" id="drawer-tab-deck" role="tab" aria-selected="false" aria-controls="deck-panel" data-drawer-tab="deck">Deck</button>
+          </div>
+          <h2 id="edit-drawer-title" class="visually-hidden">Edit Slide</h2>
+          <div class="edit-drawer__header-actions" id="edit-drawer-slide-actions">
             <button type="button" class="edit-drawer__nav-btn" id="edit-nav-prev" aria-label="Edit previous slide" title="Previous slide">‹</button>
             <button type="button" class="edit-drawer__nav-btn" id="edit-nav-next" aria-label="Edit next slide" title="Next slide">›</button>
             <button type="button" class="edit-drawer__nav-btn" id="edit-nav-add" aria-label="Add new slide" title="Add new slide">+</button>
             <button class="edit-drawer__close" aria-label="Close editor">×</button>
           </div>
+          <button class="edit-drawer__close edit-drawer__close--deck" aria-label="Close editor" hidden>×</button>
         </div>
-        <div class="edit-drawer__content" id="edit-drawer-content">
+        <div class="edit-drawer__content" id="edit-drawer-content" role="tabpanel" aria-labelledby="drawer-tab-slide">
           <!-- Form will be dynamically generated -->
+        </div>
+
+        <!-- Deck panel: everything that belongs to the whole deck rather than
+             the slide in front of you. Kept out of the HUD so the bar stays a
+             stage control instead of a settings menu. -->
+        <div class="deck-panel" id="deck-panel" role="tabpanel" aria-labelledby="drawer-tab-deck" hidden>
+          <section class="deck-panel__group">
+            <h3 class="deck-panel__title">Type</h3>
+            <p class="deck-panel__hint">Body weight across the whole deck. Readable at projector distance beats delicate.</p>
+            <div class="weight-picker" id="deck-weight-picker" role="radiogroup" aria-label="Body text weight">
+              <button type="button" class="weight-picker__option" data-weight="400" role="radio" aria-checked="false">Light</button>
+              <button type="button" class="weight-picker__option" data-weight="500" role="radio" aria-checked="true">Regular</button>
+              <button type="button" class="weight-picker__option" data-weight="600" role="radio" aria-checked="false">Heavy</button>
+            </div>
+            <p class="deck-panel__preview" id="deck-weight-preview">Forces an email + password + OTP wall before you even use the tool.</p>
+          </section>
+
+          <section class="deck-panel__group">
+            <h3 class="deck-panel__title">Deck</h3>
+            <div class="deck-panel__actions">
+              <button type="button" class="deck-panel__btn" id="share-deck-btn">Share link</button>
+              <button type="button" class="deck-panel__btn" id="deck-download-btn">Download JSON</button>
+              <button type="button" class="deck-panel__btn" id="deck-upload-btn">Load a deck</button>
+              <button type="button" class="deck-panel__btn" id="deck-shuffle-btn">Shuffle theme</button>
+              <button type="button" class="deck-panel__btn" id="help-btn">Keyboard shortcuts</button>
+            </div>
+          </section>
+
+          <section class="deck-panel__group">
+            <h3 class="deck-panel__title">AI</h3>
+            <p class="deck-panel__hint" id="deck-ai-status">No key set. Slides and decks can be drafted with Gemini once a key is in place.</p>
+            <div class="deck-panel__actions">
+              <button type="button" class="deck-panel__btn" id="deck-ai-key-btn">Gemini key</button>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -227,55 +267,65 @@
             <h2 id="hints-modal-title">Keyboard Shortcuts</h2>
           </div>
           <div class="hints-modal__body">
-            <div class="hint-item hint-item--static">
-              <div class="hint-item__key">← →</div>
-              <div class="hint-item__desc">Navigate slides</div>
-            </div>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="edit">
-              <div class="hint-item__key">E</div>
-              <div class="hint-item__desc">Edit slide or theme</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="theme">
-              <div class="hint-item__key">T</div>
-              <div class="hint-item__desc">Shuffle the theme</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
-              <div class="hint-item__key">O</div>
-              <div class="hint-item__desc">Overview grid</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice" hidden>
-              <div class="hint-item__key">V</div>
-              <div class="hint-item__desc">Speak a slide</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="notes">
-              <div class="hint-item__key">N</div>
-              <div class="hint-item__desc">Speaker notes</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="radio">
-              <div class="hint-item__key">R</div>
-              <div class="hint-item__desc">Toggle radio</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
-              <div class="hint-item__key">H</div>
-              <div class="hint-item__desc">Hide/show nav bar</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="download">
-              <div class="hint-item__key">D</div>
-              <div class="hint-item__desc">Download JSON backup</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
-            <button type="button" class="hint-item hint-item--action" data-hint-action="upload">
-              <div class="hint-item__key">U</div>
-              <div class="hint-item__desc">Load a deck file</div>
-              <span class="hint-item__go" aria-hidden="true">→</span>
-            </button>
+            <section class="hint-group">
+              <h3 class="hint-group__title">Move</h3>
+              <div class="hint-item hint-item--static">
+                <span class="hint-item__key">← →</span>
+                <span class="hint-item__desc">Slide by slide</span>
+              </div>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="overview">
+                <span class="hint-item__key">O</span>
+                <span class="hint-item__desc">Overview</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="index">
+                <span class="hint-item__key">I</span>
+                <span class="hint-item__desc">Jump list</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+            </section>
+
+            <section class="hint-group">
+              <h3 class="hint-group__title">Present</h3>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="notes">
+                <span class="hint-item__key">N</span>
+                <span class="hint-item__desc">Speaker notes</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hint-item hint-item--action" id="hint-voice" data-hint-action="voice" hidden>
+                <span class="hint-item__key">V</span>
+                <span class="hint-item__desc">Speak a slide</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="radio">
+                <span class="hint-item__key">R</span>
+                <span class="hint-item__desc">Radio</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="hud">
+                <span class="hint-item__key">H</span>
+                <span class="hint-item__desc">Hide the bar</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+            </section>
+
+            <section class="hint-group">
+              <h3 class="hint-group__title">Make</h3>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="edit">
+                <span class="hint-item__key">E</span>
+                <span class="hint-item__desc">Edit slide</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hint-item hint-item--action" data-hint-action="deck">
+                <span class="hint-item__key">S</span>
+                <span class="hint-item__desc">Deck settings</span>
+                <span class="hint-item__go" aria-hidden="true">→</span>
+              </button>
+              <div class="hint-item hint-item--static">
+                <span class="hint-item__key">?</span>
+                <span class="hint-item__desc">This sheet</span>
+              </div>
+            </section>
           </div>
           <div class="hints-modal__footer">
             <button class="hints-modal__btn" id="hints-modal-got-it">Got it!</button>
@@ -353,7 +403,7 @@
             <span class="hud__notes-icon" aria-hidden="true">📝</span>
           </button>
         </div>
-        <div class="hud__counter">
+        <div class="hud__counter" id="hud-counter" role="button" tabindex="0" aria-label="Back to the first slide" title="Back to the first slide (Home)">
           <span data-counter-current>1</span>
           <span class="hud__divider">/</span>
           <span data-counter-total>1</span>
@@ -365,18 +415,6 @@
           <button class="hud__action hud__overview-btn" id="overview-btn" aria-label="View all slides (O)" title="View all slides (O)">
             <span class="hud__action-icon" aria-hidden="true">⊞</span>
             <span class="hud__action-label">Overview</span>
-          </button>
-          <button class="hud__action hud__home-btn" id="home-btn" aria-label="Go to first slide" title="Go to first slide">
-            <span class="hud__action-icon" aria-hidden="true">⌂</span>
-            <span class="hud__action-label">Home</span>
-          </button>
-          <button class="hud__action hud__help-btn" id="help-btn" aria-label="Keyboard shortcuts (?)" title="Press ? for all keyboard shortcuts">
-            <span class="hud__action-icon" aria-hidden="true">?</span>
-            <span class="hud__action-label">Help</span>
-          </button>
-          <button class="hud__action hud__share-btn" id="share-deck-btn" aria-label="Share this deck" title="Create a read-only share link">
-            <span class="hud__action-icon" aria-hidden="true">⇪</span>
-            <span class="hud__action-label">Share</span>
           </button>
           <button class="hud__action hud__radio-btn" id="hud-radio-btn" aria-label="Toggle radio" aria-pressed="false" aria-haspopup="true" title="Radio on/off (R). Right-click for stations">
             <span class="hud__action-icon" aria-hidden="true">📻</span>
