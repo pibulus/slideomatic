@@ -935,6 +935,13 @@ function initHudControls() {
     });
   }
 
+  // Discoverable counterpart to the `H` shortcut. Touch users have no
+  // keyboard, so the hint has to live somewhere they can tap.
+  const hideHudBtn = document.getElementById('hud-hide-btn');
+  if (hideHudBtn) {
+    hideHudBtn.addEventListener('click', () => toggleHudHidden());
+  }
+
   // Screen-edge tap zones, mobile only (see css/ui.css): a visible signifier
   // that swiping/tapping the edges moves slides, since the HUD arrows are
   // small and easy to miss on a phone.

@@ -9,6 +9,9 @@
 - Divider slides can opt into a large plate with `media-strip__plate`, separate from the opening title banner.
 - Generated image prompts ask for dense, diagrammatic plates with axes, labels, and plotted data instead of abstract mood.
 - `/collections.html` merges an optional `deck-collections.local.json` (gitignored) after the public collections, so private packs stay local.
+- New `scroll` slide type: a long-form document page with a lead paragraph and `##` section headings.
+- `## Heading` lines in any body copy render as section subheadings.
+- The HUD gains a Hide button matching the existing `H` shortcut, so the nav bar is discoverable to hide on touch.
 
 ## v1.0.1 - May 30, 2026
 

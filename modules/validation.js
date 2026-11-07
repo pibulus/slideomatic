@@ -6,6 +6,7 @@ export function validateSlides(data) {
   const allowedTypes = new Set([
     'title',
     'standard',
+    'scroll',
     'quote',
     'split',
     'grid',

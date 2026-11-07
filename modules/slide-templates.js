@@ -17,6 +17,20 @@ export function getSlideTemplate(type) {
       body: ['First talking point', 'Second talking point'],
       font: 'sans'
     },
+    scroll: {
+      type: 'scroll',
+      badge: 'Reading',
+      headline: 'Headline Goes Here',
+      lead: 'A one-sentence opening that sets the page up.',
+      body: [
+        '## First section',
+        'First paragraph of the long read.',
+        'Second paragraph, same section.',
+        '## Second section',
+        'More copy. This page is allowed to scroll.'
+      ],
+      font: 'serif'
+    },
     quote: {
       type: 'quote',
       quote: '"Add your quote here."',

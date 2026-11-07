@@ -1436,6 +1436,64 @@ div.image-placeholder-wrapper .image-placeholder {
   box-shadow: var(--shadow-lg);
 }
 
+/* --- Scroll page -------------------------------------------------------
+   A deliberate long-form page, not a slide that merely overflows.
+   Narrow reading column, generous leading, and real section headings, so
+   a document reads as a document. */
+.slide--scroll .slide__content {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  gap: var(--space-md);
+}
+
+.slide--scroll .scroll__lead {
+  font-size: var(--type-xl);
+  line-height: 1.45;
+  max-width: none;
+  color: var(--color-ink);
+}
+
+.slide--scroll .scroll__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.slide--scroll .scroll__body > p {
+  font-size: var(--type-md);
+  line-height: 1.7;
+  max-width: none;
+  margin: 0;
+}
+
+.slide--scroll .scroll__body ul,
+.slide--scroll .scroll__body ol {
+  margin: 0;
+  padding-inline-start: 1.25em;
+}
+
+.slide--scroll .scroll__body .callout {
+  max-width: none;
+}
+
+/* Section heading inside body copy ("## Heading"). Usable by any slide
+   type, but it is what lets a scroll page read as a document. */
+.slide .body-heading {
+  font-family: var(--font-mono);
+  font-size: var(--type-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-block: var(--space-md) 0;
+  padding-block-end: 0.3em;
+  border-bottom: 2px solid var(--color-accent);
+  /* The generic .slide h3 is a surface tint; body headings are ink. */
+  color: var(--color-ink);
+}
+
+.slide--scroll .body-heading:first-child {
+  margin-block-start: 0;
+}
+
 .slide--grid {
   display: grid;
   grid-template-rows: auto 1fr;

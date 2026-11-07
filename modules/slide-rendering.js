@@ -62,6 +62,7 @@ export function renderEmptyState() {
 export const renderers = {
     title: renderTitleSlide,
     standard: renderStandardSlide,
+    scroll: renderScrollSlide,
     quote: renderQuoteSlide,
     split: renderSplitSlide,
     grid: renderGridSlide,
@@ -287,6 +288,34 @@ export function renderStandardSlide(section, slide) {
         });
         wrapper.appendChild(imageElement);
         section.appendChild(wrapper);
+    }
+
+    if (slide.footnote) {
+        section.appendChild(createFootnote(slide.footnote));
+    }
+}
+
+export function renderScrollSlide(section, slide) {
+    section.classList.add('slide--scroll');
+
+    if (slide.headline) {
+        const headline = document.createElement('h2');
+        setRichContent(headline, slide.headline);
+        section.appendChild(headline);
+    }
+
+    if (slide.lead) {
+        const lead = document.createElement('p');
+        lead.className = 'scroll__lead';
+        setRichContent(lead, slide.lead);
+        section.appendChild(lead);
+    }
+
+    if (slide.body) {
+        const body = document.createElement('div');
+        body.className = 'scroll__body';
+        appendBody(body, slide.body);
+        section.appendChild(body);
     }
 
     if (slide.footnote) {
@@ -701,6 +730,21 @@ export function appendBody(container, body) {
                     callout: kinds[markerMatch[1]],
                     body: markerMatch[2]
                 }));
+                return;
+            }
+        }
+
+        // Section subheading inside body copy: "## Heading" or "### Heading".
+        // Lets a scroll page read as a document with real sections rather than
+        // one long run of paragraphs.
+        if (typeof text === 'string') {
+            const headingMatch = text.match(/^\s*#{2,3}\s+(.+)$/);
+            if (headingMatch) {
+                listEl = null;
+                const heading = document.createElement('h3');
+                heading.className = 'body-heading';
+                setRichContent(heading, headingMatch[1]);
+                container.appendChild(heading);
                 return;
             }
         }

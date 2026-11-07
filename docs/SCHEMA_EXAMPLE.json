@@ -5,6 +5,7 @@
     "slideTypes": {
       "title": "Hero slide with eyebrow, title, subtitle, and media strip",
       "standard": "Basic slide with badge, headline, body, and optional image",
+      "scroll": "Long-form page with a lead paragraph and ## section headings",
       "quote": "Large centered quote with attribution",
       "split": "Two-column layout with left/right content",
       "grid": "Grid of images or color swatches",

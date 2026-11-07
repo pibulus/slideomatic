@@ -117,6 +117,7 @@ Edit `slides.json` directly. Each slide is a JSON object. Supported `type` value
 
 - `title`
 - `standard`
+- `scroll` (long-form page: lead paragraph, body copy, `##` section headings)
 - `quote`
 - `split`
 - `grid`
@@ -335,6 +336,25 @@ A slide is a full viewport, not a fixed frame. When a slide's copy runs taller t
 - **Scroll page:** a long argument, the evidence, the full list. It reads like a web page.
 - **Held slide:** the beat that lands. It reads like a slide.
 - **The rhythm is the point.** A deck that is all scroll pages is a web page; a deck that is all held slides is a slideshow. Alternating the two is what makes it a deck.
+
+Use `"type": "scroll"` when the page is a document on purpose:
+
+```json
+{
+  "type": "scroll",
+  "badge": "Reading",
+  "headline": "What the record shows",
+  "lead": "A one-sentence opening that sets the page up.",
+  "body": [
+    "## First section",
+    "Body copy. This page is allowed to run.",
+    "## Second section",
+    "More copy."
+  ]
+}
+```
+
+A `##` or `###` line becomes a section heading inside the body, so a long page can actually be navigated. Any slide can use them, but the `scroll` type is built around them.
 
 On a projector or a live talk, keep scroll pages short: the room cannot scroll with you. On a phone or desktop, a scroll page is the natural reading surface. The HUD reserves clearance at the bottom, so the last line always clears the nav bar.
 

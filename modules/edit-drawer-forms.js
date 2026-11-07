@@ -14,6 +14,7 @@ import { loadThemeLibrary, getCurrentThemePath } from './theme-manager.js';
 export const LAYOUT_OPTIONS = [
   { value: 'title', label: 'Title', description: 'Hero intro' },
   { value: 'standard', label: 'Standard', description: 'Flexible content' },
+  { value: 'scroll', label: 'Scroll', description: 'Long-form page' },
   { value: 'quote', label: 'Quote', description: 'Pull quote' },
   { value: 'split', label: 'Split', description: 'Two-column' },
   { value: 'grid', label: 'Grid', description: '3-up highlights' },
@@ -198,11 +199,16 @@ function buildCombinedContentSection(slide, type) {
   // Body
   const shouldShowBody =
     Object.prototype.hasOwnProperty.call(slide, 'body') ||
-    ['standard', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
+    ['standard', 'scroll', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
 
   if (shouldShowBody) {
     const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
     fields.push(buildTextareaField('body', bodyValue, 'Body copy'));
+  }
+
+  // Long-form opening paragraph (scroll pages)
+  if (type === 'scroll' || Object.prototype.hasOwnProperty.call(slide, 'lead')) {
+    fields.push(buildTextareaField('lead', slide.lead || '', 'Lead paragraph'));
   }
 
   // Pillars cards (editable without touching raw JSON)
