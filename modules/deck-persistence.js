@@ -166,8 +166,17 @@ export async function loadSlides() {
     const response = await fetch(slidesPath, { cache: 'no-store' });
     if (response.ok) {
       const data = await response.json();
+      // A deck file may be a bare array (legacy) or {theme, slides} so a deck
+      // can carry its own palette. The url= and data= loaders already accept
+      // both shapes; ?slides= used to reject the wrapped one silently.
       if (Array.isArray(data)) {
         return data;
+      }
+      if (data && typeof data === 'object' && Array.isArray(data.slides)) {
+        if (data.theme && typeof data.theme === 'object') {
+          applySharedThemeHook(data.theme);
+        }
+        return data.slides;
       }
     }
     throw new Error(`Slides file ${slidesPath} is missing or not a slides array`);

@@ -24,3 +24,12 @@ images/screenshots/
 
 # Generated at build time by scripts/stamp-version.mjs
 version.json
+
+# Personal decks — never published. These carry the Dossier and its readings.
+case-2891982.json
+numerological-reading*.json
+pdeck-3*.json
+themes/case-2891982.json
+images/case-2891982/
+images/numerological/
+images/pdeck-3/

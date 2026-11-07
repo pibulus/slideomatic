@@ -30,6 +30,12 @@ export function createImage(image, className = 'slide__image', options = {}) {
     }
     const img = document.createElement('img');
     img.className = className;
+    if (image.extraClass) {
+        String(image.extraClass)
+            .split(/\s+/)
+            .filter(Boolean)
+            .forEach((token) => img.classList.add(token));
+    }
     const actualSrc = image.src;
     const modalSrc = image.modalSrc ?? actualSrc;
     const shouldLazyLoad = typeof actualSrc === 'string' && !actualSrc.startsWith('data:');

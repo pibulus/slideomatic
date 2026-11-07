@@ -681,6 +681,30 @@ export function appendBody(container, body) {
             listEl = null;
             return;
         }
+
+        // Object-form callout: { callout: "info"|"didyouknow"|"warning"|"pull", title, body }
+        if (typeof text === 'object' && text.callout) {
+            listEl = null;
+            container.appendChild(createCallout(text));
+            return;
+        }
+
+        // String-form callout markers keep hand-written JSON readable:
+        //   "!! text"  info box      "?! text"  did-you-know
+        //   "?? text"  open question ">> text"  pull quote
+        if (typeof text === 'string') {
+            const markerMatch = text.match(/^\s*(!!|\?!|\?\?|>>)\s+([\s\S]+)$/);
+            if (markerMatch) {
+                listEl = null;
+                const kinds = { '!!': 'info', '?!': 'didyouknow', '??': 'question', '>>': 'pull' };
+                container.appendChild(createCallout({
+                    callout: kinds[markerMatch[1]],
+                    body: markerMatch[2]
+                }));
+                return;
+            }
+        }
+
         const bulletMatch = typeof text === 'string' && text.match(/^\s*[-•]\s+(.+)$/);
         if (bulletMatch) {
             if (!listEl) {
@@ -702,6 +726,39 @@ export function appendBody(container, body) {
         setRichContent(paragraph, text);
         container.appendChild(paragraph);
     });
+}
+
+const CALLOUT_LABELS = {
+    info: 'Note',
+    didyouknow: 'Did you know',
+    warning: 'Careful',
+    question: 'Open question',
+    pull: 'Margin note'
+};
+
+export function createCallout(data) {
+    const kind = CALLOUT_LABELS[data.callout] ? data.callout : 'info';
+    const box = document.createElement('div');
+    box.className = `callout callout--${kind}`;
+
+    const label = document.createElement('div');
+    label.className = 'callout__label';
+    label.textContent = data.label || CALLOUT_LABELS[kind];
+    box.appendChild(label);
+
+    if (data.title) {
+        const title = document.createElement('div');
+        title.className = 'callout__title';
+        setRichContent(title, data.title);
+        box.appendChild(title);
+    }
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'callout__body';
+    setRichContent(bodyEl, data.body || '');
+    box.appendChild(bodyEl);
+
+    return box;
 }
 
 export function createBadge(label) {

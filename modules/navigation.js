@@ -339,6 +339,7 @@ export function setActiveSlide(nextIndex) {
   newSlide.querySelectorAll('img[data-src]').forEach(loadLazyImage);
   slideElements[currentIndex].classList.add('is-active');
   slideElements[currentIndex].scrollIntoView({ block: 'center' });
+  updateScrollAffordance(currentIndex);
   setOverviewCursor(currentIndex);
   setLastOverviewHighlight(currentIndex);
   updateOverviewButton();
@@ -480,4 +481,26 @@ export function navigateToDeckHome() {
   // Absolute path: on a shared /s/<slug> URL a relative 'index.html' would
   // resolve to /s/index.html and dead-end in the share loader.
   window.location.href = '/index.html';
+}
+
+/**
+ * Toggle the bottom fade on the active slide so long copy reads as
+ * "there is more below" instead of "the text is cut off". Re-checked on
+ * scroll so the fade disappears once the reader reaches the end.
+ */
+export function updateScrollAffordance(index) {
+  const slide = slideElements[index];
+  if (!slide) return;
+
+  const apply = () => {
+    const overflowing = slide.scrollHeight - slide.clientHeight > 24;
+    const atBottom = slide.scrollTop + slide.clientHeight >= slide.scrollHeight - 8;
+    slide.classList.toggle('is-scrollable', overflowing && !atBottom);
+  };
+
+  apply();
+
+  if (slide.dataset.scrollBound === '1') return;
+  slide.dataset.scrollBound = '1';
+  slide.addEventListener('scroll', apply, { passive: true });
 }

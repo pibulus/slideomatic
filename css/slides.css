@@ -18,10 +18,20 @@
   inset: 0;
   --slide-space-block: clamp(24px, 5vh, 64px);
   --slide-space-inline: clamp(32px, 5vw, 96px);
+  /* The HUD floats fixed over the bottom edge. Reserve room for it so long
+     body copy never scrolls underneath the controls. */
+  --hud-clearance: calc(96px + env(safe-area-inset-bottom, 0px));
   padding: var(--slide-space-block) var(--slide-space-inline);
+  /* The HUD floats over the bottom edge; that clearance is the real need.
+     Stacking the full block padding on top of it buried short slides in ~45px
+     of dead cream and forced needless scroll on title and graph slides. */
+  padding-bottom: calc(var(--space-xs) + var(--hud-clearance));
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  /* Short slides sit optically centred instead of hugging the top edge with a
+     dead half-frame below. "safe" falls back to top-aligned the moment the
+     copy overflows, so long scrolly slides still read from the first line. */
+  justify-content: safe center;
   align-items: stretch;
   opacity: 0;
   transform: translate3d(0, 20px, 0) scale(0.99);
@@ -147,7 +157,10 @@
 .slide--standard .slide__content {
   width: 100%;
   margin: 0;
-  margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
+  /* The slide already pads its edges. Stacking a second block of top space
+     on top of that pushed short decks into the lower half of the frame and
+     left a dead band above the headline. */
+  margin-block-start: var(--space-heading);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -157,7 +170,16 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 2vh, 32px);
+  gap: clamp(12px, 1.6vh, 24px);
+}
+
+/* Dense bodies stay at a readable size. Slides scroll now — the bottom fade
+   says "there is more below", so long copy is a feature, not a failure.
+   Shrinking type to fit the frame made dense pages feel cramped. */
+.slide--standard .slide__standard-text p,
+.slide--standard .slide__standard-text li {
+  font-size: var(--type-md);
+  line-height: 1.5;
 }
 
 .slide--standard .slide__image-wrapper {
@@ -170,8 +192,11 @@
   border: var(--border-width) solid var(--color-ink);
   padding: clamp(8px, 1vw, 16px);
   box-shadow: var(--shadow-sm);
-  background: var(--color-accent);
-  align-self: flex-start;
+  /* A loud accent mat turned into big empty colour bands whenever the image
+     was shorter than the text column. A cream mount reads calm and keeps the
+     frame without stealing the slide. */
+  background: var(--slide-bg, var(--color-bg));
+  align-self: center;
   overflow: hidden;
 }
 
@@ -193,7 +218,9 @@
   grid-template-columns: 1.2fr 0.8fr;
   grid-template-areas: "content image";
   gap: var(--space-lg);
-  align-items: center;
+  /* Top-align the pair. Centering left a short plate floating in the middle
+     of a long text column, which read as dead space rather than balance. */
+  align-items: start;
 }
 
 .slide--layout-default .slide__standard-text,
@@ -205,7 +232,7 @@
 .slide--layout-image-right .slide__image-wrapper {
   grid-area: image;
   width: 100%;
-  align-self: stretch;
+  align-self: start;
 }
 
 .slide--layout-image-left .slide__content {
@@ -213,7 +240,7 @@
   grid-template-columns: 0.8fr 1.2fr;
   grid-template-areas: "image content";
   gap: var(--space-lg);
-  align-items: center;
+  align-items: start;
 }
 
 .slide--layout-image-left .slide__standard-text {
@@ -223,7 +250,7 @@
 .slide--layout-image-left .slide__image-wrapper {
   grid-area: image;
   width: 100%;
-  align-self: stretch;
+  align-self: start;
 }
 
 .slide--layout-image-top .slide__content {
@@ -246,9 +273,9 @@
 
 .slide--layout-image-top .slide__standard-text {
   grid-area: content;
-  max-width: 100%;
+  max-width: min(100%, 70ch);
   margin-inline: auto;
-  text-align: center;
+  text-align: left;
 }
 
 .slide--layout-image-bottom .slide__content {
@@ -264,7 +291,7 @@
 
 .slide--layout-image-bottom .slide__image-wrapper {
   grid-area: image;
-  max-height: 40vh;
+  max-height: 30vh;
   width: min(100%, clamp(320px, 60vw, 720px));
   justify-self: center;
 }
@@ -273,7 +300,10 @@
   grid-area: content;
   max-width: 100%;
   margin-inline: auto;
-  text-align: center;
+  /* Centred text is fine for a caption. Long body copy centred across the
+     full width makes the eye hunt for the start of every line. Keep it
+     left-aligned but let it use the full measure so it does not stack up. */
+  text-align: left;
 }
 
 @media (max-width: 1024px) {
@@ -328,8 +358,11 @@
 
 .slide__content {
   width: min(100%, clamp(1040px, 96vw, 2280px));
-  margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
-  margin-block-end: clamp(24px, 7vh, 80px);
+  /* The slide already pads its own edges. Adding the block padding again here
+     double-counted it and pushed short slides into a valley of dead color.
+     Keep a single, small breath above the first line instead. */
+  margin-block-start: var(--space-heading);
+  margin-block-end: clamp(12px, 3vh, 40px);
   margin-inline: clamp(20px, 2.5vw, 64px);
   display: grid;
   gap: var(--space-md);
@@ -369,7 +402,10 @@
   width: 100%;
   max-width: clamp(1180px, 96vw, 2200px);
   margin: 0;
-  margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
+  /* The slide already pads its own edges. The block padding was being added
+     again here and stacking ~170px of dead cream around the title group,
+     which pushed title slides into an unnecessary scroll. */
+  margin-block-start: var(--space-heading);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -378,7 +414,7 @@
      The larger end margin biases the group above true center, where a
      title optically belongs. */
   justify-content: safe center;
-  margin-block-end: clamp(48px, 8vh, 96px);
+  margin-block-end: clamp(16px, 3vh, 40px);
   align-items: flex-start;
   text-align: left;
   gap: var(--space-md);
@@ -391,17 +427,21 @@
 }
 
 .slide--quote .slide__content {
-  width: min(100%, clamp(1120px, 98vw, 2400px));
+  width: min(100%, clamp(1120px, 92vw, 2100px));
   gap: var(--space-md);
   margin: 0;
-  margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
+  /* The block padding added in front of this margin pushed the quote down the
+     frame, leaving a lone card in the top half. Let it sit in the middle. */
+  margin-block-start: 0;
 }
 
 .slide--split .slide__content,
 .slide--gallery .slide__content {
   width: min(100%, clamp(1120px, 96vw, 2320px));
   margin: 0;
-  margin-block-start: calc(var(--slide-space-block) + var(--space-heading));
+  /* The slide already pads its own edges; adding the block padding again here
+     double-spaced the top and pushed split content down the frame. */
+  margin-block-start: var(--space-heading);
 }
 
 .slide--title {
@@ -432,6 +472,18 @@
 .slide--title .media-strip__image {
   width: 100%;
   max-height: clamp(200px, 34vh, 400px);
+}
+
+/* A section divider whose only media is a diagram is making an argument, not
+   decorating a title. Opted-in plates are allowed to be large — but they
+   still have to FIT, because a divider you must scroll to finish reading
+   reads as a mistake rather than as depth.
+   Opt-in matters: the opening title image is a banner and must stay one. */
+.slide--title .media-strip__plate {
+  max-height: calc(100dvh - 465px);
+  max-width: 100%;
+  width: auto;
+  margin-inline: auto;
 }
 
 .slide--title .title__subtitle {
@@ -572,9 +624,22 @@
   text-wrap: pretty;
 }
 
+/* Emphasis used the surface tint as its ink, which on a cream page meant
+   pale pink on pale cream — roughly 1.3:1. Keep the ink dark and let a
+   marker stroke behind the words do the emphasising instead.
+   A full block of accent was too loud when a deck bolds its lead phrase on
+   every paragraph, so this is a highlighter on the lower third only. */
 .slide p strong {
-  color: var(--color-surface);
+  color: var(--color-ink);
   font-weight: 700;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-accent) 62%, transparent) 0 0.34em,
+    transparent 0.34em 100%
+  );
+  padding-inline: 0.06em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .slide p em {
@@ -697,7 +762,9 @@
   border: solid var(--color-ink);
   border-width: max(2px, calc(var(--border-width) * 0.7));
   box-shadow: var(--shadow-md);
-  background: var(--color-accent);
+  /* The frame should read as paper, not as a highlighter. Accent mats were
+     the "yellow space" complaint: a loud colour behind every plate. */
+  background: var(--slide-bg, var(--color-bg));
   padding: clamp(4px, 0.6vw, 14px);
   transition: transform 250ms cubic-bezier(0.2, 2, 0.4, 1),
               box-shadow 250ms ease,
@@ -744,6 +811,202 @@
 .slide__image[data-orientation="square"]:not(.slide__image--full) {
   width: min(520px, 60vw);
   max-height: 70vh;
+}
+
+/* Graph slides had no sizing rules at all, so the generated 16:9 plate
+   rendered at full container width and pushed the slide past the frame
+   by a constant amount. Cap the height and let it letterbox instead. */
+.slide__graph {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vh, 24px);
+  align-items: center;
+}
+
+.slide__graph h2 {
+  width: 100%;
+  align-self: flex-start;
+}
+
+.graph-container {
+  width: 100%;
+  /* A generated chart is the point of a graph slide. Capping it at 900px left
+     a third of a laptop frame empty on both sides; let it own the width. */
+  max-width: min(100%, 1180px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.graph-image {
+  /* Fit the plate inside the frame instead of pushing its caption under the
+     HUD. Sizing off both axes with auto width keeps the 16:9 proportion and
+     avoids the letterbox bars a fixed height used to produce. */
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: calc(100dvh - 340px);
+  margin-inline: auto;
+  display: block;
+  object-fit: contain;
+  border: var(--border-width) solid var(--color-ink);
+  background: var(--slide-bg, var(--color-bg));
+  box-shadow: var(--shadow-md);
+}
+
+.graph-description {
+  max-width: min(100%, 70ch);
+}
+
+.graph-regenerate-btn {
+  font-family: var(--font-sans);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  border: var(--border-width) solid var(--color-ink);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.graph-regenerate-btn:hover {
+  transform: translate(-2px, -2px);
+  background: var(--color-accent);
+}
+
+/* --- Callouts -------------------------------------------------------
+   Margin notes that sit inside the body flow. They let a long scroll
+   carry asides, "did you knows" and open questions without breaking the
+   reading rhythm. Colours come from theme vars so they adapt to any deck. */
+.callout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin-block: clamp(6px, 1vh, 14px);
+  padding: clamp(12px, 1.6vw, 20px) clamp(14px, 2vw, 24px);
+  border: var(--border-width) solid var(--color-ink);
+  border-left-width: clamp(6px, 1vw, 10px);
+  background: var(--slide-bg, var(--color-bg));
+  box-shadow: var(--shadow-sm);
+  /* Full measure. Capping these at 72ch left a note hugging the left edge
+     with half the slide empty beside it — the exact "unfinished" look the
+     rest of the deck had just lost. */
+  width: 100%;
+  max-width: none;
+  text-align: left;
+}
+
+/* On any real screen a callout becomes a margin note: a narrow label rail
+   and the prose running beside it. Short notes then fill the frame instead
+   of trailing off into dead colour. */
+@media (min-width: 900px) {
+  .callout {
+    grid-template-columns: clamp(110px, 12vw, 168px) minmax(0, 1fr);
+    grid-template-areas:
+      'label title'
+      'label body';
+    align-items: start;
+    column-gap: clamp(16px, 2vw, 32px);
+    row-gap: 4px;
+    padding-block: clamp(16px, 2vh, 26px);
+  }
+
+  .callout__label {
+    grid-area: label;
+    padding-block-start: 0.45em;
+    border-right: 2px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+    padding-inline-end: 12px;
+  }
+
+  .callout__title {
+    grid-area: title;
+  }
+
+  .callout__body {
+    grid-area: body;
+  }
+}
+
+.callout__label {
+  font-family: var(--font-sans);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-muted);
+}
+
+.callout__title {
+  font-family: var(--font-sans);
+  font-size: var(--type-md);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.callout__body {
+  font-size: var(--type-sm);
+  line-height: 1.45;
+}
+
+.callout__body p {
+  max-width: none;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.callout--info {
+  border-left-color: var(--color-accent);
+}
+
+.callout--didyouknow {
+  border-left-color: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 12%, var(--slide-bg, var(--color-bg)));
+}
+
+.callout--warning {
+  border-left-color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--slide-bg, var(--color-bg)));
+}
+
+.callout--question {
+  border-left-color: var(--color-muted);
+  border-style: dashed;
+}
+
+.callout--pull {
+  border: none;
+  border-left: clamp(6px, 1vw, 10px) solid var(--color-surface);
+  background: transparent;
+  box-shadow: none;
+  font-style: italic;
+  font-size: var(--type-md);
+}
+
+/* A scroll affordance: when a slide's copy runs past the frame, fade the
+   bottom edge so it reads as "there is more" rather than "cut".
+   A sticky pseudo-element inside a flex column scroller lands wherever the
+   flex algorithm puts it — it showed up as a band across the middle of a
+   long slide. A mask is pinned to the element's own box, so it always fades
+   the actual bottom edge. */
+.slide.is-scrollable {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--hud-clearance)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--hud-clearance)),
+    transparent 100%
+  );
 }
 
 .image-placeholder {
@@ -992,13 +1255,15 @@ div.image-placeholder-wrapper .image-placeholder {
   text-wrap: pretty;
   padding: clamp(36px, 5vw, 64px);
   padding-left: clamp(48px, 6vw, 80px);
+  border: var(--border-width) solid var(--color-ink);
   border-left: clamp(12px, 2vw, 24px) solid var(--color-surface);
-  background: linear-gradient(135deg,
-    rgba(255, 159, 243, 0.12) 0%,
-    rgba(136, 212, 255, 0.08) 100%);
+  /* Was a 12%-pink → 8%-blue gradient over cream: the classic washed-out
+     veil. A solid paper card with a hard ink rule matches every other
+     surface in the deck and keeps the quote as the loudest thing on screen. */
+  background: var(--slide-bg, var(--color-bg));
   border-radius: var(--radius);
   position: relative;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   font-style: italic;
 }
 
@@ -1058,8 +1323,18 @@ div.image-placeholder-wrapper .image-placeholder {
   text-transform: uppercase;
   font-style: normal;
   font-weight: 900;
-  color: var(--color-surface);
+  /* The attribution was painted in the surface tint: pink on cream, barely
+     legible. Ink with a marker rule under it reads at a glance.
+     inline-block keeps that rule hugging the words instead of running the
+     full slide width as a stray line. */
+  display: inline-block;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--color-ink);
+  border-bottom: 4px solid var(--color-accent);
   padding-left: clamp(48px, 6vw, 80px);
+  padding-bottom: 6px;
   font-family: var(--font-mono);
   letter-spacing: 0.05em;
 }
@@ -1095,19 +1370,50 @@ div.image-placeholder-wrapper .image-placeholder {
   object-fit: contain;
 }
 
+/* Dense split prose reads as a column of text, not a poem. Force a clean
+   left edge so long paragraphs don't inherit a centred rhythm from any
+   ancestor and look "off balance" in the narrow cards. */
+/* Columns are ~465px wide. At the global body size (up to 1.8rem) that is
+   about thirty characters a line — under any readable measure, and the
+   reason two-column slides grew to 1100px tall. Same words, set to fit the
+   column: this is typesetting, not trimming. */
+.slide--split .slide__column p,
+.slide--split .slide__column li,
+.slide--split .slide__column .callout__body {
+  font-size: clamp(1rem, 1.45vw, 1.25rem);
+  line-height: 1.5;
+}
+
+.slide--split .slide__column p,
+.slide--split .slide__column li,
+.slide--split .slide__column h3,
+.slide--split .slide__column .callout__body {
+  text-align: left;
+}
+
 .slide--split--feature .slide__content {
   gap: clamp(28px, 5vw, 64px);
   align-items: stretch;
 }
 
 .slide--split--feature .slide__column {
-  background: var(--color-surface);
+  /* Solid surface slabs turned two-column slides into walls of pink. Paper
+     cards with a coloured spine keep the used-notebook feel and let the ink
+     do the work; the two columns get different spines so the eye can tell
+     them apart at a glance. */
+  background: var(--slide-bg, var(--color-bg));
   border: var(--border-width) solid var(--color-ink);
+  border-left-width: clamp(8px, 1vw, 12px);
+  border-left-color: var(--color-surface);
   border-radius: var(--radius);
   padding: clamp(24px, 3vw, 36px);
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
+}
+
+.slide--split--feature .slide__column:nth-child(even) {
+  border-left-color: var(--color-surface-alt);
 }
 
 .slide--split--feature .slide__column h3 {
@@ -1389,7 +1695,7 @@ div.image-placeholder-wrapper .image-placeholder {
 }
 
 .pillar h3 {
-  font-size: var(--type-lg);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
   color: var(--color-ink);
   background: var(--color-surface);
   padding: 8px 12px;
@@ -1397,6 +1703,10 @@ div.image-placeholder-wrapper .image-placeholder {
   border-bottom: var(--border-width) solid var(--color-ink);
   text-transform: none;
   letter-spacing: 0.02em;
+  /* Long single words — OBSERVATION, CANDIDATE — ran straight out of the
+     card. Let a heading break rather than bleed past its own border. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .pillar p {

@@ -151,22 +151,27 @@ export async function generateAIImage(placeholderElement, imageConfig = {}) {
     showHudStatus('✨ Generating image...', 'info');
 
     try {
-        const prompt = `Create an illustration for a presentation slide about: ${imageContext || headline}.
+        const prompt = `Create a dense, diagrammatic illustration for a presentation slide about: ${imageContext || headline}.
 
 Slide context:
 ${headline ? `- Headline: ${headline}` : ''}
-${body ? `- Content: ${body.substring(0, 200)}` : ''}
+${body ? `- Content: ${body.substring(0, 300)}` : ''}
 
-Style requirements:
-- Risograph print aesthetic with bold, flat colors, ${themeMood}
-- HYPER-SATURATED fluorescent ink: colors at full intensity, like fresh
-  riso soy ink on bright paper. Never washed out, never pastel-muddy
-- Use complementary colors inspired by: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}, pushed to their most vivid versions
-- Clean, minimal composition
-- High contrast, professional quality
-- No text or labels in the image
+VISUAL LANGUAGE — this is the important part:
+- It should read as an INFORMATION RICH DIAGRAM or schematic, not a decorative illustration.
+- Fill the frame with STRUCTURE: intersecting lines, nodal points, flow arrows, concentric rings, grids, axes, measurement ticks, exploded views, cross-sections, topological maps, or engineering callouts.
+- Include real GEOMETRY — circles, arcs, spirals, lattices, platonic solids, nomograms, or orbital traces.
+- If the slide is about numbers, show the numbers AS DATA: small printed digits, tabulated columns, axis labels, coordinate pairs, or tally marks arranged with intent.
+- Text and labels are WELCOME and encouraged — tiny annotations, legends, captions in a technical hand. Let the diagram look like it came from a field notebook or an observatory log.
+- Compose like an antique scientific plate crossed with a modern data visualisation: dense, ordered, slightly obsessive.
 
-The image should be visually striking and support the slide content.`;
+STYLE:
+- Risograph print aesthetic: bold flat colour, visible grain, slight ink misregistration, screen-printed texture.
+- HYPER-SATURATED fluorescent inks at full intensity — never washed out, never pastel-muddy.
+- Palette drawn from: ${colorSurface}, ${colorSurfaceAlt}, ${colorAccent}, pushed to their most vivid versions.
+- High contrast against warm cream paper. ${themeMood}.
+
+The image should feel like a page torn from a very specific, very detailed working notebook — something that rewards a second look.`;
 
         const response = await callGemini(
             'gemini-3.1-flash-image',
@@ -258,7 +263,7 @@ export async function generateGraphVisualization(slide = {}, options = {}) {
     const slideFacts = summarizeSlideForGraph(slide);
 
     const prompt = `
-You are Slideomatic's risograph data visualiser. Create a single 16:9 infographic image (PNG/JPEG) that feels screen-printed, textural, and bold.
+You are Slideomatic's risograph data visualiser. Create a single 16:9 infographic image that feels screen-printed, textural, and dense with information.
 
 Slide context:
 Title: ${headline}
@@ -266,7 +271,15 @@ Description: ${description}
 ${slideFacts}
 
 ${paletteLine}
-Use chunky ink lines, halftone fills, grain, and HYPER-SATURATED fluorescent riso inks at full intensity (never washed out). Choose an appropriate chart style (bar, line, radial, stacked, comparison cards, etc.) that best communicates the data/story. Label axes or segments minimally, keep typography clean (Inter / Space Mono inspiration). Avoid realistic photos or UI chrome. Include the title within the graphic. Output only an image.
+
+Build a REAL chart, not an abstract mood piece. Choose the form that actually fits the data: bar, line, scatter, radial, heatmap, network, stacked, timeline, or comparison cards. Then make it generous with information:
+- Draw proper axes with tick marks and numeric labels.
+- Label the series, the units, and the key data points. Small type is fine — this should reward close reading.
+- If the slide names specific numbers, PLOT THEM. If it describes a sequence, show the sequence. If it describes a distribution, show the shape of the distribution.
+- Add small annotations, callout lines, and a legend where they help.
+- Fill the frame. Empty space in a data slide reads as unfinished, not as restraint.
+
+Style: chunky ink lines, halftone fills, visible grain, HYPER-SATURATED fluorescent riso inks at full intensity (never washed out). Technical, ordered, slightly obsessive — an observatory plate crossed with a modern data page. Include the title within the graphic. Avoid realistic photos and UI chrome. Output only an image.
 `.trim();
 
     const response = await callGemini(
