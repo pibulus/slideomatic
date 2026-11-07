@@ -13,7 +13,7 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | --- | --- |
 | `index.html` | Public launcher, guide/blank entry, local deck shelf, JSON upload/paste, about modal. |
 | `deck.html` + `main.js` | Presentation/runtime shell: load, render, edit, navigate, share, export, voice, and PWA behavior. |
-| `collections.html` | Curated deck bundle surface using `deck-collections.json`. |
+| `collections.html` | Curated deck bundle surface using `deck-collections.json`, plus an optional gitignored `deck-collections.local.json` for private packs. |
 | `admin.html` + `admin.js` | Legacy password-gated JSON slide editor. Useful, but not the main v1 editing path. |
 | `branding/index.html` | Branded/static resource page. |
 | `netlify/functions/*` | Hosted `/s/...` share records, Blob image assets, asset cleanup, and fallback-compatible legacy `?share=` loading. |
@@ -88,7 +88,7 @@ Important data files:
 - `guide.json` - v1 onboarding guide deck.
 - `design-resources.json` / `demo-deck.json` - richer demo/reference decks.
 - `theme.json`, `themes/*.json` - theme tokens.
-- `catalog.json`, `deck-collections.json` - launcher and collection metadata.
+- `catalog.json`, `deck-collections.json` - launcher and collection metadata. `deck-collections.local.json` (optional, gitignored) merges local-only packs into `/collections.html`.
 - `autolinks.json` - optional phrase-to-link mappings.
 
 See `SCHEMA_EXAMPLE.json` for a deck-format reference.

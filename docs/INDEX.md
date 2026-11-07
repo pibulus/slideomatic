@@ -30,5 +30,5 @@ Start here when the repo has been cold for a while. Root keeps `README.md`
 - `design-resources.json` — design resources deck.
 - `templates/*.json` — the four starter templates.
 - `theme.json`, `themes/*.json` — theme tokens.
-- `catalog.json`, `deck-collections.json` — launcher and collection data.
+- `catalog.json`, `deck-collections.json` — launcher and collection data. `deck-collections.local.json` (gitignored) merges private packs into `/collections.html`.
 - `slides-screenshots.json` — generated QA deck (`scripts/generate-image-deck.mjs`).

@@ -155,6 +155,31 @@ Options:
 
 Use arrays for multi-paragraph copy (`"body": ["Paragraph 1", "Paragraph 2"]`). Text supports markdown-style formatting — `**bold**`, `*italic*`, `` `code` ``, `[links](https://…)` — plus auto-links. Raw HTML in slide content is escaped and shown as text (decks arrive from strangers via share links, so HTML never executes).
 
+### Callouts
+
+Body copy can carry a callout box, in object form or as a short string marker. Both are read as a body item, so they sit inline with the rest of the paragraphs:
+
+```json
+{
+  "type": "standard",
+  "headline": "What the evidence shows",
+  "body": [
+    "A plain paragraph.",
+    { "callout": "info", "title": "Note", "body": "Object form, with an explicit title." },
+    "!! A string marker is quicker to hand-write."
+  ]
+}
+```
+
+Kinds: `info`, `didyouknow`, `warning`, `question`, `pull`. Object form takes `{ callout, title, body }`; the string form uses a marker at the start of the line:
+
+| Marker | Kind |
+| --- | --- |
+| `!! text` | info |
+| `?! text` | didyouknow |
+| `?? text` | question |
+| `>> text` | pull |
+
 ### Missing Image Helpers
 
 If you define an `image` object without a `src`, the deck renders a drop zone: drag & drop, paste, or click to browse for a file. Add alt text and the 🪄 button can generate an image with AI instead.
@@ -227,6 +252,8 @@ Edit `theme.json` to swap colors, typography, spacing, shadows, and background t
 - `/?theme=noir` → loads `themes/noir.json`.
 - `/index.html?theme=alternate.json` → loads `alternate.json` from the project root.
 
+A deck can also carry its own palette. Save a deck as `{ "theme": { ... }, "slides": [ ... ] }` and the `?slides=` loader applies that theme automatically — no `?theme=` needed. `?url=` and `?data=` accept the same wrapper. This keeps a pack's look with the deck itself instead of editing the shared `theme.json`.
+
 | Token | Result |
 | --- | --- |
 | `color-bg` | Base canvas colour (also used when slide background is solid). |
@@ -251,6 +278,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - Launch a deck by visiting `deck.html?slides=path/to.json&theme=my-theme.json` (the index page builds these URLs for you).
 - To edit a non-default deck, open `/admin.html?slides=path/to.json`.
 - If you omit a parameter, the deck falls back to `slides.json` and `theme.json`.
+- A deck can be self-contained: `{ "slides": [...], "theme": { ... } }`. When the slides file carries a theme, the loader applies it automatically, so a pack stays consistent without a shared `theme.json`.
+- Local-only packs (private decks, working sets) merge into `/collections.html` without being committed: add `deck-collections.local.json` (gitignored) and the page appends it after the public collections.
 
 ---
 
@@ -302,6 +331,7 @@ Press `E` to open the edit drawer where you'll find all theme controls:
 - Slides are rendered up front but hidden until shown, keeping GPU/CPU usage low while you navigate.
 - Images load lazily and are prefetched a slide or two ahead for smooth transitions.
 - `content-visibility` is enabled so off-screen slides stay cheap even with long decks.
+- A slide taller than the frame scrolls inside the frame. A bottom fade marks the overflow and lifts once the reader reaches the end, so long copy never runs under the HUD.
 
 ---
 

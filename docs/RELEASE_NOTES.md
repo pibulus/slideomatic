@@ -1,5 +1,15 @@
 # Slide-o-Matic Release Notes
 
+## Unreleased — 2026-11-07
+
+- Decks can carry their own theme: `?slides=`, `?url=`, and `?data=` all accept `{ slides, theme }`.
+- Long slides scroll inside the frame; a bottom fade marks the overflow and lifts when the reader reaches the end.
+- Body copy supports callouts in object form (`{ callout, title, body }`) and string form (`!!`, `?!`, `??`, `>>`).
+- Split-column prose is sized to the column rather than the viewport, so dense two-column slides read at a proper measure.
+- Divider slides can opt into a large plate with `media-strip__plate`, separate from the opening title banner.
+- Generated image prompts ask for dense, diagrammatic plates with axes, labels, and plotted data instead of abstract mood.
+- `/collections.html` merges an optional `deck-collections.local.json` (gitignored) after the public collections, so private packs stay local.
+
 ## v1.0.1 - May 30, 2026
 
 - Share modal now creates hosted Netlify `/s/...` links first, backed by Netlify Blobs.

@@ -257,10 +257,26 @@
             throw new Error(`Failed to load deck collections (${response.status})`);
           }
           const text = await response.text();
-          return safeParse(text) || [];
+          const base = safeParse(text) || [];
+          // Optional local-only collections (private decks, working sets). Kept
+          // in a separate file so a local pack never has to be committed or
+          // published with the public starter pack.
+          const local = await fetchLocalCollections();
+          return [...base, ...local];
         } catch (error) {
           console.error('Unable to fetch deck collections', error);
           showEmptyState('Unable to load the collection right now. Try refreshing in a bit.');
+          return [];
+        }
+      }
+
+      async function fetchLocalCollections() {
+        try {
+          const response = await fetch('deck-collections.local.json', { cache: 'no-store' });
+          if (!response.ok) return [];
+          const parsed = safeParse(await response.text());
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
           return [];
         }
       }
