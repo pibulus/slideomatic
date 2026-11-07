@@ -299,6 +299,8 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 - `S` – Settings (configure Gemini API key)
 - `I` – Toggle slide index
 - `N` – Toggle speaker notes
+- `H` – Hide/show the navigation bar (HUD)
+- `R` – Toggle radio
 
 ### 🎙️ Voice-to-Slide + Dictation
 Press `V` or click the voice button in the HUD to generate slides using AI. The edit drawer and cheat console also include mic buttons that transcribe rough speech into cleaned prompt/body text. See [docs/VOICE_TO_SLIDE.md](docs/VOICE_TO_SLIDE.md) for setup and examples.
@@ -325,6 +327,16 @@ Press `E` to open the edit drawer where you'll find all theme controls:
 - **Save themes** to your personal library for quick access later
 
 ---
+
+## Scrollable Slides
+
+A slide is a full viewport, not a fixed frame. When a slide's copy runs taller than the frame, the slide scrolls in place: the deck stays put, and a short fade at the bottom marks the overflow until the reader reaches the end. That is the differentiator from a conventional slide tool. You can alternate between a dense, scrollable document page and a single held frame.
+
+- **Scroll page:** a long argument, the evidence, the full list. It reads like a web page.
+- **Held slide:** the beat that lands. It reads like a slide.
+- **The rhythm is the point.** A deck that is all scroll pages is a web page; a deck that is all held slides is a slideshow. Alternating the two is what makes it a deck.
+
+On a projector or a live talk, keep scroll pages short: the room cannot scroll with you. On a phone or desktop, a scroll page is the natural reading surface. The HUD reserves clearance at the bottom, so the last line always clears the nav bar.
 
 ## Performance Notes
 
