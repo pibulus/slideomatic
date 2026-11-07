@@ -179,6 +179,13 @@ function buildSlide(slide, index, rendererMap = renderers) {
         attachSlideHomeBadge(rootBadge);
     }
 
+    // The overview shows each card as a contact sheet: number plus the
+    // section badge it belongs to. Stamped here because the plaque is drawn
+    // with a pseudo-element, and pseudo-elements can only read attributes.
+    if (manualBadgeValue) {
+        section.dataset.badge = ` · ${manualBadgeValue}`;
+    }
+
     return section;
 }
 

@@ -291,7 +291,7 @@ The list is deliberately short: navigation and presentation on the keyboard, eve
 - `→` / `Space` – Next slide
 - `←` – Previous slide
 - `Home` / `End` – Jump to first / last slide
-- `O` – Toggle overview grid (click to jump)
+- `O` – Toggle overview grid (click to jump). Each card is labelled with its slide number and section badge, like a contact sheet, so the deck's shape reads at a glance.
 - `Esc` – Exit overview
 - `?` – Show keyboard shortcuts help
 - `V` – **Voice-to-slide** (record audio, AI generates slide — needs a Gemini key)

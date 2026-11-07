@@ -20,7 +20,8 @@
 - The top badge is in the layout flow instead of floating above it. On tall slides the headline used to start inside the badge box; it now keeps a consistent 40px-plus gap on every slide type.
 - Column subheadings use a mix of the theme surface and the ink colour instead of pure surface, roughly 1.3:1 contrast before.
 - The shortcut sheet is grouped by purpose (Move / Present / Make) in aligned columns instead of a ragged two-column grid.
-- Overview is calmer: a paper wash behind the grid, larger thumbnails, and slide numbers in the bottom-right corner where they no longer sit on the copy.
+- Overview reads like a contact sheet: every card carries its slide number and section badge above the frame, the way a gallery labels a print, so nothing is printed over the copy.
+- Overview is calmer: a paper wash behind the grid, larger thumbnails, and the active card lifts a few pixels.
 - The AI slide and deck prompts now carry the house design rules: one idea per slide, headline length, body limits, scroll-page pacing, image punctuation, real quotes only, and the no-"you" voice.
 
 ## v1.0.1 - May 30, 2026
