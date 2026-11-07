@@ -33,26 +33,26 @@
   box-shadow: var(--shadow-md);
 }
 
-.accordion--theme {
-  background: linear-gradient(135deg, rgba(255, 159, 243, 0.08) 0%, rgba(255, 159, 243, 0.04) 100%), white;
-}
-
-.accordion--radio {
-  background: linear-gradient(135deg, rgba(156, 202, 255, 0.1) 0%, rgba(156, 202, 255, 0.04) 100%), white;
-}
-
-.accordion--images {
-  background: var(--warm-white);
-}
-
-.accordion--actions {
-  background: var(--warm-white);
-}
+/* Sections used to be flat warm-white on a warm-white drawer, so every
+   header sank into the page and the only hierarchy was a 4px outline. The
+   header now carries the theme's surface colour as a band, which means a
+   pink deck gets pink bands, a gameboy deck gets green ones, and open /
+   closed is legible without reading the chevron. */
 
 .accordion--advanced {
   border-style: dashed;
   border-color: var(--color-muted);
   background: rgba(var(--warm-white-rgb), 0.5);
+}
+
+/* Advanced JSON is a back door, not a chapter: keep its band grey so the
+   colour hierarchy still says "the others matter more". */
+.accordion--advanced .accordion__header {
+  background: color-mix(in srgb, var(--color-muted) 12%, transparent);
+}
+
+.accordion--advanced .accordion__title {
+  color: var(--color-muted);
 }
 
 /* ───────────────────────────────────────────────────────────────────────── */
@@ -65,27 +65,47 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 16px 20px;
-  background: transparent;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-surface) 30%, var(--warm-white)) 0%,
+    color-mix(in srgb, var(--color-surface) 10%, var(--warm-white)) 100%
+  );
   border: none;
+  /* The accordion keeps overflow visible for dropdowns, so the band has to
+     round its own corners to sit inside the frame. Closed sections are just
+     the header, hence the full radius. */
+  border-radius: calc(var(--radius) - var(--border-width));
   cursor: pointer;
   text-align: left;
-  transition: background-color 150ms ease;
+  transition: background-color 150ms ease, filter 150ms ease;
   position: relative;
 }
 
 .accordion__header:hover {
-  background: rgba(255, 159, 243, 0.08);
+  filter: brightness(0.96) saturate(1.15);
 }
 
 .accordion__header:active {
-  background: rgba(255, 159, 243, 0.14);
+  filter: brightness(0.92) saturate(1.2);
+}
+
+.accordion.is-open > .accordion__header {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-surface) 62%, var(--warm-white)) 0%,
+    color-mix(in srgb, var(--color-surface) 30%, var(--warm-white)) 100%
+  );
+  border-radius: calc(var(--radius) - var(--border-width))
+                 calc(var(--radius) - var(--border-width)) 0 0;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-ink) 22%, transparent);
 }
 
 .accordion__title {
   font-family: var(--font-mono);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: var(--weight-heading);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin: 0;
@@ -94,15 +114,18 @@
 
 .accordion__chevron {
   font-size: 0.7em;
-  color: var(--color-surface);
+  /* A surface-coloured chevron on a surface-tinted band is a ghost. Ink at
+     partial strength reads on every theme. */
+  color: var(--color-ink);
+  opacity: 0.55;
   transition:
     transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    color 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: center;
 }
 
 .accordion__header:hover .accordion__chevron {
-  color: var(--color-ink);
+  opacity: 1;
   transform: scale(1.15);
 }
 

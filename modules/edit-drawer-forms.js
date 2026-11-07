@@ -500,8 +500,8 @@ function buildThemeSection() {
       </div>
     </div>
     <div class="accordion__group" style="display: flex; gap: 10px;">
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Shuffle colors within this style (T)" style="flex: 1;">
-        Shuffle (T)
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Shuffle colours within this style" style="flex: 1;">
+        Shuffle
       </button>
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current look to your browser" style="flex: 1;">
         Save Theme

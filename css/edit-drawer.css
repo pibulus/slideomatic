@@ -124,6 +124,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -140,11 +141,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
 .edit-drawer__nav-btn {
   appearance: none;
-  background: var(--color-surface);
+  /* Chips on the coloured header, not cut-outs: `background: surface` made
+     them invisible fills with a border floating on the same colour. */
+  background: rgba(var(--warm-white-rgb), 0.55);
   border: var(--border-width) solid var(--color-ink);
   color: var(--color-ink);
   width: 44px;
@@ -170,9 +174,20 @@
   box-shadow: 1px 1px 0 var(--color-ink);
 }
 
+/* Add is the one action in this row that creates something, so it wears the
+   theme's badge pair — the only pair a theme is required to keep readable
+   against itself. Surfaces and accents can both go dark (Slack's accent is
+   black), and a black glyph on a black square is not a button. */
+#edit-nav-add {
+  background: var(--badge-bg, var(--color-accent));
+  color: var(--badge-color, var(--color-ink));
+  font-size: 1.6rem;
+}
+
+/* Closing is not the headline act: a quiet glyph that fills in on hover. */
 .edit-drawer__close {
   appearance: none;
-  background: var(--color-accent);
+  background: transparent;
   border: var(--border-width) solid var(--color-ink);
   color: var(--color-ink);
   width: 44px;
@@ -184,13 +199,17 @@
   line-height: 1;
   cursor: pointer;
   transition: transform 200ms cubic-bezier(0.2, 2, 0.4, 1),
-              box-shadow 200ms ease;
-  box-shadow: var(--shadow-sm);
+              box-shadow 200ms ease,
+              background 150ms ease,
+              color 150ms ease;
+  box-shadow: none;
 }
 
 .edit-drawer__close:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-md);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  transform: rotate(90deg) scale(1.03);
+  box-shadow: var(--shadow-sm);
 }
 
 .edit-drawer__close:active {

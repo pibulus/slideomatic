@@ -2,7 +2,7 @@
 // with the real deploy's commit hash as Netlify's build command, so the
 // service worker's fetch handler is guaranteed to change on every deploy
 // and returning visitors' browsers actually notice new CSS/JS.
-const CACHE_VERSION = 'slideomatic-v2-20261108j';
+const CACHE_VERSION = 'slideomatic-v2-20261108p';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -82,13 +82,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (isStaticAsset(url.pathname)) {
+  if (isCodeAsset(url.pathname)) {
+    // Code and styles go to the network first. Serving this build's HTML
+    // beside last build's CSS is exactly how the edit drawer once rendered
+    // unstyled with two close buttons and a visible hidden title: every
+    // class name still matched, so nothing errored, it just looked broken.
+    // Worst case offline we fall back to the cached copy.
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (isMediaAsset(url.pathname)) {
+    // Images and fonts are big and effectively versioned by filename, so
+    // stale-while-revalidate stays correct and instant.
     event.respondWith(staleWhileRevalidate(request));
   }
 });
 
-function isStaticAsset(pathname) {
-  return /\.(?:css|js|json|webmanifest|png|jpg|jpeg|webp|avif|gif|svg|ico)$/i.test(pathname);
+function isCodeAsset(pathname) {
+  return /\.(?:css|js|mjs|json|webmanifest)$/i.test(pathname);
+}
+
+function isMediaAsset(pathname) {
+  return /\.(?:png|jpg|jpeg|webp|avif|gif|svg|ico|woff2?)$/i.test(pathname);
 }
 
 async function networkFirst(request, fallbackUrl) {

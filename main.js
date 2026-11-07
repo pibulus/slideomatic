@@ -455,7 +455,6 @@ function setDrawerTab(tab = 'slide') {
   const content = document.getElementById('edit-drawer-content');
   const panel = document.getElementById('deck-panel');
   const slideActions = document.getElementById('edit-drawer-slide-actions');
-  const deckClose = document.querySelector('.edit-drawer__close--deck');
   const title = document.getElementById('edit-drawer-title');
 
   if (!slideTab || !deckTab || !content || !panel) return;
@@ -468,7 +467,6 @@ function setDrawerTab(tab = 'slide') {
   content.hidden = isDeck;
   panel.hidden = !isDeck;
   if (slideActions) slideActions.hidden = isDeck;
-  if (deckClose) deckClose.hidden = !isDeck;
   if (title) title.textContent = isDeck ? 'Deck settings' : 'Edit Slide';
 
   if (isDeck) {

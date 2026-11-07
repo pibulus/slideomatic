@@ -20,6 +20,10 @@
 - The top badge is in the layout flow instead of floating above it. On tall slides the headline used to start inside the badge box; it now keeps a consistent 40px-plus gap on every slide type.
 - Column subheadings use a mix of the theme surface and the ink colour instead of pure surface, roughly 1.3:1 contrast before.
 - The shortcut sheet is grouped by purpose (Move / Present / Make) in aligned columns instead of a ragged two-column grid.
+- Accordion headers carry the theme's surface as a tinted band, with a stronger band when open, so sections stop disappearing into the white drawer.
+- The drawer header has one close button instead of two; **+** wears the theme's badge colour, and the tabs are chips that stay legible on any header colour.
+- Standard slides give the headline 35px of air before the body (was 17px) and paragraphs a little more rhythm.
+- The service worker serves CSS and JS network-first. A deploy that shipped new markup with last build's stylesheet is how the drawer once rendered unstyled, with two close buttons and a visible hidden title.
 - Overview reads like a contact sheet: every card carries its slide number and section badge above the frame, the way a gallery labels a print, so nothing is printed over the copy.
 - Overview is calmer: a paper wash behind the grid, larger thumbnails, and the active card lifts a few pixels.
 - The AI slide and deck prompts now carry the house design rules: one idea per slide, headline length, body limits, scroll-page pacing, image punctuation, real quotes only, and the no-"you" voice.
