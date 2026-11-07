@@ -1478,6 +1478,34 @@ div.image-placeholder-wrapper .image-placeholder {
 
 /* Section heading inside body copy ("## Heading"). Usable by any slide
    type, but it is what lets a scroll page read as a document. */
+/* Two-column variant: the same document, set in columns for dense reference
+   pages. CSS columns keep the reading order, so a long list reads down one
+   column and up the next instead of being split into two hand-built halves. */
+.slide--scroll--two-column .slide__content {
+  width: min(100%, 92rem);
+}
+
+.slide--scroll--two-column .scroll__body {
+  display: block;
+  column-count: 2;
+  column-gap: clamp(28px, 4vw, 56px);
+  column-rule: 2px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
+}
+
+.slide--scroll--two-column .scroll__body > * {
+  margin-block: 0 var(--space-md);
+}
+
+.slide--scroll--two-column .scroll__body > .body-heading {
+  break-after: avoid;
+  margin-block: var(--space-sm) var(--space-xs);
+}
+
+.slide--scroll--two-column .scroll__body > .callout,
+.slide--scroll--two-column .scroll__body > ul > li {
+  break-inside: avoid;
+}
+
 .slide .body-heading {
   font-family: var(--font-mono);
   font-size: var(--type-lg);

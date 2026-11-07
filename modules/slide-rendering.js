@@ -297,6 +297,14 @@ export function renderStandardSlide(section, slide) {
 
 export function renderScrollSlide(section, slide) {
     section.classList.add('slide--scroll');
+    const variants = Array.isArray(slide.variant)
+        ? slide.variant
+        : slide.variant
+            ? [slide.variant]
+            : [];
+    variants.forEach((variant) => {
+        if (variant) section.classList.add(`slide--scroll--${variant}`);
+    });
 
     if (slide.headline) {
         const headline = document.createElement('h2');

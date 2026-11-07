@@ -356,6 +356,8 @@ Use `"type": "scroll"` when the page is a document on purpose:
 
 A `##` or `###` line becomes a section heading inside the body, so a long page can actually be navigated. Any slide can use them, but the `scroll` type is built around them.
 
+Add `"variant": "two-column"` for a dense reference page. The same document is set in CSS columns with a rule between them, so a long list reads down one column and up the next, and the reading order is preserved without hand-splitting the body.
+
 On a projector or a live talk, keep scroll pages short: the room cannot scroll with you. On a phone or desktop, a scroll page is the natural reading surface. The HUD reserves clearance at the bottom, so the last line always clears the nav bar.
 
 ## Performance Notes

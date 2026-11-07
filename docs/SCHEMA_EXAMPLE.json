@@ -38,6 +38,10 @@
       "string": "!! info  ·  ?! did-you-know  ·  ?? question  ·  >> pull",
       "note": "A callout is a body item: put it in the body array alongside paragraphs."
     },
+    "scrollVariants": {
+      "two-column": "Long-form page set in two CSS columns with a rule between them",
+      "note": "Set \"variant\": \"two-column\" on a scroll slide for a dense reference page."
+    },
     "exampleSlide": {
       "type": "standard",
       "badge": "Slide 2B",
