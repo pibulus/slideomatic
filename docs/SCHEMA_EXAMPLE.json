@@ -32,6 +32,11 @@
       "footnote": "optional - small text at bottom",
       "font": "optional - font preset or custom font name"
     },
+    "callouts": {
+      "object": "{ \"callout\": \"info\" | \"didyouknow\" | \"warning\" | \"question\" | \"pull\", \"title\": \"...\", \"body\": \"...\" }",
+      "string": "!! info  ·  ?! did-you-know  ·  ?? question  ·  >> pull",
+      "note": "A callout is a body item: put it in the body array alongside paragraphs."
+    },
     "exampleSlide": {
       "type": "standard",
       "badge": "Slide 2B",
