@@ -2,7 +2,6 @@
   /* Hide UI elements */
   .hud,
   .edit-drawer,
-  .theme-drawer,
   .settings-modal,
   .share-modal,
   .hints-modal,
@@ -22,7 +21,7 @@
   html, body {
     height: auto !important;
     overflow: visible !important;
-    background: white !important;
+    background: var(--warm-white, #fffef7) !important;
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -52,13 +51,13 @@
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    background: white !important; /* Save ink */
-    color: black !important;
+    background: var(--warm-white, #fffef7) !important; /* Save ink */
+    color: var(--warm-black, #1e1714) !important;
   }
 
   /* Adjust typography for print */
   .slide h1, .slide h2, .slide h3, .slide p, .slide li {
-    color: black !important;
+    color: var(--warm-black, #1e1714) !important;
     text-shadow: none !important;
   }
 
@@ -79,8 +78,8 @@
   }
 
   .slide--quote blockquote {
-    border-left-color: black !important;
+    border-left-color: var(--warm-black, #1e1714) !important;
     background: none !important;
-    color: black !important;
+    color: var(--warm-black, #1e1714) !important;
   }
 }

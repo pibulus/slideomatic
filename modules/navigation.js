@@ -43,6 +43,7 @@ let getEditDrawerContextHook = () => ({
   getCurrentIndex: () => currentIndex,
 });
 let renderEditFormHook = (_context) => {};
+let flushEditDrawerHook = (_context) => {};
 let toggleSpeakerNotesHook = () => {};
 let onSlideChangeHook = (_index) => {};
 
@@ -118,6 +119,9 @@ export function registerNavigationHooks(hooks = {}) {
   if (typeof hooks.renderEditForm === 'function') {
     renderEditFormHook = hooks.renderEditForm;
   }
+  if (typeof hooks.flushEditDrawer === 'function') {
+    flushEditDrawerHook = hooks.flushEditDrawer;
+  }
   if (typeof hooks.toggleSpeakerNotes === 'function') {
     toggleSpeakerNotesHook = hooks.toggleSpeakerNotes;
   }
@@ -140,6 +144,7 @@ export function enterOverview() {
   document.body.dataset.mode = 'overview';
   updateOverviewLayout();
   slideElements.forEach((slide) => {
+    slide.classList.remove('is-leaving');
     slide.style.visibility = 'visible';
     slide.style.pointerEvents = 'auto';
     slide.setAttribute('aria-hidden', 'false');
@@ -311,6 +316,10 @@ export function setActiveSlide(nextIndex) {
     return;
   }
 
+  if (isEditDrawerOpen && clamped !== currentIndex) {
+    flushEditDrawerHook(getEditDrawerContextHook());
+  }
+
   const oldSlide = slideElements[currentIndex];
   if (oldSlide) {
     slideScrollPositions.set(currentIndex, oldSlide.scrollTop);
@@ -321,7 +330,7 @@ export function setActiveSlide(nextIndex) {
     oldSlide.removeAttribute('aria-current');
     setTimeout(() => {
       oldSlide.classList.remove('is-leaving');
-      if (!oldSlide.classList.contains('is-active')) {
+      if (!oldSlide.classList.contains('is-active') && !isOverview) {
         oldSlide.style.visibility = 'hidden';
       }
     }, 400);

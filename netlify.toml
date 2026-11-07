@@ -19,6 +19,22 @@
 [functions."cleanup-shares"]
   schedule = "@daily"
 
+[[edge_functions]]
+  path = "/s/*"
+  function = "share-og"
+
+[[edge_functions]]
+  path = "/collections"
+  function = "collection-og"
+
+[[edge_functions]]
+  path = "/collections.html"
+  function = "collection-og"
+
+[[edge_functions]]
+  path = "/collections/*"
+  function = "collection-og"
+
 [[redirects]]
   from = "/s/:slug"
   to = "/deck.html?share=:slug"

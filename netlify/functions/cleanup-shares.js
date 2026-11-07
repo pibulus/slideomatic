@@ -12,15 +12,21 @@ export async function handler(event) {
   connectLambda(event);
 
   try {
-    // Allow manual GET/POST invocations and scheduled runs. A scheduled
-    // invocation arrives with no httpMethod, so only reject real HTTP calls
-    // that use some other method.
-    const isScheduled = !event.httpMethod;
-    if (!isScheduled && event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
+    // Only allow scheduled runs or authenticated admin invocations.
+    const isScheduled =
+      !event.httpMethod ||
+      event.headers?.['x-nf-event'] === 'schedule' ||
+      event.headers?.['X-Nf-Event'] === 'schedule';
+    const adminToken = process.env.CLEANUP_ADMIN_TOKEN;
+    const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+    const hasValidAdminToken =
+      Boolean(adminToken) && authHeader === `Bearer ${adminToken}`;
+
+    if (!isScheduled && !hasValidAdminToken) {
       return {
-        statusCode: 405,
+        statusCode: 403,
         headers: BASE_HEADERS,
-        body: JSON.stringify({ error: 'Method not allowed' }),
+        body: JSON.stringify({ error: 'Scheduled invocation required' }),
       };
     }
 
@@ -45,6 +51,9 @@ export async function handler(event) {
 
     for (const share of (shares.blobs || [])) {
       try {
+        if (share.metadata?.permanent === true) {
+          continue;
+        }
         let expiresAt = Number(share.metadata?.expiresAt) || 0;
 
         // Records written before expiry metadata existed: derive a lifetime
@@ -89,7 +98,14 @@ export async function handler(event) {
 
     for (const asset of (assets.blobs || [])) {
       try {
-        const expiresAt = asset.metadata?.expiresAt;
+        if (asset.metadata?.permanent === true) {
+          continue;
+        }
+        let expiresAt = Number(asset.metadata?.expiresAt) || 0;
+        if (!expiresAt) {
+          const createdAt = Number(asset.metadata?.createdAt) || 0;
+          expiresAt = createdAt ? createdAt + TTL.ASSET_MS : 0;
+        }
 
         // Delete if expired
         if (expiresAt && expiresAt < now) {
@@ -113,9 +129,28 @@ export async function handler(event) {
       }
     }
 
+    // Prune stale daily spend-budget keys (anything not from today's UTC date)
+    let budgetKeysDeleted = 0;
+    try {
+      const budgetStore = getStore('spend-budgets');
+      const budgetList = await budgetStore.list();
+      const todayUtc = new Date(now).toISOString().slice(0, 10);
+      for (const item of (budgetList.blobs || [])) {
+        if (item.key && !item.key.includes(todayUtc)) {
+          if (!isDryRun) {
+            await budgetStore.delete(item.key);
+          }
+          budgetKeysDeleted++;
+        }
+      }
+    } catch (budgetErr) {
+      console.warn('Could not prune spend-budgets store:', budgetErr?.message || budgetErr);
+    }
+
     // Format summary
     const summary = {
       ...results,
+      budgetKeysDeleted,
       bytesFreedMB: (results.bytesFreed / (1024 * 1024)).toFixed(2),
       timestamp: new Date().toISOString(),
     };

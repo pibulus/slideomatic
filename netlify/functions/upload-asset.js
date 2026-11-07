@@ -56,16 +56,18 @@ export async function handler(event) {
       };
     }
 
-    const { buffer, detectedMime } = decodeDataUrl(dataUrl, mimeType);
-    const bytes = buffer.byteLength;
-
-    if (!detectedMime.startsWith('image/')) {
+    let buffer;
+    let detectedMime;
+    try {
+      ({ buffer, detectedMime } = decodeDataUrl(dataUrl, mimeType));
+    } catch {
       return {
         statusCode: 400,
         headers: BASE_HEADERS,
-        body: JSON.stringify({ error: 'Only image uploads are supported' }),
+        body: JSON.stringify({ error: 'Only raster image uploads (PNG, JPEG, WebP, GIF, AVIF) are supported' }),
       };
     }
+    const bytes = buffer.byteLength;
 
     if (bytes > LIMITS.MAX_ASSET_BYTES) {
       return {

@@ -36,7 +36,7 @@
 // the upgrade — not more code here.
 
 import { connectLambda, getStore } from '@netlify/blobs';
-import { isAllowedOrigin } from './common.js';
+import { isAllowedOrigin, extractPassportToken, verifyPassportToken } from './common.js';
 
 const BUDGET_STORE = 'spend-budgets';
 
@@ -48,6 +48,7 @@ const num = (value, fallback) => {
 // Generous by design — a single deck build is a handful of calls, so honest use
 // never comes near these. Both are env-tunable without a code change; 0 disables.
 const perIpDailyLimit = () => num(process.env.AI_DAILY_LIMIT_PER_IP, 60);
+const passportDailyLimit = () => num(process.env.AI_DAILY_LIMIT_PASSPORT, 300);
 const globalDailyLimit = () => num(process.env.AI_DAILY_LIMIT_GLOBAL, 2000);
 
 /** UTC day, so the key rolls over on its own and yesterday stops mattering. */
@@ -59,13 +60,19 @@ function clientIp(event) {
   const h = event.headers || {};
   return (
     h['x-nf-client-connection-ip'] ||
-    (h['x-forwarded-for'] || '').split(',')[0].trim() ||
+    h['X-Nf-Client-Connection-Ip'] ||
+    (process.env.NETLIFY_DEV === 'true'
+      ? (h['x-forwarded-for'] || '').split(',')[0].trim()
+      : '') ||
     'unknown'
   );
 }
 
 async function bump(store, key, limit) {
   const current = num(await store.get(key), 0);
+  if (current >= limit) {
+    return false;
+  }
   const next = current + 1;
   await store.set(key, String(next));
   return next <= limit;
@@ -101,6 +108,35 @@ export async function guardSpend(event, headers, usesHouseKey = true) {
     const store = getStore(BUDGET_STORE);
     const day = dayBucket();
 
+    const rawPassport = extractPassportToken(event);
+    const passportClaims = rawPassport ? verifyPassportToken(rawPassport) : null;
+    if (passportClaims?.sub) {
+      const perPassport = passportDailyLimit();
+      if (perPassport > 0) {
+        const ok = await bump(store, `passport-${day}-${passportClaims.sub}`, perPassport);
+        if (!ok) {
+          return {
+            statusCode: 429,
+            headers,
+            body: JSON.stringify({
+              error: 'Daily Passport allowance reached. Add a personal Gemini key in Deck settings for unlimited runs.',
+            }),
+          };
+        }
+      }
+    } else if (perIp > 0) {
+      const ok = await bump(store, `ip-${day}-${clientIp(event)}`, perIp);
+      if (!ok) {
+        return {
+          statusCode: 429,
+          headers,
+          body: JSON.stringify({
+            error: 'Daily free allowance reached. Add a personal Gemini key in Deck settings for unlimited runs.',
+          }),
+        };
+      }
+    }
+
     if (global > 0) {
       const ok = await bump(store, `global-${day}`, global);
       if (!ok) {
@@ -108,20 +144,7 @@ export async function guardSpend(event, headers, usesHouseKey = true) {
           statusCode: 429,
           headers,
           body: JSON.stringify({
-            error: 'Slideomatic is unusually busy today. Add your own Gemini key in Settings to keep going.',
-          }),
-        };
-      }
-    }
-
-    if (perIp > 0) {
-      const ok = await bump(store, `ip-${day}-${clientIp(event)}`, perIp);
-      if (!ok) {
-        return {
-          statusCode: 429,
-          headers,
-          body: JSON.stringify({
-            error: "That's today's free allowance used up. Add your own Gemini key in Settings for unlimited use.",
+            error: 'House quota reached for today. Add a personal Gemini key in Deck settings to continue.',
           }),
         };
       }

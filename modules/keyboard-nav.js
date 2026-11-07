@@ -18,7 +18,6 @@ const defaultContext = {
   exitOverview: (_targetIndex) => {},
   getOverviewCursor: () => 0,
   toggleOverview: () => {},
-  downloadDeck: () => {},
   toggleSpeakerNotes: () => {},
   setActiveSlide: (_index) => {},
   getCurrentIndex: () => 0,
@@ -26,13 +25,12 @@ const defaultContext = {
   toggleEditDrawer: () => {},
   openDeckPanel: () => {},
   toggleVoiceRecording: (_mode) => {},
-  randomizeTheme: () => {},
   openSettingsModal: () => {},
   closeSettingsModal: () => {},
-  triggerDeckUpload: () => {},
   toggleKeyboardHelp: () => {},
   toggleSlideIndex: () => {},
   toggleHud: () => {},
+  toggleRadio: () => {},
 };
 
 let keyboardContext = { ...defaultContext };
@@ -64,13 +62,21 @@ export function initKeyboardNav(partialContext = {}) {
 
     // Disable global shortcuts if a modal is open
     // We allow drawers to stay open while navigating or toggling other drawers
-    if (document.querySelector('.modal-base.is-open')) {
+    if (document.querySelector('.modal-base.is-open, .cheat-console.is-open, .slide-index.is-open')) {
       return;
     }
 
     const context = keyboardContext;
     const { key } = event;
     const lowerKey = key.toLowerCase();
+
+    const isInteractiveTarget =
+      target instanceof HTMLElement &&
+      Boolean(
+        target.closest(
+          'button, a, summary, [role="button"], [role="tab"], [role="radio"], .edit-drawer.is-open'
+        )
+      );
 
     if (context.isOverview()) {
       if (key === 'ArrowRight') {
@@ -93,7 +99,7 @@ export function initKeyboardNav(partialContext = {}) {
         context.moveOverviewCursorBy(0, -1);
         return;
       }
-      if (key === 'Enter' || key === ' ') {
+      if (key === 'Enter' || (key === ' ' && !isInteractiveTarget)) {
         event.preventDefault();
         flashKeyFeedback('↵');
         context.exitOverview(context.getOverviewCursor());
@@ -115,7 +121,7 @@ export function initKeyboardNav(partialContext = {}) {
       }
     }
 
-    if (key === 'ArrowRight' || key === ' ') {
+    if (key === 'ArrowRight' || (key === ' ' && !isInteractiveTarget)) {
       event.preventDefault();
       flashKeyFeedback('→');
       context.setActiveSlide(context.getCurrentIndex() + 1);

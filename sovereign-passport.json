@@ -34,7 +34,7 @@
         }
       }
     ],
-    "notes": "Press E to edit, T to roll themes, or Arrow keys to step through the 4 layers of the Sovereign Passport."
+    "notes": "Press E to edit, S to open Deck settings and shuffle themes, or Arrow keys to step through the 4 layers of the Sovereign Passport."
   },
   {
     "type": "split",

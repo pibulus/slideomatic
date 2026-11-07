@@ -38,6 +38,7 @@ import {
   refreshSlideIndex,
   updateSlideIndexHighlight,
 } from './slide-index.js';
+import { cancelPendingEditDrawerWork } from './edit-drawer.js';
 import { slidesRoot } from './dom-refs.js';
 
 let showHudStatusHook = () => {};
@@ -182,6 +183,7 @@ export function removeSlideAt(index, options = {}) {
   const { focus = true } = options;
   if (index < 0 || index >= slides.length) return;
 
+  cancelPendingEditDrawerWork();
   cleanupSlideAssetsHook(slides[index]);
 
   slides.splice(index, 1);
@@ -293,11 +295,78 @@ export function replaceSlideAt(index, options = {}) {
   }
 }
 
+export function moveSlide(fromIndex, toIndex) {
+  if (
+    fromIndex < 0 ||
+    fromIndex >= slides.length ||
+    toIndex < 0 ||
+    toIndex >= slides.length ||
+    fromIndex === toIndex
+  ) {
+    return false;
+  }
+
+  if (slideScrollPositions.size) {
+    const nextScrolls = new Map();
+    const minIdx = Math.min(fromIndex, toIndex);
+    const maxIdx = Math.max(fromIndex, toIndex);
+    slideScrollPositions.forEach((scrollTop, idx) => {
+      if (idx === fromIndex) {
+        nextScrolls.set(toIndex, scrollTop);
+      } else if (fromIndex < toIndex && idx > fromIndex && idx <= toIndex) {
+        nextScrolls.set(idx - 1, scrollTop);
+      } else if (fromIndex > toIndex && idx >= toIndex && idx < fromIndex) {
+        nextScrolls.set(idx + 1, scrollTop);
+      } else if (idx < minIdx || idx > maxIdx) {
+        nextScrolls.set(idx, scrollTop);
+      }
+    });
+    slideScrollPositions.clear();
+    nextScrolls.forEach((val, key) => slideScrollPositions.set(key, val));
+  }
+
+  const [movedSlide] = slides.splice(fromIndex, 1);
+  slides.splice(toIndex, 0, movedSlide);
+
+  const [movedElement] = slideElements.splice(fromIndex, 1);
+  slideElements.splice(toIndex, 0, movedElement);
+
+  if (movedElement && slidesRoot) {
+    const referenceElement = slideElements[toIndex + 1] || null;
+    slidesRoot.insertBefore(movedElement, referenceElement);
+  }
+
+  reindexSlides(Math.min(fromIndex, toIndex));
+  updateOverviewLayout();
+  refreshSlideIndex();
+
+  if (currentIndex === fromIndex) {
+    setCurrentIndex(toIndex);
+  } else if (fromIndex < toIndex && currentIndex > fromIndex && currentIndex <= toIndex) {
+    setCurrentIndex(currentIndex - 1);
+  } else if (fromIndex > toIndex && currentIndex >= toIndex && currentIndex < fromIndex) {
+    setCurrentIndex(currentIndex + 1);
+  }
+
+  if (isOverview) {
+    setOverviewCursor(toIndex);
+    highlightOverviewSlide(toIndex, { scroll: false });
+    updateSlideIndexHighlight(toIndex);
+  } else {
+    setActiveSlide(toIndex);
+    updateSlideIndexHighlight(toIndex);
+  }
+
+  persistSlides();
+  return true;
+}
+
 export function downloadDeck(filename) {
   const currentTheme = getCurrentThemeHook();
   const deckName = deriveDeckNameHook(slides);
   
   const payload = {
+    format: 'slideomatic/v1',
     version: 1,
     meta: {
       name: deckName,
@@ -334,8 +403,7 @@ export function downloadDeck(filename) {
   setTimeout(hideHudStatusHook, 1600);
 }
 
-export function handleDeckUpload(event) {
-  const file = event.target.files[0];
+export function loadDeckFile(file) {
   if (!file) return;
 
   const reader = new FileReader();
@@ -353,14 +421,15 @@ export function handleDeckUpload(event) {
       }
 
       if (!newSlides) {
-        throw new Error('File must contain a JSON array of slides.');
+        throw new Error('File must contain an array of slides.');
       }
 
       validateSlides(newSlides);
 
+      cancelPendingEditDrawerWork();
       cleanupAllSlideAssetsHook();
       setSlides(newSlides);
-      
+
       if (theme) {
         applyThemeHook(theme);
         setCurrentThemeHook(theme, { source: '__upload__' });
@@ -386,6 +455,12 @@ export function handleDeckUpload(event) {
   };
 
   reader.readAsText(file);
+}
+
+export function handleDeckUpload(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  loadDeckFile(file);
   event.target.value = '';
 }
 

@@ -133,7 +133,7 @@ async function testApiKey() {
     testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
   }
 
-  showApiKeyStatus('info', '⏳ Testing connection...');
+  showApiKeyStatus('info', 'Testing connection...');
 
   try {
     // Route through our proxy like every other Gemini call — keeps the key off
@@ -148,10 +148,10 @@ async function testApiKey() {
     );
 
     if (response.ok) {
-      showApiKeyStatus('success', '✅ Connection successful! Your API key is working.');
+      showApiKeyStatus('success', '✓ Connection successful. Key is active.');
       if (testBtn) {
         testBtn.classList.add('is-success');
-        testBtn.innerHTML = '✅ Connected!';
+        testBtn.innerHTML = '✓ Connected!';
         setTimeout(() => {
           testBtn.classList.remove('is-success', 'is-loading');
           testBtn.innerHTML = 'Test Connection';
@@ -160,7 +160,7 @@ async function testApiKey() {
       }
     } else {
       const error = await response.json();
-      showApiKeyStatus('error', `🔑 Gemini said no to that key: ${error.error?.message || 'no details given'}`);
+      showApiKeyStatus('error', `Gemini rejected that key: ${error.error?.message || 'no details given'}`);
       if (testBtn) {
         testBtn.classList.remove('is-loading');
         testBtn.innerHTML = 'Test Connection';
@@ -168,7 +168,7 @@ async function testApiKey() {
       }
     }
   } catch {
-    showApiKeyStatus('error', '📡 No reply from Gemini. Check the connection and try again');
+    showApiKeyStatus('error', 'No reply from Gemini. Check the connection and try again');
     if (testBtn) {
       testBtn.classList.remove('is-loading');
       testBtn.innerHTML = 'Test Connection';

@@ -67,7 +67,7 @@
             "name": "Slide-o-Matic",
             "alternateName": "Slideomatic",
             "url": "https://slideomatic.app/",
-            "description": "A simple way to make a slideshow and share it. Edit in the browser, save locally, and export JSON or PDF when you want it elsewhere. No login, nothing to install.",
+            "description": "A simple way to make a slideshow and share it. Edit in the browser, save locally, and export JSON or PDF anytime. No login, nothing to install.",
             "applicationCategory": "PresentationApplication",
             "applicationSubCategory": "Slide Deck Builder",
             "operatingSystem": "Any",
@@ -77,7 +77,7 @@
             "image": "https://slideomatic.app/og-image.jpg",
             "screenshot": "https://slideomatic.app/og-image.jpg",
             "featureList": [
-              "Nine purpose-built slide layouts: title, standard, quote, split, grid, pillars, gallery, graph, image, and typeface specimen",
+              "Eleven purpose-built slide layouts: title, standard, scroll, quote, split, grid, pillars, gallery, graph, image, and typeface specimen",
               "Voice-to-slide and voice-to-theme studio for spoken or typed deck and palette generation",
               "Swap Neo-Toybrut CSS themes mid-deck without breaking alignment",
               "Keyboard-driven stage mode with fullscreen presentation, speaker notes drawer, and slide overview grid",
@@ -130,7 +130,7 @@
             <h1 class="landing__title landing__title--main">Slide-o-Matic</h1>
             <h2 class="landing__title landing__title--sub">Slideshows that don't suck</h2>
             <p class="landing__subtitle">
-              Pick a layout, type your words, drop in photos, and hit share. Everything saves in your browser—no account, no cloud lock-in.
+              Pick a layout, type the words, drop in photos, and hit share. Everything saves in the browser—no account, no cloud lock-in.
             </p>
           </div>
 
@@ -150,7 +150,7 @@
             </div>
 
             <div class="template-section">
-              <p class="template-row__label">Or jump into a starter structure (shows you what to write as you go)</p>
+              <p class="template-row__label">Or jump into a starter structure (shows what to write step by step)</p>
               <div class="template-grid">
                 <a class="start-card start-card--template start-card--pitch" href="deck.html#slides=templates/the-pitch&open=edit">
                   <span class="start-card__kicker">6 slides · Pitch</span>
@@ -165,7 +165,7 @@
                 <a class="start-card start-card--template start-card--show" href="deck.html#slides=templates/show-and-tell&open=edit">
                   <span class="start-card__kicker">6 slides · Visual</span>
                   <span class="start-card__name">Show &amp; Tell</span>
-                  <span class="start-card__desc">Process shots, the money shot, and what you learned.</span>
+                  <span class="start-card__desc">Process shots, the money shot, and key takeaways.</span>
                 </a>
                 <a class="start-card start-card--template start-card--weird" href="deck.html#slides=templates/the-weird-one&open=edit">
                   <span class="start-card__kicker">6 slides · Manifesto</span>
@@ -176,7 +176,7 @@
             </div>
 
             <p class="start-deck__reassurance">Free · No sign-up · JSON &amp; PDF export built in</p>
-            <input type="file" id="upload-input" accept=".json,application/json" style="display: none;" />
+            <input type="file" id="upload-input" accept=".sld,.som,.deck,.json,application/json" style="display: none;" />
           </div>
         </section>
       </div>
@@ -193,16 +193,16 @@
         </div>
       </section>
 
-      <!-- ===== YOUR DECKS: Simplified (moved to bottom) ===== -->
+      <!-- ===== SAVED DECKS: Simplified (moved to bottom) ===== -->
       <section class="deck-shelf" id="saved">
         <header class="deck-shelf__header">
           <div>
-            <h2>Your Decks</h2>
+            <h2>Saved Decks</h2>
             <p class="deck-shelf__subtitle">Local drafts from this browser. Reopen, star, duplicate, or delete them here.</p>
           </div>
           <div class="deck-shelf__actions">
-            <button class="link-button" type="button" data-new-mode="upload">📂 Import JSON</button>
-            <button class="link-button" type="button" data-new-mode="paste">📋 Paste JSON</button>
+            <button class="link-button" type="button" data-new-mode="upload">Import JSON</button>
+            <button class="link-button" type="button" data-new-mode="paste">Paste JSON</button>
           </div>
         </header>
         <ul class="deck-shelf__list" id="deck-shelf-list">
@@ -253,15 +253,15 @@
           Slideomatic exists because I owed my mate Cara’s class a deck and every other tool wanted me to take a two-week course just to move a text box. So I built the thing I needed (sorry for the late slides gang!).
         </p>
         <p class="about-modal__lede">
-          It’s the “just do the thing” button: get the idea out, keep it playful, no corporate polish unless you add it yourself.
+          It’s the “just do the thing” button: get the idea out, keep it playful, no corporate polish unless added deliberately.
         </p>
 
         <ul class="about-modal__list">
           <li>Keyboard flow: press ? anytime for the shortcut cheat sheet.</li>
-          <li>Themes and layouts you can swap mid-deck without breaking alignment.</li>
-          <li>Local-first saves: everything lives in your browser, not on a server.</li>
-          <li>Works on whatever’s in your bag: phone, tablet, laptop.</li>
-          <li>JSON and PDF exports so you can back up or share without lock-in.</li>
+          <li>Themes and layouts swap mid-deck without breaking alignment.</li>
+          <li>Local-first saves: everything lives in the browser, not on a server.</li>
+          <li>Works on phone, tablet, or laptop.</li>
+          <li>JSON and PDF exports back up or share without lock-in.</li>
         </ul>
 
         <p class="about-modal__footer">
@@ -608,6 +608,7 @@
           starBtn.type = 'button';
           starBtn.className = 'deck-card__star';
           starBtn.setAttribute('aria-label', deck.starred ? 'Remove from favorites' : 'Add to favorites');
+          starBtn.setAttribute('aria-pressed', String(Boolean(deck.starred)));
           starBtn.textContent = deck.starred ? '★' : '☆';
           starBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent card click

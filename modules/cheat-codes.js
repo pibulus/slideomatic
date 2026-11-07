@@ -126,7 +126,7 @@ function showConsole(code) {
   if (unlockedLabel) {
     unlockedLabel.textContent = `Cheat unlocked: ${code.toUpperCase()}`;
   }
-  setStatus(`Cheat "${code}" unlocked. Describe what you want and let Gemini cook.`, 'info');
+  setStatus(`Cheat "${code}" unlocked. Describe the idea and let Gemini cook.`, 'info');
   promptInput.focus();
 }
 
@@ -247,13 +247,13 @@ async function handleCheatAction(mode) {
   try {
     if (mode === 'slide') {
       await generateSlideFromPrompt(prompt, { insert: true });
-      setStatus('✨ Slide injected after the current one.', 'success');
+      setStatus('✓ Slide injected after the current one.', 'success');
     } else {
       // generateDeckFromPrompt reports where it actually inserted — reading
       // getCurrentIndex() before the long await pointed image generation at
       // the wrong slides whenever the user navigated during generation.
       const { slides, firstIndex } = await generateDeckFromPrompt(prompt, { insert: true, slideCount: 8 });
-      setStatus('✨ Mini deck added! Generating images...', 'success');
+      setStatus('✓ Mini deck added! Generating images...', 'success');
 
       // Fire off image generation in the background for slides with empty image slots
       if (firstIndex != null) {
@@ -292,7 +292,7 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
   }
 
   if (!tasks.length) {
-    setStatus('✨ Mini deck added!', 'success');
+    setStatus('✓ Mini deck added!', 'success');
     return;
   }
 
@@ -305,7 +305,7 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
       return;
     }
     try {
-      setStatus(`🎨 Generating image ${attempted + 1}/${tasks.length}...`, 'info');
+      setStatus(`Generating image ${attempted + 1}/${tasks.length}...`, 'info');
       const ok = await generateAIImage(null, {
         slideIndex: task.slideIndex,
         imageIndex: task.imageIndex,
@@ -325,11 +325,11 @@ async function generateImagesForNewSlides(slidesData, firstSlideIndex) {
   }
 
   if (generated === tasks.length) {
-    setStatus(`✨ Done! ${generated} image${generated !== 1 ? 's' : ''} generated.`, 'success');
+    setStatus(`✓ Done! ${generated} image${generated !== 1 ? 's' : ''} generated.`, 'success');
   } else if (generated > 0) {
-    setStatus(`✨ ${generated}/${tasks.length} images generated — retry the rest from the edit drawer.`, 'info');
+    setStatus(`✓ ${generated}/${tasks.length} images generated — retry the rest from the edit drawer.`, 'info');
   } else {
-    setStatus('⚠️ Images didn\'t generate — use the ✨ button in the edit drawer to retry.', 'error');
+    setStatus('Images did not generate — retry from the edit drawer.', 'error');
   }
 }
 

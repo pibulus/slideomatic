@@ -27,7 +27,12 @@ import { initRadioDock, setRadioDockHidden } from './modules/radio-dock.js';
 import { initDeckPanel, refreshAiStatus } from './modules/deck-panel.js';
 
 
-import { renderEditForm, flushPendingEditDrawerWork } from './modules/edit-drawer.js';
+import {
+  renderEditForm,
+  flushPendingEditDrawerWork,
+  handleDownloadPdf,
+  handleImageFile,
+} from './modules/edit-drawer.js';
 import {
   createDrawer,
   openDrawer,
@@ -53,7 +58,7 @@ import {
   initSlideIndex,
   toggleSlideIndex,
 } from './modules/slide-index.js';
-import { initCheatConsole } from './modules/cheat-codes.js';
+import { initCheatConsole, openCheatConsole } from './modules/cheat-codes.js';
 import {
   loadSlides,
   generateDeckId,
@@ -64,14 +69,14 @@ import {
   insertSlideAt,
   removeSlideAt,
   replaceSlideAt,
+  moveSlide,
   downloadDeck,
   handleDeckUpload,
+  loadDeckFile,
   registerSlideActionHooks,
 } from './modules/slide-actions.js';
 import {
   initThemeDrawer,
-  openThemeDrawer,
-  closeThemeDrawer,
   syncThemeSelectUI,
   randomizeTheme,
 } from './modules/theme-drawer.js';
@@ -85,7 +90,6 @@ import {
   setAutoLinkConfigs,
   overviewCursor,
   setOverviewCursor,
-  themeDrawerInstance,
   DECK_STORAGE_PREFIX,
   setDeckStorageKey,
   activeDeckId,
@@ -159,9 +163,9 @@ registerDeckPersistenceHooks({
 });
 
 registerNavigationHooks({
-  closeThemeDrawer,
   getEditDrawerContext,
   renderEditForm,
+  flushEditDrawer: flushPendingEditDrawerWork,
   toggleSpeakerNotes,
   onSlideChange: (index) => pushSlideHistory(index),
 });
@@ -461,8 +465,10 @@ function setDrawerTab(tab = 'slide') {
 
   slideTab.classList.toggle('is-active', !isDeck);
   slideTab.setAttribute('aria-selected', String(!isDeck));
+  slideTab.setAttribute('tabindex', isDeck ? '-1' : '0');
   deckTab.classList.toggle('is-active', isDeck);
   deckTab.setAttribute('aria-selected', String(isDeck));
+  deckTab.setAttribute('tabindex', isDeck ? '0' : '-1');
 
   content.hidden = isDeck;
   panel.hidden = !isDeck;
@@ -476,9 +482,6 @@ function setDrawerTab(tab = 'slide') {
 
 function openEditDrawer(tab = 'slide') {
   if (!editDrawerInstance) return;
-  if (themeDrawerInstance?.isOpen) {
-    closeDrawer(themeDrawerInstance, { restoreFocus: false });
-  }
   setDrawerTab(tab);
   // Pre-render the form BEFORE opening to avoid DOM manipulation during animation
   renderEditForm(getEditDrawerContext());
@@ -537,7 +540,7 @@ document.addEventListener('dblclick', (event) => {
 function syncVoiceFabVisibility() {
   const fab = document.getElementById('voice-fab');
   if (!fab) return;
-  fab.hidden = !canRecordSpeech() || !getGeminiApiKey();
+  fab.hidden = !canRecordSpeech();
 }
 
 function handleApiKeyChanged() {
@@ -576,11 +579,6 @@ function initVoiceFab() {
   const onDown = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     event.preventDefault();
-    if (!getGeminiApiKey()) {
-      // Shows the friendly "paste a key in Settings" nudge
-      toggleVoiceRecording('add');
-      return;
-    }
     if (isVoiceBusy()) return;
     holdActive = true;
     fab.classList.add('is-holding', 'is-recording');
@@ -620,6 +618,7 @@ function getEditDrawerContext() {
     },
     replaceSlideAt: (index, options) => replaceSlideAt(index, options),
     insertSlideAt: (index, slideData, options) => insertSlideAt(index, slideData, options),
+    moveSlideAt: (fromIndex, toIndex) => moveSlide(fromIndex, toIndex),
     deleteSlideAt: (index) => {
       removeSlideAt(index, { focus: true });
       return true;
@@ -639,7 +638,6 @@ function getKeyboardContext() {
     exitOverview,
     getOverviewCursor: () => overviewCursor,
     toggleOverview,
-    downloadDeck,
     toggleSpeakerNotes,
     setActiveSlide,
     getCurrentIndex: () => currentIndex,
@@ -647,23 +645,23 @@ function getKeyboardContext() {
     toggleEditDrawer,
     openDeckPanel: () => openEditDrawer('deck'),
     toggleVoiceRecording,
-    randomizeTheme,
     openSettingsModal,
     closeSettingsModal,
     toggleKeyboardHelp,
     toggleSlideIndex,
     toggleHud: () => toggleHudHidden(),
     toggleRadio: () => document.getElementById('hud-radio-btn')?.click(),
-    triggerDeckUpload: () => {
-      const uploadInput = document.getElementById('deck-upload');
-      if (uploadInput) uploadInput.click();
-    },
   };
 }
 const createdEditDrawer = createDrawer({
   id: 'edit-drawer',
   onOpen: () => {
     setEditDrawerOpen(true);
+    const editBtn = document.getElementById('hud-edit-btn');
+    if (editBtn) {
+      editBtn.classList.add('is-active');
+      editBtn.setAttribute('aria-pressed', 'true');
+    }
     // renderEditForm is now called before opening for smooth animation
     editDrawerInstance.element.querySelectorAll('.edit-drawer__close').forEach((closeBtn) => {
       if (closeBtn.dataset.listenerAttached) return;
@@ -673,6 +671,11 @@ const createdEditDrawer = createDrawer({
   },
   onClose: () => {
     setEditDrawerOpen(false);
+    const editBtn = document.getElementById('hud-edit-btn');
+    if (editBtn) {
+      editBtn.classList.remove('is-active');
+      editBtn.setAttribute('aria-pressed', 'false');
+    }
     flushPendingEditDrawerWork(getEditDrawerContext());
   },
 });
@@ -723,22 +726,21 @@ async function initDeckWithTheme() {
 
   if (slides.length === 0) {
     renderEmptyState();
-    return;
+  } else {
+    const renderedElements = slides.map((slide, index) =>
+      createSlide(slide, index, renderers)
+    );
+    setSlideElements(renderedElements);
+
+    const fragment = document.createDocumentFragment();
+    slideElements.forEach((slide) => {
+      slide.style.visibility = 'hidden';
+      slide.style.pointerEvents = 'none';
+      fragment.appendChild(slide);
+    });
+    slidesRoot.appendChild(fragment);
+    updateOverviewLayout();
   }
-
-  const renderedElements = slides.map((slide, index) =>
-    createSlide(slide, index, renderers)
-  );
-  setSlideElements(renderedElements);
-
-  const fragment = document.createDocumentFragment();
-  slideElements.forEach((slide) => {
-    slide.style.visibility = 'hidden';
-    slide.style.pointerEvents = 'none';
-    fragment.appendChild(slide);
-  });
-  slidesRoot.appendChild(fragment);
-  updateOverviewLayout();
 
   initKeyboardNav(getKeyboardContext());
   initTouchNav({
@@ -753,6 +755,46 @@ async function initDeckWithTheme() {
   const uploadInput = document.getElementById('deck-upload');
   if (uploadInput) {
     uploadInput.addEventListener('change', handleDeckUpload);
+  }
+
+  // Accept dropped .sld, .som, .deck, .json, or image files anywhere on the stage
+  document.addEventListener('dragover', (event) => {
+    if (event.dataTransfer?.types?.includes('Files')) {
+      event.preventDefault();
+    }
+  });
+  document.addEventListener('drop', (event) => {
+    if (event.defaultPrevented) return;
+    const files = Array.from(event.dataTransfer?.files || []);
+    if (!files.length) return;
+    // Always prevent browser navigation when files are dropped onto the window
+    event.preventDefault();
+    const deckFile = files.find(
+      (f) => /\.(sld|som|deck|json)$/i.test(f.name) || f.type === 'application/json'
+    );
+    if (deckFile) {
+      loadDeckFile(deckFile);
+      return;
+    }
+    const imageFile = files.find((f) => f.type.startsWith('image/'));
+    if (imageFile) {
+      handleImageFile(getEditDrawerContext(), imageFile, null);
+    }
+  });
+
+  // PWA File Handlers API: open .som / .deck / .json files launched from OS Finder
+  if ('launchQueue' in window && window.launchQueue && typeof window.launchQueue.setConsumer === 'function') {
+    window.launchQueue.setConsumer(async (launchParams) => {
+      const handle = launchParams?.files?.[0];
+      if (handle && typeof handle.getFile === 'function') {
+        try {
+          const file = await handle.getFile();
+          loadDeckFile(file);
+        } catch (error) {
+          console.warn('Unable to open launched deck file:', error);
+        }
+      }
+    });
   }
 
   initVoiceButtons({
@@ -779,8 +821,29 @@ async function initDeckWithTheme() {
     });
   }
 
-  document.querySelectorAll('[data-drawer-tab]').forEach((btn) => {
+  const drawerTabs = Array.from(document.querySelectorAll('[data-drawer-tab]'));
+  drawerTabs.forEach((btn, idx) => {
     btn.addEventListener('click', () => setDrawerTab(btn.dataset.drawerTab));
+    btn.addEventListener('keydown', (event) => {
+      let targetIdx = null;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        targetIdx = (idx + 1) % drawerTabs.length;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        targetIdx = (idx - 1 + drawerTabs.length) % drawerTabs.length;
+      } else if (event.key === 'Home') {
+        targetIdx = 0;
+      } else if (event.key === 'End') {
+        targetIdx = drawerTabs.length - 1;
+      }
+      if (targetIdx !== null) {
+        event.preventDefault();
+        const nextBtn = drawerTabs[targetIdx];
+        if (nextBtn instanceof HTMLElement) {
+          setDrawerTab(nextBtn.dataset.drawerTab);
+          nextBtn.focus({ preventScroll: true });
+        }
+      }
+    });
   });
 
   const helpBtn = document.getElementById('help-btn');
@@ -844,8 +907,15 @@ async function initDeckWithTheme() {
   initRadioDock();
   initDeckPanel({
     downloadDeck,
+    downloadPdf: () => handleDownloadPdf(getEditDrawerContext()),
     triggerDeckUpload: () => document.getElementById('deck-upload')?.click(),
     randomizeTheme,
+    openStudioConsole: () => {
+      if (editDrawerInstance?.isOpen) {
+        closeDrawer(editDrawerInstance, { restoreFocus: false });
+      }
+      openCheatConsole();
+    },
     openSettingsModal,
     getApiKey: getGeminiApiKey,
   });
@@ -876,7 +946,9 @@ initSharePasswordModal();
   // Initialize speaker notes
   initSpeakerNotes();
 
-  setActiveSlide(0);
+  if (slides.length > 0) {
+    setActiveSlide(0);
+  }
   updateOverviewButton();
   setOverviewCursor(currentIndex);
   initBrowserHistory();
@@ -902,7 +974,9 @@ function handleInitialIntent() {
 
   requestAnimationFrame(() => {
     if (openIntent === 'theme') {
-      openThemeDrawer();
+      openEditDrawer('slide');
+      const themeAcc = document.querySelector('#edit-drawer-content .accordion--theme');
+      if (themeAcc) themeAcc.classList.add('is-open');
     } else if (openIntent === 'settings') {
       openSettingsModal();
     } else if (openIntent === 'deck') {

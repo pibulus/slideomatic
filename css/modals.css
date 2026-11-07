@@ -121,84 +121,6 @@
   box-shadow: 6px 6px 0 rgba(var(--warm-black-rgb), 0.28);
 }
 
-/* --- Keyboard Help Modal --- */
-.keyboard-help-modal__dialog {
-  width: min(800px, 90vw);
-  max-height: 90vh;
-  border-radius: 28px;
-  box-shadow: 18px 20px 0 rgba(var(--warm-black-rgb), 0.28);
-  padding: 0;
-  overflow: hidden;
-  animation: modal-slide-up 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.keyboard-help-modal__header {
-  padding: 24px 32px;
-  background: var(--color-surface);
-  border-bottom: var(--border-width) solid var(--color-ink);
-}
-
-.keyboard-help-modal__header h2 {
-  font-size: 1.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.keyboard-help-modal__body {
-  padding: 32px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 32px;
-  background: var(--color-surface-alt);
-}
-
-.keyboard-help-section h3 {
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-muted);
-  margin-bottom: 16px;
-  border-bottom: 2px solid rgba(var(--warm-black-rgb),0.1);
-  padding-bottom: 8px;
-}
-
-.keyboard-help-list {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px 16px;
-  align-items: center;
-}
-
-.keyboard-help-list dt {
-  display: flex;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.keyboard-help-list kbd {
-  font-family: var(--font-mono);
-  background: var(--color-surface);
-  border: 2px solid var(--color-ink);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 0.85rem;
-  box-shadow: 2px 2px 0 rgba(var(--warm-black-rgb),0.2);
-}
-
-.keyboard-help-list dd {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .keyboard-help-modal__body {
-    grid-template-columns: 1fr;
-    gap: 24px;
-    padding: 24px;
-  }
-}
-
 /* --- Hints Modal (Quick Guide) --- */
 .hints-modal {
   z-index: var(--z-hints);
@@ -669,30 +591,72 @@
 
 .share-modal__input {
   flex: 1;
-  padding: 14px 16px;
-  border: 3px solid var(--color-ink);
-  border-radius: 16px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ui-ink, #1e1714);
+  border-radius: 12px;
+  font-family: var(--ui-font-mono);
   font-size: 0.95rem;
-  background: var(--warm-white);
-  color: var(--color-ink);
+  background: var(--ui-surface, #fffef7);
+  color: var(--ui-ink, #1e1714);
   line-height: 1.4;
+}
+
+.share-modal__input::placeholder {
+  color: var(--ui-muted, #57524e);
+  opacity: 1;
 }
 
 .share-modal__input:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(255, 115, 200, 0.25);
+  border-color: var(--ui-ink, #1e1714);
+  box-shadow: 0 0 0 3px rgba(var(--warm-black-rgb), 0.14);
 }
 
 .share-modal__hint {
   margin: -4px 0 0;
   font-size: 0.9rem;
-  color: var(--color-text-muted, #666);
+  color: var(--ui-muted, #57524e);
 }
 
 .share-modal__hint.is-warning {
   color: #8a4a00;
   font-weight: 700;
+}
+
+.share-modal__options {
+  border: 2px solid var(--ui-ink, #1e1714);
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: var(--ui-surface, #fffef7);
+  box-shadow: 3px 3px 0 rgba(var(--warm-black-rgb), 0.14);
+}
+
+.share-modal__options-summary {
+  cursor: pointer;
+  font-family: var(--ui-font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ui-ink, #1e1714);
+  user-select: none;
+}
+
+.share-modal__options[open] .share-modal__options-summary {
+  margin-bottom: 10px;
+}
+
+.share-modal__options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.share-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .share-modal__copy-btn {
@@ -1208,6 +1172,14 @@
   .share-modal__body {
     padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
     gap: 18px;
+  }
+  .share-modal__input {
+    font-size: 16px;
+  }
+  .share-modal__options-summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
   }
   .share-modal__input-group {
     flex-direction: column;

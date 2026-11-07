@@ -62,10 +62,15 @@ export function openKeyboardHelp() {
   const modal = document.getElementById('hints-modal');
   if (!modal) return;
 
-  // Voice is opt-in: only advertise V when a Gemini key is configured
+  // Show V shortcut whenever the browser supports microphone recording
   const voiceHint = document.getElementById('hint-voice');
   if (voiceHint) {
-    voiceHint.hidden = !localStorage.getItem('slideomatic_gemini_api_key');
+    const canRecord = Boolean(
+      navigator.mediaDevices &&
+      typeof navigator.mediaDevices.getUserMedia === 'function' &&
+      window.MediaRecorder
+    );
+    voiceHint.hidden = !canRecord;
   }
 
   previousFocus = document.activeElement;

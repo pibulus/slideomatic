@@ -86,9 +86,16 @@ function buildInputField(field, value, placeholder) {
 function buildTextareaField(field, value, placeholder) {
   const safeField = escapeHtml(field);
   const targetId = `quick-edit-${safeField}`;
-  // Dictation rides on Gemini — only offer the mic when a key is configured
-  const hasAiKey = !!localStorage.getItem('slideomatic_gemini_api_key');
-  const dictateButton = hasAiKey
+  // Dictation routes through the Gemini proxy (which has a house key fallback),
+  // so offer the mic whenever the browser supports MediaRecorder.
+  const canDictate = Boolean(
+    typeof navigator !== 'undefined' &&
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === 'function' &&
+    typeof window !== 'undefined' &&
+    window.MediaRecorder
+  );
+  const dictateButton = canDictate
     ? `
       <button
         type="button"
@@ -112,6 +119,150 @@ function buildTextareaField(field, value, placeholder) {
       >${escapeHtml(value ?? '')}</textarea>${dictateButton}
     </div>
   `;
+}
+
+function serializeBodyForTextarea(body) {
+  if (!body) return '';
+  if (typeof body === 'string') return body;
+  if (!Array.isArray(body)) return '';
+
+  const markerMap = {
+    info: '!!',
+    didyouknow: '?!',
+    question: '??',
+    pull: '>>',
+  };
+
+  return body
+    .map((entry) => {
+      if (typeof entry === 'string') return entry;
+      if (entry && typeof entry === 'object' && entry.callout && !entry.title && typeof entry.body === 'string') {
+        const prefix = markerMap[entry.callout] || '!!';
+        return `${prefix} ${entry.body}`;
+      }
+      return null;
+    })
+    .filter((line) => line !== null)
+    .join('\n');
+}
+
+function buildVisualBlockFields(slide, type) {
+  if (type !== 'standard' && type !== 'scroll') return '';
+  const blocks = [];
+
+  // 1. Code block editor
+  const codeSpec = slide.code
+    ? (typeof slide.code === 'string'
+      ? { code: slide.code, lang: slide.lang || '', title: slide.codeTitle || '' }
+      : slide.code)
+    : null;
+  if (codeSpec) {
+    blocks.push(`
+      <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
+        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span class="edit-drawer__sublabel" style="margin: 0;">Code Block</span>
+          <button type="button" class="edit-drawer__image-remove" data-remove-block="code" title="Remove code block" aria-label="Remove code block" style="margin-left: auto;">×</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          ${buildInputField('visual.code.title', codeSpec.title || '', 'Filename / title')}
+          ${buildInputField('visual.code.lang', codeSpec.lang || '', 'Language (js, bash…)')}
+        </div>
+        ${buildTextareaField('visual.code.code', codeSpec.code || '', 'Code snippet')}
+      </div>
+    `);
+  }
+
+  // 2. Vector chart editor
+  const chartSpec = slide.chart
+    ? (typeof slide.chart === 'string'
+      ? { chart: slide.chart, title: slide.chartTitle || '', items: slide.items || [] }
+      : slide.chart)
+    : null;
+  if (chartSpec) {
+    const itemsLines = Array.isArray(chartSpec.items)
+      ? chartSpec.items.map((item) => `${item.label ?? ''}: ${item.value ?? 0}`).join('\n')
+      : '';
+    blocks.push(`
+      <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
+        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span class="edit-drawer__sublabel" style="margin: 0;">Vector Chart</span>
+          <button type="button" class="edit-drawer__image-remove" data-remove-block="chart" title="Remove chart" aria-label="Remove chart" style="margin-left: auto;">×</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          ${buildInputField('visual.chart.title', chartSpec.title || '', 'Chart title')}
+          ${buildInputField('visual.chart.type', chartSpec.chart || 'bar', 'Type (bar, hbar, donut)')}
+        </div>
+        ${buildTextareaField('visual.chart.items', itemsLines, 'Label: Value (one per line)')}
+      </div>
+    `);
+  }
+
+  // 3. Ruled table editor
+  const tableSpec = slide.table && typeof slide.table === 'object' ? slide.table : null;
+  if (tableSpec) {
+    const lines = [];
+    if (Array.isArray(tableSpec.headers) && tableSpec.headers.length) {
+      lines.push(tableSpec.headers.join(' | '));
+    }
+    if (Array.isArray(tableSpec.rows)) {
+      tableSpec.rows.forEach((row) => {
+        if (Array.isArray(row)) lines.push(row.join(' | '));
+      });
+    }
+    blocks.push(`
+      <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
+        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span class="edit-drawer__sublabel" style="margin: 0;">Data Table</span>
+          <button type="button" class="edit-drawer__image-remove" data-remove-block="table" title="Remove table" aria-label="Remove table" style="margin-left: auto;">×</button>
+        </div>
+        ${buildInputField('visual.table.title', tableSpec.title || '', 'Table title (optional)')}
+        ${buildTextareaField('visual.table.rows', lines.join('\n'), 'Col 1 | Col 2 (first line = headers)')}
+      </div>
+    `);
+  }
+
+  // 4. Video / Embed editor
+  const rawVideo = slide.video || slide.embed;
+  const videoSpec = rawVideo
+    ? (typeof rawVideo === 'string' ? { src: rawVideo, caption: '' } : rawVideo)
+    : null;
+  if (videoSpec) {
+    blocks.push(`
+      <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
+        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span class="edit-drawer__sublabel" style="margin: 0;">Video / Embed</span>
+          <button type="button" class="edit-drawer__image-remove" data-remove-block="video" title="Remove video" aria-label="Remove video" style="margin-left: auto;">×</button>
+        </div>
+        ${buildInputField('visual.video.src', videoSpec.src || videoSpec.video || videoSpec.embed || '', 'YouTube, Vimeo, Loom, or .mp4 URL')}
+        ${buildInputField('visual.video.caption', videoSpec.caption || '', 'Caption (optional)')}
+      </div>
+    `);
+  }
+
+  // Add buttons for any block not currently attached
+  const addButtons = [];
+  if (!codeSpec) {
+    addButtons.push('<button type="button" class="edit-drawer__button edit-drawer__button--secondary" data-add-block="code" style="flex: 1; min-width: 45%; padding: 6px 8px; font-size: 0.72rem;">+ Code</button>');
+  }
+  if (!chartSpec) {
+    addButtons.push('<button type="button" class="edit-drawer__button edit-drawer__button--secondary" data-add-block="chart" style="flex: 1; min-width: 45%; padding: 6px 8px; font-size: 0.72rem;">+ Chart</button>');
+  }
+  if (!tableSpec) {
+    addButtons.push('<button type="button" class="edit-drawer__button edit-drawer__button--secondary" data-add-block="table" style="flex: 1; min-width: 45%; padding: 6px 8px; font-size: 0.72rem;">+ Table</button>');
+  }
+  if (!videoSpec) {
+    addButtons.push('<button type="button" class="edit-drawer__button edit-drawer__button--secondary" data-add-block="video" style="flex: 1; min-width: 45%; padding: 6px 8px; font-size: 0.72rem;">+ Video</button>');
+  }
+
+  if (addButtons.length > 0) {
+    blocks.push(`
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px;">
+        ${addButtons.join('')}
+      </div>
+    `);
+  }
+
+  return blocks.join('');
 }
 
 function resolveField(slide, candidates) {
@@ -204,13 +355,19 @@ function buildCombinedContentSection(slide, type) {
     ['standard', 'scroll', 'gallery', 'grid', 'pillars', 'split', 'image'].includes(type);
 
   if (shouldShowBody) {
-    const bodyValue = Array.isArray(slide.body) ? slide.body.join('\n') : (slide.body || '');
+    const bodyValue = serializeBodyForTextarea(slide.body);
     fields.push(buildTextareaField('body', bodyValue, 'Body copy'));
   }
 
   // Long-form opening paragraph (scroll pages)
   if (type === 'scroll' || Object.prototype.hasOwnProperty.call(slide, 'lead')) {
     fields.push(buildTextareaField('lead', slide.lead || '', 'Lead paragraph'));
+  }
+
+  // Visual Representers (Code, Chart, Table, Video)
+  const visualControls = buildVisualBlockFields(slide, type);
+  if (visualControls) {
+    fields.push(visualControls);
   }
 
   // Pillars cards (editable without touching raw JSON)
@@ -221,9 +378,9 @@ function buildCombinedContentSection(slide, type) {
         ? `<button type="button" class="edit-drawer__image-remove" data-remove-pillar="${idx}" title="Remove pillar ${idx + 1}" aria-label="Remove pillar ${idx + 1}" style="margin-left: auto;">×</button>`
         : '';
       fields.push(`
-        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.18);">
+        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
           <div style="display: flex; align-items: center; margin-bottom: 6px;">
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface);">Card ${idx + 1}</span>
+            <span class="edit-drawer__sublabel" style="margin: 0;">Card ${idx + 1}</span>
             ${removeBtn}
           </div>
           ${buildInputField(`pillars.${idx}.title`, pillar.title || '', `Card ${idx + 1} title`)}
@@ -243,8 +400,8 @@ function buildCombinedContentSection(slide, type) {
     slide.items.forEach((item, idx) => {
       const copyVal = Array.isArray(item.copy) ? item.copy.join('\n') : (item.copy || '');
       fields.push(`
-        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.18);">
-          <span style="display: block; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin-bottom: 6px;">Item ${idx + 1}</span>
+        <div class="accordion__group" style="padding-top: 8px; border-top: 1px dashed rgba(var(--warm-black-rgb), 0.18);">
+          <span class="edit-drawer__sublabel">Item ${idx + 1}</span>
           ${buildInputField(`items.${idx}.label`, item.label || '', `Item ${idx + 1} label`)}
           ${type === 'gallery' ? buildTextareaField(`items.${idx}.copy`, copyVal, `Item ${idx + 1} copy`) : ''}
         </div>
@@ -257,10 +414,20 @@ function buildCombinedContentSection(slide, type) {
   return buildAccordion('Content', fields.join(''), { startOpen: true });
 }
 
-export function buildActionsSection() {
+export function buildActionsSection({ index = 0, total = 1 } = {}) {
+  const canMoveEarlier = index > 0;
+  const canMoveLater = index < total - 1;
   // Changes save themselves: the drawer autosaves as you type, closing it
   // is "done". No toggle, no Save button, no decision.
   const content = `
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="move-slide-earlier-btn" style="flex: 1;" ${canMoveEarlier ? '' : 'disabled'} title="Move slide earlier in deck">
+        ← Move Earlier
+      </button>
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="move-slide-later-btn" style="flex: 1;" ${canMoveLater ? '' : 'disabled'} title="Move slide later in deck">
+        Move Later →
+      </button>
+    </div>
     <div style="display: flex; gap: 10px;">
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="duplicate-slide-btn" style="flex: 1;">
         Duplicate
@@ -429,14 +596,14 @@ function buildSplitContentSection(slide) {
   const content = `
     ${buildInputField('headline', slide.headline || '', 'Slide Headline')}
     <div class="accordion__group">
-      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Left Column</p>
+      <p class="edit-drawer__sublabel">Left Column</p>
       ${buildInputField('left.headline', left.headline || '', 'Headline')}
-      ${buildTextareaField('left.body', Array.isArray(left.body) ? left.body.join('\n') : (left.body || ''), 'Body copy')}
+      ${buildTextareaField('left.body', serializeBodyForTextarea(left.body), 'Body copy')}
     </div>
     <div class="accordion__group">
-      <p style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-surface); margin: 0 0 8px 0;">Right Column</p>
+      <p class="edit-drawer__sublabel">Right Column</p>
       ${buildInputField('right.headline', right.headline || '', 'Headline')}
-      ${buildTextareaField('right.body', Array.isArray(right.body) ? left.body !== undefined && Array.isArray(right.body) ? right.body.join('\n') : right.body.join('\n') : (right.body || ''), 'Body copy')}
+      ${buildTextareaField('right.body', serializeBodyForTextarea(right.body), 'Body copy')}
     </div>
   `;
 
@@ -503,7 +670,7 @@ function buildThemeSection() {
       <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-random-btn-inline" title="Shuffle colours within this style" style="flex: 1;">
         Shuffle
       </button>
-      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current look to your browser" style="flex: 1;">
+      <button type="button" class="edit-drawer__button edit-drawer__button--secondary" id="theme-save-btn-inline" title="Save current look locally" style="flex: 1;">
         Save Theme
       </button>
     </div>

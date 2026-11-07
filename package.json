@@ -10,7 +10,8 @@
     "check": "node scripts/validate.mjs",
     "lint": "eslint .",
     "pdf": "node scripts/export-pdf.mjs",
-    "test": "node --test netlify/functions/utils/*.test.js"
+    "test": "node --test netlify/functions/utils/*.test.js netlify/functions/*.test.js netlify/edge-functions/*.test.js",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

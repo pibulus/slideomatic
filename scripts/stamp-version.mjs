@@ -18,9 +18,9 @@
 //
 // Runs from `prebuild`, so it cannot be forgotten on a build path.
 
-import { execSync } from "node:child_process";
-import { writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { execSync } from 'node:child_process';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 function commit() {
   // Netlify/Vercel set this; on a shallow CI clone it is more reliable than git.
@@ -28,15 +28,15 @@ function commit() {
   if (fromEnv) return fromEnv.trim().slice(0, 7);
 
   try {
-    const sha = execSync("git rev-parse HEAD", {
-      stdio: ["ignore", "pipe", "ignore"],
+    const sha = execSync('git rev-parse HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
     })
       .toString()
       .trim()
       .slice(0, 7);
 
-    const dirty = execSync("git status --porcelain", {
-      stdio: ["ignore", "pipe", "ignore"],
+    const dirty = execSync('git status --porcelain', {
+      stdio: ['ignore', 'pipe', 'ignore'],
     })
       .toString()
       .trim();
@@ -45,7 +45,7 @@ function commit() {
   } catch {
     // A tarball build with no git and no CI env. Better to serve a known
     // "unknown" than to fail the build over a diagnostic file.
-    return "unknown";
+    return 'unknown';
   }
 }
 
@@ -56,9 +56,9 @@ const stamp = {
 
 // Most apps serve static/ at the root. Sites that publish the repo root
 // itself (slideomatic) set STAMP_OUT=version.json instead.
-const out = process.env.STAMP_OUT || "static/version.json";
+const out = process.env.STAMP_OUT || 'static/version.json';
 const dir = dirname(out);
-if (dir && dir !== ".") mkdirSync(dir, { recursive: true });
+if (dir && dir !== '.') mkdirSync(dir, { recursive: true });
 writeFileSync(out, `${JSON.stringify(stamp, null, 2)}\n`);
 
 console.log(`🔖 ${out} → ${stamp.commit} (${stamp.built})`);

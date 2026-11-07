@@ -18,20 +18,32 @@ export default async (request, context) => {
   let html = await response.text();
   const title = `${collection.title} — Slide-o-Matic`;
   const description = collection.description || collection.tagline || '';
-  const pageUrl = `https://slideomatic.app/collections?collection=${slug}`;
+  const pageUrl = `https://slideomatic.app/collections?collection=${encodeURIComponent(slug)}`;
+
+  const safeTitle = escapeHtml(title);
+  const safeDesc = escapeHtml(description);
+  const safePageUrl = escapeHtml(pageUrl);
 
   html = html
-    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
-    .replace(/(<meta name="description" content=").*?(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<link rel="canonical" href=").*?(")/, `$1${pageUrl}$2`)
-    .replace(/(<meta property="og:url" content=").*?(")/, `$1${pageUrl}$2`)
-    .replace(/(<meta property="og:title" content=").*?(")/, `$1${escapeHtml(title)}$2`)
-    .replace(/(<meta property="og:description" content=").*?(")/, `$1${escapeHtml(description)}$2`)
-    .replace(/(<meta name="twitter:url" content=").*?(")/, `$1${pageUrl}$2`)
-    .replace(/(<meta name="twitter:title" content=").*?(")/, `$1${escapeHtml(title)}$2`)
-    .replace(/(<meta name="twitter:description" content=").*?(")/, `$1${escapeHtml(description)}$2`);
+    .replace(/<title>.*?<\/title>/, () => `<title>${safeTitle}</title>`)
+    .replace(/(<meta name="description" content=").*?(")/, (_, p1, p2) => `${p1}${safeDesc}${p2}`)
+    .replace(/(<link rel="canonical" href=").*?(")/, (_, p1, p2) => `${p1}${safePageUrl}${p2}`)
+    .replace(/(<meta property="og:url" content=").*?(")/, (_, p1, p2) => `${p1}${safePageUrl}${p2}`)
+    .replace(/(<meta property="og:title" content=").*?(")/, (_, p1, p2) => `${p1}${safeTitle}${p2}`)
+    .replace(/(<meta property="og:description" content=").*?(")/, (_, p1, p2) => `${p1}${safeDesc}${p2}`)
+    .replace(/(<meta name="twitter:url" content=").*?(")/, (_, p1, p2) => `${p1}${safePageUrl}${p2}`)
+    .replace(/(<meta name="twitter:title" content=").*?(")/, (_, p1, p2) => `${p1}${safeTitle}${p2}`)
+    .replace(/(<meta name="twitter:description" content=").*?(")/, (_, p1, p2) => `${p1}${safeDesc}${p2}`);
 
-  return new Response(html, response);
+  const headers = new Headers(response.headers);
+  headers.set('content-type', 'text/html; charset=UTF-8');
+  headers.delete('content-length');
+
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 };
 
 function escapeHtml(str) {
@@ -39,9 +51,10 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export const config = {
-  path: '/collections',
+  path: ['/collections', '/collections.html', '/collections/*'],
 };

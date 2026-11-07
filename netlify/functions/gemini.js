@@ -86,7 +86,7 @@ export async function handler(event) {
     return {
       statusCode: 503,
       headers,
-      body: JSON.stringify({ error: 'No API key available — add your own Gemini key in Settings.' }),
+      body: JSON.stringify({ error: 'No API key available — add a personal Gemini key in Deck settings.' }),
     };
   }
 

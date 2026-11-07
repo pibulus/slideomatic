@@ -49,5 +49,14 @@
       "description": "Open the Slide-o-Matic welcome deck.",
       "url": "/deck.html"
     }
+  ],
+  "file_handlers": [
+    {
+      "action": "/deck.html",
+      "accept": {
+        "application/json": [".sld", ".som", ".deck", ".json"],
+        "application/vnd.slideomatic+json": [".sld", ".som", ".deck"]
+      }
+    }
   ]
 }

@@ -1,27 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Theme Drawer Module
+// Theme Controls & Randomizer Module
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Handles the theme drawer UI: opening/closing, populating the dropdown,
-// saving themes, random/AI theme generation, and keeping the select UI synced
-// with the current theme selection.
+// Handles theme shuffling, saving custom themes to localStorage, and keeping
+// the inline theme picker in the edit drawer synced with the active theme.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
-  createDrawer,
-  openDrawer,
-  closeDrawer,
-} from './drawer-base.js';
-import {
-  themeDrawerInstance,
-  setThemeDrawerInstance,
-  setThemeDrawerOpen,
-  editDrawerInstance,
-} from './state.js';
-import {
-  loadThemeLibrary,
-  saveThemeToLibrary,
   applyTheme,
   setCurrentTheme,
   getCurrentTheme,
@@ -36,319 +22,10 @@ import {
 } from './theme-manager.js';
 import { showHudStatus, hideHudStatus } from './hud.js';
 import { clamp } from './utils.js';
-import { getGeminiApiKey } from './voice-modes.js';
 import { persistSlides } from './deck-persistence.js';
 
-// Route Gemini calls through our Netlify proxy so the SHARED app key stays
-// server-side. If the visitor pasted their own key, it's sent as `userKey` and
-// the proxy uses theirs instead. Returns the raw fetch Response.
-const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
-function callGemini(model, payload, { signal } = {}) {
-  return fetch(GEMINI_PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-    body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
-  });
-}
-
-function ensureThemeDrawerInstance() {
-  if (!themeDrawerInstance) {
-    const instance = createDrawer({
-      id: 'theme-drawer',
-      onOpen: () => {
-        const themeBtn = document.getElementById('theme-btn');
-        setThemeDrawerOpen(true);
-        themeBtn?.setAttribute('aria-expanded', 'true');
-        themeBtn?.classList.add('is-active');
-        const closeBtn = instance.element.querySelector('.theme-drawer__close');
-        if (closeBtn && !closeBtn.dataset.listenerAttached) {
-          closeBtn.addEventListener('click', () => closeDrawer(instance));
-          closeBtn.dataset.listenerAttached = 'true';
-        }
-      },
-      onClose: () => {
-        const themeBtn = document.getElementById('theme-btn');
-        setThemeDrawerOpen(false);
-        themeBtn?.setAttribute('aria-expanded', 'false');
-        themeBtn?.classList.remove('is-active');
-      },
-    });
-    setThemeDrawerInstance(instance);
-  }
-  return themeDrawerInstance;
-}
-
 export function initThemeDrawer() {
-  const drawer = ensureThemeDrawerInstance();
-  const themeDrawerEl = drawer.element;
-  const themeBtn = document.getElementById('theme-btn');
-  const saveBtn = document.getElementById('theme-save-btn');
-  const aiBtn = document.getElementById('theme-ai-btn');
-  const randomBtn = document.getElementById('theme-random-btn');
-
-  if (!themeDrawerEl) return;
-
-  themeBtn?.setAttribute('aria-expanded', 'false');
-  themeBtn?.classList.remove('is-active');
-
-  if (themeBtn && !themeBtn.dataset.listenerAttached) {
-    themeBtn.addEventListener('click', toggleThemeDrawer);
-    themeBtn.dataset.listenerAttached = 'true';
-  }
-
-  const closeBtn = themeDrawerEl.querySelector('.theme-drawer__close');
-  if (closeBtn && !closeBtn.dataset.listenerAttached) {
-    closeBtn.addEventListener('click', () => closeDrawer(ensureThemeDrawerInstance()));
-    closeBtn.dataset.listenerAttached = 'true';
-  }
-
-  setupThemeSelectDropdown();
-
-  saveBtn?.addEventListener('click', handleSaveTheme);
-  aiBtn?.addEventListener('click', () => handleAiTheme(aiBtn));
-  randomBtn?.addEventListener('click', handleRandomTheme);
-
-  populateThemeDropdown();
   syncThemeSelectUI();
-}
-
-export function toggleThemeDrawer() {
-  const drawer = ensureThemeDrawerInstance();
-  if (drawer.isOpen) {
-    closeDrawer(drawer);
-  } else {
-    openThemeDrawer();
-  }
-}
-
-export function openThemeDrawer() {
-  const drawer = ensureThemeDrawerInstance();
-  if (editDrawerInstance?.isOpen) {
-    closeDrawer(editDrawerInstance, { restoreFocus: false });
-  }
-  loadThemeIntoEditor();
-  populateThemeDropdown();
-  syncThemeSelectUI();
-  openDrawer(drawer);
-}
-
-export function closeThemeDrawer() {
-  const drawer = ensureThemeDrawerInstance();
-  closeDrawer(drawer);
-}
-
-import { setupCustomSelect } from './custom-select.js';
-
-function setupThemeSelectDropdown() {
-  const container = document.querySelector('.theme-drawer__content');
-  if (!container) return;
-
-  // Initialize custom select logic
-  setupCustomSelect(container);
-  setupLegacyThemeSelect();
-
-  // Listen for changes
-  const themeSelect = document.getElementById('theme-select-wrapper');
-  if (themeSelect && !themeSelect.dataset.listenerAttached) {
-    themeSelect.addEventListener('customSelectChange', async (event) => {
-      const themePath = event.detail.value;
-      
-      try {
-        if (themePath.startsWith('saved:')) {
-          const savedName = themePath.replace('saved:', '');
-          const library = loadThemeLibrary();
-          const entry = library.find((entry) => entry.name === savedName);
-          if (entry) {
-            const normalizedTheme = applyTheme(entry.theme);
-            setCurrentTheme(normalizedTheme, { source: themePath });
-          }
-        } else {
-          const response = await fetch(themePath, { cache: 'no-store' });
-          if (!response.ok) throw new Error(`Failed to load theme: ${response.status}`);
-          const theme = await response.json();
-          const normalizedTheme = applyTheme(theme);
-          setCurrentTheme(normalizedTheme, { source: themePath });
-        }
-        syncThemeSelectUI();
-        showHudStatus('✓ Theme applied', 'success');
-        setTimeout(hideHudStatus, 1600);
-      } catch (error) {
-        console.error('Failed to apply theme:', error);
-        showHudStatus('Could not load that theme', 'error');
-        setTimeout(hideHudStatus, 2000);
-      }
-    });
-    themeSelect.dataset.listenerAttached = 'true';
-  }
-}
-
-function setupLegacyThemeSelect() {
-  const themeSelect = document.getElementById('theme-select-wrapper');
-  const trigger = document.getElementById('theme-select-trigger');
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!themeSelect || !trigger || !dropdown || trigger.dataset.listenerAttached === 'true') return;
-
-  const setOpenState = (isOpen) => {
-    trigger.classList.toggle('is-open', isOpen);
-    dropdown.classList.toggle('is-open', isOpen);
-    trigger.setAttribute('aria-expanded', String(isOpen));
-    dropdown.setAttribute('aria-hidden', String(!isOpen));
-    if (isOpen) {
-      dropdown.removeAttribute('inert');
-    } else {
-      dropdown.setAttribute('inert', '');
-    }
-  };
-
-  const closeDropdown = () => setOpenState(false);
-  const openDropdown = () => setOpenState(true);
-
-  const getOptions = () => Array.from(dropdown.querySelectorAll('.theme-select__option'));
-  const focusOption = (direction = 'current') => {
-    const options = getOptions();
-    if (!options.length) return;
-    const currentIndex = options.findIndex((option) => option.classList.contains('is-selected'));
-    const fallbackIndex = Math.max(0, currentIndex);
-    const index = direction === 'next'
-      ? (fallbackIndex + 1) % options.length
-      : direction === 'previous'
-        ? (fallbackIndex - 1 + options.length) % options.length
-        : fallbackIndex;
-    options[index].focus({ preventScroll: true });
-  };
-
-  const selectOption = (option) => {
-    const value = option?.dataset?.value;
-    if (!value) return;
-    const label = option.textContent?.trim() || value;
-    themeSelect.dataset.value = value;
-    closeDropdown();
-    themeSelect.dispatchEvent(new CustomEvent('customSelectChange', {
-      detail: { value, label },
-      bubbles: true,
-    }));
-    trigger.focus({ preventScroll: true });
-  };
-
-  trigger.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (dropdown.classList.contains('is-open')) {
-      closeDropdown();
-    } else {
-      openDropdown();
-    }
-  });
-
-  trigger.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (dropdown.classList.contains('is-open')) {
-        closeDropdown();
-      } else {
-        openDropdown();
-      }
-      return;
-    }
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      openDropdown();
-      queueMicrotask(() => focusOption(event.key === 'ArrowDown' ? 'next' : 'previous'));
-      return;
-    }
-    if (event.key === 'Escape') {
-      closeDropdown();
-    }
-  });
-
-  dropdown.addEventListener('click', (event) => {
-    const target = event.target instanceof Element ? event.target : null;
-    const option = target?.closest('.theme-select__option');
-    if (option) selectOption(option);
-  });
-
-  dropdown.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      const target = event.target instanceof Element ? event.target : null;
-      selectOption(target?.closest('.theme-select__option'));
-      return;
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeDropdown();
-      trigger.focus({ preventScroll: true });
-      return;
-    }
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      focusOption(event.key === 'ArrowDown' ? 'next' : 'previous');
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!themeSelect.contains(event.target)) {
-      closeDropdown();
-    }
-  });
-
-  trigger.dataset.listenerAttached = 'true';
-  setOpenState(false);
-}
-
-function handleSaveTheme() {
-  try {
-    const theme = getCurrentTheme();
-    const currentPath = getCurrentThemePath() || '';
-    const basePath = resolveBaseThemePath(currentPath);
-    let defaultName = '';
-    if (basePath.startsWith('saved:')) {
-      defaultName = basePath.replace('saved:', '');
-    }
-
-    const name = prompt('Name your theme:', defaultName);
-    if (!name || !name.trim()) return;
-
-    const saved = saveThemeToLibrary(name.trim(), theme);
-    if (!saved) {
-      showHudStatus('Could not save theme (storage full)', 'error');
-      setTimeout(hideHudStatus, 2400);
-      return;
-    }
-    setCurrentTheme(theme, { source: `saved:${name.trim()}` });
-    populateThemeDropdown();
-    syncThemeSelectUI();
-
-    showHudStatus('✓ Theme saved', 'success');
-    setTimeout(hideHudStatus, 1600);
-  } catch (error) {
-    showHudStatus(error.message || 'Could not save theme', 'error');
-    setTimeout(hideHudStatus, 2000);
-  }
-}
-
-async function handleAiTheme(aiBtn) {
-  const description = prompt('Describe your theme:\n(e.g. "dark cyberpunk with neon greens" or "warm sunset beach vibes")');
-  if (!description) return;
-
-  try {
-    showHudStatus('✨ Generating theme...', 'processing');
-    aiBtn.disabled = true;
-
-    const theme = await generateThemeWithAI(description);
-    const normalizedTheme = applyTheme(theme);
-    setCurrentTheme(normalizedTheme, { source: '__ai__' });
-    loadThemeIntoEditor();
-
-    showHudStatus('✨ Theme generated!', 'success');
-    setTimeout(hideHudStatus, 1600);
-  } catch (error) {
-    showHudStatus(`🎨 ${error.message}`, 'error');
-    setTimeout(hideHudStatus, 3000);
-  } finally {
-    aiBtn.disabled = false;
-  }
 }
 
 function handleRandomTheme() {
@@ -369,9 +46,6 @@ function handleRandomTheme() {
   }
 }
 
-/**
- * Export randomize theme function for keyboard shortcut
- */
 export function randomizeTheme() {
   handleRandomTheme();
 }
@@ -381,28 +55,7 @@ export function loadThemeIntoEditor() {
 }
 
 export function populateThemeDropdown() {
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!dropdown) return;
-
-  const library = loadThemeLibrary();
-  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
-  options.forEach((option) => {
-    const value = option.dataset.value || '';
-    if (value.startsWith('saved:')) {
-      option.remove();
-    }
-  });
-
-  library.forEach((entry) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'theme-select__option';
-    button.dataset.value = `saved:${entry.name}`;
-    button.setAttribute('role', 'option');
-    button.setAttribute('aria-selected', 'false');
-    button.textContent = `✨ ${entry.name}`;
-    dropdown.appendChild(button);
-  });
+  syncThemeSelectUI();
 }
 
 export function syncThemeSelectUI() {
@@ -432,81 +85,6 @@ export function syncThemeSelectUI() {
       editOptions.forEach((opt) => opt.classList.remove('is-selected'));
     }
   }
-
-  const trigger = document.getElementById('theme-select-trigger');
-  const dropdown = document.getElementById('theme-select-dropdown');
-  if (!trigger || !dropdown) return;
-
-  const valueSpan = trigger.querySelector('.theme-select__value');
-  if (!valueSpan) return;
-
-  const options = Array.from(dropdown.querySelectorAll('.theme-select__option'));
-  const matchingOption = options.find((opt) => {
-    const value = opt.dataset.value;
-    if (!value) return false;
-    return value === currentPath || value === basePath;
-  });
-
-  if (matchingOption) {
-    const optionLabel = matchingOption.textContent.trim();
-    valueSpan.textContent = isRandom ? `🎲 ${optionLabel}` : matchingOption.textContent;
-    options.forEach((opt) => {
-      const isSelected = opt.dataset.value === basePath;
-      opt.classList.toggle('is-selected', isSelected);
-      opt.setAttribute('aria-selected', String(isSelected));
-    });
-  } else {
-    valueSpan.textContent = isRandom ? '🎲 Custom Theme' : '🎨 Custom Theme';
-    options.forEach((opt) => {
-      opt.classList.remove('is-selected');
-      opt.setAttribute('aria-selected', 'false');
-    });
-  }
-}
-
-async function generateThemeWithAI(description) {
-  // Proxy supplies a shared server key fallback, so no early throw on empty.
-  const sanitizedDescription = typeof description === 'string'
-    ? description.replace(/`/g, "'")
-    : '';
-
-  const prompt = `You are a theme designer for a presentation app called Slide-O-Matic.\n\nUser description:\n${sanitizedDescription || '(no additional description provided)'}\n\nProvide a JSON object with theme tokens.`;
-
-  const response = await callGemini(
-    'gemini-flash-lite-latest',
-    {
-      contents: [
-        {
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.9,
-        maxOutputTokens: 2048,
-      },
-    },
-    { signal: AbortSignal.timeout(30_000) }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Gemini API call failed');
-  }
-
-  const result = await response.json();
-  const generatedText = result.candidates[0]?.content?.parts[0]?.text;
-  if (!generatedText) {
-    throw new Error('No response from Gemini');
-  }
-
-  const jsonMatch =
-    generatedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) ||
-    generatedText.match(/\{[\s\S]*\}/);
-
-  const jsonText = jsonMatch ? jsonMatch[1] || jsonMatch[0] : generatedText;
-  const theme = JSON.parse(jsonText);
-
-  return normalizeThemeTokens(theme);
 }
 
 function generateRandomTheme() {
@@ -578,11 +156,11 @@ function randomizeDefaultTheme(theme, context = {}) {
     ? hslToHex(baseHue, clamp(22 + Math.random() * 12, 0, 100), clamp(14 + Math.random() * 10, 0, 100))
     : hslToHex(baseHue, clamp(28 + Math.random() * 20, 0, 100), clamp(88 + Math.random() * 6, 0, 100));
 
-  const colorInk = isDefaultBase ? '#1b1b1b' : getAccessibleTextColor(colorBg);
+  const colorInk = isDefaultBase ? '#1e1714' : getAccessibleTextColor(colorBg);
   const colorMuted =
-    colorInk === '#000000'
-      ? mixHexColors('#000000', '#555555', 0.55)
-      : mixHexColors('#ffffff', '#444444', 0.45);
+    colorInk === '#1e1714' || colorInk === '#000000'
+      ? mixHexColors('#1e1714', '#555555', 0.55)
+      : mixHexColors('#fffef7', '#444444', 0.45);
   const badgeTextColor = getAccessibleTextColor(palette.accent);
 
   const borderCandidates = [
@@ -596,22 +174,22 @@ function randomizeDefaultTheme(theme, context = {}) {
 
   const shadowSets = [
     {
-      sm: '6px 6px 0 rgba(0, 0, 0, 0.25)',
-      md: '10px 10px 0 rgba(0, 0, 0, 0.3)',
-      lg: '16px 16px 0 rgba(0, 0, 0, 0.35)',
-      xl: '24px 24px 0 rgba(0, 0, 0, 0.4)',
+      sm: '6px 6px 0 rgba(30, 23, 20, 0.25)',
+      md: '10px 10px 0 rgba(30, 23, 20, 0.3)',
+      lg: '16px 16px 0 rgba(30, 23, 20, 0.35)',
+      xl: '24px 24px 0 rgba(30, 23, 20, 0.4)',
     },
     {
-      sm: '4px 4px 0 rgba(0, 0, 0, 0.22)',
-      md: '8px 8px 0 rgba(0, 0, 0, 0.26)',
-      lg: '12px 12px 0 rgba(0, 0, 0, 0.3)',
-      xl: '18px 18px 0 rgba(0, 0, 0, 0.32)',
+      sm: '4px 4px 0 rgba(30, 23, 20, 0.22)',
+      md: '8px 8px 0 rgba(30, 23, 20, 0.26)',
+      lg: '12px 12px 0 rgba(30, 23, 20, 0.3)',
+      xl: '18px 18px 0 rgba(30, 23, 20, 0.32)',
     },
     {
-      sm: '0 4px 12px rgba(0, 0, 0, 0.18)',
-      md: '0 8px 24px rgba(0, 0, 0, 0.22)',
-      lg: '0 12px 36px rgba(0, 0, 0, 0.26)',
-      xl: '0 18px 54px rgba(0, 0, 0, 0.3)',
+      sm: '0 4px 12px rgba(30, 23, 20, 0.18)',
+      md: '0 8px 24px rgba(30, 23, 20, 0.22)',
+      lg: '0 12px 36px rgba(30, 23, 20, 0.26)',
+      xl: '0 18px 54px rgba(30, 23, 20, 0.3)',
     },
     {
       sm: theme['shadow-sm'],
@@ -666,8 +244,8 @@ export function themeFromAiPalette(colors = {}, baseTheme = {}) {
   const colorInk = hex(colors.text, getAccessibleTextColor(colorBg));
   const slideBg = hex(colors.surface, null);
   const colorMuted =
-    colorInk === '#000000' || colorInk.toLowerCase() === '#1b1b1b'
-      ? mixHexColors('#000000', '#555555', 0.55)
+    colorInk === '#1e1714' || colorInk === '#000000' || colorInk.toLowerCase() === '#1b1b1b'
+      ? mixHexColors('#1e1714', '#555555', 0.55)
       : mixHexColors(colorInk, colorBg, 0.4);
 
   return {
@@ -731,7 +309,7 @@ function randomizeVaporwaveTheme(theme) {
     ...theme,
     'color-bg': pink,
     'background-surface': `linear-gradient(140deg, ${cyan} 0%, ${mint} 50%, ${purple} 100%)`,
-    'background-overlay': theme['background-overlay'] || 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px)',
+    'background-overlay': theme['background-overlay'] || 'repeating-linear-gradient(0deg, rgba(255, 254, 247, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 254, 247, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 254, 247, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 254, 247, 0.08) 6px)',
     'slide-bg': hexToRgbaString(pink, 0.82),
     'slide-border-color': cyan,
     'slide-shadow': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
@@ -741,7 +319,7 @@ function randomizeVaporwaveTheme(theme) {
     'badge-bg': neon,
     'badge-color': getAccessibleTextColor(neon),
     'color-ink': ink,
-    'color-muted': mixHexColors(ink, '#ffffff', 0.25),
+    'color-muted': mixHexColors(ink, '#fffef7', 0.25),
     'shadow-sm': `8px 8px 0 ${applyAlpha(cyan, 0.42)}`,
     'shadow-md': `12px 12px 0 ${applyAlpha(cyan, 0.5)}`,
     'shadow-lg': `16px 16px 0 ${applyAlpha(cyan, 0.6)}`,
@@ -756,7 +334,7 @@ function randomizeSlackTheme(theme) {
   const deep = hslToHex((baseHue + 200) % 360, 90, 40);
   const accent = hslToHex((baseHue + 140) % 360, 92, 52);
   const badgeBg = hslToHex((baseHue + 320) % 360, 92, 40);
-  const ink = '#000000';
+  const ink = '#1e1714';
 
   return {
     ...theme,

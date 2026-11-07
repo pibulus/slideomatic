@@ -122,7 +122,7 @@ function wireControls() {
       state.enabled = true;
       updateVisualState(true, channel);
       const { showHudStatus, hideHudStatus } = await import('./hud.js');
-      showHudStatus(`📻 ${channel.name} is on`, 'success');
+      showHudStatus(`✓ ${channel.name} is on`, 'success');
       setTimeout(hideHudStatus, 1800);
     } catch (error) {
       console.error('Failed to start radio', error);
@@ -149,12 +149,12 @@ function wireControls() {
         await enableRadio(channel.id);
         updateVisualState(true, channel);
         const { showHudStatus, hideHudStatus } = await import('./hud.js');
-        showHudStatus(`🎶 ${channel.name}`, 'success');
+        showHudStatus(`✓ ${channel.name}`, 'success');
         setTimeout(hideHudStatus, 1600);
       } catch (error) {
         console.error('Failed to switch radio station', error);
         const { showHudStatus, hideHudStatus } = await import('./hud.js');
-        showHudStatus('📻 Station change hiccup. Try again', 'info');
+        showHudStatus('Station change hiccup. Try again', 'info');
         setTimeout(hideHudStatus, 2000);
       }
     } else {

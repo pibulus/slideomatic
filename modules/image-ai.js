@@ -21,9 +21,18 @@ import {
 const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
 function callGemini(model, payload, { signal } = {}) {
     const userKey = localStorage.getItem(STORAGE_KEY_API) || undefined;
+    let passportToken = '';
+    try {
+        passportToken = (localStorage.getItem('softstack_passport_token') || '').trim();
+    } catch {
+        passportToken = '';
+    }
     return fetch(GEMINI_PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(passportToken ? { Authorization: `Bearer ${passportToken}` } : {}),
+        },
         signal,
         body: JSON.stringify({ model, payload, userKey }),
     });
@@ -37,13 +46,13 @@ export async function askAIForImage(placeholderElement, imageConfig = {}) {
     } else if (placeholderElement) {
         context = extractSlideContext(placeholderElement);
     } else {
-        console.warn('No context provided for AI image generation');
+        console.warn('No context provided for image generation');
         return;
     }
 
     const { headline, body, slideType } = context;
 
-    showHudStatus('🤔 Deciding...', 'info');
+    showHudStatus('Deciding...', 'info');
 
     try {
         const decisionPrompt = `You're helping find the perfect image for a presentation slide.
@@ -87,29 +96,29 @@ GENERATE`;
         const decision = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
         if (!decision) {
-            throw new Error('No decision returned from AI');
+            throw new Error('No decision returned from image service');
         }
 
         if (decision.toUpperCase().startsWith('SEARCH:')) {
-            // AI thinks a real photo beats a generated one — no more shipping
+            // A real photo beats a generated one — no more shipping
             // people off to Google; just say so and let them drop a file in.
             hideHudStatus();
-            showHudStatus('🖼️ A real photo would work best here — drop one in', 'info');
+            showHudStatus('A real photo works best here — drop one in', 'info');
             setTimeout(hideHudStatus, 3000);
         } else if (decision.toUpperCase().includes('GENERATE')) {
-            const genToastId = showHudStatus('🎨 Generating image...', 'processing');
+            const genToastId = showHudStatus('Generating image...', 'processing');
             try {
                 await generateAIImage(placeholderElement, imageConfig);
             } finally {
                 hideToastById(genToastId);
             }
         } else {
-            throw new Error('AI returned unclear decision');
+            throw new Error('Unclear image decision returned');
         }
 
     } catch (error) {
-        console.error('AI image decision failed:', error);
-        showHudStatus(`🎨 ${error.message}`, 'error', {
+        console.error('Image decision failed:', error);
+        showHudStatus(error.message, 'error', {
             onRetry: () => askAIForImage(placeholderElement, imageConfig)
         });
         setTimeout(hideHudStatus, 6000);
@@ -148,7 +157,7 @@ export async function generateAIImage(placeholderElement, imageConfig = {}) {
     };
     const themeMood = themeMoods[themeName] || themeMoods.default;
 
-    showHudStatus('✨ Generating image...', 'info');
+    showHudStatus('Generating image...', 'info');
 
     try {
         const prompt = `Create a dense, diagrammatic illustration for a presentation slide about: ${imageContext || headline}.
@@ -204,8 +213,8 @@ The image should feel like a page torn from a very specific, very detailed worki
 
         const imageData = {
             src: base64Data,
-            alt: imageContext || headline || 'AI generated image',
-            originalFilename: 'ai-generated.png',
+            alt: imageContext || headline || 'Generated illustration',
+            originalFilename: 'generated-illustration.png',
             generatedAt: Date.now()
         };
 
@@ -229,13 +238,13 @@ The image should feel like a page torn from a very specific, very detailed worki
             }
         }
 
-        showHudStatus('✨ Image generated!', 'success');
+        showHudStatus('✓ Image generated', 'success');
         setTimeout(hideHudStatus, 2000);
         return true;
 
     } catch (error) {
-        console.error('AI image generation failed:', error);
-        showHudStatus(`🎨 ${error.message}`, 'error');
+        console.error('Image generation failed:', error);
+        showHudStatus(error.message, 'error');
         setTimeout(hideHudStatus, 3000);
         return false;
     }

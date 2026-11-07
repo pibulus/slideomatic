@@ -203,7 +203,7 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
         placeholder.addEventListener('click', clickHandler);
         listeners.push({ element: placeholder, event: 'click', handler: clickHandler });
     } else {
-        placeholder.setAttribute('aria-label', 'Describe the graph you want to generate');
+        placeholder.setAttribute('aria-label', 'Describe the graph to generate');
     }
 
     // Drag & drop handlers
@@ -226,11 +226,21 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
     listeners.push({ element: placeholder, event: 'dragleave', handler: dragleaveHandler });
 
     const dropHandler = async (event) => {
+        placeholder.classList.remove('image-placeholder--dragover');
+        text.textContent = defaultText;
+
+        const files = Array.from(event.dataTransfer?.files || []);
+        const deckFile = files.find(
+            (f) => /\.(sld|som|deck|json)$/i.test(f.name) || f.type === 'application/json'
+        );
+        // Let deck files (.sld, .som, .deck, .json) bubble to the document drop handler
+        if (deckFile && !files.some((f) => f.type.startsWith('image/'))) {
+            return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
-        placeholder.classList.remove('image-placeholder--dragover');
 
-        const files = Array.from(event.dataTransfer.files);
         const imageFile = files.find(f => f.type.startsWith('image/'));
 
         if (imageFile) {
@@ -238,9 +248,6 @@ export function createImagePlaceholder(image = {}, className = 'slide__image', c
                 await handleImageUpload(imageFile, placeholder, image);
             } catch (error) {
                 console.error('Drop upload failed:', error);
-                // We don't have showHudStatus here easily without importing it,
-                // but handleImageUpload handles its own errors mostly.
-                // If we need it, we can import it.
             }
         }
     };
@@ -398,8 +405,8 @@ export function handleImageModalTrigger(event) {
 
         // Backdrop fade
         modal.animate([
-            { backgroundColor: 'rgba(0, 0, 0, 0)' },
-            { backgroundColor: 'rgba(0, 0, 0, 0.9)' }
+            { backgroundColor: 'rgba(30, 23, 20, 0)' },
+            { backgroundColor: 'rgba(30, 23, 20, 0.9)' }
         ], {
             duration: 300,
             easing: 'ease-out',

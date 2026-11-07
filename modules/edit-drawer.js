@@ -69,6 +69,30 @@ let activeFormListeners = [];
 let autoSaveTimeout = null;
 let moduleImagePicker = null; // Reused across edit drawer renders to prevent DOM leak
 let drawerDictationSession = null;
+let renderedSlideIndex = -1;
+let renderedSlideRef = null;
+
+function isRenderedSlideStillCurrent(ctx) {
+  if (renderedSlideIndex < 0 || !renderedSlideRef) return false;
+  const slides = ctx.getSlides();
+  return slides[renderedSlideIndex] === renderedSlideRef;
+}
+
+function updateRenderedSlide(ctx, index, nextSlide) {
+  ctx.updateSlide(index, nextSlide);
+  if (index === renderedSlideIndex) {
+    renderedSlideRef = ctx.getSlides()[index] || null;
+  }
+}
+
+export function cancelPendingEditDrawerWork() {
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+  }
+  renderedSlideIndex = -1;
+  renderedSlideRef = null;
+}
 
 /**
  * Clean up all event listeners before re-rendering form
@@ -143,31 +167,44 @@ function ensureContext(context) {
   return context;
 }
 
+function commitCurrentDrawerEdits(ctx) {
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+  }
+  if (!isRenderedSlideStillCurrent(ctx)) {
+    return;
+  }
+  syncQuickEditToJSON(ctx);
+  const textarea = document.getElementById('slide-json-editor');
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
+  try {
+    const parsed = JSON.parse(textarea.value);
+    const idx = renderedSlideIndex;
+    const orig = ctx.getSlides()[idx];
+    if (orig && orig === renderedSlideRef) {
+      const restored = restoreBase64FromTokens(parsed, orig);
+      updateRenderedSlide(ctx, idx, restored);
+    }
+  } catch {
+    // Keep existing slide state if JSON is temporarily invalid
+  }
+}
+
 function applyLayoutToCurrentSlide(ctx, layout, variant) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
-    ctx.showHudStatus(`🧩 No template for "${layout}" yet`, 'info');
+    ctx.showHudStatus(`No template for "${layout}" yet`, 'info');
     setTimeout(() => ctx.hideHudStatus(), 2000);
     return;
   }
 
   // Flush any in-progress quick-edit typing before switching layout
-  syncQuickEditToJSON(ctx);
-  const textarea = document.getElementById('slide-json-editor');
-  let latestSlide = null;
-  if (textarea instanceof HTMLTextAreaElement) {
-    try {
-      const parsed = JSON.parse(textarea.value);
-      const orig = ctx.getSlides()[ctx.getCurrentIndex()];
-      if (orig) latestSlide = restoreBase64FromTokens(parsed, orig);
-    } catch {
-      // Fall back to current slide in state
-    }
-  }
+  commitCurrentDrawerEdits(ctx);
 
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
-  const currentSlide = latestSlide || slides[currentIndex];
+  const currentSlide = slides[currentIndex];
   if (!currentSlide) return;
 
   const mergedSlide = mergeSlideWithTemplate(template, currentSlide);
@@ -184,7 +221,7 @@ function applyLayoutToCurrentSlide(ctx, layout, variant) {
     if (layout !== 'split' && layout !== 'quote') delete mergedSlide.variant;
   }
 
-  ctx.updateSlide(currentIndex, mergedSlide);
+  updateRenderedSlide(ctx, currentIndex, mergedSlide);
   ctx.replaceSlideAt(currentIndex);
   renderEditForm(ctx);
 
@@ -194,7 +231,7 @@ function applyLayoutToCurrentSlide(ctx, layout, variant) {
 }
 
 function applyVariantToCurrentSlide(ctx, variant) {
-  syncQuickEditToJSON(ctx);
+  commitCurrentDrawerEdits(ctx);
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
   const currentSlide = slides[currentIndex];
@@ -216,7 +253,7 @@ function applyVariantToCurrentSlide(ctx, variant) {
     }
   }
 
-  ctx.updateSlide(currentIndex, updatedSlide);
+  updateRenderedSlide(ctx, currentIndex, updatedSlide);
   ctx.replaceSlideAt(currentIndex);
   renderEditForm(ctx);
   ctx.showHudStatus('✓ Layout updated', 'success');
@@ -256,6 +293,30 @@ function setupQuickEditSync(context) {
 
 let jsonSyncBroken = false;
 
+function mergeBodyLinesWithObjects(rawText, existingBody) {
+  const preservedObjects = Array.isArray(existingBody)
+    ? existingBody.filter(
+        (entry) =>
+          entry &&
+          typeof entry === 'object' &&
+          !(entry.callout && !entry.title && typeof entry.body === 'string')
+      )
+    : [];
+
+  const textLines = rawText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (preservedObjects.length > 0) {
+    return [...textLines, ...preservedObjects];
+  }
+  if (rawText.includes('\n') || Array.isArray(existingBody)) {
+    return textLines;
+  }
+  return rawText;
+}
+
 function syncQuickEditToJSON(context) {
   const textarea = document.getElementById('slide-json-editor');
   if (!(textarea instanceof HTMLTextAreaElement)) return true;
@@ -273,17 +334,74 @@ function syncQuickEditToJSON(context) {
       let rawValue = input.value;
       let finalValue = rawValue;
 
-      if (field.endsWith('.body') || field === 'body') {
-        if (rawValue.includes('\n')) {
-          const lines = rawValue
-            .split('\n')
-            .map((line) => line.trim())
-            .filter(Boolean);
-          // @ts-ignore - Reassigning to array is intentional here
-          // Empty array (not '') so an all-whitespace paste empties the
-          // field instead of deleting it and collapsing the drawer layout
-          finalValue = lines.length ? lines : [];
+      if (field === 'body') {
+        // @ts-ignore - Body can be an array of strings and object blocks
+        finalValue = mergeBodyLinesWithObjects(rawValue, slide.body);
+      } else if (field === 'left.body') {
+        // @ts-ignore
+        finalValue = mergeBodyLinesWithObjects(rawValue, slide.left?.body);
+      } else if (field === 'right.body') {
+        // @ts-ignore
+        finalValue = mergeBodyLinesWithObjects(rawValue, slide.right?.body);
+      }
+
+      // Handle visual block fields ('visual.code.*', 'visual.chart.*', 'visual.table.*', 'visual.video.*')
+      if (field.startsWith('visual.')) {
+        const [, blockKind, subField] = field.split('.');
+        if (blockKind === 'code') {
+          if (!slide.code || typeof slide.code !== 'object') {
+            slide.code = { code: typeof slide.code === 'string' ? slide.code : '', lang: '', title: '' };
+          }
+          slide.code[subField] = rawValue;
+        } else if (blockKind === 'chart') {
+          if (!slide.chart || typeof slide.chart !== 'object') {
+            slide.chart = { chart: typeof slide.chart === 'string' ? slide.chart : 'bar', title: '', items: [] };
+          }
+          if (subField === 'type') {
+            slide.chart.chart = rawValue.trim() || 'bar';
+          } else if (subField === 'title') {
+            slide.chart.title = rawValue;
+          } else if (subField === 'items') {
+            slide.chart.items = rawValue
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => {
+                const idx = line.lastIndexOf(':');
+                if (idx === -1) return { label: line, value: 0 };
+                return {
+                  label: line.slice(0, idx).trim(),
+                  value: Number.parseFloat(line.slice(idx + 1).trim()) || 0,
+                };
+              });
+          }
+        } else if (blockKind === 'table') {
+          if (!slide.table || typeof slide.table !== 'object') {
+            slide.table = { title: '', headers: [], rows: [] };
+          }
+          if (subField === 'title') {
+            slide.table.title = rawValue;
+          } else if (subField === 'rows') {
+            const parsedRows = rawValue
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) =>
+                line
+                  .replace(/^\||\|$/g, '')
+                  .split('|')
+                  .map((c) => c.trim())
+              );
+            slide.table.headers = parsedRows[0] || [];
+            slide.table.rows = parsedRows.slice(1);
+          }
+        } else if (blockKind === 'video') {
+          if (!slide.video || typeof slide.video !== 'object') {
+            slide.video = { src: typeof slide.video === 'string' ? slide.video : '', caption: '' };
+          }
+          slide.video[subField] = rawValue;
         }
+        return;
       }
 
       // Handle nested fields (e.g., 'left.headline', 'pillars.0.title', 'items.0.label')
@@ -294,6 +412,10 @@ function syncQuickEditToJSON(context) {
           const idx = Number.parseInt(parts[1], 10);
           const prop = parts[2];
           if (Array.isArray(slide[arrName]) && slide[arrName][idx]) {
+            if (prop === 'copy') {
+              delete slide[arrName][idx].body;
+              delete slide[arrName][idx].text;
+            }
             if (prop === 'copy' && Array.isArray(slide[arrName][idx].copy) && typeof finalValue === 'string') {
               const lines = finalValue.split('\n').map((l) => l.trim()).filter(Boolean);
               slide[arrName][idx].copy = lines.length ? lines : [''];
@@ -343,7 +465,7 @@ function syncQuickEditToJSON(context) {
       textarea.classList.add('edit-drawer__textarea--needs-fix');
       if (context) {
         const ctx = ensureContext(context);
-        ctx.showHudStatus('🧩 The JSON below needs a tweak — your edits are waiting', 'info');
+        ctx.showHudStatus('JSON below needs a tweak — edits are waiting', 'info');
         setTimeout(() => ctx.hideHudStatus(), 2500);
       }
     }
@@ -353,6 +475,9 @@ function syncQuickEditToJSON(context) {
 
 function autoSaveSlide(context) {
   const ctx = ensureContext(context);
+  if (!isRenderedSlideStillCurrent(ctx)) {
+    return;
+  }
   syncQuickEditToJSON(context);
 
   const textarea = document.getElementById('slide-json-editor');
@@ -361,20 +486,20 @@ function autoSaveSlide(context) {
   try {
     const editedSlide = JSON.parse(textarea.value);
     const slides = ctx.getSlides();
-    const currentIndex = ctx.getCurrentIndex();
-    const originalSlide = slides[currentIndex];
+    const targetIndex = renderedSlideIndex;
+    const originalSlide = slides[targetIndex];
 
-    if (!originalSlide) return;
+    if (!originalSlide || originalSlide !== renderedSlideRef) return;
 
     const restoredSlide = restoreBase64FromTokens(editedSlide, originalSlide);
-    ctx.updateSlide(currentIndex, restoredSlide);
-    ctx.replaceSlideAt(currentIndex);
+    updateRenderedSlide(ctx, targetIndex, restoredSlide);
+    ctx.replaceSlideAt(targetIndex);
 
     // Show subtle "Saved ✓" indicator
     showAutoSaveStatus(ctx);
   } catch (error) {
     console.warn('Auto-save failed:', error);
-    ctx.showHudStatus('💾 Not saved yet — fix the JSON below and it\'ll catch up', 'info');
+    ctx.showHudStatus('Not saved yet — fix the JSON below and it will catch up', 'info');
     setTimeout(() => ctx.hideHudStatus(), 2500);
   }
 }
@@ -419,7 +544,7 @@ function handleLayoutAdd(context) {
 function addNewSlideWithLayout(ctx, layout) {
   const template = ctx.getSlideTemplate(layout);
   if (!template) {
-    ctx.showHudStatus(`🧩 No template for "${layout}" yet`, 'info');
+    ctx.showHudStatus(`No template for "${layout}" yet`, 'info');
     setTimeout(() => ctx.hideHudStatus(), 2000);
     return;
   }
@@ -433,7 +558,7 @@ function addNewSlideWithLayout(ctx, layout) {
   ctx.insertSlideAt(newIndex, newSlide, { activate: true });
 
   const label = getLayoutMeta(layout)?.label || layout;
-  ctx.showHudStatus(`✨ New ${label} slide added`, 'success');
+  ctx.showHudStatus(`✓ New ${label} slide added`, 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
@@ -450,6 +575,11 @@ const PRESERVED_FIELDS = [
   'speaker_notes',
   'cta',
   'description',
+  'code',
+  'chart',
+  'table',
+  'video',
+  'embed',
 ];
 
 /**
@@ -507,29 +637,32 @@ function mergeSlideWithTemplate(template, currentSlide) {
 /**
  * @param {object} context
  */
-async function handleDownloadPdf(context) {
+export async function handleDownloadPdf(context) {
   const ctx = ensureContext(context);
-  const downloadBtn = document.getElementById('download-pdf-btn');
+  const downloadBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('download-pdf-btn'));
+  const deckPdfBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('deck-pdf-btn'));
   const deckNameInput = document.getElementById('deck-name-text') || document.getElementById('deck-name');
   const deckName = (deckNameInput?.value || deckNameInput?.textContent || 'slideomatic').trim();
 
   try {
     if (downloadBtn) downloadBtn.disabled = true;
-    ctx.showHudStatus('📄 Rendering PDF…', 'info');
+    if (deckPdfBtn) deckPdfBtn.disabled = true;
+    ctx.showHudStatus('Rendering PDF…', 'info');
     const result = await exportDeckToPdf(deckName);
     if (result?.failedSlides?.length) {
       ctx.showHudStatus(
-        `⚠️ PDF ready — ${result.rendered}/${result.total} slides (skipped ${result.failedSlides.join(', ')})`,
+        `PDF ready — ${result.rendered}/${result.total} slides (skipped ${result.failedSlides.join(', ')})`,
         'warning'
       );
     } else {
-      ctx.showHudStatus('✅ PDF ready', 'success');
+      ctx.showHudStatus('✓ PDF ready', 'success');
     }
   } catch (error) {
     console.error('PDF export failed:', error);
-    ctx.showHudStatus('📄 PDF export hiccup. Give it another go', 'error');
+    ctx.showHudStatus('PDF export hiccup. Give it another go', 'error');
   } finally {
     if (downloadBtn) downloadBtn.disabled = false;
+    if (deckPdfBtn) deckPdfBtn.disabled = false;
     setTimeout(() => ctx.hideHudStatus(), 2000);
   }
 }
@@ -546,10 +679,10 @@ function handleImageRemove(context, imageIndex) {
   if (!currentSlide) return;
 
   const updatedSlide = removeImageByIndex(imageIndex, currentSlide);
-  ctx.updateSlide(currentIndex, updatedSlide);
+  updateRenderedSlide(ctx, currentIndex, updatedSlide);
   ctx.replaceSlideAt(currentIndex);
   renderEditForm(ctx);
-  ctx.showHudStatus('🗑️ Image removed', 'success');
+  ctx.showHudStatus('✓ Image removed', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
   debug('Image removed from slide');
 }
@@ -567,9 +700,9 @@ function handleImageReorder(context, fromIndex, toIndex) {
   if (!currentSlide) return;
 
   const updatedSlide = reorderSlideImages(fromIndex, toIndex, currentSlide);
-  ctx.updateSlide(currentIndex, updatedSlide);
+  updateRenderedSlide(ctx, currentIndex, updatedSlide);
   renderEditForm(ctx);
-  ctx.showHudStatus('↕️ Images reordered', 'success');
+  ctx.showHudStatus('✓ Images reordered', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
 }
 
@@ -586,7 +719,7 @@ function handleImageAltUpdate(context, imageIndex, altText) {
   if (!currentSlide) return;
 
   const updatedSlide = updateImageAltText(imageIndex, altText, currentSlide);
-  ctx.updateSlide(currentIndex, updatedSlide);
+  updateRenderedSlide(ctx, currentIndex, updatedSlide);
   ctx.replaceSlideAt(currentIndex);
 }
 
@@ -595,7 +728,7 @@ function handleImageAltUpdate(context, imageIndex, altText) {
  * @param {File} file
  * @param {number|null} [replaceIndex]
  */
-async function handleImageFile(context, file, replaceIndex = null) {
+export async function handleImageFile(context, file, replaceIndex = null) {
   if (!file || !file.type.startsWith('image/')) return;
   const ctx = ensureContext(context);
 
@@ -618,18 +751,23 @@ async function handleImageFile(context, file, replaceIndex = null) {
 
     if (typeof replaceIndex === 'number' && replaceIndex >= 0) {
       updateSlideImageByIndex(currentIndex, replaceIndex, imageData);
+      if (currentIndex === renderedSlideIndex) {
+        renderedSlideRef = ctx.getSlides()[currentIndex] || null;
+      }
     } else {
       const updatedSlide = addImageToSlide(currentSlide, imageData);
-      ctx.updateSlide(currentIndex, updatedSlide);
+      updateRenderedSlide(ctx, currentIndex, updatedSlide);
     }
     ctx.replaceSlideAt(currentIndex);
-    renderEditForm(ctx);
+    if (document.getElementById('edit-drawer')?.classList.contains('is-open')) {
+      renderEditForm(ctx);
+    }
 
-    ctx.showHudStatus('📷 Image added!', 'success');
+    ctx.showHudStatus('✓ Image added', 'success');
     setTimeout(() => ctx.hideHudStatus(), 2000);
   } catch (error) {
     console.warn('Image upload failed:', error);
-    ctx.showHudStatus('🖼 That image did not want to load. Try another', 'error');
+    ctx.showHudStatus('Image failed to load. Try another', 'error');
     setTimeout(() => ctx.hideHudStatus(), 2000);
   }
 }
@@ -726,17 +864,27 @@ async function handleDrawerDictation(button, context) {
 
   stopDrawerDictation();
 
-  // No key gate: the Gemini proxy falls back to the shared server key, so
-  // dictation works out of the box just like deck/slide generation.
-  const {
-    startSpeechCapture,
-    transcribeSpeechToText,
-  } = await import('./voice-modes.js');
+  const token = { cancelled: false };
+  drawerDictationSession = {
+    button,
+    stop: () => {
+      token.cancelled = true;
+    },
+    token,
+  };
+  setDrawerDictationButton(button, 'recording');
+  ctx.showHudStatus('Recording text. Tap Mic again to stop.', 'info');
 
   try {
-    const token = { cancelled: false };
-    setDrawerDictationButton(button, 'recording');
-    ctx.showHudStatus('Recording text. Tap Mic again to stop.', 'info');
+    // No key gate: the Gemini proxy falls back to the shared server key, so
+    // dictation works out of the box just like deck/slide generation.
+    const {
+      startSpeechCapture,
+      transcribeSpeechToText,
+    } = await import('./voice-modes.js');
+
+    if (token.cancelled) return;
+
     const recorder = await startSpeechCapture({
       onStop: async (audioBlob) => {
         if (token.cancelled) return;
@@ -764,6 +912,10 @@ async function handleDrawerDictation(button, context) {
         setTimeout(() => ctx.hideHudStatus(), 3000);
       },
     });
+    if (token.cancelled) {
+      recorder.stop();
+      return;
+    }
     drawerDictationSession = { button, stop: recorder.stop, token };
   } catch (error) {
     drawerDictationSession = null;
@@ -823,9 +975,12 @@ export function renderEditForm(context) {
   const currentSlide = slides[currentIndex];
   if (!currentSlide) return;
 
+  renderedSlideIndex = currentIndex;
+  renderedSlideRef = currentSlide;
+
   const displaySlide = prepareSlideForEditing(currentSlide);
   const mainSections = buildMainSections(currentSlide);
-  const actionsSection = buildActionsSection();
+  const actionsSection = buildActionsSection({ index: currentIndex, total: slides.length });
   const advancedSection = buildAdvancedSection(displaySlide);
 
   content.innerHTML = `
@@ -923,6 +1078,18 @@ export function renderEditForm(context) {
 
   // Register all button click handlers with cleanup tracking
   addTrackedListener(
+    document.getElementById('move-slide-earlier-btn'),
+    'click',
+    () => moveCurrentSlide(ctx, -1)
+  );
+
+  addTrackedListener(
+    document.getElementById('move-slide-later-btn'),
+    'click',
+    () => moveCurrentSlide(ctx, 1)
+  );
+
+  addTrackedListener(
     document.getElementById('duplicate-slide-btn'),
     'click',
     () => duplicateCurrentSlide(ctx)
@@ -978,30 +1145,92 @@ export function renderEditForm(context) {
     document.getElementById('add-pillar-btn'),
     'click',
     () => {
-      syncQuickEditToJSON(ctx);
-      const s = JSON.parse(JSON.stringify(ctx.getSlides()[ctx.getCurrentIndex()] || {}));
+      commitCurrentDrawerEdits(ctx);
+      const idx = ctx.getCurrentIndex();
+      const s = JSON.parse(JSON.stringify(ctx.getSlides()[idx] || {}));
       if (!Array.isArray(s.pillars)) s.pillars = [];
       s.pillars.push({ title: `Card ${s.pillars.length + 1}`, copy: ['Supporting detail'] });
-      ctx.updateSlide(ctx.getCurrentIndex(), s);
-      ctx.replaceSlideAt(ctx.getCurrentIndex());
+      updateRenderedSlide(ctx, idx, s);
+      ctx.replaceSlideAt(idx);
       renderEditForm(ctx);
     }
   );
 
   addTrackedListener(content, 'click', (event) => {
-    const removePillarBtn = event.target instanceof Element
-      ? event.target.closest('[data-remove-pillar]')
-      : null;
+    const targetEl = event.target instanceof Element ? event.target : null;
+    if (!targetEl) return;
+
+    const addBlockBtn = targetEl.closest('[data-add-block]');
+    if (addBlockBtn) {
+      event.preventDefault();
+      const kind = addBlockBtn.getAttribute('data-add-block');
+      commitCurrentDrawerEdits(ctx);
+      const idx = ctx.getCurrentIndex();
+      const s = JSON.parse(JSON.stringify(ctx.getSlides()[idx] || {}));
+      if (kind === 'code') {
+        s.code = { title: 'terminal', lang: 'bash', code: 'curl -s https://slideomatic.app/version.json' };
+      } else if (kind === 'chart') {
+        s.chart = {
+          chart: 'bar',
+          title: 'Comparison',
+          items: [
+            { label: 'Before', value: 44 },
+            { label: 'After', value: 7 },
+          ],
+        };
+      } else if (kind === 'table') {
+        s.table = {
+          title: '',
+          headers: ['Column A', 'Column B'],
+          rows: [['First row', 'Detail']],
+        };
+      } else if (kind === 'video') {
+        s.video = { src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: '' };
+      }
+      updateRenderedSlide(ctx, idx, s);
+      ctx.replaceSlideAt(idx);
+      renderEditForm(ctx);
+      return;
+    }
+
+    const removeBlockBtn = targetEl.closest('[data-remove-block]');
+    if (removeBlockBtn) {
+      event.preventDefault();
+      const kind = removeBlockBtn.getAttribute('data-remove-block');
+      commitCurrentDrawerEdits(ctx);
+      const idx = ctx.getCurrentIndex();
+      const s = JSON.parse(JSON.stringify(ctx.getSlides()[idx] || {}));
+      if (kind === 'code') {
+        delete s.code;
+        delete s.lang;
+        delete s.codeTitle;
+      } else if (kind === 'chart') {
+        delete s.chart;
+        delete s.chartTitle;
+      } else if (kind === 'table') {
+        delete s.table;
+      } else if (kind === 'video') {
+        delete s.video;
+        delete s.embed;
+      }
+      updateRenderedSlide(ctx, idx, s);
+      ctx.replaceSlideAt(idx);
+      renderEditForm(ctx);
+      return;
+    }
+
+    const removePillarBtn = targetEl.closest('[data-remove-pillar]');
     if (!removePillarBtn) return;
     event.preventDefault();
     const pIdx = Number.parseInt(removePillarBtn.getAttribute('data-remove-pillar') || '', 10);
     if (Number.isNaN(pIdx)) return;
-    syncQuickEditToJSON(ctx);
-    const s = JSON.parse(JSON.stringify(ctx.getSlides()[ctx.getCurrentIndex()] || {}));
+    commitCurrentDrawerEdits(ctx);
+    const idx = ctx.getCurrentIndex();
+    const s = JSON.parse(JSON.stringify(ctx.getSlides()[idx] || {}));
     if (Array.isArray(s.pillars) && s.pillars.length > 1) {
       s.pillars.splice(pIdx, 1);
-      ctx.updateSlide(ctx.getCurrentIndex(), s);
-      ctx.replaceSlideAt(ctx.getCurrentIndex());
+      updateRenderedSlide(ctx, idx, s);
+      ctx.replaceSlideAt(idx);
       renderEditForm(ctx);
     }
   });
@@ -1106,7 +1335,7 @@ export function renderEditForm(context) {
           const slideObj = ctx.getSlides()[slideIdx];
           if (!slideObj) return;
           const updatedSlide = addImageToSlide(slideObj, imageData);
-          ctx.updateSlide(slideIdx, updatedSlide);
+          updateRenderedSlide(ctx, slideIdx, updatedSlide);
           ctx.replaceSlideAt(slideIdx);
         },
         onSuccess: () => renderEditForm(ctx),
@@ -1175,8 +1404,32 @@ export function renderEditForm(context) {
 /**
  * @param {object} context
  */
+export function moveCurrentSlide(context, delta) {
+  const ctx = ensureContext(context);
+  if (typeof ctx.moveSlideAt !== 'function') return;
+  commitCurrentDrawerEdits(ctx);
+  const slides = ctx.getSlides();
+  const currentIndex = ctx.getCurrentIndex();
+  const targetIndex = currentIndex + delta;
+  if (targetIndex < 0 || targetIndex >= slides.length) return;
+
+  const moved = ctx.moveSlideAt(currentIndex, targetIndex);
+  if (moved) {
+    renderEditForm(ctx);
+    const preferredBtnId = delta < 0 ? 'move-slide-earlier-btn' : 'move-slide-later-btn';
+    const fallbackBtnId = delta < 0 ? 'move-slide-later-btn' : 'move-slide-earlier-btn';
+    const preferredBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById(preferredBtnId));
+    const fallbackBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById(fallbackBtnId));
+    const focusTarget = preferredBtn && !preferredBtn.disabled ? preferredBtn : fallbackBtn;
+    focusTarget?.focus({ preventScroll: true });
+    ctx.showHudStatus(`✓ Moved to slide ${targetIndex + 1}`, 'success');
+    setTimeout(() => ctx.hideHudStatus(), 1400);
+  }
+}
+
 export function duplicateCurrentSlide(context) {
   const ctx = ensureContext(context);
+  commitCurrentDrawerEdits(ctx);
   const slides = ctx.getSlides();
   const currentIndex = ctx.getCurrentIndex();
   const currentSlide = slides[currentIndex];
@@ -1186,7 +1439,7 @@ export function duplicateCurrentSlide(context) {
   const newIndex = currentIndex + 1;
   ctx.insertSlideAt(newIndex, duplicatedSlide, { activate: true });
   ctx.closeDrawer();
-  ctx.showHudStatus('✨ Slide duplicated', 'success');
+  ctx.showHudStatus('✓ Slide duplicated', 'success');
   setTimeout(() => ctx.hideHudStatus(), 1600);
   debug('Slide duplicated');
 }
@@ -1200,7 +1453,7 @@ export function deleteCurrentSlide(context) {
   const currentIndex = ctx.getCurrentIndex();
 
   if (slides.length <= 1) {
-    ctx.showHudStatus('🌱 A deck needs at least one slide', 'info');
+    ctx.showHudStatus('A deck needs at least one slide', 'info');
     setTimeout(() => ctx.hideHudStatus(), 1800);
     return;
   }
@@ -1226,12 +1479,18 @@ export function deleteCurrentSlide(context) {
     deleteBtn.classList.remove('is-armed');
   }
 
+  // Cancel any pending debounced autosave and invalidate the rendered slide
+  // reference BEFORE splicing slides, so setActiveSlide's flush hook never
+  // writes the deleted slide's form state over the neighbour that shifts into
+  // this index.
+  cancelPendingEditDrawerWork();
+
   // removeSlideAt (via deleteSlideAt) already re-renders, re-indexes, and
   // persists the deck — no extra replaceSlideAt needed here.
   const success = ctx.deleteSlideAt(currentIndex);
   if (success) {
     ctx.closeDrawer();
-    ctx.showHudStatus('🗑️ Slide deleted', 'success');
+    ctx.showHudStatus('✓ Slide deleted', 'success');
     setTimeout(() => ctx.hideHudStatus(), 1600);
     debug('Slide deleted');
   }

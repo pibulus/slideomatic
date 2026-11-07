@@ -33,7 +33,7 @@ export function getSlideTemplate(type) {
     },
     quote: {
       type: 'quote',
-      quote: '"Add your quote here."',
+      quote: '"Add a memorable quote here."',
       attribution: 'Attribution Name',
       font: 'sans'
     },

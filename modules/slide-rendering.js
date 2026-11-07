@@ -37,7 +37,7 @@ export function renderLoadError(error) {
     message.className = 'slide slide--error is-active';
     message.innerHTML = `
     <h2>Unable to load slides</h2>
-    <p>Please refresh the page or contact the deck owner.</p>
+    <p>Refresh the page or check the deck file.</p>
     ${error ? `<pre>${escapeHtml(error.message)}</pre>` : ''}
   `;
     slidesRoot.appendChild(message);
@@ -180,10 +180,16 @@ function buildSlide(slide, index, rendererMap = renderers) {
     }
 
     // The overview shows each card as a contact sheet: number plus the
-    // section badge it belongs to. Stamped here because the plaque is drawn
-    // with a pseudo-element, and pseudo-elements can only read attributes.
-    if (manualBadgeValue) {
-        section.dataset.badge = ` · ${manualBadgeValue}`;
+    // section badge (or short title/type fallback) it belongs to. Stamped here
+    // because the plaque is drawn with a pseudo-element, and pseudo-elements
+    // can only read attributes.
+    const overviewLabel =
+        manualBadgeValue ||
+        getPlainSlideText(slide.eyebrow ?? slide.title ?? slide.headline ?? slide.type ?? '');
+    if (overviewLabel) {
+        section.dataset.badge = ` · ${overviewLabel}`;
+    } else {
+        section.dataset.badge = '';
     }
 
     return section;
@@ -263,10 +269,26 @@ export function renderTitleSlide(section, slide) {
     }
 }
 
+function addSafeVariantClasses(element, prefix, rawValue) {
+    const values = Array.isArray(rawValue) ? rawValue : rawValue ? [rawValue] : [];
+    values.forEach((val) => {
+        String(val || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .forEach((token) => {
+                const safeToken = token.replace(/[^a-zA-Z0-9_-]/g, '');
+                if (safeToken) {
+                    element.classList.add(`${prefix}${safeToken}`);
+                }
+            });
+    });
+}
+
 export function renderStandardSlide(section, slide) {
     // Apply layout class if specified. Default behavior is stacked.
     if (slide.layout) {
-        section.classList.add(`slide--layout-${slide.layout}`);
+        addSafeVariantClasses(section, 'slide--layout-', slide.layout);
     }
 
     const textGroup = document.createElement('div');
@@ -280,6 +302,29 @@ export function renderStandardSlide(section, slide) {
 
     appendBody(textGroup, slide.body);
 
+    const visualStage = document.createElement('div');
+    visualStage.className = 'slide__visual-stage';
+    appendSlideVisualBlocks(visualStage, slide);
+
+    // If a standard slide put its single visual representer inside `body` (and has
+    // no top-level visual or image), promote that block into `.slide__visual-stage`
+    // so side-by-side layouts and solo-embed slides place it as the visual centerpiece.
+    if (!slide.image && visualStage.childNodes.length === 0) {
+        const inlineVisuals = textGroup.querySelectorAll(
+            ':scope > .code-card, :scope > .vector-chart, :scope > .slide-table-wrap, :scope > .video-card'
+        );
+        if (inlineVisuals.length === 1) {
+            visualStage.appendChild(inlineVisuals[0]);
+        }
+    }
+
+    const hasProseCopy = Boolean(
+        textGroup.querySelector('p, ul, ol, blockquote, .callout, .body-heading')
+    );
+    if (!hasProseCopy && !slide.image && visualStage.childNodes.length > 0) {
+        section.classList.add('slide--visual-solo');
+    }
+
     if (textGroup.childNodes.length > 0) {
         section.appendChild(textGroup);
     }
@@ -288,13 +333,18 @@ export function renderStandardSlide(section, slide) {
         // Create image wrapper for better control
         const wrapper = document.createElement('div');
         wrapper.className = 'slide__image-wrapper';
-        
+
         // Use full image style but contained in wrapper
         const imageElement = createImage(slide.image, 'slide__image', {
             orientationTarget: section,
         });
         wrapper.appendChild(imageElement);
         section.appendChild(wrapper);
+        if (visualStage.childNodes.length > 0) {
+            textGroup.append(...visualStage.childNodes);
+        }
+    } else if (visualStage.childNodes.length > 0) {
+        section.appendChild(visualStage);
     }
 
     if (slide.footnote) {
@@ -304,14 +354,7 @@ export function renderStandardSlide(section, slide) {
 
 export function renderScrollSlide(section, slide) {
     section.classList.add('slide--scroll');
-    const variants = Array.isArray(slide.variant)
-        ? slide.variant
-        : slide.variant
-            ? [slide.variant]
-            : [];
-    variants.forEach((variant) => {
-        if (variant) section.classList.add(`slide--scroll--${variant}`);
-    });
+    addSafeVariantClasses(section, 'slide--scroll--', slide.variant);
 
     if (slide.headline) {
         const headline = document.createElement('h2');
@@ -326,10 +369,11 @@ export function renderScrollSlide(section, slide) {
         section.appendChild(lead);
     }
 
-    if (slide.body) {
+    if (slide.body || slide.code || slide.chart || slide.table || slide.video || slide.embed) {
         const body = document.createElement('div');
         body.className = 'scroll__body';
         appendBody(body, slide.body);
+        appendSlideVisualBlocks(body, slide);
         section.appendChild(body);
     }
 
@@ -367,7 +411,7 @@ export function renderImageSlide(section, slide) {
 export function renderQuoteSlide(section, slide) {
     section.classList.add('slide--quote');
     if (slide.variant) {
-        section.classList.add(`slide--quote--${slide.variant}`);
+        addSafeVariantClasses(section, 'slide--quote--', slide.variant);
     }
 
     const quoteText = slide.quote ?? slide.headline ?? '';
@@ -385,15 +429,7 @@ export function renderQuoteSlide(section, slide) {
 
 export function renderSplitSlide(section, slide) {
     section.classList.add('slide--split');
-    const variants = Array.isArray(slide.variant)
-        ? slide.variant
-        : slide.variant
-            ? [slide.variant]
-            : [];
-    variants.forEach((variant) => {
-        if (!variant) return;
-        section.classList.add(`slide--split--${variant}`);
-    });
+    addSafeVariantClasses(section, 'slide--split--', slide.variant);
 
     if (slide.headline) {
         const headline = document.createElement('h2');
@@ -714,23 +750,104 @@ export function renderColumn(column, data = {}) {
     }
 }
 
+export function appendSlideVisualBlocks(container, slide) {
+    if (!slide || typeof slide !== 'object') return;
+    if (slide.code && typeof slide.code === 'string') {
+        container.appendChild(createCodeBlock({
+            code: slide.code,
+            lang: slide.lang || slide.language || '',
+            title: slide.codeTitle || ''
+        }));
+    } else if (slide.code && typeof slide.code === 'object') {
+        container.appendChild(createCodeBlock(slide.code));
+    }
+    if (slide.chart) {
+        const chartSpec = typeof slide.chart === 'string'
+            ? { chart: slide.chart, title: slide.chartTitle, unit: slide.unit, items: slide.items, labels: slide.labels, values: slide.values }
+            : slide.chart;
+        container.appendChild(createVectorChart(chartSpec));
+    }
+    if (slide.table && typeof slide.table === 'object') {
+        container.appendChild(createTableBlock(slide.table));
+    }
+    if (slide.video || slide.embed) {
+        container.appendChild(createVideoBlock(slide.video || slide.embed));
+    }
+}
+
 export function appendBody(container, body) {
     if (!body) return;
     const copy = Array.isArray(body) ? body : [body];
     // Consecutive "- " lines group into one ul so decks can use real dot
     // points (the .slide ul li accent-bar styling was unreachable before)
     let listEl = null;
+    let tableLines = [];
+
+    const flushTableLines = () => {
+        if (!tableLines.length) return;
+        const parsedTable = parseMarkdownTable(tableLines);
+        tableLines = [];
+        if (parsedTable) {
+            container.appendChild(createTableBlock(parsedTable));
+        }
+    };
+
     copy.forEach((text) => {
         if (!text) {
             listEl = null;
+            flushTableLines();
             return;
         }
 
-        // Object-form callout: { callout: "info"|"didyouknow"|"warning"|"pull", title, body }
-        if (typeof text === 'object' && text.callout) {
+        // Group consecutive markdown pipe-table rows ("| Col A | Col B |")
+        if (typeof text === 'string' && /^\s*\|.+\|\s*$/.test(text)) {
             listEl = null;
-            container.appendChild(createCallout(text));
+            tableLines.push(text.trim());
             return;
+        }
+        flushTableLines();
+
+        if (typeof text === 'object') {
+            listEl = null;
+            // Object-form callout: { callout: "info"|"didyouknow"|"warning"|"pull", title, body }
+            if (text.callout) {
+                container.appendChild(createCallout(text));
+                return;
+            }
+            // Object-form code card: { code: "...", lang?: "js", title?: "app.js" }
+            if (typeof text.code === 'string') {
+                container.appendChild(createCodeBlock(text));
+                return;
+            }
+            // Object-form vector chart: { chart: "bar"|"hbar"|"donut", title, items, labels, values }
+            if (text.chart) {
+                container.appendChild(createVectorChart(text));
+                return;
+            }
+            // Object-form data table: { table: { headers, rows } } or { headers, rows }
+            if (text.table || Array.isArray(text.rows)) {
+                container.appendChild(createTableBlock(text.table || text));
+                return;
+            }
+            // Object-form video / embed: { video: "..." } or { embed: "..." }
+            if (text.video || text.embed) {
+                container.appendChild(createVideoBlock(text.video || text.embed || text));
+                return;
+            }
+        }
+
+        // Fenced code block shorthand inside a body string: ```lang\n...\n```
+        if (typeof text === 'string') {
+            const fenceMatch = text.match(/^\s*```([a-zA-Z0-9_-]*)(?:[ \t]+([^\n]+))?\n([\s\S]*?)```\s*$/);
+            if (fenceMatch) {
+                listEl = null;
+                container.appendChild(createCodeBlock({
+                    lang: fenceMatch[1] || '',
+                    title: fenceMatch[2] || '',
+                    code: fenceMatch[3].replace(/\n$/, ''),
+                }));
+                return;
+            }
         }
 
         // String-form callout markers keep hand-written JSON readable:
@@ -785,6 +902,7 @@ export function appendBody(container, body) {
         setRichContent(paragraph, text);
         container.appendChild(paragraph);
     });
+    flushTableLines();
 }
 
 const CALLOUT_LABELS = {
@@ -1029,4 +1147,575 @@ function buildAutoLinkHref(text, config) {
     return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(
         query
     )}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Visual Representers: Code Cards, Ruled Tables, Vector Charts, Video Embeds
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MAX_HIGHLIGHT_CHARS = 20_000;
+const CODE_KEYWORDS = new Set([
+    'const', 'let', 'var', 'function', 'return', 'async', 'await', 'import',
+    'export', 'from', 'default', 'if', 'else', 'for', 'while', 'switch',
+    'case', 'break', 'new', 'class', 'extends', 'try', 'catch', 'finally',
+    'throw', 'true', 'false', 'null', 'undefined', 'def', 'elif', 'None',
+    'True', 'False', 'curl', 'git', 'npm', 'node', 'deno', 'bash', 'sh',
+    'ssh', 'docker', 'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES',
+    'UPDATE', 'DELETE', 'JOIN', 'ORDER', 'BY', 'LIMIT',
+]);
+
+function isIdentStart(ch) {
+    const code = ch.charCodeAt(0);
+    return (
+        (code >= 65 && code <= 90) ||
+        (code >= 97 && code <= 122) ||
+        code === 95 ||
+        code === 36
+    );
+}
+
+function isIdentPart(ch) {
+    const code = ch.charCodeAt(0);
+    return (
+        isIdentStart(ch) ||
+        (code >= 48 && code <= 57)
+    );
+}
+
+function isDigit(ch) {
+    const code = ch.charCodeAt(0);
+    return code >= 48 && code <= 57;
+}
+
+export function highlightCodeHtml(rawCode = '') {
+    const fullSource = String(rawCode ?? '');
+    const source = fullSource.length > MAX_HIGHLIGHT_CHARS
+        ? fullSource.slice(0, MAX_HIGHLIGHT_CHARS)
+        : fullSource;
+    const remainder = fullSource.length > MAX_HIGHLIGHT_CHARS
+        ? fullSource.slice(MAX_HIGHLIGHT_CHARS)
+        : '';
+
+    const len = source.length;
+    let out = '';
+    let i = 0;
+
+    while (i < len) {
+        const ch = source[i];
+        const next = i + 1 < len ? source[i + 1] : '';
+
+        // Line comment: // or #
+        if ((ch === '/' && next === '/') || ch === '#') {
+            let end = source.indexOf('\n', i);
+            if (end === -1) end = len;
+            out += `<span class="tok-comment">${escapeHtml(source.slice(i, end))}</span>`;
+            i = end;
+            continue;
+        }
+
+        // Block comment: /* ... */
+        if (ch === '/' && next === '*') {
+            let end = source.indexOf('*/', i + 2);
+            if (end === -1) end = len;
+            else end += 2;
+            out += `<span class="tok-comment">${escapeHtml(source.slice(i, end))}</span>`;
+            i = end;
+            continue;
+        }
+
+        // Single-pass string literal: "...", '...', `...` (never backtracks)
+        if (ch === '"' || ch === "'" || ch === '`') {
+            const quote = ch;
+            let j = i + 1;
+            while (j < len) {
+                const c = source[j];
+                if (c === '\\') {
+                    j += 2;
+                    continue;
+                }
+                if (c === quote) {
+                    j += 1;
+                    break;
+                }
+                if (c === '\n' && quote !== '`') {
+                    break;
+                }
+                j += 1;
+            }
+            out += `<span class="tok-string">${escapeHtml(source.slice(i, Math.min(j, len)))}</span>`;
+            i = Math.min(j, len);
+            continue;
+        }
+
+        // CLI flag after whitespace: -x or --flag-name
+        if (
+            (ch === ' ' || ch === '\t' || ch === '\n') &&
+            next === '-' &&
+            i + 2 < len &&
+            (source[i + 2] === '-' || isIdentPart(source[i + 2]))
+        ) {
+            let j = i + 2;
+            if (source[j] === '-') j += 1;
+            const flagStart = j;
+            while (j < len && (isIdentPart(source[j]) || source[j] === '-')) {
+                j += 1;
+            }
+            if (j > flagStart) {
+                out += `<span class="tok-flag">${escapeHtml(source.slice(i, j))}</span>`;
+                i = j;
+                continue;
+            }
+        }
+
+        // Number literal at word boundary
+        if (isDigit(ch) && (i === 0 || !isIdentPart(source[i - 1]))) {
+            let j = i + 1;
+            while (j < len && isDigit(source[j])) j += 1;
+            if (j < len && source[j] === '.' && j + 1 < len && isDigit(source[j + 1])) {
+                j += 1;
+                while (j < len && isDigit(source[j])) j += 1;
+            }
+            if (j < len && source[j] === '%') j += 1;
+            if (j === len || !isIdentPart(source[j])) {
+                out += `<span class="tok-number">${escapeHtml(source.slice(i, j))}</span>`;
+                i = j;
+                continue;
+            }
+        }
+
+        // Identifier or keyword
+        if (isIdentStart(ch) && (i === 0 || !isIdentPart(source[i - 1]))) {
+            let j = i + 1;
+            while (j < len && isIdentPart(source[j])) j += 1;
+            const word = source.slice(i, j);
+            if (CODE_KEYWORDS.has(word)) {
+                out += `<span class="tok-keyword">${escapeHtml(word)}</span>`;
+            } else {
+                out += escapeHtml(word);
+            }
+            i = j;
+            continue;
+        }
+
+        out += escapeHtml(ch);
+        i += 1;
+    }
+
+    if (remainder) {
+        out += escapeHtml(remainder);
+    }
+    return out;
+}
+
+export function createCodeBlock(spec = {}) {
+    const rawCode = typeof spec === 'string' ? spec : String(spec.code ?? '');
+    const lang = typeof spec === 'object' ? String(spec.lang || spec.language || '').trim() : '';
+    const title = typeof spec === 'object' ? String(spec.title || spec.filename || '').trim() : '';
+
+    const card = document.createElement('div');
+    card.className = 'code-card';
+
+    const header = document.createElement('div');
+    header.className = 'code-card__header';
+
+    const dots = document.createElement('span');
+    dots.className = 'code-card__dots';
+    dots.setAttribute('aria-hidden', 'true');
+    dots.innerHTML = '<i></i><i></i><i></i>';
+    header.appendChild(dots);
+
+    const label = document.createElement('span');
+    label.className = 'code-card__title';
+    label.textContent = title || lang || 'snippet';
+    header.appendChild(label);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'code-card__copy';
+    copyBtn.textContent = 'Copy';
+    copyBtn.setAttribute('aria-label', 'Copy code snippet');
+    copyBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(rawCode).then(() => {
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                }, 1400);
+            }).catch(() => {});
+        }
+    });
+    header.appendChild(copyBtn);
+
+    const pre = document.createElement('pre');
+    pre.className = 'code-card__pre';
+    const codeEl = document.createElement('code');
+    if (lang) {
+        codeEl.dataset.lang = lang;
+    }
+    codeEl.innerHTML = highlightCodeHtml(rawCode);
+    pre.appendChild(codeEl);
+
+    card.append(header, pre);
+    return card;
+}
+
+export function parseMarkdownTable(lines = []) {
+    if (!Array.isArray(lines) || lines.length < 2) return null;
+    const parseRow = (line) =>
+        line
+            .trim()
+            .replace(/^\||\|$/g, '')
+            .split('|')
+            .map((cell) => cell.trim());
+
+    const firstRow = parseRow(lines[0]);
+    const secondRow = parseRow(lines[1]);
+    const isSeparator = secondRow.every((cell) => /^:?-{2,}:?$/.test(cell));
+
+    if (isSeparator) {
+        const rows = lines.slice(2).map(parseRow).filter((r) => r.some(Boolean));
+        return { headers: firstRow, rows };
+    }
+    return {
+        headers: [],
+        rows: lines.map(parseRow).filter((r) => r.some(Boolean)),
+    };
+}
+
+export function createTableBlock(spec = {}) {
+    const headers = Array.isArray(spec.headers) ? spec.headers : [];
+    const rows = Array.isArray(spec.rows) ? spec.rows : [];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'slide-table-wrap';
+
+    if (spec.title) {
+        const caption = document.createElement('div');
+        caption.className = 'slide-table__title';
+        setRichContent(caption, String(spec.title));
+        wrap.appendChild(caption);
+    }
+
+    const table = document.createElement('table');
+    table.className = 'slide-table';
+
+    if (headers.length > 0) {
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+        headers.forEach((cell) => {
+            const th = document.createElement('th');
+            setRichContent(th, String(cell ?? ''));
+            tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+        table.appendChild(thead);
+    }
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+        if (!Array.isArray(row)) return;
+        const tr = document.createElement('tr');
+        row.forEach((cell) => {
+            const td = document.createElement('td');
+            setRichContent(td, String(cell ?? ''));
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+}
+
+export function createVectorChart(spec = {}) {
+    const kind = String(spec.chart || spec.type || 'bar').toLowerCase();
+    const unit = spec.unit ? String(spec.unit) : '';
+    const prefix = spec.prefix ? String(spec.prefix) : '';
+
+    let items = [];
+    if (Array.isArray(spec.items)) {
+        items = spec.items.map((item) => ({
+            label: String(item.label ?? item.name ?? ''),
+            value: Number(item.value ?? 0) || 0,
+        }));
+    } else if (Array.isArray(spec.labels) && Array.isArray(spec.values)) {
+        items = spec.labels.map((label, idx) => ({
+            label: String(label ?? ''),
+            value: Number(spec.values[idx] ?? 0) || 0,
+        }));
+    }
+
+    const figure = document.createElement('figure');
+    figure.className = `vector-chart vector-chart--${kind}`;
+
+    if (spec.title) {
+        const figcap = document.createElement('figcaption');
+        figcap.className = 'vector-chart__title';
+        figcap.textContent = String(spec.title);
+        figure.appendChild(figcap);
+    }
+
+    if (!items.length) {
+        return figure;
+    }
+
+    const maxVal = Math.max(...items.map((d) => Math.abs(d.value)), 1);
+    const paletteVars = [
+        'var(--color-surface, #ff9ff3)',
+        'var(--color-accent, #feca57)',
+        'var(--color-surface-alt, #70d6ff)',
+        'var(--badge-bg, #ff9f43)',
+    ];
+
+    if (kind === 'donut') {
+        const total = items.reduce((sum, item) => sum + Math.max(0, item.value), 0) || 1;
+        const radius = 64;
+        const circumference = 2 * Math.PI * radius;
+        let offset = 0;
+
+        const circles = items.map((item, idx) => {
+            const fraction = Math.max(0, item.value) / total;
+            const dash = fraction * circumference;
+            const fill = paletteVars[idx % paletteVars.length];
+            const seg = `<circle cx="90" cy="90" r="${radius}" fill="none" stroke="${fill}" stroke-width="28" stroke-dasharray="${dash.toFixed(2)} ${(circumference - dash).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" />`;
+            offset += dash;
+            return seg;
+        }).join('');
+
+        const wrap = document.createElement('div');
+        wrap.className = 'vector-chart__donut-wrap';
+        wrap.innerHTML = `
+          <svg class="vector-chart__svg vector-chart__svg--donut" viewBox="0 0 180 180" role="img" aria-label="${escapeHtml(spec.title || 'Donut chart')}">
+            <circle cx="90" cy="90" r="${radius}" fill="none" stroke="rgba(30,23,20,0.1)" stroke-width="28" />
+            <g transform="rotate(-90 90 90)">${circles}</g>
+            <circle cx="90" cy="90" r="${radius - 14}" fill="none" stroke="var(--color-ink, #1e1714)" stroke-width="2.5" />
+            <circle cx="90" cy="90" r="${radius + 14}" fill="none" stroke="var(--color-ink, #1e1714)" stroke-width="2.5" />
+          </svg>
+        `;
+
+        const legend = document.createElement('div');
+        legend.className = 'vector-chart__legend';
+        items.forEach((item, idx) => {
+            const row = document.createElement('div');
+            row.className = 'vector-chart__legend-row';
+            const swatch = document.createElement('span');
+            swatch.className = 'vector-chart__swatch';
+            swatch.style.background = paletteVars[idx % paletteVars.length];
+            const label = document.createElement('span');
+            label.className = 'vector-chart__legend-label';
+            label.textContent = item.label;
+            const val = document.createElement('span');
+            val.className = 'vector-chart__legend-value';
+            val.textContent = `${prefix}${item.value}${unit}`;
+            row.append(swatch, label, val);
+            legend.appendChild(row);
+        });
+        wrap.appendChild(legend);
+        figure.appendChild(wrap);
+        return figure;
+    }
+
+    if (kind === 'hbar') {
+        const list = document.createElement('div');
+        list.className = 'vector-chart__hbars';
+        items.forEach((item, idx) => {
+            const pct = Math.max(4, Math.round((Math.abs(item.value) / maxVal) * 100));
+            const row = document.createElement('div');
+            row.className = 'vector-chart__hbar-row';
+
+            const label = document.createElement('span');
+            label.className = 'vector-chart__hbar-label';
+            label.textContent = item.label;
+
+            const track = document.createElement('div');
+            track.className = 'vector-chart__hbar-track';
+            const fill = document.createElement('div');
+            fill.className = 'vector-chart__hbar-fill';
+            fill.style.width = `${pct}%`;
+            fill.style.background = paletteVars[idx % paletteVars.length];
+            track.appendChild(fill);
+
+            const val = document.createElement('span');
+            val.className = 'vector-chart__hbar-value';
+            val.textContent = `${prefix}${item.value}${unit}`;
+
+            row.append(label, track, val);
+            list.appendChild(row);
+        });
+        figure.appendChild(list);
+        return figure;
+    }
+
+    // Default: vertical bar chart ("bar")
+    const cols = document.createElement('div');
+    cols.className = 'vector-chart__bars';
+    items.forEach((item, idx) => {
+        const pct = Math.max(6, Math.round((Math.abs(item.value) / maxVal) * 100));
+        const col = document.createElement('div');
+        col.className = 'vector-chart__bar-col';
+
+        const val = document.createElement('span');
+        val.className = 'vector-chart__bar-value';
+        val.textContent = `${prefix}${item.value}${unit}`;
+
+        const well = document.createElement('div');
+        well.className = 'vector-chart__bar-well';
+        const bar = document.createElement('div');
+        bar.className = 'vector-chart__bar-fill';
+        bar.style.height = `${pct}%`;
+        bar.style.background = paletteVars[idx % paletteVars.length];
+        well.appendChild(bar);
+
+        const label = document.createElement('span');
+        label.className = 'vector-chart__bar-label';
+        label.textContent = item.label;
+
+        col.append(val, well, label);
+        cols.appendChild(col);
+    });
+    figure.appendChild(cols);
+    return figure;
+}
+
+function resolveEmbedInfo(rawUrl = '') {
+    const trimmed = String(rawUrl || '').trim();
+    if (!trimmed) return null;
+    try {
+        const parsed = new URL(trimmed, window.location.origin);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+
+        // YouTube
+        if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+            let videoId = '';
+            if (host === 'youtu.be') {
+                videoId = parsed.pathname.slice(1).split('/')[0];
+            } else if (parsed.pathname.startsWith('/embed/')) {
+                videoId = parsed.pathname.split('/')[2] || '';
+            } else if (parsed.pathname.startsWith('/shorts/')) {
+                videoId = parsed.pathname.split('/')[2] || '';
+            } else {
+                videoId = parsed.searchParams.get('v') || '';
+            }
+            if (/^[a-zA-Z0-9_-]{6,20}$/.test(videoId)) {
+                return {
+                    kind: 'youtube',
+                    embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`,
+                    posterUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    provider: 'YouTube',
+                    href: trimmed,
+                };
+            }
+        }
+
+        // Vimeo
+        if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+            const match = parsed.pathname.match(/\/(?:video\/)?(\d+)/);
+            if (match) {
+                return {
+                    kind: 'vimeo',
+                    embedUrl: `https://player.vimeo.com/video/${match[1]}?autoplay=1`,
+                    posterUrl: '',
+                    provider: 'Vimeo',
+                    href: trimmed,
+                };
+            }
+        }
+
+        // Loom
+        if (host === 'loom.com') {
+            const match = parsed.pathname.match(/\/(?:share|embed)\/([a-f0-9]{20,40})/i);
+            if (match) {
+                return {
+                    kind: 'loom',
+                    embedUrl: `https://www.loom.com/embed/${match[1]}?autoplay=1`,
+                    posterUrl: '',
+                    provider: 'Loom',
+                    href: trimmed,
+                };
+            }
+        }
+
+        return {
+            kind: 'video',
+            src: parsed.href,
+            href: trimmed,
+        };
+    } catch {
+        if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('images/') || trimmed.startsWith('media/')) {
+            return {
+                kind: 'video',
+                src: trimmed,
+                href: trimmed,
+            };
+        }
+        return null;
+    }
+}
+
+export function createVideoBlock(spec = {}) {
+    const raw = typeof spec === 'string' ? { src: spec } : spec;
+    const src = raw.src || raw.video || raw.embed || raw.url || '';
+    const captionText = raw.caption || raw.title || raw.label || '';
+    const info = resolveEmbedInfo(src);
+
+    const figure = document.createElement('figure');
+    figure.className = 'video-card';
+    if (!info) return figure;
+
+    if (info.kind === 'video') {
+        const video = document.createElement('video');
+        video.className = 'video-card__player';
+        video.src = info.src;
+        video.playsInline = true;
+        if (raw.poster) video.poster = raw.poster;
+        if (raw.loop) {
+            video.loop = true;
+            video.muted = true;
+            video.autoplay = true;
+        } else {
+            video.controls = true;
+            video.preload = 'metadata';
+        }
+        figure.appendChild(video);
+    } else {
+        // Lite-embed card: zero third-party iframe until the user clicks Play
+        const stage = document.createElement('div');
+        stage.className = 'video-card__stage';
+        const poster = raw.poster || info.posterUrl;
+        if (poster) {
+            const safePosterUrl = String(poster).replace(/["\\()\r\n]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `);
+            stage.style.backgroundImage = `url("${safePosterUrl}")`;
+        }
+
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.className = 'video-card__play';
+        playBtn.setAttribute('aria-label', `Play ${info.provider} video${captionText ? `: ${captionText}` : ''}`);
+        playBtn.innerHTML = `<span class="video-card__play-icon" aria-hidden="true">▶</span><span class="video-card__play-label">Play ${escapeHtml(info.provider)}</span>`;
+
+        playBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const iframe = document.createElement('iframe');
+            iframe.className = 'video-card__iframe';
+            iframe.src = info.embedUrl;
+            iframe.title = captionText || `${info.provider} video`;
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            stage.replaceChildren(iframe);
+        });
+
+        stage.appendChild(playBtn);
+        figure.appendChild(stage);
+    }
+
+    if (captionText) {
+        const figcap = document.createElement('figcaption');
+        figcap.className = 'video-card__caption';
+        setRichContent(figcap, String(captionText));
+        figure.appendChild(figcap);
+    }
+
+    return figure;
 }

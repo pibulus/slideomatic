@@ -68,7 +68,7 @@
     />
   </head>
   <body>
-    <input type="file" id="deck-upload" accept=".json" style="display: none;" />
+    <input type="file" id="deck-upload" accept=".sld,.som,.deck,.json,application/json" style="display: none;" />
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
     
@@ -83,53 +83,13 @@
     </div>
     <div class="app app-container" id="app">
       <div class="grain-overlay" aria-hidden="true"></div>
-      <!-- Theme Editor Drawer (Right Side) -->
-      <div class="theme-drawer" id="theme-drawer" role="dialog" aria-modal="true" aria-labelledby="theme-drawer-title" aria-hidden="true" inert>
-        <div class="theme-drawer__header">
-          <h2 id="theme-drawer-title">🎨 Theme Editor</h2>
-          <button class="theme-drawer__close" aria-label="Close theme editor">×</button>
-        </div>
-        <div class="theme-drawer__content">
-          <form class="theme-drawer__form">
-            <div class="theme-drawer__actions theme-drawer__actions--inline">
-              <button class="theme-drawer__btn theme-drawer__btn--random" type="button" id="theme-random-btn">
-                🎲 Random
-              </button>
-              <button class="theme-drawer__btn theme-drawer__btn--primary" type="button" id="theme-save-btn">
-                💾 Save Theme...
-              </button>
-              <!-- <button class="theme-drawer__btn theme-drawer__btn--ai" type="button" id="theme-ai-btn">
-                ✨ Ask AI
-              </button> -->
-            </div>
-
-            <div class="theme-drawer__field">
-              <label class="theme-drawer__label" for="theme-select">Current Theme</label>
-              <div class="theme-select" id="theme-select-wrapper">
-                <button type="button" class="theme-select__trigger" id="theme-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-select-dropdown">
-                  <span class="theme-select__value">🎨 Default</span>
-                  <span class="theme-select__arrow">▼</span>
-                </button>
-                <div class="theme-select__dropdown" id="theme-select-dropdown" role="listbox" aria-hidden="true" inert>
-                  <button type="button" class="theme-select__option" data-value="theme.json" role="option" aria-selected="true">🎨 Default</button>
-                  <button type="button" class="theme-select__option" data-value="themes/vaporwave.json" role="option" aria-selected="false">🌴 Vaporwave</button>
-                  <button type="button" class="theme-select__option" data-value="themes/slack.json" role="option" aria-selected="false">👽 Slack</button>
-                  <button type="button" class="theme-select__option" data-value="themes/gameboy.json" role="option" aria-selected="false">🎮 Gameboy</button>
-                  <!-- User-saved themes will be appended here -->
-                </div>
-              </div>
-            </div>
-
-          </form>
-        </div>
-      </div>
 
       <!-- Slide Editor Drawer (Right Side) -->
       <div class="edit-drawer" id="edit-drawer" role="dialog" aria-modal="true" aria-labelledby="edit-drawer-title" aria-hidden="true" inert>
         <div class="edit-drawer__header">
           <div class="drawer-tabs" role="tablist" aria-label="Drawer panels">
-            <button type="button" class="drawer-tabs__tab is-active" id="drawer-tab-slide" role="tab" aria-selected="true" aria-controls="edit-drawer-content" data-drawer-tab="slide">Slide</button>
-            <button type="button" class="drawer-tabs__tab" id="drawer-tab-deck" role="tab" aria-selected="false" aria-controls="deck-panel" data-drawer-tab="deck">Deck</button>
+            <button type="button" class="drawer-tabs__tab is-active" id="drawer-tab-slide" role="tab" aria-selected="true" tabindex="0" aria-controls="edit-drawer-content" data-drawer-tab="slide">Slide</button>
+            <button type="button" class="drawer-tabs__tab" id="drawer-tab-deck" role="tab" aria-selected="false" tabindex="-1" aria-controls="deck-panel" data-drawer-tab="deck">Deck</button>
           </div>
           <h2 id="edit-drawer-title" class="visually-hidden">Edit Slide</h2>
           <div class="edit-drawer__header-actions" id="edit-drawer-slide-actions">
@@ -144,7 +104,7 @@
         </div>
 
         <!-- Deck panel: everything that belongs to the whole deck rather than
-             the slide in front of you. Kept out of the HUD so the bar stays a
+             the current slide. Kept out of the HUD so the bar stays a
              stage control instead of a settings menu. -->
         <div class="deck-panel" id="deck-panel" role="tabpanel" aria-labelledby="drawer-tab-deck" hidden>
           <section class="deck-panel__group">
@@ -155,7 +115,7 @@
               <button type="button" class="weight-picker__option" data-weight="500" role="radio" aria-checked="true">Regular</button>
               <button type="button" class="weight-picker__option" data-weight="600" role="radio" aria-checked="false">Heavy</button>
             </div>
-            <p class="deck-panel__preview" id="deck-weight-preview">Forces an email + password + OTP wall before you even use the tool.</p>
+            <p class="deck-panel__preview" id="deck-weight-preview">Local-first slides that stay crisp at the back of the room.</p>
           </section>
 
           <section class="deck-panel__group">
@@ -163,6 +123,7 @@
             <div class="deck-panel__actions">
               <button type="button" class="deck-panel__btn" id="share-deck-btn">Share link</button>
               <button type="button" class="deck-panel__btn" id="deck-download-btn">Download JSON</button>
+              <button type="button" class="deck-panel__btn" id="deck-pdf-btn">Download PDF</button>
               <button type="button" class="deck-panel__btn" id="deck-upload-btn">Load a deck</button>
               <button type="button" class="deck-panel__btn" id="deck-shuffle-btn">Shuffle theme</button>
               <button type="button" class="deck-panel__btn" id="help-btn">Keyboard shortcuts</button>
@@ -170,9 +131,10 @@
           </section>
 
           <section class="deck-panel__group">
-            <h3 class="deck-panel__title">AI</h3>
-            <p class="deck-panel__hint" id="deck-ai-status">No key set. Slides and decks can be drafted with Gemini once a key is in place.</p>
+            <h3 class="deck-panel__title">Studio</h3>
+            <p class="deck-panel__hint" id="deck-ai-status">Ready to draft a slide or starter deck from a sentence. Add a personal Gemini key for unlimited runs.</p>
             <div class="deck-panel__actions">
+              <button type="button" class="deck-panel__btn" id="deck-studio-console-btn">Draft deck or slide</button>
               <button type="button" class="deck-panel__btn" id="deck-ai-key-btn">Gemini key</button>
             </div>
           </section>
@@ -184,7 +146,7 @@
         <div class="notes-modal__backdrop modal-backdrop"></div>
         <div class="notes-modal__content modal-content" role="dialog" aria-modal="true" aria-labelledby="notes-modal-title">
           <div class="notes-modal__header">
-            <h2 id="notes-modal-title">📝 Speaker Notes</h2>
+            <h2 id="notes-modal-title">Speaker Notes</h2>
             <button class="notes-modal__close" aria-label="Close notes">×</button>
           </div>
           <div class="notes-modal__body">
@@ -201,21 +163,21 @@
         <div class="settings-modal__backdrop modal-backdrop"></div>
         <div class="settings-modal__content modal-content" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
           <div class="settings-modal__header">
-            <h2 id="settings-modal-title">⚙️ Settings</h2>
+            <h2 id="settings-modal-title">Settings</h2>
             <button class="settings-modal__close" aria-label="Close settings">×</button>
           </div>
           <div class="settings-modal__body">
             <form class="settings-field" onsubmit="event.preventDefault();">
               <label class="settings-field__label" for="gemini-api-key">
                 Gemini API Key
-                <span class="settings-field__hint">Unlocks voice dictation, slide generation, and image helpers — stored locally in your browser</span>
+                <span class="settings-field__hint">Optional personal key for unlimited voice dictation, slide drafting, and image helpers — stored locally in the browser</span>
               </label>
               <div class="settings-field__input-group">
                 <input
                   type="password"
                   id="gemini-api-key"
                   class="settings-field__input"
-                  placeholder="Enter your Gemini API key..."
+                  placeholder="Paste Gemini API key..."
                   autocomplete="off"
                   name="gemini-api-key"
                 />
@@ -240,15 +202,15 @@
               <div class="settings-field__status" id="api-key-status" role="status" aria-live="polite"></div>
             </form>
             <div class="settings-help">
-              <p><strong>Don't have an API key?</strong></p>
+              <p><strong>Personal Gemini key</strong></p>
               <p>
                 Open
                 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
-                  Google AI Studio API keys
+                  Google Studio API keys
                 </a>,
                 create a key, paste it here, then hit Save and Test.
               </p>
-              <p class="settings-help__note">Your key is stored locally in your browser and never sent anywhere except Google's Gemini API.</p>
+              <p class="settings-help__note">Keys stay in local browser storage and only talk to Gemini.</p>
             </div>
           </div>
         </div>
@@ -341,7 +303,7 @@
             <button class="share-modal__close" aria-label="Close share dialog" id="share-modal-close">&times;</button>
           </div>
           <div class="share-modal__body">
-            <p class="share-modal__intro">Generate a link that includes your slides and theme. Anyone who opens it gets a copy of the deck in their browser.</p>
+            <p class="share-modal__intro">Generate a link containing slides and theme. Opening the link loads a working copy directly in the browser.</p>
 
             <div class="share-modal__section">
               <label for="share-url-input" class="share-modal__label">Share link</label>
@@ -358,8 +320,40 @@
                   Copy
                 </button>
               </div>
-              <p class="share-modal__hint" id="share-details" aria-live="polite" hidden></p>
+              <p class="share-modal__hint" id="share-details" hidden></p>
             </div>
+
+            <details class="share-modal__options" id="share-options-details">
+              <summary class="share-modal__options-summary">Link options <span class="share-modal__label-hint">custom slug or passphrase lock</span></summary>
+              <div class="share-modal__options-grid">
+                <div class="share-modal__field">
+                  <label for="share-slug-input" class="share-modal__label">
+                    Custom link <span class="share-modal__label-hint">3–40 letters, numbers, hyphens</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="share-slug-input"
+                    class="share-modal__input"
+                    maxlength="40"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="e.g. zines-and-machines"
+                  />
+                </div>
+                <div class="share-modal__field">
+                  <label for="share-password-input" class="share-modal__label">
+                    Passphrase lock <span class="share-modal__label-hint">optional</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="share-password-input"
+                    class="share-modal__input"
+                    autocomplete="new-password"
+                    placeholder="Leave blank for open access"
+                  />
+                </div>
+              </div>
+            </details>
 
             <div class="share-modal__section share-modal__actions">
               <button type="button" class="button button--primary" id="share-generate-btn">Generate link</button>
@@ -377,7 +371,7 @@
         <div class="share-protect__dialog modal-content" role="dialog" aria-modal="true" aria-labelledby="share-protect-title">
           <div class="share-protect__header">
             <h2 id="share-protect-title">This deck is locked</h2>
-            <p class="share-protect__intro">Enter the passphrase to view it.</p>
+            <p class="share-protect__intro">Passphrase required to unlock this deck.</p>
           </div>
           <div class="share-protect__body">
             <label for="share-protect-input" class="share-protect__label">Passphrase</label>
@@ -440,15 +434,13 @@
       <div class="cheat-console__panel" role="dialog" aria-modal="true" aria-labelledby="cheat-console-title" aria-describedby="cheat-console-hint">
         <div class="cheat-console__header">
           <div>
-            <p class="cheat-console__eyebrow" id="cheat-console-unlocked">Cheat unlocked</p>
-            <h2 id="cheat-console-title">AI Cheat Console</h2>
+            <p class="cheat-console__eyebrow" id="cheat-console-unlocked">Studio console</p>
+            <h2 id="cheat-console-title">KAZAM Studio</h2>
           </div>
           <button class="cheat-console__close" aria-label="Close cheat console" data-cheat-close>×</button>
         </div>
         <p class="cheat-console__hint" id="cheat-console-hint">
-          Describe the slide or deck you want. Gemini cooks it live. Need an API key?
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Grab one here</a>,
-          then tap <strong>S</strong> to paste it into Settings.
+          Describe a slide or full starter deck. Gemini drafts it live. Optional personal key in <strong>Deck settings (S)</strong> unlocks unlimited runs.
         </p>
         <div class="cheat-console__prompt-wrap">
           <textarea
@@ -456,7 +448,7 @@
             class="cheat-console__textarea"
             rows="5"
             placeholder="e.g. a presentation about brutalist architecture — who built it, why people hate it, and why it's having a comeback"
-            aria-label="AI slide prompt"
+            aria-label="Slide or deck prompt"
             aria-describedby="cheat-console-hint cheat-console-status"
           ></textarea>
           <button

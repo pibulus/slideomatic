@@ -8,6 +8,7 @@ const root = join(__dirname, '..');
 const allowedTypes = new Set([
   'title',
   'standard',
+  'scroll',
   'quote',
   'split',
   'grid',
@@ -67,9 +68,12 @@ function validateTemplates() {
 }
 
 function validateSlides(relativePath) {
-  const slides = readJson(relativePath);
+  const raw = readJson(relativePath);
+  const slides = Array.isArray(raw)
+    ? raw
+    : (raw && typeof raw === 'object' && Array.isArray(raw.slides) ? raw.slides : null);
   if (!Array.isArray(slides)) {
-    throw new Error(`${relativePath} must export an array`);
+    throw new Error(`${relativePath} must export an array of slides (or an envelope with a slides array)`);
   }
 
   slides.forEach((slide, index) => {

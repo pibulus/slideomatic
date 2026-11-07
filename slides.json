@@ -32,7 +32,7 @@
   {
     "type": "pillars",
     "badge": "Three moves",
-    "headline": "Three keys and you're rolling",
+    "headline": "Three keys and the room is rolling",
     "body": "That's the whole learning curve. Press **?** anytime for the full list.",
     "font": "sans",
     "pillars": [
@@ -41,8 +41,8 @@
         "text": "Opens the workbench. Rewrite text, swap layouts, drop in photos, or pick a theme."
       },
       {
-        "title": "T: Theme",
-        "text": "Shuffles the color palette. Keep pressing until the room feels right."
+        "title": "S: Settings",
+        "text": "Opens deck settings. Shuffle themes, set type weight, share a link, or export PDF and JSON."
       },
       {
         "title": "O: Overview",
@@ -53,14 +53,14 @@
   {
     "type": "split",
     "badge": "Layouts",
-    "headline": "Pick a shape, then make it yours",
+    "headline": "Pick a shape, then make it land",
     "left": {
-      "headline": "9 built-in shapes",
-      "body": "Title, Standard, Split (like this one), Pillars, Grid, Gallery, Quote, Image, and Typeface. Switch a slide's type anytime without losing your words."
+      "headline": "10 built-in shapes",
+      "body": "Title, Standard, Scroll, Split (like this one), Pillars, Grid, Gallery, Quote, Image, and Typeface. Switch a slide's type anytime without losing the words."
     },
     "right": {
       "headline": "Zero layout math",
-      "body": "No nudging text boxes by two pixels. You write the point; the slide handles the proportions, borders, and mobile layout."
+      "body": "No nudging text boxes by two pixels. Write the point; the slide handles the proportions, borders, and mobile layout."
     },
     "font": "sans"
   },
@@ -68,14 +68,14 @@
     "type": "gallery",
     "badge": "Pictures",
     "headline": "Drop, paste, or search for photos",
-    "body": "Drag files onto a slide, paste from your clipboard, or hit **🔍** to pull free shots from Pexels and Unsplash.",
+    "body": "Drag files onto a slide, paste from clipboard, or hit **🔍** to pull free shots from Pexels and Unsplash.",
     "items": [
       {
         "image": {
           "src": "images/genre-systems.webp",
           "alt": "Riso collage of cassette tape, vinyl record, boombox, and guitar"
         },
-        "label": "Drop your own art"
+        "label": "Drop original art"
       },
       {
         "image": {
@@ -99,9 +99,9 @@
     "badge": "Themes + tunes",
     "headline": "Flip the vibe in one keystroke",
     "body": [
-      "Press **T** right now to shuffle the color palette.",
-      "Want a whole different look? Open **E → Theme** to switch between Default, Vaporwave, Slack, and Gameboy—or save your own.",
-      "Press **R** to flip on the built-in SomaFM radio dock while you build or present."
+      "Press **S** and hit **Shuffle Theme** to spin a fresh color palette.",
+      "Open **E → Theme** to switch between Default, Vaporwave, Slack, and Gameboy—or save a custom palette.",
+      "Press **R** to flip on the built-in SomaFM radio dock while building or presenting."
     ],
     "font": "sans",
     "image": {

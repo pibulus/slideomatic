@@ -163,10 +163,10 @@
   {
     "type": "standard",
     "badge": "Themes + tunes",
-    "headline": "Press **T** when the look gets stale",
+    "headline": "Shuffle the palette when the look gets stale",
     "body": [
-      "**T** shuffles the deck's colors. Keep pressing until something clicks.",
-      "Open **Theme** in the edit drawer to pick a style (Default, Vaporwave, Slack, Gameboy) or save a look you want to keep.",
+      "Hit **Shuffle theme** in the **Deck** drawer (**S**) or **Theme** section (**E**) until the colors click.",
+      "Open **Theme** in the edit drawer to pick a style (Default, Vaporwave, Slack, Gameboy) or save a custom look locally.",
       "Need background music while presenting? Hit **R** (or the Radio button) for SomaFM stations."
     ],
     "image": {

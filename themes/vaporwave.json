@@ -1,7 +1,7 @@
 {
   "color-bg": "#ff71ce",
   "background-surface": "linear-gradient(135deg, #01cdfe 0%, #05ffa1 50%, #b967ff 100%)",
-  "background-overlay": "repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 255, 255, 0.08) 6px)",
+  "background-overlay": "repeating-linear-gradient(0deg, rgba(255, 254, 247, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 254, 247, 0.08) 6px), repeating-linear-gradient(90deg, rgba(255, 254, 247, 0.08) 0px, transparent 2px, transparent 4px, rgba(255, 254, 247, 0.08) 6px)",
   "background-opacity": "0.4",
   "slide-bg": "rgba(255, 113, 206, 0.82)",
   "slide-border-color": "#01cdfe",

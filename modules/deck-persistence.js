@@ -243,11 +243,15 @@ async function attemptSharedDeckLoad(shareId) {
 
 async function fetchSharedRecord(shareId, password) {
   const params = new URLSearchParams({ id: shareId });
+  const headers = {};
   if (password) {
-    params.set('password', password);
+    headers['X-Share-Passphrase'] = password;
   }
 
-  const response = await fetch(`/.netlify/functions/share?${params.toString()}`, { cache: 'no-store' });
+  const response = await fetch(`/.netlify/functions/share?${params.toString()}`, {
+    cache: 'no-store',
+    headers,
+  });
   let payload = null;
   try {
     payload = await response.json();
@@ -368,7 +372,7 @@ export function resolveSlidesPath() {
   if (/^(https?:)?\/\//.test(slidesParam) || slidesParam.startsWith('/')) {
     return slidesParam;
   }
-  if (slidesParam.endsWith('.json')) {
+  if (/\.(json|sld|som|deck)$/i.test(slidesParam)) {
     return `/${slidesParam.replace(/^\/+/, '')}`;
   }
   return `/${slidesParam.replace(/^\/+/, '')}.json`;

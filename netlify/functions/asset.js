@@ -1,13 +1,26 @@
-import { connectLambda, getStore } from '@netlify/blobs';
+import { connectLambda as defaultConnectLambda, getStore as defaultGetStore } from '@netlify/blobs';
 import {
   STORE_NAMES,
   CACHE_HEADERS,
   BASE_HEADERS,
-  corsHeaders
+  corsHeaders,
+  normalizeAllowedImageMime,
+  sniffImageMime,
 } from './utils/common.js';
 
-export async function handler(event) {
-  connectLambda(event);
+const ASSET_SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': "default-src 'none'; sandbox",
+};
+
+export async function handler(event, deps = {}) {
+  const connectLambdaFn = deps.connectLambda || defaultConnectLambda;
+  const getStoreFn = deps.getStore || defaultGetStore;
+  try {
+    connectLambdaFn(event);
+  } catch {
+    // Allow running in local/unit test environments without Lambda context
+  }
 
   try {
     if (event.httpMethod === 'OPTIONS') {
@@ -27,7 +40,7 @@ export async function handler(event) {
     }
 
     if (event.httpMethod === 'HEAD') {
-      return await handleHead(assetId);
+      return await handleHead(assetId, getStoreFn);
     }
 
     if (event.httpMethod !== 'GET') {
@@ -38,7 +51,7 @@ export async function handler(event) {
       };
     }
 
-    const store = getStore(STORE_NAMES.ASSETS);
+    const store = getStoreFn(STORE_NAMES.ASSETS);
     const result = await store.getWithMetadata(assetId, { type: 'arrayBuffer' });
 
     if (!result) {
@@ -50,17 +63,28 @@ export async function handler(event) {
     }
 
     const { data, metadata = {}, etag } = result;
-    const mimeType = metadata.mimeType || 'application/octet-stream';
-    const buffer = Buffer.from(data);
+    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+    const safeMime = sniffImageMime(buffer) || normalizeAllowedImageMime(metadata.mimeType);
+    if (!safeMime) {
+      return {
+        statusCode: 415,
+        headers: {
+          ...BASE_HEADERS,
+          ...ASSET_SECURITY_HEADERS,
+        },
+        body: JSON.stringify({ error: 'Unsupported asset media type' }),
+      };
+    }
 
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': mimeType,
+        'Content-Type': safeMime,
         'Cache-Control': CACHE_HEADERS.IMMUTABLE,
         'Content-Length': String(buffer.length),
         ...(etag ? { ETag: etag } : {}),
         'Access-Control-Allow-Origin': '*',
+        ...ASSET_SECURITY_HEADERS,
       },
       body: buffer.toString('base64'),
       isBase64Encoded: true,
@@ -75,8 +99,8 @@ export async function handler(event) {
   }
 }
 
-async function handleHead(assetId) {
-  const store = getStore(STORE_NAMES.ASSETS);
+async function handleHead(assetId, getStoreFn = defaultGetStore) {
+  const store = getStoreFn(STORE_NAMES.ASSETS);
   const metadata = await store.getMetadata(assetId);
   if (!metadata) {
     return {
@@ -86,15 +110,27 @@ async function handleHead(assetId) {
     };
   }
   const { metadata: meta = {}, etag } = metadata;
+  const safeMime = normalizeAllowedImageMime(meta.mimeType);
+  if (!safeMime) {
+    return {
+      statusCode: 415,
+      headers: {
+        ...BASE_HEADERS,
+        ...ASSET_SECURITY_HEADERS,
+      },
+      body: '',
+    };
+  }
   const bytes = meta.bytes ? Number(meta.bytes) : undefined;
   return {
     statusCode: 200,
     headers: {
-      'Content-Type': meta.mimeType || 'application/octet-stream',
+      'Content-Type': safeMime,
       'Cache-Control': CACHE_HEADERS.IMMUTABLE,
       ...(bytes ? { 'Content-Length': String(bytes) } : {}),
       ...(etag ? { ETag: etag } : {}),
       'Access-Control-Allow-Origin': '*',
+      ...ASSET_SECURITY_HEADERS,
     },
     body: '',
   };

@@ -69,6 +69,7 @@ function paintWeightControl(weight) {
     const isOn = Number(btn.dataset.weight) === weight;
     btn.classList.toggle('is-active', isOn);
     btn.setAttribute('aria-checked', isOn ? 'true' : 'false');
+    btn.setAttribute('tabindex', isOn ? '0' : '-1');
   });
 
   const preview = document.getElementById('deck-weight-preview');
@@ -95,8 +96,35 @@ export function initDeckPanel(context = {}) {
     setTimeout(hideHudStatus, 1200);
   });
 
+  picker?.addEventListener('keydown', (event) => {
+    const buttons = Array.from(picker.querySelectorAll('[data-weight]'));
+    if (!buttons.length) return;
+    const currentIdx = Math.max(
+      0,
+      buttons.findIndex((btn) => btn.getAttribute('aria-checked') === 'true')
+    );
+    let nextIdx = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIdx = (currentIdx + 1) % buttons.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIdx = (currentIdx - 1 + buttons.length) % buttons.length;
+    }
+    if (nextIdx !== null) {
+      event.preventDefault();
+      const targetBtn = /** @type {HTMLElement} */ (buttons[nextIdx]);
+      applyBodyWeight(Number(targetBtn.dataset.weight), { persist: true });
+      targetBtn.focus({ preventScroll: true });
+      showHudStatus('Type weight set', 'success');
+      setTimeout(hideHudStatus, 1200);
+    }
+  });
+
   document.getElementById('deck-download-btn')?.addEventListener('click', () => {
     context.downloadDeck?.();
+  });
+
+  document.getElementById('deck-pdf-btn')?.addEventListener('click', () => {
+    context.downloadPdf?.();
   });
 
   document.getElementById('deck-upload-btn')?.addEventListener('click', () => {
@@ -105,6 +133,10 @@ export function initDeckPanel(context = {}) {
 
   document.getElementById('deck-shuffle-btn')?.addEventListener('click', () => {
     context.randomizeTheme?.();
+  });
+
+  document.getElementById('deck-studio-console-btn')?.addEventListener('click', () => {
+    context.openStudioConsole?.();
   });
 
   document.getElementById('deck-ai-key-btn')?.addEventListener('click', () => {
@@ -124,6 +156,6 @@ export function refreshAiStatus(context = {}) {
     hasKey = false;
   }
   status.textContent = hasKey
-    ? 'Gemini is connected. The cheat console can draft a slide or a whole starter deck from a sentence.'
-    : 'No key set. Slides and decks can be drafted with Gemini once a key is in place.';
+    ? 'Personal Gemini key connected. Draft a slide or whole starter deck from a single prompt.'
+    : 'Ready to draft a slide or starter deck from a sentence. Add a personal Gemini key for unlimited runs.';
 }

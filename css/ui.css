@@ -33,21 +33,26 @@
 
 /* --- HUD --- */
 .hud {
+  /* Isolate HUD chrome from slide canvas theme variables */
+  --color-ink: var(--ui-ink, #1e1714);
+  --font-mono: var(--ui-font-mono);
+
   position: fixed;
-  bottom: calc(30px + env(safe-area-inset-bottom));
+  bottom: calc(26px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  width: min(720px, calc(100vw - 32px));
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  width: min(780px, calc(100vw - 32px));
+  display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 14px;
-  border: 3px solid var(--color-ink);
-  border-radius: 18px;
-  background: var(--paper);
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 2.5px solid var(--ui-ink, #1e1714);
+  border-radius: 999px;
+  background: var(--ui-panel, #fbf1e4);
+  color: var(--ui-ink, #1e1714);
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 4px 4px 0 rgba(var(--warm-black-rgb), 0.18);
   z-index: var(--z-hud);
   animation: hud-float 3s ease-in-out infinite;
   transition: opacity 220ms ease, transform 220ms ease, left 280ms cubic-bezier(0.22, 1, 0.36, 1), width 280ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -56,7 +61,7 @@
 @media (min-width: 1100px) {
   body.is-drawer-open .hud {
     left: calc((100vw - min(480px, 90vw)) / 2);
-    width: min(680px, calc(100vw - min(480px, 90vw) - 32px));
+    width: min(720px, calc(100vw - min(480px, 90vw) - 32px));
   }
 }
 
@@ -68,47 +73,50 @@
 .hud__nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .hud__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+  gap: 6px;
+  font-family: var(--ui-font-mono);
+  font-size: 0.86rem;
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 /* Legacy class kept for backwards compat */
 .hud__controls {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  gap: 10px;
+  font-family: var(--ui-font-mono);
+  font-size: 0.86rem;
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .hud__action {
   appearance: none;
   background: transparent;
-  border: none;
+  border: 1.5px solid transparent;
   min-width: 44px;
-  min-height: 44px;
-  padding: 0 10px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--ui-font-mono);
+  font-size: 0.86rem;
   font-weight: 700;
-  color: var(--color-ink);
+  color: var(--ui-ink, #1e1714);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: color 160ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
   line-height: 1.2;
   display: inline-flex;
   align-items: center;
@@ -116,16 +124,20 @@
 }
 
 .hud__action:hover {
-  color: var(--color-accent);
+  background: var(--ui-control-bg, #f1e6d6);
+  border-color: rgba(var(--warm-black-rgb), 0.25);
+  color: var(--ui-ink, #1e1714);
 }
 
-.hud__action.is-active {
-  color: var(--color-accent);
-}
-
+/* High-contrast active mode container pill so OVERVIEW, RADIO, and EDIT
+   states are unmistakable at a glance */
+.hud__action.is-active,
+.hud__action[aria-pressed="true"],
 .hud__radio-btn.is-live {
-  background: var(--color-accent);
-  border-radius: 10px;
+  background: var(--ui-ink, #1e1714);
+  color: var(--ui-surface, #fffef7);
+  border-color: var(--ui-ink, #1e1714);
+  border-radius: 999px;
 }
 
 .hud__radio-btn.is-live .hud__action-icon {
@@ -144,21 +156,23 @@
 
 .hud__counter {
   display: flex;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
+  gap: 5px;
+  font-family: var(--ui-font-mono);
+  font-size: 0.9rem;
   font-weight: 700;
+  color: var(--ui-ink, #1e1714);
   justify-self: center;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .hud__progress {
   justify-self: stretch;
-  width: 100%;
-  flex: 1;
-  min-width: 0;
-  height: 12px;
-  border: var(--border-width) solid var(--color-ink);
+  flex: 1 1 110px;
+  min-width: 64px;
+  max-width: 150px;
+  height: 10px;
+  border: 2px solid var(--ui-ink, #1e1714);
   border-radius: 999px;
   background: rgba(var(--warm-black-rgb), 0.1);
   overflow: hidden;
@@ -167,39 +181,41 @@
 }
 
 .hud__progress:hover {
-  box-shadow: 0 0 0 2px var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(var(--warm-black-rgb), 0.2);
 }
 
 .hud__progress:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
+  outline: 2px solid var(--ui-ink, #1e1714);
+  outline-offset: 3px;
 }
 
 .hud__progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);
+  background: var(--ui-ink, #1e1714);
   width: 0%;
   transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .hud__nav-btn {
-  width: 44px;
-  height: 44px;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
   background: transparent;
-  font-family: var(--font-mono);
+  font-family: var(--ui-font-mono);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 160ms ease;
+  transition: background 150ms ease, transform 150ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-ink);
+  color: var(--ui-ink, #1e1714);
 }
 
 .hud__nav-btn:hover {
+  background: var(--ui-control-bg, #f1e6d6);
   transform: translateY(-1px);
 }
 
@@ -212,7 +228,7 @@
 
 .hud__nav-btn:focus-visible,
 .hud__action:focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 2px solid var(--ui-ink, #1e1714);
   outline-offset: 2px;
   border-radius: 8px;
 }
@@ -500,12 +516,6 @@
   /* Radio joins the row on phones (the floating dock is hidden here) */
   .hud__action.hud__radio-btn {
     display: flex;
-  }
-
-  /* Home is redundant on a phone — tapping the start of the progress bar
-     does the same job, and the row needs the room for radio */
-  .hud__action.hud__home-btn {
-    display: none;
   }
 
   .hud__notes-indicator {

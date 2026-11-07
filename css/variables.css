@@ -41,6 +41,17 @@
   --surface-cream-1: #fffefc;
   --surface-cream-2: #fffdf7;
 
+  /* Immutable Tool-UI Tokens — isolated from the slide canvas theme so dark,
+     neon, or pixel-font themes never degrade drawer legibility or input contrast */
+  --ui-ink: #1e1714;
+  --ui-muted: #57524e;
+  --ui-surface: #fffef7;
+  --ui-panel: #fbf1e4;
+  --ui-control-bg: #f1e6d6;
+  --ui-border: #1e1714;
+  --ui-font-sans: "Inter", "SF Pro", -apple-system, system-ui, sans-serif;
+  --ui-font-mono: "JetBrains Mono", "Fira Code", "Roboto Mono", monospace;
+
   /* Core Palette - Mapped to Risograph */
   --color-bg: var(--cream);
   --color-surface: var(--paper);

@@ -84,8 +84,22 @@ function prepareClone(node, width, height) {
   node.style.left = 'auto';
   node.style.top = 'auto';
   node.style.width = `${width}px`;
-  node.style.height = `${height}px`;
-  node.classList.remove('is-active');
+  node.style.minHeight = `${height}px`;
+  node.style.height = 'auto';
+  node.style.maxHeight = 'none';
+  node.style.overflow = 'visible';
+  node.style.webkitMaskImage = 'none';
+  node.style.maskImage = 'none';
+  node.classList.remove('is-active', 'is-scrollable');
+
+  // Replace cross-origin iframes in the PDF clone with a static label card
+  node.querySelectorAll('iframe.video-card__iframe').forEach((iframe) => {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-card__play';
+    placeholder.textContent = iframe.title || 'Embedded Video';
+    iframe.replaceWith(placeholder);
+  });
+
   return node;
 }
 
@@ -131,7 +145,7 @@ export async function exportDeckToPdf(filename) {
         tempHost.appendChild(clone);
         try {
           await new Promise((resolve) => requestAnimationFrame(resolve));
-          const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+          const canvas = await html2canvas(clone, { backgroundColor: '#fffef7', scale: 2, useCORS: true });
 
           const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
           const imgWidth = canvas.width * ratio;

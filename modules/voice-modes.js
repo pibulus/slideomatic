@@ -42,6 +42,7 @@ let isRecording = false;
 // window where a double-press spawned two recorders sharing module state and
 // leaked a hot mic.
 let isStartingRecording = false;
+let stopRequestedWhileStarting = false;
 let mediaRecorder = null;
 let audioChunks = [];
 let mediaStream = null;
@@ -72,9 +73,18 @@ export function getGeminiApiKey() {
 // callers keep using response.ok / response.json() unchanged.
 const GEMINI_PROXY_URL = '/.netlify/functions/gemini';
 export async function callGemini(model, payload, { signal } = {}) {
+  let passportToken = '';
+  try {
+    passportToken = (localStorage.getItem('softstack_passport_token') || '').trim();
+  } catch {
+    passportToken = '';
+  }
   const response = await fetch(GEMINI_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(passportToken ? { Authorization: `Bearer ${passportToken}` } : {}),
+    },
     signal,
     body: JSON.stringify({ model, payload, userKey: getGeminiApiKey() || undefined }),
   }).catch(() => null);
@@ -158,7 +168,7 @@ export async function startSpeechCapture({ onStop, onError } = {}) {
   recorder.onerror = (event) => {
     stopTracks();
     if (typeof onError === 'function') {
-      onError(event.error || new Error('The recording did not come through. One more take?'));
+      onError(event.error || new Error('The recording did not come through. Try another take.'));
     }
   };
 
@@ -272,7 +282,7 @@ export function hasGeminiKey() {
 }
 
 export function toggleVoiceRecording(mode = 'add') {
-  if (!hasGeminiKey()) {
+  if (!canRecordSpeech()) {
     return;
   }
 
@@ -293,6 +303,7 @@ export function toggleVoiceRecording(mode = 'add') {
 export async function startVoiceRecording(mode) {
   if (isStartingRecording || isRecording) return;
   isStartingRecording = true;
+  stopRequestedWhileStarting = false;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -301,6 +312,11 @@ export async function startVoiceRecording(mode) {
         autoGainControl: true,
       }
     });
+
+    if (stopRequestedWhileStarting) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
 
     const mimeType = getPreferredAudioMimeType();
 
@@ -323,7 +339,7 @@ export async function startVoiceRecording(mode) {
         if (audioBlob.size < MIN_RECORDING_BYTES) {
           // Insta-taps produce empty blobs — don't burn an API call on them.
           const context = getVoiceContext();
-          context.showHudStatus('🤏 Nothing recorded — hold the mic a moment longer', 'warning');
+          context.showHudStatus('Nothing recorded — hold the mic a moment longer', 'warning');
         } else {
           await processVoiceToSlide(audioBlob);
         }
@@ -341,26 +357,31 @@ export async function startVoiceRecording(mode) {
     // payload limit anyway — stop and process what we have.
     recordingCapTimer = setTimeout(() => {
       if (isRecording) {
-        getVoiceContext().showHudStatus('⏱️ Recording capped at 5 minutes — processing…', 'warning');
+        getVoiceContext().showHudStatus('Recording capped at 5 minutes — processing…', 'warning');
         stopVoiceRecording();
       }
     }, MAX_RECORDING_MS);
     updateVoiceUI(mode, 'recording');
     debug('Recording started');
   } catch (error) {
-    console.error('❌ Error starting recording:', error);
+    console.error('Error starting recording:', error);
     const context = getVoiceContext();
-    context.showHudStatus('🎙 The mic is not reachable. Check browser permissions', 'error');
+    context.showHudStatus('Microphone not reachable. Check browser permissions', 'error');
     setTimeout(context.hideHudStatus, 3000);
     cleanupVoiceRecording({ resetButton: false });
     updateVoiceUI(mode, 'idle');
     activeVoiceMode = null;
   } finally {
     isStartingRecording = false;
+    stopRequestedWhileStarting = false;
   }
 }
 
 export function stopVoiceRecording() {
+  if (isStartingRecording && !isRecording) {
+    stopRequestedWhileStarting = true;
+    return;
+  }
   if (!mediaRecorder || !isRecording) return;
 
   isRecording = false;
@@ -400,10 +421,10 @@ function updateVoiceUI(mode, state) {
     // success/error message the user actually needs to see.
     const context = getVoiceContext();
     if (state === 'recording') {
-      voiceFallbackToastId = context.showHudStatus('🎙 Recording… press V to finish', 'processing');
+      voiceFallbackToastId = context.showHudStatus('Recording… press V to finish', 'processing');
     } else if (state === 'processing') {
       hideToastById(voiceFallbackToastId);
-      voiceFallbackToastId = context.showHudStatus('🤖 Turning speech into a slide…', 'processing');
+      voiceFallbackToastId = context.showHudStatus('Turning speech into a slide…', 'processing');
     } else if (voiceFallbackToastId != null) {
       hideToastById(voiceFallbackToastId);
       voiceFallbackToastId = null;
@@ -420,7 +441,7 @@ function updateVoiceUI(mode, state) {
     button.textContent = 'Stop';
     button.setAttribute('aria-label', 'Stop recording');
     if (hudStatus) {
-      hudStatus.textContent = '🎙 Recording...';
+      hudStatus.textContent = 'Recording...';
       hudStatus.className = 'hud__status hud__status--recording is-visible';
     }
     return;
@@ -432,7 +453,7 @@ function updateVoiceUI(mode, state) {
     button.textContent = 'Processing...';
     button.setAttribute('aria-label', 'Processing voice input');
     if (hudStatus) {
-      hudStatus.textContent = '🤖 Thinking...';
+      hudStatus.textContent = 'Thinking...';
       hudStatus.className = 'hud__status hud__status--processing is-visible';
     }
     return;
@@ -502,13 +523,13 @@ export async function processVoiceToSlide(audioBlob) {
     const newIndex = insertSlideAfterCurrent(slideData);
 
     await ensureMinimumDelay(uiStart, 1300);
-    context.showHudStatus('✨ Slide ready — Save Deck to export', 'success');
+    context.showHudStatus('✓ Slide ready — Save Deck to export', 'success');
     context.setActiveSlide(newIndex);
     setTimeout(context.hideHudStatus, 2000);
     debug('Slide created and inserted');
   } catch (error) {
-    console.error('❌ Error processing voice:', error);
-    context.showHudStatus(`🎙 ${error.message}`, 'error');
+    console.error('Error processing voice:', error);
+    context.showHudStatus(error.message, 'error');
     setTimeout(context.hideHudStatus, 4000);
   }
 }
@@ -517,11 +538,11 @@ export async function generateSlideFromPrompt(promptText, { insert = false } = {
   const context = getVoiceContext();
   const request = (promptText || '').trim();
   if (!request) {
-    throw new Error('Describe the slide you want first.');
+    throw new Error('Describe the slide first.');
   }
 
   const apiKey = ensureApiKeyOrThrow(context);
-  context.showHudStatus('🪄 Summoning a slide...', 'info');
+  context.showHudStatus('Summoning a slide...', 'info');
 
   try {
     const prompt = buildSlideDesignPrompt(request);
@@ -538,12 +559,12 @@ export async function generateSlideFromPrompt(promptText, { insert = false } = {
       context.setOverviewCursor(newIndex);
     }
 
-    context.showHudStatus('✨ Slide ready', 'success');
+    context.showHudStatus('✓ Slide ready', 'success');
     setTimeout(context.hideHudStatus, 2000);
     return slide;
   } catch (error) {
     console.error('Gemini slide prompt failed:', error);
-    context.showHudStatus(`🎙 ${error.message}`, 'error');
+    context.showHudStatus(error.message, 'error');
     setTimeout(context.hideHudStatus, 3500);
     throw error;
   }
@@ -553,11 +574,11 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
   const context = getVoiceContext();
   const request = (promptText || '').trim();
   if (!request) {
-    throw new Error('Describe the deck you want first.');
+    throw new Error('Describe the deck first.');
   }
 
   const apiKey = ensureApiKeyOrThrow(context);
-  context.showHudStatus('📚 Drafting a deck...', 'info');
+  context.showHudStatus('Drafting a deck...', 'info');
 
   try {
     const prompt = buildDeckDesignPrompt(request, slideCount);
@@ -589,12 +610,12 @@ export async function generateDeckFromPrompt(promptText, { insert = false, slide
       context.setOverviewCursor(firstInserted);
     }
 
-    context.showHudStatus(`✨ Added ${slidesArray.length} slides`, 'success');
+    context.showHudStatus(`✓ Added ${slidesArray.length} slides`, 'success');
     setTimeout(context.hideHudStatus, 2200);
     return { slides: slidesArray, firstIndex: firstInserted };
   } catch (error) {
     console.error('Gemini deck prompt failed:', error);
-    context.showHudStatus(`🎙 ${error.message}`, 'error');
+    context.showHudStatus(error.message, 'error');
     setTimeout(context.hideHudStatus, 3500);
     throw error;
   }
@@ -670,6 +691,10 @@ HOUSE DESIGN RULES (a deck that breaks these reads as a document dump):
   would use ("mountain sunrise landscape", "retro synthesizer").
 - Vary the rhythm across a deck: statement, evidence, quote, image, question.
   Five standard slides in a row is a wall, whatever the words say.
+- Visual representers inside "body" arrays (on "standard" or "scroll" slides):
+  - Code card: {"code": "curl -s https://slideomatic.app/version.json", "lang": "bash", "title": "terminal"}
+  - Instant vector chart: {"chart": "bar" | "hbar" | "donut", "title": "Monthly Burn", "unit": "", "items": [{"label": "Before", "value": 44}, {"label": "After", "value": 7}]}
+  - Ruled table: {"table": {"headers": ["Free", "Passport"], "rows": [["90-day link", "Permanent"]]}}
 `;
 
 function buildSlideDesignPrompt(description = null) {

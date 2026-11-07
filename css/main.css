@@ -174,7 +174,7 @@
 }
 
 .cheat-console__status[data-state='error'] {
-  color: #b33939;
+  color: #8c4a1e;
 }
 
 .cheat-console__status[data-state='success'] {
