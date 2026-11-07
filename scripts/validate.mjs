@@ -34,8 +34,9 @@ try {
   validateCatalog('catalog.json');
   validateOptional('autolinks.json', validateAutolinks);
   validateTemplates();
+  validateServiceWorker();
   validateSeoPortal();
-  console.log('✔ Validation passed for slides, themes, catalog, templates, and SEO portal.');
+  console.log('✔ Validation passed for slides, themes, catalog, templates, service worker, and SEO portal.');
 } catch (error) {
   console.error('✖ Validation failed:', error.message);
   process.exitCode = 1;
@@ -219,5 +220,36 @@ function validateSeoPortal() {
         throw new Error(`${file}: invalid JSON-LD block #${idx + 1}: ${err.message}`);
       }
     });
+  });
+}
+
+function validateServiceWorker() {
+  const swContents = readFileSync(join(root, 'sw.js'), 'utf8');
+  const match = swContents.match(/SHELL_ASSETS\s*=\s*\[([\s\S]*?)\]/);
+  if (!match) {
+    throw new Error('sw.js is missing SHELL_ASSETS array');
+  }
+  const assets = (match[1].match(/'([^']+)'/g) || []).map((s) => s.slice(1, -1));
+  const assetSet = new Set(assets);
+
+  assets.forEach((assetPath) => {
+    if (assetPath === '/') return;
+    assertFileExists(assetPath.replace(/^\/+/, ''));
+  });
+
+  const moduleFiles = readdirSync(join(root, 'modules')).filter((f) => f.endsWith('.js'));
+  moduleFiles.forEach((file) => {
+    const expected = `/modules/${file}`;
+    if (!assetSet.has(expected)) {
+      throw new Error(`sw.js SHELL_ASSETS is missing module ${expected}`);
+    }
+  });
+
+  const cssFiles = readdirSync(join(root, 'css')).filter((f) => f.endsWith('.css'));
+  cssFiles.forEach((file) => {
+    const expected = `/css/${file}`;
+    if (!assetSet.has(expected)) {
+      throw new Error(`sw.js SHELL_ASSETS is missing stylesheet ${expected}`);
+    }
   });
 }

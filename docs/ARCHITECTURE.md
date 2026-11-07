@@ -14,7 +14,6 @@ Slide-o-Matic is a browser-native slideshow builder. `main.js` boots the deck ru
 | `index.html` | Public launcher, guide/blank entry, local deck shelf, JSON upload/paste, about modal. |
 | `deck.html` + `main.js` | Presentation/runtime shell: load, render, edit, navigate, share, export, voice, and PWA behavior. |
 | `collections.html` | Curated deck bundle surface using `deck-collections.json`, plus an optional gitignored `deck-collections.local.json` for private packs. |
-| `admin.html` + `admin.js` | Legacy password-gated JSON slide editor. Useful, but not the main v1 editing path. |
 | `branding/index.html` | Branded/static resource page. |
 | `netlify/functions/*` | Hosted `/s/...` share records, Blob image assets, asset cleanup, and fallback-compatible legacy `?share=` loading. |
 
@@ -177,7 +176,7 @@ Recommended browser smoke:
 ## Related Docs
 
 - `README.md` - product overview and user workflows.
-- `LAUNCH_AUDIT.md` - v1 release audit and verification.
+- `archive/LAUNCH_AUDIT.md` - v1 release audit and verification.
 - `RELEASE_NOTES.md` - release notes.
 - `VOICE_TO_SLIDE.md` - Gemini and voice details.
 - `LOCAL_TESTING.md` - deeper local smoke scenarios.

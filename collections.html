@@ -252,6 +252,9 @@
       }
 
       async function fetchLocalCollections() {
+        const host = window.location.hostname;
+        const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+        if (!isLocalHost) return [];
         try {
           const response = await fetch('deck-collections.local.json', { cache: 'no-store' });
           if (!response.ok) return [];

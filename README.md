@@ -44,7 +44,6 @@ For the repo map, read `docs/ARCHITECTURE.md`; the full docs index is `docs/INDE
 | `catalog.json` | Deck catalog data for curated/default decks. |
 | `autolinks.json` | Optional phrase → URL mappings for automatic hyperlinks. |
 | `manifest.webmanifest` / `sw.js` / `icons/` | PWA install shell. |
-| `admin.html` / `admin.js` / `admin.css` | Legacy browser-based slide editor with a local password gate. |
 | `netlify/functions/` | Hosted share links, Blob-backed image assets, and cleanup endpoints. |
 | `images/` | All deck imagery. Drop your own assets here. |
 
@@ -55,10 +54,10 @@ For the repo map, read `docs/ARCHITECTURE.md`; the full docs index is `docs/INDE
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Serves the repo locally using `serve`. Required for JSON fetches. |
-| `npm run check` | Validates `slides.json`, theme files, catalog entries, and optional autolinks. |
+| `npm run check` | Validates `slides.json`, theme files, catalog entries, service worker assets, and SEO portal. |
 | `npm run lint` | Runs ESLint on source files. |
+| `npm test` | Runs Node unit tests for Netlify Functions and Edge Functions. |
 | `deck.html?slides=foo.json&theme=themes/bar.json` | Manual check for alternate slide/theme combos. |
-| `admin.html?slides=foo.json` | Opens the editor for a non-default slide file. |
 
 ---
 
@@ -104,12 +103,11 @@ Note: `_schema` slides are for hand-maintained JSON files. The app strips them w
 
 ## Editing Slides
 
-### Option A – In-browser editor (recommended)
+### Option A – In-deck Edit Drawer (recommended)
 
-1. Visit `/admin.html` while the local server is running.
-2. Enter the password (a default hash ships in `admin.js > ADMIN_PASSWORD_HASH` — change it per [Changing the Admin Password](#changing-the-admin-password) before treating it as any kind of lock).
-3. Expand a slide card, edit text, colors, image paths, or arrays. Fields update live in memory.
-4. Click **Download slides.json** to export your changes. Replace the existing `slides.json` with the downloaded file.
+1. Open any deck in `deck.html` and press `E` (or click **Edit** in the stage HUD).
+2. Switch between the **Slide** tab (layout, text, media, theme) and the **Deck** tab (`S` — deck-wide typography weight, share, JSON export/import, Gemini key).
+3. Edits autosave to browser `localStorage` (`slideomatic_deck_overrides:*`). Click **Download** in the Deck tab to export a `.sld` / `.json` cartridge.
 
 ### Option B – Manual editing
 
@@ -277,7 +275,6 @@ Swap `theme.json` for instant vibe changes; keep alternate files handy and renam
 
 - List decks in `catalog.json`; each entry can point to a different slides JSON and theme JSON.
 - Launch a deck by visiting `deck.html?slides=path/to.json&theme=my-theme.json` (the index page builds these URLs for you).
-- To edit a non-default deck, open `/admin.html?slides=path/to.json`.
 - If you omit a parameter, the deck falls back to `slides.json` and `theme.json`.
 - A deck can be self-contained: `{ "slides": [...], "theme": { ... } }`. When the slides file carries a theme, the loader applies it automatically, so a pack stays consistent without a shared `theme.json`.
 - Local-only packs (private decks, working sets) merge into `/collections.html` without being committed: add `deck-collections.local.json` (gitignored) and the page appends it after the public collections.
@@ -387,16 +384,9 @@ npx serve .
 
 ---
 
-## Changing the Admin Password
-
-The legacy admin editor uses a SHA-256 hash in `admin.js` (`ADMIN_PASSWORD_HASH`). Generate a replacement hash in the browser console with the snippet in that file, paste the new hash, and redeploy. Treat this as a convenience layer for local editing, not hardened security.
-
----
-
 ## Troubleshooting
 
 - **Deck shows “Unable to load slides”** – ensure you’re serving over HTTP (not using `file://`) and `slides.json` is valid JSON.
-- **Admin editor stuck on loading** – same as above; confirm `slides.json` is reachable.
 - **Auto-links missing** – confirm `autolinks.json` is valid JSON and the term matches the exact casing/spacing you expect.
 
 ---

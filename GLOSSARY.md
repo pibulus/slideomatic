@@ -25,12 +25,11 @@
 
 - **index.html** – Home hub / deck launcher. CTA copy and typography tweaks happen here.
 - **deck.html** – Presentation shell that renders a deck JSON + optional theme.
-- **admin.html** – Legacy password-gated slide editor. The current hash ships for `bonesoup`; change `ADMIN_PASSWORD_HASH` in `admin.js` before treating it as anything beyond a convenience tool.
 - **collections.html** – Simple UI for showing curated deck bundles (e.g., “Design Starter”).
 - **README.md** – Canonical onboarding (install, dev commands, saving/export info). Should match the current UI feature set.
 - **SHARING_OPTIMIZATIONS.md** – Netlify Blob/share architecture. Default production Share UI creates hosted `/s/...` links and falls back to compressed client-side `?data=` links.
 - **manifest.webmanifest / sw.js / icons/** – PWA install shell for home-screen usage.
-- **LAUNCH_AUDIT.md** – Current audit state, fixed issues, verification, and residual launch risks.
+- **docs/archive/LAUNCH_AUDIT.md** – Historical v1 launch audit state, fixed issues, and verification notes.
 - **docs/** – All supporting docs; start at `docs/INDEX.md`.
 
 ## Concepts

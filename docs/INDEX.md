@@ -17,10 +17,11 @@ Start here when the repo has been cold for a while. Root keeps `README.md`
 ## Reference / Historical Docs
 
 - `RELEASE_NOTES.md` — v1.0.x release notes.
-- `LAUNCH_AUDIT.md` — v1 release audit, fixed issues, verification, and post-release smoke list.
-- `FABLE-AUDIT.md` / `NEXT-STEPS.md` — July 2026 deep-audit report and its follow-ups.
-- `REFACTOR_PROMPT.md` — old refactor planning prompt, not current runtime truth.
 - `SCHEMA_EXAMPLE.json` — inline deck schema example.
+- `archive/LAUNCH_AUDIT.md` — v1 release audit, fixed issues, verification, and post-release smoke list.
+- `archive/FABLE-AUDIT.md` / `archive/NEXT-STEPS.md` — July 2026 deep-audit report and its follow-ups.
+- `archive/AUTOPRESO-RAID.md` — Autopreso feature raid notes.
+- `archive/REFACTOR_PROMPT.md` — old refactor planning prompt, not current runtime truth.
 
 ## Core Data Files (repo root)
 
@@ -28,7 +29,7 @@ Start here when the repo has been cold for a while. Root keeps `README.md`
 - `guide.json` — guide/how-to deck.
 - `demo-deck.json` — brand/visual demo deck ("How to Get Got").
 - `design-resources.json` — design resources deck.
+- `sovereign-passport.json` — Sovereign Passport architecture deck.
 - `templates/*.json` — the four starter templates.
 - `theme.json`, `themes/*.json` — theme tokens.
-- `catalog.json`, `deck-collections.json` — launcher and collection data. `deck-collections.local.json` (gitignored) merges private packs into `/collections.html`.
-- `slides-screenshots.json` — generated QA deck (`scripts/generate-image-deck.mjs`).
+- `catalog.json`, `deck-collections.json` — launcher and collection data. `deck-collections.local.json` (gitignored, loaded on localhost only) merges private packs from `decks/local/` into `/collections.html`.

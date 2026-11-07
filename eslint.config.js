@@ -15,10 +15,8 @@ export default [
   },
   {
     ignores: [
-      'admin.js',
       'node_modules/**',
       '.netlify/**',
-      'js/vendor/**',
       'modules/vendor/**',
       'netlify/functions/**',
       'exports/**'

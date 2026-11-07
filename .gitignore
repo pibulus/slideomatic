@@ -14,6 +14,7 @@ yarn-error.log*
 exports/
 
 # Local-only assets: raw moodboard material + QA screenshot deck images
+local-assets/
 branding/*
 !branding/index.html
 images/screenshots/
@@ -26,6 +27,7 @@ images/screenshots/
 version.json
 
 # Personal decks — never published. These carry the Dossier and its readings.
+decks/local/
 case-2891982.json
 numerological-reading*.json
 pdeck-3*.json

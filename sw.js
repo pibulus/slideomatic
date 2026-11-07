@@ -2,7 +2,7 @@
 // with the real deploy's commit hash as Netlify's build command, so the
 // service worker's fetch handler is guaranteed to change on every deploy
 // and returning visitors' browsers actually notice new CSS/JS.
-const CACHE_VERSION = 'slideomatic-v2-20261108p';
+const CACHE_VERSION = 'slideomatic-v2-20261108q';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -18,7 +18,6 @@ const SHELL_ASSETS = [
   '/css/layout.css',
   '/css/slides.css',
   '/css/ui.css',
-  '/css/drawers.css',
   '/css/modals.css',
   '/css/animations.css',
   '/css/edit-drawer.css',
@@ -49,12 +48,12 @@ const SHELL_ASSETS = [
   '/modules/image-utils.js',
   '/modules/keyboard-nav.js',
   '/modules/lazy-images.js',
-  '/modules/markdown.js',
   '/modules/navigation.js',
   '/modules/onboarding.js',
   '/modules/pdf-export.js',
   '/modules/pwa.js',
   '/modules/radio-dock.js',
+  '/modules/radio.js',
   '/modules/settings-modal.js',
   '/modules/share-modal.js',
   '/modules/share-password-modal.js',
@@ -71,7 +70,7 @@ const SHELL_ASSETS = [
   '/modules/utils.js',
   '/modules/validation.js',
   '/modules/voice-modes.js',
-  '/js/vendor/browser-image-compression.js',
+  '/modules/vendor/browser-image-compression.js',
   '/guide.json',
   '/favicon.svg',
   '/slides.json',
