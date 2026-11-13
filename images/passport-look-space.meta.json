@@ -1,0 +1,110 @@
+[
+ {
+  "palette": "Miami",
+  "holo": "rainbow",
+  "frame": "soft",
+  "texture": "sparkle",
+  "type": "display",
+  "avatar": "thumbs",
+  "name": "Salty Penguin"
+ },
+ {
+  "palette": "Grape Soda",
+  "holo": "oily",
+  "frame": "hairline",
+  "texture": "grain",
+  "type": "airy",
+  "avatar": "adventurer",
+  "name": "Cosmic Pelican"
+ },
+ {
+  "palette": "Mango",
+  "holo": "oily",
+  "frame": "hairline",
+  "texture": "scanlines",
+  "type": "display",
+  "avatar": "thumbs",
+  "name": "Speedy Lynx"
+ },
+ {
+  "palette": "Risograph",
+  "holo": "rainbow",
+  "frame": "terminal",
+  "texture": "sparkle",
+  "type": "display",
+  "avatar": "thumbs",
+  "name": "Chunky Lemur"
+ },
+ {
+  "palette": "Sunset",
+  "holo": "pearl",
+  "frame": "hairline",
+  "texture": "grain",
+  "type": "mono",
+  "avatar": "adventurer",
+  "name": "Crispy Narwhal"
+ },
+ {
+  "palette": "Sunset",
+  "holo": "oily",
+  "frame": "terminal",
+  "texture": "none",
+  "type": "airy",
+  "avatar": "adventurer",
+  "name": "Sleepy Lynx"
+ },
+ {
+  "palette": "Miami",
+  "holo": "oily",
+  "frame": "chunky",
+  "texture": "scanlines",
+  "type": "mono",
+  "avatar": "adventurer",
+  "name": "Silver Panda"
+ },
+ {
+  "palette": "Spearmint",
+  "holo": "pearl",
+  "frame": "hairline",
+  "texture": "none",
+  "type": "mono",
+  "avatar": "thumbs",
+  "name": "Quiet Pangolin"
+ },
+ {
+  "palette": "Mango",
+  "holo": "pearl",
+  "frame": "hairline",
+  "texture": "grain",
+  "type": "mono",
+  "avatar": "adventurer",
+  "name": "Silent Rosella"
+ },
+ {
+  "palette": "Mango",
+  "holo": "oily",
+  "frame": "soft",
+  "texture": "sparkle",
+  "type": "mono",
+  "avatar": "bottts",
+  "name": "Silent Finch"
+ },
+ {
+  "palette": "Risograph",
+  "holo": "prismatic",
+  "frame": "terminal",
+  "texture": "halftone",
+  "type": "display",
+  "avatar": "thumbs",
+  "name": "Lucky Quokka"
+ },
+ {
+  "palette": "Lavender",
+  "holo": "pearl",
+  "frame": "hairline",
+  "texture": "sparkle",
+  "type": "display",
+  "avatar": "funEmoji",
+  "name": "Fizzy Ocelot"
+ }
+]
