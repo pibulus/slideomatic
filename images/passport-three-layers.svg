@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Three layers: four words become an SS- code by HMAC; the code becomes an identity and card by SHA-256; the same four words name a vault folder by SHA-256, holding one state and one sram per game, resumable from any screen via the phrase in the URL fragment.">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1e1714"/>
+    </marker>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1e1714" opacity="0.10"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="#fbf1e4"/>
+  <rect x="30" y="30" width="1540" height="840" fill="url(#dots)" stroke="#1e1714" stroke-opacity="0.14" stroke-width="2" rx="14"/>
+
+  <!-- header -->
+  <text x="70" y="88" font-family="Menlo, ui-monospace, monospace" font-size="20" letter-spacing="6" fill="#8a7767">ONE SECRET, THREE LAYERS</text>
+  <text x="70" y="120" font-family="Menlo, ui-monospace, monospace" font-size="15" fill="#a08a78">the card is computed on the device; only the saves travel</text>
+  <line x1="70" y1="140" x2="1530" y2="140" stroke="#1e1714" stroke-opacity="0.18" stroke-width="2"/>
+
+  <!-- ══ ROW A ══ -->
+  <text x="70" y="186" font-family="Menlo, ui-monospace, monospace" font-size="17" letter-spacing="4" fill="#b03a48">LAYER 1</text>
+  <text x="506" y="186" font-family="Menlo, ui-monospace, monospace" font-size="17" letter-spacing="4" fill="#b03a48">LAYER 2</text>
+
+  <!-- card 1: the phrase -->
+  <rect x="70" y="206" width="306" height="186" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="94" y="248" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">THE SECRET</text>
+  <text x="94" y="298" font-family="Menlo, ui-monospace, monospace" font-size="31" font-weight="700" fill="#1e1714">salty penguin</text>
+  <text x="94" y="334" font-family="Menlo, ui-monospace, monospace" font-size="31" font-weight="700" fill="#1e1714">ripple tide</text>
+  <text x="94" y="370" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">4,096-word bank · 48 bits</text>
+
+  <!-- arrow: HMAC -->
+  <line x1="380" y1="300" x2="490" y2="300" stroke="#1e1714" stroke-width="3" marker-end="url(#ah)"/>
+  <text x="386" y="288" font-family="Menlo, ui-monospace, monospace" font-size="15" font-weight="700" fill="#1e1714">HMAC</text>
+  <text x="386" y="322" font-family="Menlo, ui-monospace, monospace" font-size="11" fill="#8a7767">one-way</text>
+
+  <!-- card 2: the handle -->
+  <rect x="506" y="206" width="306" height="186" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="530" y="248" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">THE HANDLE (PUBLIC)</text>
+  <text x="530" y="298" font-family="Menlo, ui-monospace, monospace" font-size="23" font-weight="700" fill="#1e1714">SS-7EF3-2895-D9B0</text>
+  <text x="530" y="334" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">printed on the card</text>
+  <text x="530" y="356" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">never restores the words</text>
+
+  <!-- arrow: SHA-256 -->
+  <line x1="816" y1="300" x2="926" y2="300" stroke="#1e1714" stroke-width="3" marker-end="url(#ah)"/>
+  <text x="818" y="288" font-family="Menlo, ui-monospace, monospace" font-size="15" font-weight="700" fill="#1e1714">SHA-256</text>
+  <text x="818" y="322" font-family="Menlo, ui-monospace, monospace" font-size="11" fill="#8a7767">on device</text>
+
+  <!-- card 3: person + card -->
+  <rect x="936" y="206" width="588" height="186" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="960" y="248" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">THE PERSON + THE CARD</text>
+  <text x="960" y="298" font-family="Menlo, ui-monospace, monospace" font-size="30" font-weight="700" fill="#1e1714">SALTY PENGUIN</text>
+  <text x="960" y="330" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">face · palette · foil · frame · texture · type</text>
+  <g>
+    <rect x="960" y="344" width="22" height="22" rx="4" fill="#f9d423"/>
+    <rect x="988" y="344" width="22" height="22" rx="4" fill="#ff6b6b"/>
+    <rect x="1016" y="344" width="22" height="22" rx="4" fill="#4ecdc4"/>
+    <rect x="1044" y="344" width="22" height="22" rx="4" fill="#c471ed"/>
+    <rect x="1072" y="344" width="22" height="22" rx="4" fill="#2af598"/>
+    <rect x="1100" y="344" width="22" height="22" rx="4" fill="#ff48b0"/>
+    <rect x="1128" y="344" width="22" height="22" rx="4" fill="#43e0c7"/>
+    <rect x="1156" y="344" width="22" height="22" rx="4" fill="#ffd200"/>
+    <text x="1192" y="361" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">8 × 4 × 4 × 5 × 3 × 4</text>
+    <text x="1192" y="380" font-family="Menlo, ui-monospace, monospace" font-size="13" font-weight="700" fill="#1e1714">= 7,680 cards</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="70" y1="424" x2="1530" y2="424" stroke="#1e1714" stroke-opacity="0.16" stroke-width="2" stroke-dasharray="8 10"/>
+  <text x="70" y="462" font-family="Menlo, ui-monospace, monospace" font-size="17" letter-spacing="4" fill="#b03a48">LAYER 3 · STORAGE</text>
+
+  <!-- card 4: vault folder -->
+  <rect x="70" y="482" width="440" height="196" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="94" y="522" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">THE VAULT · ONE PER SECRET</text>
+  <text x="94" y="560" font-family="Menlo, ui-monospace, monospace" font-size="19" font-weight="700" fill="#1e1714">~/arcade-saves/</text>
+  <text x="94" y="588" font-family="Menlo, ui-monospace, monospace" font-size="19" font-weight="700" fill="#1e1714">218ba188797e48e0…</text>
+  <text x="94" y="618" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">sha256(four words)[:32]</text>
+  <text x="94" y="640" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">two credentials per game</text>
+
+  <line x1="514" y1="580" x2="588" y2="580" stroke="#1e1714" stroke-width="3" marker-end="url(#ah)"/>
+
+  <!-- card 5: the file -->
+  <rect x="600" y="482" width="390" height="196" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="624" y="522" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">THE FILE</text>
+  <text x="624" y="558" font-family="Menlo, ui-monospace, monospace" font-size="16" font-weight="700" fill="#1e1714">nds_Sonic_Rush</text>
+  <text x="624" y="580" font-family="Menlo, ui-monospace, monospace" font-size="16" font-weight="700" fill="#1e1714">.zip.sram.json</text>
+  <text x="624" y="612" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">{ game, kind, data, timestamp }</text>
+  <text x="624" y="634" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">last write wins · plaintext today</text>
+
+  <line x1="994" y1="580" x2="1068" y2="580" stroke="#1e1714" stroke-width="3" marker-end="url(#ah)"/>
+
+  <!-- card 6: other screens -->
+  <rect x="1080" y="482" width="450" height="196" rx="12" fill="#fffef7" stroke="#1e1714" stroke-width="3"/>
+  <text x="1104" y="522" font-family="Menlo, ui-monospace, monospace" font-size="14" letter-spacing="3" fill="#8a7767">ANY OTHER SCREEN</text>
+  <text x="1104" y="558" font-family="Menlo, ui-monospace, monospace" font-size="18" font-weight="700" fill="#1e1714">open #phrase=</text>
+  <text x="1104" y="582" font-family="Menlo, ui-monospace, monospace" font-size="18" font-weight="700" fill="#1e1714">→ RESUME</text>
+  <text x="1104" y="614" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">the QR is the same thing</text>
+  <text x="1104" y="636" font-family="Menlo, ui-monospace, monospace" font-size="13" fill="#5c4d40">no account anywhere in the path</text>
+
+  <!-- footer -->
+  <line x1="70" y1="726" x2="1530" y2="726" stroke="#1e1714" stroke-opacity="0.12" stroke-width="2"/>
+  <text x="70" y="760" font-family="Menlo, ui-monospace, monospace" font-size="14" fill="#8a7767">five surfaces, one module · the words are the key, the name, and the portrait</text>
+  <text x="1530" y="760" text-anchor="end" font-family="Menlo, ui-monospace, monospace" font-size="14" fill="#8a7767">SoftStack Passport · 2026</text>
+</svg>

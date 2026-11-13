@@ -120,7 +120,8 @@ Do **not** generate: a hero astronaut, a padlock, a glowing cloud, a hand holdin
 
 - Full schema: `docs/SCHEMA_EXAMPLE.json`; slide types: `title, standard, scroll, quote, split, grid, pillars, gallery, typeface, image`. Callouts are **body items** (`{ callout: "info" | "didyouknow" | "warning" | "question" | "pull", title, body }`).
 - Fonts per slide: `sans | mono | grotesk | jetbrains | pixel`.
-- Images: put files in `images/`, reference relatively. Hosted share preserves image assets; JSON export is the full-fidelity fallback.
+- Images: put files in `images/`, reference relatively. `.svg` works and is the right call for diagrams — real text, guaranteed legible, no model.
+- 🚨 **`grid` colour swatches print their `label` twice** (`createColorBlock` writes it inside the block, `renderGridSlide` adds it again as a `<figcaption>`). Leave `items[].label` off a colour grid and name the colours in `body` instead. Hosted share preserves image assets; JSON export is the full-fidelity fallback.
 - Add the catalog entry (`category: "Core Deck"`, tags e.g. `["Passport", "Architecture"]`) so it appears on the launcher.
 - `npm run check` must pass; the deck must also open in `deck.html?slides=sovereign-passport-2026.json` with no error slide.
 - Verify visually: 1440×900 and 390×844. Text must not overflow; `pillars` and `grid` must not crush on phone.

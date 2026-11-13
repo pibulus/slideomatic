@@ -1,5 +1,16 @@
 [
   {
+    "title": "The Sovereign Passport",
+    "description": "Four words that name you, draw your card, and carry your saves between screens — and the honest limits of that promise.",
+    "slides": "sovereign-passport-2026.json",
+    "theme": "theme.json",
+    "category": "Core Deck",
+    "tags": [
+      "Passport",
+      "Architecture"
+    ]
+  },
+  {
     "title": "Frequency Deck",
     "description": "Primary pastel-punk narrative with mesh gradient background.",
     "slides": "slides.json",
