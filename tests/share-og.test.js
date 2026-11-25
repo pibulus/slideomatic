@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rewriteShareHeadHtml } from './share-og.js';
+import { rewriteShareHeadHtml } from '../netlify/edge-functions/share-og.js';
 
 const deckHtml = fs.readFileSync(path.resolve(process.cwd(), 'deck.html'), 'utf8');
 
