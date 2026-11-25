@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { handler } from './share.js';
-import { handler as assetHandler } from './asset.js';
-import { STORE_NAMES } from './utils/common.js';
+import { handler } from '../netlify/functions/share.js';
+import { handler as assetHandler } from '../netlify/functions/asset.js';
+import { STORE_NAMES } from '../netlify/functions/utils/common.js';
 
 function createMemoryStores() {
   const stores = new Map();
